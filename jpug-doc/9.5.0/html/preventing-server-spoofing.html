@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>17.7. サーバのなりすまし防止</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="PostgreSQL 9.5.0文書" /><link rel="up" href="runtime.html" title="第17章 サーバの準備と運用" /><link rel="prev" href="upgrading.html" title="17.6. PostgreSQLクラスタのアップグレード処理" /><link rel="next" href="encryption-options.html" title="17.8. 暗号化オプション" /><link rel="copyright" href="legalnotice.html" title="法的告知" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">17.7. サーバのなりすまし防止</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="upgrading.html">戻る</a> </td><th width="60%" align="center">第17章 サーバの準備と運用</th><td width="20%" align="right"> <a accesskey="n" href="encryption-options.html">次へ</a></td></tr></table><hr /></div><div class="sect1" id="preventing-server-spoofing"><div class="titlepage"><div><div><h2 class="title" style="clear: both">17.7. サーバのなりすまし防止</h2></div></div></div><span class="original"><!--$-->
+  &lt;title&gt;Preventing Server Spoofing&lt;/title&gt;
+</span><br /><a id="idp72749584" class="indexterm"></a><p><span class="original"><!--$-->
+   While the server is running, it is not possible for a malicious user
+   to take the place of the normal database server.  However, when the
+   server is down, it is possible for a local user to spoof the normal
+   server by starting their own server.  The spoof server could read
+   passwords and queries sent by clients, but could not return any data
+   because the &lt;varname&gt;PGDATA&lt;/&gt; directory would still be secure because
+   of directory permissions. Spoofing is possible because any user can
+   start a database server; a client cannot identify an invalid server
+   unless it is specially configured.
+</span><br />サーバが稼動中、悪意のあるユーザが通常のデータベースサーバに取って代わることはできません。
+しかし、サーバが停止している時、ローカルユーザに対し、独自のサーバを起動させることで正常なサーバになりすますことは可能です。
+なりすましたサーバで、クライアントから送信されたパスワードを読み取ることも問い合わせを読み取ることも可能です。
+しかし、<code class="varname">PGDATA</code>ディレクトリの安全性はディレクトリの権限により維持されていますので、データを返すことはできません。
+誰もがデータベースサーバを起動させることができるため、なりすましは可能です。
+特殊な設定がなされていなければ、クライアントは無効なサーバであることを識別できません。
+  </p><p><span class="original"><!--$-->
+   The simplest way to prevent spoofing for &lt;literal&gt;local&lt;/&gt;
+   connections is to use a Unix domain socket directory (&lt;xref
+   linkend="guc-unix-socket-directories"&gt;) that has write permission only
+   for a trusted local user.  This prevents a malicious user from creating
+   their own socket file in that directory.  If you are concerned that
+   some applications might still reference &lt;filename&gt;/tmp&lt;/&gt; for the
+   socket file and hence be vulnerable to spoofing, during operating system
+   startup create a symbolic link &lt;filename&gt;/tmp/.s.PGSQL.5432&lt;/&gt; that points
+   to the relocated socket file.  You also might need to modify your
+   &lt;filename&gt;/tmp&lt;/&gt; cleanup script to prevent removal of the symbolic link.
+</span><br /><code class="literal">ローカル</code>接続に対してなりすましを防ぐ、もっとも簡単な方法は、信頼できるローカルユーザのみに書き込み権限を付与したUnixドメインソケットディレクトリ（<a class="xref" href="runtime-config-connection.html#guc-unix-socket-directories">unix_socket_directories</a>）を使用することです。
+これにより、悪意のあるユーザがそのディレクトリに独自のソケットを作成することを防ぐことができます。
+一部のアプリケーションがソケットファイルのために<code class="filename">/tmp</code>を参照し、なりすましに対して脆弱であるかもしれないと気にするならば、オペレーティングシステムの起動時に、再割り当てされたソケットファイルを指し示す<code class="filename">/tmp/.s.PGSQL.5432</code>というシンボリックリンクを作成してください。
+また、このシンボリックリンクが削除されることを防ぐために、<code class="filename">/tmp</code>を整理するスクリプトを変更する必要があるかもしれません。
+  </p><p><span class="original"><!--$-->
+   To prevent spoofing on TCP connections, the best solution is to use
+   SSL certificates and make sure that clients check the server's certificate.
+   To do that, the server
+   must be configured to accept only &lt;literal&gt;hostssl&lt;/&gt; connections (&lt;xref
+   linkend="auth-pg-hba-conf"&gt;) and have SSL key and certificate files
+   (&lt;xref linkend="ssl-tcp"&gt;). The TCP client must connect using
+   &lt;literal&gt;sslmode=verify-ca&lt;/&gt; or
+   &lt;literal&gt;verify-full&lt;/&gt; and have the appropriate root certificate
+   file installed (&lt;xref linkend="libq-ssl-certificates"&gt;).
+</span><br />TCP接続のなりすましを防ぐための最善の方法は、SSL証明書を使用し、クライアントがサーバの証明書を確実に検査することです。
+これを行うためには、サーバは<code class="literal">hostssl</code>接続（<a class="xref" href="auth-pg-hba-conf.html" title="19.1. pg_hba.confファイル">「<code class="filename">pg_hba.conf</code>ファイル」</a>）のみを受け付け、SSLキーと証明書ファイル（<a class="xref" href="ssl-tcp.html" title="17.9. SSLによる安全なTCP/IP接続">「SSLによる安全なTCP/IP接続」</a>）を持たせる必要があります。
+TCPクライアントは<code class="literal">sslmode=verify-ca</code>もしくは<code class="literal">verify-full</code>を使用して接続し、また、適切なルート証明書ファイルをインストールしなければなりません（<a class="xref" href="libpq-ssl.html#libq-ssl-certificates" title="31.18.1. サーバ証明書のクライアント検証">「サーバ証明書のクライアント検証」</a>）。
+  </p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="upgrading.html">戻る</a> </td><td width="20%" align="center"><a accesskey="u" href="runtime.html">上に戻る</a></td><td width="40%" align="right"> <a accesskey="n" href="encryption-options.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">17.6. <span class="productname">PostgreSQL</span>クラスタのアップグレード処理 </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> 17.8. 暗号化オプション</td></tr></table></div></body></html>

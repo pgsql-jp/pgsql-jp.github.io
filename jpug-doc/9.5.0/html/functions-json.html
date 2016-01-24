@@ -1,0 +1,360 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>9.15. JSON関数と演算子</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="PostgreSQL 9.5.0文書" /><link rel="up" href="functions.html" title="第9章 関数と演算子" /><link rel="prev" href="functions-xml.html" title="9.14. XML関数" /><link rel="next" href="functions-sequence.html" title="9.16. シーケンス操作関数" /><link rel="copyright" href="legalnotice.html" title="法的告知" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">9.15. JSON関数と演算子</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="functions-xml.html">戻る</a> </td><th width="60%" align="center">第9章 関数と演算子</th><td width="20%" align="right"> <a accesskey="n" href="functions-sequence.html">次へ</a></td></tr></table><hr /></div><div class="sect1" id="functions-json"><div class="titlepage"><div><div><h2 class="title" style="clear: both">9.15. JSON関数と演算子</h2></div></div></div><span class="original"><!--$-->
+  &lt;title&gt;JSON Functions and Operators&lt;/title&gt;
+</span><br /><a id="idp65532064" class="indexterm"></a><p><span class="original"><!--$-->
+   &lt;xref linkend="functions-json-op-table"&gt; shows the operators that
+   are available for use with the two JSON data types (see &lt;xref
+   linkend="datatype-json"&gt;).
+</span><br /><a class="xref" href="functions-json.html#functions-json-op-table" title="表9.40 jsonとjsonb演算子">表9.40「<code class="type">json</code>と<code class="type">jsonb</code>演算子」</a>は2つのJSONデータ型(<a class="xref" href="datatype-json.html" title="8.14. JSONデータ型">「<acronym class="acronym">JSON</acronym>データ型」</a>を参照)で使用可能な演算子を示しています。
+  </p><div class="table" id="functions-json-op-table"><p class="title"><strong>表9.40 <code class="type">json</code>と<code class="type">jsonb</code>演算子</strong></p><div class="table-contents"><span class="original"><!--$-->
+     &lt;title&gt;&lt;type&gt;json&lt;/&gt; and &lt;type&gt;jsonb&lt;/&gt; Operators&lt;/title&gt;
+</span><br /><table summary="jsonとjsonb演算子" border="1"><colgroup><col /><col /><col /><col /><col /></colgroup><thead><tr><th>演算子</th><th>右オペランド型</th><th>説明</th><th>例</th><th>例の結果</th></tr></thead><tbody><tr><td><code class="literal">-&gt;</code></td><td><code class="type">int</code></td><td>Get JSON array element (indexed from zero, negative
+        integers count from the end)</td><td><code class="literal">'[{"a":"foo"},{"b":"bar"},{"c":"baz"}]'::json-&gt;2</code></td><td><code class="literal">{"c":"baz"}</code></td></tr><tr><td><code class="literal">-&gt;</code></td><td><code class="type">text</code></td><td>キーに依るJSONオブジェクトフィールド取得</td><td><code class="literal">'{"a": {"b":"foo"}}'::json-&gt;'a'</code></td><td><code class="literal">{"b":"foo"}</code></td></tr><tr><td><code class="literal">-&gt;&gt;</code></td><td><code class="type">int</code></td><td>JSON 配列要素を<code class="type">text</code>として取得</td><td><code class="literal">'[1,2,3]'::json-&gt;&gt;2</code></td><td><code class="literal">3</code></td></tr><tr><td><code class="literal">-&gt;&gt;</code></td><td><code class="type">text</code></td><td>JSON オブジェクトフィールドを<code class="type">text</code>として取得</td><td><code class="literal">'{"a":1,"b":2}'::json-&gt;&gt;'b'</code></td><td><code class="literal">2</code></td></tr><tr><td><code class="literal">#&gt;</code></td><td><code class="type">text[]</code></td><td>指定されたパスにてJSONオブジェクトを取得</td><td><code class="literal">'{"a": {"b":{"c": "foo"}}}'::json#&gt;'{a,b}'</code></td><td><code class="literal">{"c": "foo"}</code></td></tr><tr><td><code class="literal">#&gt;&gt;</code></td><td><code class="type">text[]</code></td><td>指定されたパスにてJSONオブジェクトを<code class="type">text</code>として取得</td><td><code class="literal">'{"a":[1,2,3],"b":[4,5,6]}'::json#&gt;&gt;'{a,2}'</code></td><td><code class="literal">3</code></td></tr></tbody></table></div></div><br class="table-break" /><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">注記</h3><p><span class="original"><!--$-->
+    There are parallel variants of these operators for both the
+    &lt;type&gt;json&lt;/type&gt; and &lt;type&gt;jsonb&lt;/type&gt; types.
+    The field/element/path extraction operators
+    return the same type as their left-hand input (either &lt;type&gt;json&lt;/type&gt;
+    or &lt;type&gt;jsonb&lt;/type&gt;), except for those specified as
+    returning &lt;type&gt;text&lt;/&gt;, which coerce the value to text.
+    The field/element/path extraction operators return NULL, rather than
+    failing, if the JSON input does not have the right structure to match
+    the request; for example if no such element exists.  The
+    field/element/path extraction operators that accept integer JSON
+    array subscripts all support negative subscripting from the end of
+    arrays.
+</span><br /><code class="type">json</code>と<code class="type">jsonb</code>型の両方に対して、以上の演算子の対応するものがあります。
+JSON入力が要求と一致する正しい構造をしていなければ、フィールド/要素/パス抽出演算子は失敗するのではなくNULLを返します。例えばそのような要素が存在しない場合です。
+★★★
+   </p></div><p><span class="original"><!--$-->
+   The standard comparison operators shown in  &lt;xref
+   linkend="functions-comparison-table"&gt; are available for
+   &lt;type&gt;jsonb&lt;/type&gt;, but not for &lt;type&gt;json&lt;/type&gt;. They follow the
+   ordering rules for B-tree operations outlined at &lt;xref
+   linkend="json-indexing"&gt;.
+</span><br /><a class="xref" href="functions-comparison.html#functions-comparison-table" title="表9.1 比較演算子">表9.1「比較演算子」</a>に示されている標準の比較演算子が<code class="type">jsonb</code>で利用可能ですが、<code class="type">json</code>ではそうではありません。
+それらは<a class="xref" href="datatype-json.html#json-indexing" title="8.14.4. jsonb インデックス">「<code class="type">jsonb</code> インデックス」</a>で概略を述べたB-tree演算子の順序規則に従います。
+  </p><p><span class="original"><!--$-->
+   Some further operators also exist only for &lt;type&gt;jsonb&lt;/type&gt;, as shown
+   in &lt;xref linkend="functions-jsonb-op-table"&gt;.
+   Many of these operators can be indexed by
+   &lt;type&gt;jsonb&lt;/&gt; operator classes.  For a full description of
+   &lt;type&gt;jsonb&lt;/&gt; containment and existence semantics, see &lt;xref
+   linkend="json-containment"&gt;.  &lt;xref linkend="json-indexing"&gt;
+   describes how these operators can be used to effectively index
+   &lt;type&gt;jsonb&lt;/&gt; data.
+</span><br /><a class="xref" href="functions-json.html#functions-jsonb-op-table" title="表9.41 追加jsonb演算子">表9.41「追加<code class="type">jsonb</code>演算子」</a>に示されているように<code class="type">jsonb</code>だけにはそれ以上の演算子も存在します。
+そのうちの多くの演算子は<code class="type">jsonb</code>演算子クラスでインデックス付けすることが可能です。
+<code class="type">jsonb</code>の包含と存在の意味に関する完全な記述は<a class="xref" href="datatype-json.html#json-containment" title="8.14.3. jsonb型用包含演算子と存在演算子">「<code class="type">jsonb</code>型用包含演算子と存在演算子」</a>を参照してください。
+<a class="xref" href="datatype-json.html#json-indexing" title="8.14.4. jsonb インデックス">「<code class="type">jsonb</code> インデックス」</a>には、<code class="type">jsonb</code>データを効率的にインデックス付けするためにこれらの演算子をどのように利用できるかについて書いてあります。
+  </p><div class="table" id="functions-jsonb-op-table"><p class="title"><strong>表9.41 追加<code class="type">jsonb</code>演算子</strong></p><div class="table-contents"><span class="original"><!--$-->
+     &lt;title&gt;Additional &lt;type&gt;jsonb&lt;/&gt; Operators&lt;/title&gt;
+</span><br /><table summary="追加jsonb演算子" border="1"><colgroup><col /><col /><col /><col /></colgroup><thead><tr><th>演算子</th><th>右オペランド型</th><th>説明</th><th>例</th></tr></thead><tbody><tr><td><code class="literal">@&gt;</code></td><td><code class="type">jsonb</code></td><td>Does the left JSON value contain the right JSON
+        path/value entries at the top level?</td><td><code class="literal">'{"a":1, "b":2}'::jsonb @&gt; '{"b":2}'::jsonb</code></td></tr><tr><td><code class="literal">&lt;@</code></td><td><code class="type">jsonb</code></td><td>Are the left JSON path/value entries contained at the top level within
+        the right JSON value?</td><td><code class="literal">'{"b":2}'::jsonb &lt;@ '{"a":1, "b":2}'::jsonb</code></td></tr><tr><td><code class="literal">?</code></td><td><code class="type">text</code></td><td>Does the <span class="emphasis"><em>string</em></span> exist as a top-level
+        key within the JSON value?</td><td><code class="literal">'{"a":1, "b":2}'::jsonb ? 'b'</code></td></tr><tr><td><code class="literal">?|</code></td><td><code class="type">text[]</code></td><td>Do any of these array <span class="emphasis"><em>strings</em></span>
+        exist as top-level keys?</td><td>キー/要素<span class="emphasis"><em>文字列</em></span>のいずれかが存在するか。</td><td><code class="literal">'{"a":1, "b":2, "c":3}'::jsonb ?| array['b', 'c']</code></td></tr><tr><td><code class="literal">?&amp;</code></td><td><code class="type">text[]</code></td><td>Do all of these array <span class="emphasis"><em>strings</em></span> exist
+        as top-level keys?</td><td><code class="literal">'["a", "b"]'::jsonb ?&amp; array['a', 'b']</code></td></tr><tr><td><code class="literal">||</code></td><td><code class="type">jsonb</code></td><td>Concatenate two <code class="type">jsonb</code> values into a new <code class="type">jsonb</code> value</td><td><code class="literal">'["a", "b"]'::jsonb || '["c", "d"]'::jsonb</code></td></tr><tr><td><code class="literal">-</code></td><td><code class="type">text</code></td><td>Delete key/value pair or <span class="emphasis"><em>string</em></span>
+        element from left operand.  Key/value pairs are matched based
+        on their key value.</td><td><code class="literal">'{"a": "b"}'::jsonb - 'a' </code></td></tr><tr><td><code class="literal">-</code></td><td><code class="type">integer</code></td><td>Delete the array element with specified index (Negative
+        integers count from the end).  Throws an error if top level
+        container is not an array.</td><td><code class="literal">'["a", "b"]'::jsonb - 1 </code></td></tr><tr><td><code class="literal">#-</code></td><td><code class="type">text[]</code></td><td>Delete the field or element with specified path (for
+        JSON arrays, negative integers count from the end)</td><td><code class="literal">'["a", {"b":1}]'::jsonb #- '{1,b}'</code></td></tr></tbody></table></div></div><br class="table-break" /><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">注記</h3><p>    The <code class="literal">||</code> operator concatenates the elements at the top level of
+    each of its operands. It does not operate recursively. For example, if
+    both operands are objects with a common key field name, the value of the
+    field in the result will just be the value from the right hand operand.
+   </p></div><p><span class="original"><!--$-->
+   &lt;xref linkend="functions-json-creation-table"&gt; shows the functions that are
+   available for creating &lt;type&gt;json&lt;/type&gt; and &lt;type&gt;jsonb&lt;/type&gt; values.
+   (There are no equivalent functions for &lt;type&gt;jsonb&lt;/&gt;, of the &lt;literal&gt;row_to_json&lt;/&gt;
+   and &lt;literal&gt;array_to_json&lt;/&gt; functions. However, the &lt;literal&gt;to_jsonb&lt;/&gt;
+   function supplies much the same functionality as these functions would.)
+</span><br /><a class="xref" href="functions-json.html#functions-json-creation-table" title="表9.42 JSON作成関数">表9.42「JSON作成関数」</a>に、JSON値を作成するために利用可能な関数を示します。
+(今のところ、<code class="type">jsonb</code>のための同様な関数はありませんが、以下の関数の結果を<code class="type">jsonb</code>にキャストできます。)
+★★★
+  </p><a id="idp65602544" class="indexterm"></a><a id="idp65603232" class="indexterm"></a><a id="idp65603920" class="indexterm"></a><a id="idp65604608" class="indexterm"></a><a id="idp65605296" class="indexterm"></a><a id="idp65605984" class="indexterm"></a><a id="idp65606672" class="indexterm"></a><a id="idp65607360" class="indexterm"></a><a id="idp65608048" class="indexterm"></a><a id="idp65608736" class="indexterm"></a><div class="table" id="functions-json-creation-table"><p class="title"><strong>表9.42 JSON作成関数</strong></p><div class="table-contents"><span class="original"><!--$-->
+    &lt;title&gt;JSON Creation Functions&lt;/title&gt;
+</span><br /><table summary="JSON作成関数" border="1"><colgroup><col /><col /><col /><col /></colgroup><thead><tr><th>関数</th><th>説明</th><th>例</th><th>例の結果</th></tr></thead><tbody><tr><td><p><code class="literal">to_json(anyelement)</code>
+          </p><p><code class="literal">to_jsonb(anyelement)</code>
+       </p></td><td><span class="original"><!--$-->
+         Returns the value as &lt;type&gt;json&lt;/&gt; or &lt;type&gt;jsonb&lt;/&gt;.
+         Arrays and composites are converted
+         (recursively) to arrays and objects; otherwise, if there is a cast
+         from the type to &lt;type&gt;json&lt;/type&gt;, the cast function will be used to
+         perform the conversion; otherwise, a scalar value is produced.
+         For any scalar type other than a number, a Boolean, or a null value,
+         the text representation will be used, in such a fashion that it is a
+         valid &lt;type&gt;json&lt;/&gt; or &lt;type&gt;jsonb&lt;/&gt; value.
+</span><br />JSONとして値を返す。
+配列と複合型は(それぞれ)配列とオブジェクトに変換される。そうでなければ、その型から<code class="type">json</code>にキャストがあれば、キャスト関数が変換のために用いられる。そうでなければ、JSONスカラ値が生成される。
+数値、論理値、またはNULL値以外のスカラ型に対しては、有効なJSONと認められるようエスケープおよび引用符で囲まれた文字列表現が使用される。
+★★★
+       </td><td><code class="literal">to_json('Fred said "Hi."'::text)</code></td><td><code class="literal">"Fred said \"Hi.\""</code></td></tr><tr><td>         <code class="literal">array_to_json(anyarray [, pretty_bool])</code>
+       </td><td><span class="original"><!--$-->
+         Returns the array as a JSON array. A PostgreSQL multidimensional array
+         becomes a JSON array of arrays. Line feeds will be added between
+         dimension-1 elements if &lt;parameter&gt;pretty_bool&lt;/parameter&gt; is true.
+</span><br />         配列をJSON配列として返す。PostgreSQLの多次元配列はJSON配列の配列となる。もし<em class="parameter"><code>pretty_bool</code></em>が真の場合、次元数-1の要素の間にラインフィードが加えられる。
+       </td><td><code class="literal">array_to_json('{{1,5},{99,100}}'::int[])</code></td><td><code class="literal">[[1,5],[99,100]]</code></td></tr><tr><td>         <code class="literal">row_to_json(record [, pretty_bool])</code>
+       </td><td><span class="original"><!--$-->
+         Returns the row as a JSON object. Line feeds will be added between
+         level-1 elements if &lt;parameter&gt;pretty_bool&lt;/parameter&gt; is true.
+</span><br />         行をJSONオブジェクトとして返す。もし<em class="parameter"><code>pretty_bool</code></em>が真の場合、レベル-1の要素の間にラインフィードが加えられる。
+       </td><td><code class="literal">row_to_json(row(1,'foo'))</code></td><td><code class="literal">{"f1":1,"f2":"foo"}</code></td></tr><tr><td><p><code class="literal">json_build_array(VARIADIC "any")</code>
+          </p><p><code class="literal">jsonb_build_array(VARIADIC "any")</code>
+       </p></td><td><span class="original"><!--$-->
+         Builds a possibly-heterogeneously-typed JSON array out of a variadic
+         argument list.
+</span><br />         異なる型から構成される可能性のあるJSON配列をvariadic引数一覧から作成。
+       </td><td><code class="literal">json_build_array(1,2,'3',4,5)</code></td><td><code class="literal">[1, 2, "3", 4, 5]</code></td></tr><tr><td><p><code class="literal">json_build_object(VARIADIC "any")</code>
+          </p><p><code class="literal">jsonb_build_object(VARIADIC "any")</code>
+       </p></td><td><span class="original"><!--$-->
+         Builds a JSON object out of a variadic argument list.  By
+         convention, the argument list consists of alternating
+         keys and values.
+</span><br />         variadic引数一覧からJSONオブジェクトを作成。慣例により引数一覧はキーと値が交互に並んだもの。
+       </td><td><code class="literal">json_build_object('foo',1,'bar',2)</code></td><td><code class="literal">{"foo": 1, "bar": 2}</code></td></tr><tr><td><p><code class="literal">json_object(text[])</code>
+          </p><p><code class="literal">jsonb_object(text[])</code>
+       </p></td><td><span class="original"><!--$-->
+         Builds a JSON object out of a text array.  The array must have either
+         exactly one dimension with an even number of members, in which case
+         they are taken as alternating key/value pairs, or two dimensions
+         such that each inner array has exactly two elements, which
+         are taken as a key/value pair.
+</span><br />         テキスト配列からJSONオブジェクトを作成。配列は、以下のどちらかでなければならない。偶数個の要素からなる1次元、この場合にはキー/値の対が交互に並んでいるものと扱われる。内側の配列が2つの要素を持つ2次元、2つの要素がキー/値の対として扱われる。
+       </td><td><p><code class="literal">json_object('{a, 1, b, "def", c, 3.5}')</code></p>
+        <p><code class="literal">json_object('{{a, 1},{b, "def"},{c, 3.5}}')</code></p></td><td><code class="literal">{"a": "1", "b": "def", "c": "3.5"}</code></td></tr><tr><td><p><code class="literal">json_object(keys text[], values text[])</code>
+          </p><p><code class="literal">jsonb_object(keys text[], values text[])</code>
+       </p></td><td><span class="original"><!--$-->
+         This form of &lt;function&gt;json_object&lt;/&gt; takes keys and values pairwise from two separate
+         arrays. In all other respects it is identical to the one-argument form.
+</span><br />        この形の<code class="function">json_object</code>は2つの別々の配列からキーと値の対を取る。他の点ではすべて、引数1つの形と同じ。
+       </td><td><code class="literal">json_object('{a, b}', '{1,2}')</code></td><td><code class="literal">{"a": "1", "b": "2"}</code></td></tr></tbody></table></div></div><br class="table-break" /><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">注記</h3><p><span class="original"><!--$-->
+     &lt;function&gt;array_to_json&lt;/&gt; and &lt;function&gt;row_to_json&lt;/&gt; have the same
+     behavior as &lt;function&gt;to_json&lt;/&gt; except for offering a pretty-printing
+     option.  The behavior described for &lt;function&gt;to_json&lt;/&gt; likewise applies
+     to each individual value converted by the other JSON creation functions.
+</span><br /><code class="function">array_to_json</code>と<code class="function">row_to_json</code>は表示を整えるオプションを提供する以外は<code class="function">to_json</code>と同様の振舞いをします。
+同様に<code class="function">to_json</code>に書かれた振舞いはJSON作成関数により変換された個々の値に適用されます。
+    </p></div><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">注記</h3><p><span class="original"><!--$-->
+     The &lt;xref linkend="hstore"&gt; extension has a cast
+     from &lt;type&gt;hstore&lt;/type&gt; to &lt;type&gt;json&lt;/type&gt;, so that
+     &lt;type&gt;hstore&lt;/type&gt; values converted via the JSON creation functions
+     will be represented as JSON objects, not as primitive string values.
+</span><br /><a class="xref" href="hstore.html" title="F.15. hstore">hstore</a>拡張は<code class="type">hstore</code>から<code class="type">json</code>へのキャストを含みます。従って、JSON作成関数で変換された<code class="type">hstore</code>値は元の文字列値ではなくJSONオブジェクトとして示されます。
+    </p></div><p><span class="original"><!--$-->
+   &lt;xref linkend="functions-json-processing-table"&gt; shows the functions that
+   are available for processing &lt;type&gt;json&lt;/type&gt; and &lt;type&gt;jsonb&lt;/type&gt; values.
+</span><br /><a class="xref" href="functions-json.html#functions-json-processing-table" title="表9.43 JSON処理関数">表9.43「JSON処理関数」</a>に<code class="type">json</code>と<code class="type">jsonb</code>値を処理するのに使える関数を示します。
+  </p><a id="idp65654208" class="indexterm"></a><a id="idp65654896" class="indexterm"></a><a id="idp65655584" class="indexterm"></a><a id="idp65656272" class="indexterm"></a><a id="idp65656960" class="indexterm"></a><a id="idp65657648" class="indexterm"></a><a id="idp65658336" class="indexterm"></a><a id="idp65659024" class="indexterm"></a><a id="idp65659712" class="indexterm"></a><a id="idp65660400" class="indexterm"></a><a id="idp65661088" class="indexterm"></a><a id="idp65661776" class="indexterm"></a><a id="idp65662464" class="indexterm"></a><a id="idp65663152" class="indexterm"></a><a id="idp65663840" class="indexterm"></a><a id="idp65664528" class="indexterm"></a><a id="idp65665184" class="indexterm"></a><a id="idp65665872" class="indexterm"></a><a id="idp65666560" class="indexterm"></a><a id="idp65667264" class="indexterm"></a><a id="idp65667968" class="indexterm"></a><a id="idp65668656" class="indexterm"></a><a id="idp65669344" class="indexterm"></a><a id="idp65670032" class="indexterm"></a><a id="idp65670720" class="indexterm"></a><a id="idp65671408" class="indexterm"></a><a id="idp65672096" class="indexterm"></a><a id="idp65672784" class="indexterm"></a><a id="idp65673472" class="indexterm"></a><a id="idp65674160" class="indexterm"></a><div class="table" id="functions-json-processing-table"><p class="title"><strong>表9.43 JSON処理関数</strong></p><div class="table-contents"><span class="original"><!--$-->
+    &lt;title&gt;JSON Processing Functions&lt;/title&gt;
+</span><br /><table summary="JSON処理関数" border="1"><colgroup><col /><col /><col /><col /><col /></colgroup><thead><tr><th>関数</th><th>戻り値型</th><th>説明</th><th>例</th><th>例の結果</th></tr></thead><tbody><tr><td><p><code class="literal">json_array_length(json)</code>
+         </p><p><code class="literal">jsonb_array_length(jsonb)</code>
+       </p></td><td><code class="type">int</code></td><td><span class="original"><!--$-->
+         Returns the number of elements in the outermost JSON array.
+</span><br />         JSON配列の最も外側の要素の数を返す。
+       </td><td><code class="literal">json_array_length('[1,2,3,{"f1":1,"f2":[5,6]},4]')</code></td><td><code class="literal">5</code></td></tr><tr><td><p><code class="literal">json_each(json)</code>
+         </p><p><code class="literal">jsonb_each(jsonb)</code>
+       </p></td><td><p><code class="literal">setof key text, value json</code>
+         </p><p><code class="literal">setof key text, value jsonb</code>
+       </p></td><td><span class="original"><!--$-->
+         Expands the outermost JSON object into a set of key/value pairs.
+</span><br />         JSONオブジェクトの最も外側をkey/valueの組み合わせに拡張する。
+       </td><td><code class="literal">select * from json_each('{"a":"foo", "b":"bar"}')</code></td><td><pre class="programlisting"> key | value
+-----+-------
+ a   | "foo"
+ b   | "bar"</pre>
+       </td></tr><tr><td><p><code class="literal">json_each_text(json)</code>
+         </p><p><code class="literal">jsonb_each_text(jsonb)</code>
+       </p></td><td><code class="type">setof key text, value text</code></td><td><span class="original"><!--$-->
+         Expands the outermost JSON object into a set of key/value pairs. The
+         returned values will be of type &lt;type&gt;text&lt;/&gt;.
+</span><br />        JSONオブジェクトの最も外側をkey/valueの組み合わせに拡張する。返り値は型<code class="type">text</code>。
+       </td><td><code class="literal">select * from json_each_text('{"a":"foo", "b":"bar"}')</code></td><td><pre class="programlisting"> key | value
+-----+-------
+ a   | foo
+ b   | bar</pre>
+       </td></tr><tr><td><p><code class="literal">json_extract_path(from_json json, VARIADIC path_elems text[])</code>
+        </p><p><code class="literal">jsonb_extract_path(from_json jsonb, VARIADIC path_elems text[])</code>
+       </p></td><td><p><code class="type">json</code></p><p><code class="type">jsonb</code>
+       </p></td><td><span class="original"><!--$-->
+         Returns JSON value pointed to by &lt;replaceable&gt;path_elems&lt;/replaceable&gt;
+         (equivalent to &lt;literal&gt;#&amp;gt;&lt;/literal&gt; operator).
+</span><br />        <em class="replaceable"><code>path_elems</code></em>で示されたJSONオブジェクトを返す(<code class="literal">#&gt;</code>と同じ)。
+       </td><td><code class="literal">json_extract_path('{"f2":{"f3":1},"f4":{"f5":99,"f6":"foo"}}','f4')</code></td><td><code class="literal">{"f5":99,"f6":"foo"}</code></td></tr><tr><td><p><code class="literal">json_extract_path_text(from_json json, VARIADIC path_elems text[])</code>
+         </p><p><code class="literal">jsonb_extract_path_text(from_json jsonb, VARIADIC path_elems text[])</code>
+       </p></td><td><code class="type">text</code></td><td><span class="original"><!--$-->
+         Returns JSON value pointed to by &lt;replaceable&gt;path_elems&lt;/replaceable&gt;
+         as &lt;type&gt;text&lt;/&gt;
+         (equivalent to &lt;literal&gt;#&amp;gt;&amp;gt;&lt;/literal&gt; operator).
+</span><br />        <em class="replaceable"><code>path_elems</code></em>で示されたJSONオブジェクトを<code class="type">text</code>として返す(<code class="literal">#&gt;&gt;</code>演算子と同じ)。
+       </td><td><code class="literal">json_extract_path_text('{"f2":{"f3":1},"f4":{"f5":99,"f6":"foo"}}','f4', 'f6')</code></td><td><code class="literal">foo</code></td></tr><tr><td><p><code class="literal">json_object_keys(json)</code>
+         </p><p><code class="literal">jsonb_object_keys(jsonb)</code>
+       </p></td><td><code class="type">setof text</code></td><td><span class="original"><!--$-->
+          Returns set of keys in the outermost JSON object.
+</span><br />        最も外側のJSONオブジェクトの中のキー一式を返す。
+       </td><td><code class="literal">json_object_keys('{"f1":"abc","f2":{"f3":"a", "f4":"b"}}')</code></td><td><pre class="programlisting"> json_object_keys
+------------------
+ f1
+ f2</pre>
+       </td></tr><tr><td><p><code class="literal">json_populate_record(base anyelement, from_json json)</code>
+         </p><p><code class="literal">jsonb_populate_record(base anyelement, from_json jsonb)</code>
+       </p></td><td><code class="type">anyelement</code></td><td><span class="original"><!--$-->
+         Expands the object in &lt;replaceable&gt;from_json&lt;/replaceable&gt; to a row
+         whose columns match the record type defined by &lt;replaceable&gt;base&lt;/&gt;
+         (see note below).
+</span><br /><em class="replaceable"><code>from_json</code></em>内のオブジェクトを行を<em class="replaceable"><code>base</code></em>で定義されたレコード型に一致する列に拡張する(以下の注意書きを参照)。
+       </td><td><code class="literal">select * from json_populate_record(null::myrowtype, '{"a":1,"b":2}')</code></td><td><pre class="programlisting"> a | b
+---+---
+ 1 | 2</pre>
+       </td></tr><tr><td><p><code class="literal">json_populate_recordset(base anyelement, from_json json)</code>
+         </p><p><code class="literal">jsonb_populate_recordset(base anyelement, from_json jsonb)</code>
+       </p></td><td><code class="type">setof anyelement</code></td><td><span class="original"><!--$-->
+         Expands the outermost array of objects
+         in &lt;replaceable&gt;from_json&lt;/replaceable&gt; to a set of rows whose
+         columns match the record type defined by &lt;replaceable&gt;base&lt;/&gt; (see
+         note below).
+</span><br /><em class="replaceable"><code>from_json</code></em>におけるオブジェクトの最も外側の配列を<em class="replaceable"><code>base</code></em>で定義されたレコード型に一致する列を持つ行の集合に展開する(以下の注意書き参照)。
+       </td><td><code class="literal">select * from json_populate_recordset(null::myrowtype, '[{"a":1,"b":2},{"a":3,"b":4}]')</code></td><td><pre class="programlisting"> a | b
+---+---
+ 1 | 2
+ 3 | 4</pre>
+       </td></tr><tr><td><p><code class="literal">json_array_elements(json)</code>
+         </p><p><code class="literal">jsonb_array_elements(jsonb)</code>
+       </p></td><td><p><code class="type">setof json</code>
+         </p><p><code class="type">setof jsonb</code>
+       </p></td><td><span class="original"><!--$-->
+         Expands a JSON array to a set of JSON values.
+</span><br />        JSON配列をJSON値の集合に展開する。
+       </td><td><code class="literal">select * from json_array_elements('[1,true, [2,false]]')</code></td><td><pre class="programlisting">   value
+-----------
+ 1
+ true
+ [2,false]</pre>
+       </td></tr><tr><td><p><code class="literal">json_array_elements_text(json)</code>
+         </p><p><code class="literal">jsonb_array_elements_text(jsonb)</code>
+       </p></td><td><code class="type">setof text</code></td><td><span class="original"><!--$-->
+         Expands a JSON array to a set of &lt;type&gt;text&lt;/&gt; values.
+</span><br />        JSON配列を<code class="type">text</code>値の集合に展開する。
+       </td><td><code class="literal">select * from json_array_elements_text('["foo", "bar"]')</code></td><td><pre class="programlisting">   value
+-----------
+ foo
+ bar</pre>
+       </td></tr><tr><td><p><code class="literal">json_typeof(json)</code>
+         </p><p><code class="literal">jsonb_typeof(jsonb)</code>
+       </p></td><td><code class="type">text</code></td><td><span class="original"><!--$-->
+         Returns the type of the outermost JSON value as a text string.
+         Possible types are
+         &lt;literal&gt;object&lt;/&gt;, &lt;literal&gt;array&lt;/&gt;, &lt;literal&gt;string&lt;/&gt;, &lt;literal&gt;number&lt;/&gt;,
+         &lt;literal&gt;boolean&lt;/&gt;, and &lt;literal&gt;null&lt;/&gt;.
+</span><br />         最も外側のJSON値の型をテキスト文字列として返す。取りうる型は<code class="literal">object</code>、 <code class="literal">array</code>、 <code class="literal">string</code>、 <code class="literal">number</code>、<code class="literal">boolean</code>、<code class="literal">null</code>である。
+       </td><td><code class="literal">json_typeof('-123.4')</code></td><td><code class="literal">number</code></td></tr><tr><td><p><code class="literal">json_to_record(json)</code>
+          </p><p><code class="literal">jsonb_to_record(jsonb)</code>
+       </p></td><td><code class="type">record</code></td><td><span class="original"><!--$-->
+         Builds an arbitrary record from a JSON object (see note below).  As
+         with all functions returning &lt;type&gt;record&lt;/&gt;, the caller must
+         explicitly define the structure of the record with an &lt;literal&gt;AS&lt;/&gt;
+         clause.
+</span><br />        JSONオブジェクトから任意のレコードを作成します(下記の注釈を参照してください)。<code class="type">record</code>を返す関数すべてと同様、呼び出し側が<code class="literal">AS</code>句でレコードの構造を明示的に決めなければなりません。
+       </td><td><code class="literal">select * from json_to_record('{"a":1,"b":[1,2,3],"c":"bar"}') as x(a int, b text, d text) </code></td><td><pre class="programlisting"> a |    b    | d
+---+---------+---
+ 1 | [1,2,3] |</pre>
+       </td></tr><tr><td><p><code class="literal">json_to_recordset(json)</code>
+         </p><p><code class="literal">jsonb_to_recordset(jsonb)</code>
+       </p></td><td><code class="type">setof record</code></td><td><span class="original"><!--$-->
+         Builds an arbitrary set of records from a JSON array of objects (see
+         note below).  As with all functions returning &lt;type&gt;record&lt;/&gt;, the
+         caller must explicitly define the structure of the record with
+         an &lt;literal&gt;AS&lt;/&gt; clause.
+</span><br />        オブジェクトの配列のJSONから任意のレコードを作成します(下記の注釈を参照してください)。<code class="type">record</code>を返す関数すべてと同様、呼び出し側が<code class="literal">AS</code>句でレコードの構造を明示的に決めなければなりません。
+       </td><td><code class="literal">select * from json_to_recordset('[{"a":1,"b":"foo"},{"a":"2","c":"bar"}]') as x(a int, b text);</code></td><td><pre class="programlisting"> a |  b
+---+-----
+ 1 | foo
+ 2 |</pre>
+       </td></tr><tr><td><p><code class="literal">json_strip_nulls(from_json json)</code>
+         </p><p><code class="literal">jsonb_strip_nulls(from_json jsonb)</code>
+       </p></td><td><p><code class="type">json</code></p><p><code class="type">jsonb</code></p></td><td>         Returns <em class="replaceable"><code>from_json</code></em>
+         with all object fields that have null values omitted. Other null values
+         are untouched.
+       </td><td><code class="literal">json_strip_nulls('[{"f1":1,"f2":null},2,null,3]')</code></td><td><code class="literal">[{"f1":1},2,null,3]</code></td></tr><tr><td><p><code class="literal">jsonb_set(target jsonb, path text[], new_value jsonb[<span class="optional">, <em class="parameter"><code>create_missing</code></em> <code class="type">boolean</code></span>])</code>
+         </p></td><td><p><code class="type">jsonb</code></p></td><td>         Returns <em class="replaceable"><code>target</code></em>
+         with the section designated by <em class="replaceable"><code>path</code></em>
+         replaced by <em class="replaceable"><code>new_value</code></em>, or with
+         <em class="replaceable"><code>new_value</code></em> added if
+         <em class="replaceable"><code>create_missing</code></em> is true ( default is
+         <code class="literal">true</code>) and the item
+         designated by <em class="replaceable"><code>path</code></em> does not exist.
+         As with the path orientated operators, negative integers that
+         appear in <em class="replaceable"><code>path</code></em> count from the end
+         of JSON arrays.
+       </td><td><p><code class="literal">jsonb_set('[{"f1":1,"f2":null},2,null,3]', '{0,f1}','[2,3,4]', false)</code>
+         </p><p><code class="literal">jsonb_set('[{"f1":1,"f2":null},2]', '{0,f3}','[2,3,4]')</code>
+         </p></td><td><p><code class="literal">[{"f1":[2,3,4],"f2":null},2,null,3]</code>
+         </p><p><code class="literal">[{"f1": 1, "f2": null, "f3": [2, 3, 4]}, 2]</code>
+        </p></td></tr><tr><td><p><code class="literal">jsonb_pretty(from_json jsonb)</code>
+         </p></td><td><p><code class="type">text</code></p></td><td>         Returns <em class="replaceable"><code>from_json</code></em>
+         as indented JSON text.
+       </td><td><code class="literal">jsonb_pretty('[{"f1":1,"f2":null},2,null,3]')</code></td><td><pre class="programlisting">[
+    {
+        "f1": 1,
+        "f2": null
+    },
+    2,
+    null,
+    3
+]</pre>
+        </td></tr></tbody></table></div></div><br class="table-break" /><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">注記</h3><p><span class="original"><!--$-->
+      Many of these functions and operators will convert Unicode escapes in
+      JSON strings to the appropriate single character.  This is a non-issue
+      if the input is type &lt;type&gt;jsonb&lt;/&gt;, because the conversion was already
+      done; but for &lt;type&gt;json&lt;/&gt; input, this may result in throwing an error,
+      as noted in &lt;xref linkend="datatype-json"&gt;.
+</span><br />これらの多くの関数や演算子はデータベースエンコードがUTF8の時は、JSON文字列のUnicodeのエスケープを適切な一文字に変換します。
+これは入力が<code class="type">jsonb</code>型であれば、変換は既に行なわれていますので、重要な問題ではありません。しかし、<code class="type">json</code>の入力に対しては、<a class="xref" href="datatype-json.html" title="8.14. JSONデータ型">「<acronym class="acronym">JSON</acronym>データ型」</a>で言及したようにこれはエラーを発生させる結果になるかもしれません．
+    </p></div><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">注記</h3><p><span class="original"><!--$-->
+      In &lt;function&gt;json_populate_record&lt;/&gt;, &lt;function&gt;json_populate_recordset&lt;/&gt;,
+      &lt;function&gt;json_to_record&lt;/&gt; and &lt;function&gt;json_to_recordset&lt;/&gt;,
+      type coercion from the JSON is &lt;quote&gt;best effort&lt;/&gt; and may not result
+      in desired values for some types.  JSON keys are matched to
+      identical column names in the target row type.  JSON fields that do not
+      appear in the target row type will be omitted from the output, and
+      target columns that do not match any JSON field will simply be NULL.
+</span><br /><code class="function">json_to_record</code>と<code class="function">json_to_recordset</code>、JSONからの型強制は<span class="quote">「<span class="quote">最善努力</span>」</span>であり、ある型では望んだ結果にならないかもしれません。
+JSONキーは対象の行の型の中の同一の列の名前と一致します。
+対象の行の型に現れないJSONフィールドは出力から省略され、JSONフィールドに一致しない対象の列は単にNULLになります。
+    </p></div><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">注記</h3><p>      All the items of the <code class="literal">path</code> parameter of <code class="literal">jsonb_set</code>
+      must be present in the <code class="literal">target</code>, unless
+      <code class="literal">create_missing</code> is true, in which case all but the last item
+      must be present. If these conditions are not met the <code class="literal">target</code>
+      is returned unchanged.
+    </p><p>      If the last path item is an object key, it will be created if it
+      is absent and given the new value. If the last path item is an array
+      index, if it is positive the item to set is found by counting from
+      the left, and if negative by counting from the right - <code class="literal">-1</code>
+      designates the rightmost element, and so on.
+      If the item is out of the range -array_length .. array_length -1,
+      and create_missing is true, the new value is added at the beginning
+      of the array if the item is negative, and at the end of the array if
+      it is positive.
+    </p></div><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">注記</h3><p><span class="original"><!--$-->
+      The &lt;literal&gt;json_typeof&lt;/&gt; function's &lt;literal&gt;null&lt;/&gt; return value
+      should not be confused with a SQL NULL.  While
+      calling &lt;literal&gt;json_typeof('null'::json)&lt;/&gt; will
+      return &lt;literal&gt;null&lt;/&gt;, calling &lt;literal&gt;json_typeof(NULL::json)&lt;/&gt;
+      will return a SQL NULL.
+</span><br /><code class="literal">json_typeof</code>の<code class="literal">null</code>戻り値をSQLのNULLと混同してはいけません。
+<code class="literal">json_typeof('null'::json)</code>を呼び出すと<code class="literal">null</code>が返りますが、<code class="literal">json_typeof(NULL::json)</code>を呼び出すとSQLのNULLが返ります。
+    </p></div><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">注記</h3><p>      If the argument to <code class="literal">json_strip_nulls</code> contains duplicate
+      field names in any object, the result could be semantically somewhat
+      different, depending on the order in which they occur. This is not an
+      issue for <code class="literal">jsonb_strip_nulls</code> since <code class="type">jsonb</code> values never have
+      duplicate object field names.
+    </p></div><p><span class="original"><!--$-->
+    See also &lt;xref linkend="functions-aggregate"&gt; for the aggregate
+    function &lt;function&gt;json_agg&lt;/function&gt; which aggregates record
+    values as JSON, and the aggregate function
+    &lt;function&gt;json_object_agg&lt;/function&gt; which aggregates pairs of values
+    into a JSON object, and their &lt;type&gt;jsonb&lt;/type&gt; equivalents,
+    &lt;function&gt;jsonb_agg&lt;/&gt; and &lt;function&gt;jsonb_object_agg&lt;/&gt;.
+</span><br />レコードの値をJSONに集約する<code class="function">json_agg</code>集約関数や、値の対をJSONオブジェクトに集約する<code class="function">json_object_agg</code>集約関数については<a class="xref" href="functions-aggregate.html" title="9.20. 集約関数">「集約関数」</a>も参照してください。
+★★★
+  </p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="functions-xml.html">戻る</a> </td><td width="20%" align="center"><a accesskey="u" href="functions.html">上に戻る</a></td><td width="40%" align="right"> <a accesskey="n" href="functions-sequence.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">9.14. XML関数 </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> 9.16. シーケンス操作関数</td></tr></table></div></body></html>
