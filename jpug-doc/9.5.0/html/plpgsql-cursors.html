@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>40.7. カーソル</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="PostgreSQL 9.5.0文書" /><link rel="up" href="plpgsql.html" title="第40章 PL/pgSQL - SQL手続き言語" /><link rel="prev" href="plpgsql-control-structures.html" title="40.6. 制御構造" /><link rel="next" href="plpgsql-errors-and-messages.html" title="40.8. エラーとメッセージ" /><link rel="copyright" href="legalnotice.html" title="法的告知" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">40.7. カーソル</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="plpgsql-control-structures.html">戻る</a> </td><th width="60%" align="center">第40章 <span class="application">PL/pgSQL</span> - <acronym class="acronym">SQL</acronym>手続き言語</th><td width="20%" align="right"> <a accesskey="n" href="plpgsql-errors-and-messages.html">次へ</a></td></tr></table><hr /></div><div class="sect1" id="plpgsql-cursors"><div class="titlepage"><div><div><h2 class="title" style="clear: both">40.7. カーソル</h2></div></div></div><span class="original"><!--$-->
    &lt;title&gt;Cursors&lt;/title&gt;
-</span><br /><a id="idp91250752" class="indexterm"></a><p><span class="original"><!--$-->
+</span><br /><a id="idp90770160" class="indexterm"></a><p><span class="original"><!--$-->
     Rather than executing a whole query at once, it is possible to set
     up a &lt;firstterm&gt;cursor&lt;/&gt; that encapsulates the query, and then read
     the query result a few rows at a time. One reason for doing this is
@@ -88,7 +88,7 @@
       via the &lt;command&gt;FOR&lt;/&gt; statement described in
       &lt;xref linkend="plpgsql-cursor-for-loop"&gt;.
 </span><br />バウンドカーソル変数は<a class="xref" href="plpgsql-cursors.html#plpgsql-cursor-for-loop" title="40.7.4. カーソル結果に対するループ">「カーソル結果に対するループ」</a>で説明されている<code class="command">FOR</code>文で、明示的にカーソルを開かなくても使用することができます。
-     </p></div><div class="sect3" id="idp91282208"><div class="titlepage"><div><div><h4 class="title">40.7.2.1. <code class="command">OPEN FOR</code> <em class="replaceable"><code>query</code></em></h4></div></div></div><pre class="synopsis">OPEN <em class="replaceable"><code>unbound_cursorvar</code></em> [<span class="optional"> [<span class="optional"> NO </span>] SCROLL </span>] FOR <em class="replaceable"><code>query</code></em>;</pre><p><span class="original"><!--$-->
+     </p></div><div class="sect3" id="idp90801456"><div class="titlepage"><div><div><h4 class="title">40.7.2.1. <code class="command">OPEN FOR</code> <em class="replaceable"><code>query</code></em></h4></div></div></div><pre class="synopsis">OPEN <em class="replaceable"><code>unbound_cursorvar</code></em> [<span class="optional"> [<span class="optional"> NO </span>] SCROLL </span>] FOR <em class="replaceable"><code>query</code></em>;</pre><p><span class="original"><!--$-->
         The cursor variable is opened and given the specified query to
         execute.  The cursor cannot be open already, and it must have been
         declared as an unbound cursor variable (that is, as a simple
@@ -116,7 +116,7 @@
         An example:
 </span><br />以下に例を示します。
 </p><pre class="programlisting">OPEN curs1 FOR SELECT * FROM foo WHERE key = mykey;</pre><p>
-       </p></div><div class="sect3" id="idp91295280"><div class="titlepage"><div><div><h4 class="title">40.7.2.2. <code class="command">OPEN FOR EXECUTE</code></h4></div></div></div><pre class="synopsis">OPEN <em class="replaceable"><code>unbound_cursorvar</code></em> [<span class="optional"> [<span class="optional"> NO </span>] SCROLL </span>] FOR EXECUTE <em class="replaceable"><code>query_string</code></em>
+       </p></div><div class="sect3" id="idp90814528"><div class="titlepage"><div><div><h4 class="title">40.7.2.2. <code class="command">OPEN FOR EXECUTE</code></h4></div></div></div><pre class="synopsis">OPEN <em class="replaceable"><code>unbound_cursorvar</code></em> [<span class="optional"> [<span class="optional"> NO </span>] SCROLL </span>] FOR EXECUTE <em class="replaceable"><code>query_string</code></em>
                                      [<span class="optional"> USING <em class="replaceable"><code>expression</code></em> [<span class="optional">, ... </span>] </span>];</pre><p><span class="original"><!--$-->
           The cursor variable is opened and given the specified query to
           execute.  The cursor cannot be open already, and it must have been
@@ -127,7 +127,8 @@
           from one run to the next (see &lt;xref linkend="plpgsql-plan-caching"&gt;),
           and it also means that variable substitution is not done on the
           command string. As with &lt;command&gt;EXECUTE&lt;/command&gt;, parameter values
-          can be inserted into the dynamic command via &lt;literal&gt;USING&lt;/&gt;.
+          can be inserted into the dynamic command via
+          &lt;literal&gt;format()&lt;/&gt; and &lt;literal&gt;USING&lt;/&gt;.
           The &lt;literal&gt;SCROLL&lt;/&gt; and
           &lt;literal&gt;NO SCROLL&lt;/&gt; options have the same meanings as for a bound
           cursor.
@@ -136,20 +137,18 @@
 問い合わせは、<code class="command">EXECUTE</code>コマンドと同じ方法による文字列式として指定されます。
 通常と同様に、これにより、次回に実行する際に違った問い合わせを計画できる柔軟性が得られます(<a class="xref" href="plpgsql-implementation.html#plpgsql-plan-caching" title="40.10.2. 計画のキャッシュ">「計画のキャッシュ」</a>参照)。
 また、変数置換がコマンド文字列上で行われないことも意味します。
-<code class="command">EXECUTE</code>と同様に<code class="literal">USING</code>を介して動的コマンドにパラメータ値を挿入することができます。
+<code class="command">EXECUTE</code>と同様に<code class="literal">format()</code>と<code class="literal">USING</code>を介して動的コマンドにパラメータ値を挿入することができます。
 <code class="literal">SCROLL</code>および<code class="literal">NO SCROLL</code>オプションの意味はバウンドカーソルと同様です。
          </p><p><span class="original"><!--$-->
         An example:
 </span><br />以下に例を示します。
-</p><pre class="programlisting">OPEN curs1 FOR EXECUTE 'SELECT * FROM ' || quote_ident(tabname)
-                                        || ' WHERE col1 = $1' USING keyvalue;</pre><p><span class="original"><!--$-->
-        In this example, the table name is inserted into the query textually,
-        so use of &lt;function&gt;quote_ident()&lt;/&gt; is recommended to guard against
-        SQL injection.  The comparison value for &lt;literal&gt;col1&lt;/&gt; is inserted
-        via a &lt;literal&gt;USING&lt;/&gt; parameter, so it needs no quoting.
+</p><pre class="programlisting">OPEN curs1 FOR EXECUTE format('SELECT * FROM %I WHERE col1 = $1',tabname) USING keyvalue;</pre><p><span class="original"><!--$-->
+        In this example, the table name is inserted into the query via
+        &lt;function&gt;format()&lt;/&gt;.  The comparison value for &lt;literal&gt;col1&lt;/&gt;
+        is inserted via a &lt;literal&gt;USING&lt;/&gt; parameter, so it needs
+        no quoting.
 </span><br />
-この例では、テーブル名は問い合わせ内にテキストとして埋め込まれます。
-このためSQLインジェクションに対抗するために<code class="function">quote_ident()</code>の使用を勧めます。
+この例では、テーブル名は問い合わせに<code class="function">format()</code>で挿入されています。
 <code class="literal">col1</code>との比較値は<code class="literal">USING</code>経由で埋め込まれますので、引用符を付ける必要がありません。
        </p></div><div class="sect3" id="plpgsql-open-bound-cursor"><div class="titlepage"><div><div><h4 class="title">40.7.2.3. バウンドカーソルを開く</h4></div></div></div><span class="original"><!--$-->
      &lt;title&gt;Opening a Bound Cursor&lt;/title&gt;
@@ -236,7 +235,7 @@ BEGIN
      only until the end of the transaction.
 </span><br />全てのポータルは、暗黙的にトランザクションの終わりで閉ざされます。
 したがって、<code class="type">refcursor</code>値はそのトランザクションの終わりまでの間のみ開いたカーソルへの参照として有効です。
-    </p><div class="sect3" id="idp91336704"><div class="titlepage"><div><div><h4 class="title">40.7.3.1. <code class="literal">FETCH</code></h4></div></div></div><pre class="synopsis">FETCH [<span class="optional"> <em class="replaceable"><code>direction</code></em> { FROM | IN } </span>] <em class="replaceable"><code>cursor</code></em> INTO <em class="replaceable"><code>target</code></em>;</pre><p><span class="original"><!--$-->
+    </p><div class="sect3" id="idp90856400"><div class="titlepage"><div><div><h4 class="title">40.7.3.1. <code class="literal">FETCH</code></h4></div></div></div><pre class="synopsis">FETCH [<span class="optional"> <em class="replaceable"><code>direction</code></em> { FROM | IN } </span>] <em class="replaceable"><code>cursor</code></em> INTO <em class="replaceable"><code>target</code></em>;</pre><p><span class="original"><!--$-->
      &lt;command&gt;FETCH&lt;/command&gt; retrieves the next row from the
      cursor into a target, which might be a row variable, a record
      variable, or a comma-separated list of simple variables, just like
@@ -283,7 +282,7 @@ BEGIN
 FETCH curs2 INTO foo, bar, baz;
 FETCH LAST FROM curs3 INTO x, y;
 FETCH RELATIVE -2 FROM curs4 INTO x;</pre><p>
-       </p></div><div class="sect3" id="idp91357840"><div class="titlepage"><div><div><h4 class="title">40.7.3.2. <code class="literal">MOVE</code></h4></div></div></div><pre class="synopsis">MOVE [<span class="optional"> <em class="replaceable"><code>direction</code></em> { FROM | IN } </span>] <em class="replaceable"><code>cursor</code></em>;</pre><p><span class="original"><!--$-->
+       </p></div><div class="sect3" id="idp90877536"><div class="titlepage"><div><div><h4 class="title">40.7.3.2. <code class="literal">MOVE</code></h4></div></div></div><pre class="synopsis">MOVE [<span class="optional"> <em class="replaceable"><code>direction</code></em> { FROM | IN } </span>] <em class="replaceable"><code>cursor</code></em>;</pre><p><span class="original"><!--$-->
      &lt;command&gt;MOVE&lt;/command&gt; repositions a cursor without retrieving
      any data. &lt;command&gt;MOVE&lt;/command&gt; works exactly like the
      &lt;command&gt;FETCH&lt;/command&gt; command, except it only repositions the
@@ -325,7 +324,7 @@ FETCH RELATIVE -2 FROM curs4 INTO x;</pre><p>
 MOVE LAST FROM curs3;
 MOVE RELATIVE -2 FROM curs4;
 MOVE FORWARD 2 FROM curs4;</pre><p>
-       </p></div><div class="sect3" id="idp91380848"><div class="titlepage"><div><div><h4 class="title">40.7.3.3. <code class="literal">UPDATE/DELETE WHERE CURRENT OF</code></h4></div></div></div><pre class="synopsis">UPDATE <em class="replaceable"><code>table</code></em> SET ... WHERE CURRENT OF <em class="replaceable"><code>cursor</code></em>;
+       </p></div><div class="sect3" id="idp90900592"><div class="titlepage"><div><div><h4 class="title">40.7.3.3. <code class="literal">UPDATE/DELETE WHERE CURRENT OF</code></h4></div></div></div><pre class="synopsis">UPDATE <em class="replaceable"><code>table</code></em> SET ... WHERE CURRENT OF <em class="replaceable"><code>cursor</code></em>;
 DELETE FROM <em class="replaceable"><code>table</code></em> WHERE CURRENT OF <em class="replaceable"><code>cursor</code></em>;</pre><p><span class="original"><!--$-->
         When a cursor is positioned on a table row, that row can be updated
         or deleted using the cursor to identify the row.  There are
@@ -341,7 +340,7 @@ DELETE FROM <em class="replaceable"><code>table</code></em> WHERE CURRENT OF <em
         An example:
 </span><br />以下に例を示します。
 </p><pre class="programlisting">UPDATE foo SET dataval = myval WHERE CURRENT OF curs1;</pre><p>
-       </p></div><div class="sect3" id="idp91388112"><div class="titlepage"><div><div><h4 class="title">40.7.3.4. <code class="literal">CLOSE</code></h4></div></div></div><pre class="synopsis">CLOSE <em class="replaceable"><code>cursor</code></em>;</pre><p><span class="original"><!--$-->
+       </p></div><div class="sect3" id="idp90907856"><div class="titlepage"><div><div><h4 class="title">40.7.3.4. <code class="literal">CLOSE</code></h4></div></div></div><pre class="synopsis">CLOSE <em class="replaceable"><code>cursor</code></em>;</pre><p><span class="original"><!--$-->
         &lt;command&gt;CLOSE&lt;/command&gt; closes the portal underlying an open
         cursor.  This can be used to release resources earlier than end of
         transaction, or to free up the cursor variable to be opened again.
@@ -351,7 +350,7 @@ DELETE FROM <em class="replaceable"><code>table</code></em> WHERE CURRENT OF <em
         An example:
 </span><br />例：
 </p><pre class="programlisting">CLOSE curs1;</pre><p>
-       </p></div><div class="sect3" id="idp91392512"><div class="titlepage"><div><div><h4 class="title">40.7.3.5. カーソルを返す</h4></div></div></div><span class="original"><!--$-->
+       </p></div><div class="sect3" id="idp90912256"><div class="titlepage"><div><div><h4 class="title">40.7.3.5. カーソルを返す</h4></div></div></div><span class="original"><!--$-->
      &lt;title&gt;Returning Cursors&lt;/title&gt;
 </span><br /><p><span class="original"><!--$-->
         &lt;application&gt;PL/pgSQL&lt;/&gt; functions can return cursors to the

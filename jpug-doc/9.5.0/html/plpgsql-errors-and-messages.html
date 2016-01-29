@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>40.8. エラーとメッセージ</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="PostgreSQL 9.5.0文書" /><link rel="up" href="plpgsql.html" title="第40章 PL/pgSQL - SQL手続き言語" /><link rel="prev" href="plpgsql-cursors.html" title="40.7. カーソル" /><link rel="next" href="plpgsql-trigger.html" title="40.9. トリガプロシージャ" /><link rel="copyright" href="legalnotice.html" title="法的告知" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">40.8. エラーとメッセージ</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="plpgsql-cursors.html">戻る</a> </td><th width="60%" align="center">第40章 <span class="application">PL/pgSQL</span> - <acronym class="acronym">SQL</acronym>手続き言語</th><td width="20%" align="right"> <a accesskey="n" href="plpgsql-trigger.html">次へ</a></td></tr></table><hr /></div><div class="sect1" id="plpgsql-errors-and-messages"><div class="titlepage"><div><div><h2 class="title" style="clear: both">40.8. エラーとメッセージ</h2></div></div></div><span class="original"><!--$-->
    &lt;title&gt;Errors and Messages&lt;/title&gt;
-</span><br /><a id="idp91423968" class="indexterm"></a><a id="idp91424656" class="indexterm"></a><p><span class="original"><!--$-->
+</span><br /><div class="sect2" id="plpgsql-statements-raise"><div class="titlepage"><div><div><h3 class="title">40.8.1. エラーとメッセージの報告</h3></div></div></div><span class="original"><!--$-->
+   &lt;title&gt;Reporting Errors and Messages&lt;/title&gt;
+</span><br /><a id="idp90944720" class="indexterm"></a><a id="idp90945920" class="indexterm"></a><p><span class="original"><!--$-->
     Use the &lt;command&gt;RAISE&lt;/command&gt; statement to report messages and
     raise errors.
 </span><br /><code class="command">RAISE</code>文を使用してメッセージを報告し、エラーを発生することができます。
@@ -44,11 +46,15 @@ RAISE ;</pre><p>
     Inside the format string, &lt;literal&gt;%&lt;/literal&gt; is replaced by the
     string representation of the next optional argument's value. Write
     &lt;literal&gt;%%&lt;/literal&gt; to emit a literal &lt;literal&gt;%&lt;/literal&gt;.
+    The number of arguments must match the number of &lt;literal&gt;%&lt;/&gt;
+    placeholders in the format string, or an error is raised during
+    the compilation of the function.
 </span><br />もしあれば<em class="replaceable"><code>level</code></em>の後に<em class="replaceable"><code>format</code></em>を記述することができます
 （これは評価式ではなく、単純文字列リテラルでなければなりません）。
 書式文字列は報告されるエラーメッセージテキストを指定します。
 書式文字列内では、<code class="literal">%</code>は次の省略可能な引数の値の文字列表現で書き換えられます。
 <code class="literal">%%</code>と記述することで<code class="literal">%</code>リテラルを表すことができます。
+引数の数は書式文字列のプレースホルダ<code class="literal">%</code>の数と一致しなければいけません。さもなくば、関数のコンパイル時にエラーが起きます。
    </p><p><span class="original"><!--$-->
     In this example, the value of &lt;literal&gt;v_job_id&lt;/&gt; will replace the
     &lt;literal&gt;%&lt;/literal&gt; in the string:
@@ -151,4 +157,46 @@ RAISE SQLSTATE '22012';</pre><p><span class="original"><!--$-->
 <code class="literal">00000</code>以外の５桁の数字かASCIIの大文字からなるどんなエラーコードも選択できます。
 ３つのゼロで終わるエラーコードの出力を避けるように推奨されています。
 と言うのは、そこには分類コードがあり、それらは全ての分類から捕捉することによってのみ補足可能だからです。
-    </p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="plpgsql-cursors.html">戻る</a> </td><td width="20%" align="center"><a accesskey="u" href="plpgsql.html">上に戻る</a></td><td width="40%" align="right"> <a accesskey="n" href="plpgsql-trigger.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">40.7. カーソル </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> 40.9. トリガプロシージャ</td></tr></table></div></body></html>
+    </p></div></div><div class="sect2" id="plpgsql-statements-assert"><div class="titlepage"><div><div><h3 class="title">40.8.2. アサート検査</h3></div></div></div><span class="original"><!--$-->
+   &lt;title&gt;Checking Assertions&lt;/title&gt;
+</span><br /><a id="idp91027616" class="indexterm"></a><a id="idp91028880" class="indexterm"></a><a id="idp91030208" class="indexterm"></a><p><span class="original"><!--$-->
+    The &lt;command&gt;ASSERT&lt;/command&gt; statement is a convenient shorthand for
+    inserting debugging checks into &lt;application&gt;PL/pgSQL&lt;/application&gt;
+    functions.
+</span><br /><code class="command">ASSERT</code>文は、<span class="application">PL/pgSQL</span>関数にデバッグ用検査を差し込むための便利な省略形です。
+
+</p><pre class="synopsis">ASSERT <em class="replaceable"><code>condition</code></em> [<span class="optional"> , <em class="replaceable"><code>message</code></em> </span>];</pre><p>
+<span class="original"><!--$-->
+    The &lt;replaceable class="parameter"&gt;condition&lt;/replaceable&gt; is a Boolean
+    expression that is expected to always evaluate to true; if it does,
+    the &lt;command&gt;ASSERT&lt;/command&gt; statement does nothing further.  If the
+    result is false or null, then an &lt;literal&gt;ASSERT_FAILURE&lt;/&gt; exception
+    is raised.  (If an error occurs while evaluating
+    the &lt;replaceable class="parameter"&gt;condition&lt;/replaceable&gt;, it is
+    reported as a normal error.)
+</span><br />
+<em class="replaceable"><code>condition</code></em>は常に真と評価されると想定される論理値式で、結果が真なら<code class="command">ASSERT</code>文がさらに何かすることはありあせん。結果が偽かNULLなら、<code class="literal">ASSERT_FAILURE</code>例外が発生します
+（もし、<em class="replaceable"><code>condition</code></em>を評価する間にエラーが生じた場合、それは通常のエラーと同様に報告されます）。
+   </p><p><span class="original"><!--$-->
+    If the optional &lt;replaceable class="parameter"&gt;message&lt;/replaceable&gt; is
+    provided, it is an expression whose result (if not null) replaces the
+    default error message text &lt;quote&gt;assertion failed&lt;/&gt;, should
+    the &lt;replaceable class="parameter"&gt;condition&lt;/replaceable&gt; fail.
+    The &lt;replaceable class="parameter"&gt;message&lt;/replaceable&gt; expression is
+    not evaluated in the normal case where the assertion succeeds.
+</span><br />省略可能な<em class="replaceable"><code>message</code></em>が与えられた場合、その式の結果で（NULLでないなら）、<em class="replaceable"><code>condition</code></em>に失敗した際のデフォルトエラーメッセージ文<span class="quote">「<span class="quote">assertion failed</span>」</span>が置き換えられます。
+<em class="replaceable"><code>message</code></em>式はアサートに成功する通常の場合には評価されません。
+   </p><p><span class="original"><!--$-->
+    Testing of assertions can be enabled or disabled via the configuration
+    parameter &lt;literal&gt;plpgsql.check_asserts&lt;/&gt;, which takes a Boolean
+    value; the default is &lt;literal&gt;on&lt;/&gt;.  If this parameter
+    is &lt;literal&gt;off&lt;/&gt; then &lt;command&gt;ASSERT&lt;/&gt; statements do nothing.
+</span><br />アサート検査は、設定パラメータ<code class="literal">plpgsql.check_asserts</code>で有効または無効にできます。設定値は真偽値で、デフォルトは<code class="literal">on</code>です。
+<code class="literal">off</code>のときには、<code class="command">ASSERT</code>文は何もしません。
+   </p><p><span class="original"><!--$-->
+    Note that &lt;command&gt;ASSERT&lt;/command&gt; is meant for detecting program
+    bugs, not for reporting ordinary error conditions.  Use
+    the &lt;command&gt;RAISE&lt;/&gt; statement, described above, for that.
+</span><br /><code class="command">ASSERT</code>はプログラムのバグを見つけるためのものであって、通常のエラー条件を報告するものではないことに注意してください。
+そのためには前述の<code class="command">RAISE</code>を使ってください。
+   </p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="plpgsql-cursors.html">戻る</a> </td><td width="20%" align="center"><a accesskey="u" href="plpgsql.html">上に戻る</a></td><td width="40%" align="right"> <a accesskey="n" href="plpgsql-trigger.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">40.7. カーソル </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> 40.9. トリガプロシージャ</td></tr></table></div></body></html>

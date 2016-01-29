@@ -71,17 +71,17 @@
    if the operator class wishes to support ordered scans (nearest-neighbor
    searches). The optional ninth method &lt;function&gt;fetch&lt;/&gt; is needed if the
    operator class wishes to support index-only scans.
-</span><br /><acronym class="acronym">GiST</acronym>用の演算子クラスが提供しなければならない７つのメソッドを以下に示します。
-８番目は省略可能です。
-インデックスの正確性は、確実に<code class="function">same</code>、<code class="function">consistent</code>、<code class="function">union</code>メソッドを適切に実装することです。
+</span><br /><acronym class="acronym">GiST</acronym>用の演算子クラスが提供しなければならないメソッドが7つ、オプションで提供可能なメソッドが2つあります。
+インデックスの正確性は、<code class="function">same</code>、<code class="function">consistent</code>、<code class="function">union</code>メソッドを適切に実装することで保証されます。
 一方、インデックスの効率（容量と速度）は<code class="function">penalty</code>と<code class="function">picksplit</code>メソッドに依存します。
 残る２つの基本メソッドは<code class="function">compress</code>と<code class="function">decompress</code>ですが、これによりインデックスはインデックス付けするデータと異なるデータ型のツリーデータを内部で持つことができるようになります。
 リーフはインデックス付けするデータ型となりますが、他のツリーノードは何らかのC構造体を取ることができます。
 （しかしここでも<span class="productname">PostgreSQL</span>のデータ型規約に従わなければなりません。
 容量が可変のデータに関しては<code class="literal">varlena</code>を参照してください。）
 ツリーの内部データ型がSQLレベルで存在する場合、<code class="command">CREATE OPERATOR CLASS</code>コマンドの<code class="literal">STORAGE</code>オプションを使用することができます。
-省略可能な８番目のメソッドは<code class="function">distance</code>です。
-これは演算子クラスに順序付けスキャン（近傍検索）をサポートさせたい場合に必要です。★★★
+オプションの８番目のメソッドは<code class="function">distance</code>です。
+これは演算子クラスに順序付けスキャン（最近傍検索）をサポートさせたい場合に必要です。
+オプションの9番目のメソッド<code class="function">fetch</code>は演算子クラスがインデックスオンリースキャンをサポートしたい場合に必要になります。
  </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="function">consistent</code></span></dt><dd><p><span class="original"><!--$-->
        Given an index entry &lt;literal&gt;p&lt;/&gt; and a query value &lt;literal&gt;q&lt;/&gt;,
        this function determines whether the index entry is
@@ -297,8 +297,7 @@ my_compress(PG_FUNCTION_ARGS)
        index representation of the data item into a format that can be
        manipulated by the other GiST methods in the operator class.
 </span><br /><code class="function">compress</code>メソッドの逆です。
-データ項目のインデックス表現から、データベースで扱うことができる書式に変換します。
-★★
+データ項目のインデックス表現から、演算子クラスの他のGiSTメソッドで扱うことができる書式に変換します。
       </p><p><span class="original"><!--$-->
         The &lt;acronym&gt;SQL&lt;/&gt; declaration of the function must look like this:
 </span><br />この関数の<acronym class="acronym">SQL</acronym>宣言は以下のようになります。
@@ -564,47 +563,73 @@ my_distance(PG_FUNCTION_ARGS)
 
     PG_RETURN_FLOAT8(retval);
 }</pre><p>
-
-       The arguments to the <code class="function">distance</code> function are identical to
-       the arguments of the <code class="function">consistent</code> function.
-      </p><p>       Some approximation is allowed when determining the distance, so long
+<span class="original"><!--$-->
+       The arguments to the &lt;function&gt;distance&lt;/&gt; function are identical to
+       the arguments of the &lt;function&gt;consistent&lt;/&gt; function.
+</span><br />
+<code class="function">distance</code>関数の引数は<code class="function">consistent</code>関数の引数と同一です。
+      </p><p><span class="original"><!--$-->
+       Some approximation is allowed when determining the distance, so long
        as the result is never greater than the entry's actual distance. Thus,
        for example, distance to a bounding box is usually sufficient in
        geometric applications.  For an internal tree node, the distance
        returned must not be greater than the distance to any of the child
        nodes. If the returned distance is not exact, the function must set
-       <code class="literal">*recheck</code> to true. (This is not necessary for internal tree
+       &lt;literal&gt;*recheck&lt;/&gt; to true. (This is not necessary for internal tree
        nodes; for them, the calculation is always assumed to be inexact.) In
        this case the executor will calculate the accurate distance after
        fetching the tuple from the heap, and reorder the tuples if necessary.
-      </p><p>       If the distance function returns <code class="literal">*recheck = true</code> for any
+</span><br />距離の決定において、その結果がエントリの実際の距離よりも大きくならない限り、多少の概算は許されます。
+したがって、例えば、幾何学に関するアプリケーションでは、通常は外接矩形への距離で十分です。
+内部ツリーノードについては、返される距離はどの子ノードへの距離よりも大きくなることは許されません。
+返される距離が正確でない場合、関数は<code class="literal">*recheck</code>を真にセットする必要があります。
+（内部ツリーノードについては、計算はいつでも不正確であると見なされるため、これは必要ありません。）
+この場合、エグゼキュータはヒープからタプルを取得した後で正確な距離を計算し、必要ならタプルを並べ替えます。
+      </p><p><span class="original"><!--$-->
+       If the distance function returns &lt;literal&gt;*recheck = true&lt;/&gt; for any
        leaf node, the original ordering operator's return type must
-       be <code class="type">float8</code> or <code class="type">float4</code>, and the distance function's
+       be &lt;type&gt;float8&lt;/&gt; or &lt;type&gt;float4&lt;/&gt;, and the distance function's
        result values must be comparable to those of the original ordering
        operator, since the executor will sort using both distance function
        results and recalculated ordering-operator results.  Otherwise, the
-       distance function's result values can be any finite <code class="type">float8</code>
+       distance function's result values can be any finite &lt;type&gt;float8&lt;/&gt;
        values, so long as the relative order of the result values matches the
        order returned by the ordering operator.  (Infinity and minus infinity
        are used internally to handle cases such as nulls, so it is not
-       recommended that <code class="function">distance</code> functions return these values.)
-      </p></dd><dt><span class="term"><code class="function">fetch</code></span></dt><dd><p>       Converts the compressed index representation of the data item into the
+       recommended that &lt;function&gt;distance&lt;/&gt; functions return these values.)
+</span><br />距離関数がリーフノードについて<code class="literal">*recheck = true</code>を返す場合、元の順序づけ演算子の戻り型は<code class="type">float8</code>または<code class="type">float4</code>でなければならず、また距離関数の結果の値は元の順序づけ演算子の戻り型と比較可能でなければなりません。
+なぜならエグゼキュータは距離関数の結果および再計算された順序づけ演算子の結果の両方を利用してソート処理を行うからです。
+その他の場合は、結果値の相対的な順序が順序づけ演算子が返す順序と一致する限り、距離関数の戻り値は任意の有限の<code class="type">float8</code>の値とすることができます。
+（無限大とマイナス無限大は内部的にNULLなどの場合を処理するために利用するので、<code class="function">distance</code>関数がこれらの値を戻すことは薦められません。）
+      </p></dd><dt><span class="term"><code class="function">fetch</code></span></dt><dd><p><span class="original"><!--$-->
+       Converts the compressed index representation of the data item into the
        original data type, for index-only scans. The returned data must be an
        exact, non-lossy copy of the originally indexed value.
-      </p><p>        The <acronym class="acronym">SQL</acronym> declaration of the function must look like this:
+</span><br />インデックスオンリースキャンで使用するため、データ項目の圧縮されたインデックス表現を元のデータ型に変換します。
+返されたデータは元のインデックス値の正確で、何も失われていない複製でなければなりません。
+      </p><p><span class="original"><!--$-->
+        The &lt;acronym&gt;SQL&lt;/&gt; declaration of the function must look like this:
+</span><br />この関数の<acronym class="acronym">SQL</acronym>宣言は以下のようにならなければなりません。
 
 </p><pre class="programlisting">CREATE OR REPLACE FUNCTION my_fetch(internal)
 RETURNS internal
 AS 'MODULE_PATHNAME'
 LANGUAGE C STRICT;</pre><p>
-
-        The argument is a pointer to a <code class="structname">GISTENTRY</code> struct. On
+<span class="original"><!--$-->
+        The argument is a pointer to a &lt;structname&gt;GISTENTRY&lt;/&gt; struct. On
         entry, its 'key' field contains a non-NULL leaf datum in its
-        compressed form. The return value is another <code class="structname">GISTENTRY</code>
+        compressed form. The return value is another &lt;structname&gt;GISTENTRY&lt;/&gt;
         struct, whose 'key' field contains the same datum in the original,
         uncompressed form. If the opclass' compress function does nothing for
         leaf entries, the fetch method can return the argument as is.
-       </p><p>        The matching code in the C module could then follow this skeleton:
+</span><br />
+引数は<code class="structname">GISTENTRY</code>構造体へのポインタです。
+entryにおいて、そのkeyフィールドには、NULLでないリーフデータが圧縮形式で入っています。
+戻り値は別の<code class="structname">GISTENTRY</code>構造体で、そのkeyフィールドには、同じデータが元の非圧縮形式で入っています。
+opclassの圧縮関数がリーフのエントリに対して何もしないなら、fetchメソッドは引数をそのまま返すことができます。
+       </p><p><span class="original"><!--$-->
+        The matching code in the C module could then follow this skeleton:
+</span><br />Cモジュールにおける対応するコードは次の骨格に従うことになります。
 
 </p><pre class="programlisting">PG_FUNCTION_INFO_V1(my_fetch);
 
@@ -619,19 +644,25 @@ my_fetch(PG_FUNCTION_ARGS)
     retval = palloc(sizeof(GISTENTRY));
     fetched_data = palloc(sizeof(fetched_data_type));
 
-    /*
+    /*<span class="original"><!--$-->
      * Convert 'fetched_data' into the a Datum of the original datatype.
+</span><br />
+     * fetched_dataを元のデータ型のデータに変換する。
      */
-
+<span class="original"><!--$-->
     /* fill *retval from fetch_data. */
+</span><br />
+    /* fetch_dataを使って*retvalに値を入れる。 */
     gistentryinit(*retval, PointerGetDatum(converted_datum),
                   entry-&gt;rel, entry-&gt;page, entry-&gt;offset, FALSE);
 
     PG_RETURN_POINTER(retval);
 }</pre><p>
-      </p><p>       If the compress method is lossy for leaf entries, the operator class
+      </p><p><span class="original"><!--$-->
+       If the compress method is lossy for leaf entries, the operator class
        cannot support index-only scans, and must not define a 'fetch'
        function.
+</span><br />compressメソッドがリーフエントリに対してデータ損失がある場合、演算子クラスはインデックスオンリースキャンをサポートすることができず、fetch関数を定義してはいけません。
       </p></dd></dl></div><p><span class="original"><!--$-->
    All the GiST support methods are normally called in short-lived memory
    contexts; that is, &lt;varname&gt;CurrentMemoryContext&lt;/&gt; will get reset after
