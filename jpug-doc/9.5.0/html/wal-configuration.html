@@ -25,7 +25,7 @@
    the redo record are no longer needed and can be recycled or removed. (When
    &lt;acronym&gt;WAL&lt;/acronym&gt; archiving is being done, the log segments must be
    archived before being recycled or removed.)
-</span><br /><em class="firstterm">チェックポイント</em><a id="idp79777824" class="indexterm"></a>は、一連のトランザクションにおいて、そのチェックポイント以前に書かれた全ての情報によりヒープとインデックスファイルがすでに更新されていることを保証する場所です。
+</span><br /><em class="firstterm">チェックポイント</em><a id="idp82124816" class="indexterm"></a>は、一連のトランザクションにおいて、そのチェックポイント以前に書かれた全ての情報によりヒープとインデックスファイルがすでに更新されていることを保証する場所です。
 チェックポイントの時刻において、全てのダーティページデータはディスクにフラッシュされ、特殊なチェックポイントレコードがログファイルに書き込まれます。
 (変更されたレコードは以前に<acronym class="acronym">WAL</acronym>フラッシュされています。)
 クラッシュした時、クラッシュからの復旧処理は最後のチェックポイントレコードを見つけ、ログの中でどのレコード（これはredoレコードと呼ばれています）から復旧処理がREDOログ操作を開始すべきかを決定します。
@@ -197,7 +197,7 @@ WALが生成されるペースにWALのアーカイブ処理が追いつかな�
    during recovery, by up to one checkpoint cycle's worth of WAL.
    (&lt;varname&gt;max_wal_size&lt;/&gt; is never a hard limit anyway, so you should
    always leave plenty of headroom to avoid running out of disk space.)
-</span><br />アーカイブからのリカバリもしくはスタンバイモードにおいて、サーバでは定期的に通常運用でのチェックポイント処理と似た<em class="firstterm">再開始点</em><a id="idp79820528" class="indexterm"></a>処理を行います。これは、すでに再生されたWALを再度読み込む必要がないよう、ディスクに現在の状態を強制的に書き込み、<code class="filename">pg_control</code>ファイルを更新します。また<code class="filename">pg_xlog</code>ディレクトリの中の古いログセグメントを再利用できるようにします。
+</span><br />アーカイブからのリカバリもしくはスタンバイモードにおいて、サーバでは定期的に通常運用でのチェックポイント処理と似た<em class="firstterm">再開始点</em><a id="idp82165728" class="indexterm"></a>処理を行います。これは、すでに再生されたWALを再度読み込む必要がないよう、ディスクに現在の状態を強制的に書き込み、<code class="filename">pg_control</code>ファイルを更新します。また<code class="filename">pg_xlog</code>ディレクトリの中の古いログセグメントを再利用できるようにします。
 再開始点処理はチェックポイントレコードに対してしか実施されないので、マスタ側のチェックポイント処理よりも発生頻度が多いということはありません。
 再開始点は、最後の再開始点より少なくとも<code class="varname">checkpoint_timeout</code>秒が経過しているか、あるいは<code class="varname">max_wal_size</code>を超えそうな場合に起動されます。
 しかし、再開始点が実施できるための制約事項により、リカバリの際には1回のチェックポイント分のWALを上限に、<code class="varname">max_wal_size</code>を超えてしまいがちです。
@@ -309,9 +309,9 @@ WALログが高遅延の回転ディスクに格納されているとき、<code
    transaction throughput with as few as two clients (that is, a single
    committing client with one sibling transaction).
 </span><br /><code class="varname">commit_delay</code>が(デフォルトの）ゼロに設定されると、グループコミットという種類が発生することが依然としてあります。しかし、それぞれのグループは前回のフラッシュ操作（あった場合）が発生したなかでの期間中にそれぞれのコミットレコードをフラッシュする必要があった時点に到達したセッションのみから成ります。
-上位のクライアントにおいて<span class="quote">「<span class="quote">gangway effect</span>」</span>が起こりそうだと計量すると、<code class="varname">commit_delay</code>がゼロであってもグループコミットの効果が著しく、そして従い、<code class="varname">commit_delay</code>を明示的に設定しても役立だちません。
+クライアントが多い状況では、<span class="quote">「<span class="quote">gangway effect</span>」</span>が起こる傾向があり、そのため<code class="varname">commit_delay</code>がゼロであってもグループコミットの効果が著しく、従って、<code class="varname">commit_delay</code>を明示的に設定しても役立ちません。
 <code class="varname">commit_delay</code>の設定は（１）いくつかの同時実行するコミットトランザクションが存在すること、そして（２）コミット度合いによりある程度までスループットが制限されている場合に役立ちます。
-しかし、高い回転待ち時間の場合、この設定はわずか二つのクライアントのトランザクションスループットを増加される効果があります（言いかえれば、一つの兄弟（sibling）トランザクションを所有する単一のコミットするクライアントです）。
+しかし、回転待ち時間が長い場合、この設定はわずか二つのクライアントにおいてさえトランザクションスループットを向上させる効果があるかもしれません（言いかえれば、一つの兄弟（sibling）トランザクションを所有する単一のコミットするクライアントです）。
   </p><p><span class="original"><!--$-->
    The &lt;xref linkend="guc-wal-sync-method"&gt; parameter determines how
    &lt;productname&gt;PostgreSQL&lt;/productname&gt; will ask the kernel to force
