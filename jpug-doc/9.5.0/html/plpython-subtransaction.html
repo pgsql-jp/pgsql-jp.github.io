@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>43.8. 明示的サブトランザクション</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="PostgreSQL 9.5.0文書" /><link rel="up" href="plpython.html" title="第43章 PL/Python - Python手続き言語" /><link rel="prev" href="plpython-database.html" title="43.7. データベースアクセス" /><link rel="next" href="plpython-util.html" title="43.9. ユーティリティ関数" /><link rel="copyright" href="legalnotice.html" title="法的告知" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">43.8. 明示的サブトランザクション</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="plpython-database.html">戻る</a> </td><th width="60%" align="center">第43章 PL/Python - Python手続き言語</th><td width="20%" align="right"> <a accesskey="n" href="plpython-util.html">次へ</a></td></tr></table><hr /></div><div class="sect1" id="plpython-subtransaction"><div class="titlepage"><div><div><h2 class="title" style="clear: both">43.8. 明示的サブトランザクション</h2></div></div></div><span class="original"><!--$-->
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>43.8. 明示的サブトランザクション</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="PostgreSQL 9.5.0文書" /><link rel="up" href="plpython.html" title="第43章 PL/Python - Python手続き言語" /><link rel="prev" href="plpython-database.html" title="43.7. データベースアクセス" /><link rel="next" href="plpython-util.html" title="43.9. ユーティリティ関数" /><link rel="copyright" href="legalnotice.html" title="法的告知" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">43.8. 明示的サブトランザクション</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="plpython-database.html">戻る</a> </td><th width="60%" align="center">第43章 PL/Python - Python手続き言語</th><td width="20%" align="right"> <a accesskey="n" href="plpython-util.html">次へ</a></td></tr></table><hr /></div><div class="sect1" id="plpython-subtransaction"><div class="titlepage"><div><div><h2 class="title" style="clear: both">43.8. 明示的サブトランザクション</h2></div></div></div><span class="original">
   &lt;title&gt;Explicit Subtransactions&lt;/title&gt;
-</span><br /><p><span class="original"><!--$-->
+</span><br /><p><span class="original">
    Recovering from errors caused by database access as described in
    &lt;xref linkend="plpython-trapping"&gt; can lead to an undesirable
    situation where some operations succeed before one of them fails,
@@ -10,9 +10,9 @@
    the form of explicit subtransactions.
 </span><br /><a class="xref" href="plpython-database.html#plpython-trapping" title="43.7.2. エラーの捕捉">「エラーの捕捉」</a>で説明したデータベースアクセスによって引き起こるエラーからの復旧は、操作の中の１つが失敗する前に、一部の操作が成功し、エラーからの復旧の後一貫性のないデータが残ってしまうという望ましくない状態を導く可能性があります。
 PL/Pythonは明示的サブトランザクションにより、この問題の解法を提供します。
-  </p><div class="sect2" id="idp95591552"><div class="titlepage"><div><div><h3 class="title">43.8.1. サブトランザクションのコンテキスト管理</h3></div></div></div><span class="original"><!--$-->
+  </p><div class="sect2" id="idp93438112"><div class="titlepage"><div><div><h3 class="title">43.8.1. サブトランザクションのコンテキスト管理</h3></div></div></div><span class="original">
    &lt;title&gt;Subtransaction Context Managers&lt;/title&gt;
-</span><br /><p><span class="original"><!--$-->
+</span><br /><p><span class="original">
     Consider a function that implements a transfer between two
     accounts:
 </span><br />2つの口座の間の振替えを実装する関数を考えてみます。
@@ -26,7 +26,7 @@ else:
     result = "funds transferred correctly"
 plan = plpy.prepare("INSERT INTO operations (result) VALUES ($1)", ["text"])
 plpy.execute(plan, [result])
-$$ LANGUAGE plpythonu;</pre><p><span class="original"><!--$-->
+$$ LANGUAGE plpythonu;</pre><p><span class="original">
     If the second &lt;literal&gt;UPDATE&lt;/literal&gt; statement results in an
     exception being raised, this function will report the error, but
     the result of the first &lt;literal&gt;UPDATE&lt;/literal&gt; will
@@ -36,7 +36,7 @@ $$ LANGUAGE plpythonu;</pre><p><span class="original"><!--$-->
 </span><br />
 2番目の<code class="literal">UPDATE</code>文が例外を発生させる結果となった場合、この関数はエラーを記録しますが、それにもかかわらず最初の<code class="literal">UPDATE</code>はコミットされます。
 言い換えると、資金はジョーの口座から引き落とされますが、メアリーの口座には移転しません。
-   </p><p><span class="original"><!--$-->
+   </p><p><span class="original">
     To avoid such issues, you can wrap your
     &lt;literal&gt;plpy.execute&lt;/literal&gt; calls in an explicit
     subtransaction.  The &lt;literal&gt;plpy&lt;/literal&gt; module provides a
@@ -61,7 +61,7 @@ else:
     result = "funds transferred correctly"
 plan = plpy.prepare("INSERT INTO operations (result) VALUES ($1)", ["text"])
 plpy.execute(plan, [result])
-$$ LANGUAGE plpythonu;</pre><p><span class="original"><!--$-->
+$$ LANGUAGE plpythonu;</pre><p><span class="original">
     Note that the use of &lt;literal&gt;try/catch&lt;/literal&gt; is still
     required.  Otherwise the exception would propagate to the top of
     the Python stack and would cause the whole function to abort with
@@ -82,9 +82,9 @@ $$ LANGUAGE plpythonu;</pre><p><span class="original"><!--$-->
 これはそのスコープの内側で実行されるデータベース操作すべてが、原子的にコミットされるかロールバックされるかだけを保証します。
 サブトランザクションブロックのロールバックは、データベースアクセスを元にしたエラーによって引き起こる例外だけではなく、何らかの種類の例外終了でも起こります。
 明示的なサブトランザクションブロックの内側で発生した通常のPython例外も同様にサブトランザクションをロールバックさせます。
-   </p></div><div class="sect2" id="idp95606336"><div class="titlepage"><div><div><h3 class="title">43.8.2. Pythonの旧式バージョン</h3></div></div></div><span class="original"><!--$-->
+   </p></div><div class="sect2" id="idp93452896"><div class="titlepage"><div><div><h3 class="title">43.8.2. Pythonの旧式バージョン</h3></div></div></div><span class="original">
    &lt;title&gt;Older Python Versions&lt;/title&gt;
-</span><br /><p><span class="original"><!--$-->
+</span><br /><p><span class="original">
     Context managers syntax using the &lt;literal&gt;with&lt;/literal&gt; keyword
     is available by default in Python 2.6.  If using PL/Python with an
     older Python version, it is still possible to use explicit
@@ -119,7 +119,7 @@ else:
 plan = plpy.prepare("INSERT INTO operations (result) VALUES ($1)", ["text"])
 plpy.execute(plan, [result])
 $$ LANGUAGE plpythonu;</pre><p>
-   </p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">注記</h3><p><span class="original"><!--$-->
+   </p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">注記</h3><p><span class="original">
      Although context managers were implemented in Python 2.5, to use
      the &lt;literal&gt;with&lt;/literal&gt; syntax in that version you need to
      use a &lt;ulink

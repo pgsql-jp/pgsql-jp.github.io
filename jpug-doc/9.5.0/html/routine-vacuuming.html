@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>23.1. 定常的なバキューム作業</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="PostgreSQL 9.5.0文書" /><link rel="up" href="maintenance.html" title="第23章 定常的なデータベース保守作業" /><link rel="prev" href="maintenance.html" title="第23章 定常的なデータベース保守作業" /><link rel="next" href="routine-reindex.html" title="23.2. 定常的なインデックスの再作成" /><link rel="copyright" href="legalnotice.html" title="法的告知" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">23.1. 定常的なバキューム作業</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="maintenance.html">戻る</a> </td><th width="60%" align="center">第23章 定常的なデータベース保守作業</th><td width="20%" align="right"> <a accesskey="n" href="routine-reindex.html">次へ</a></td></tr></table><hr /></div><div class="sect1" id="routine-vacuuming"><div class="titlepage"><div><div><h2 class="title" style="clear: both">23.1. 定常的なバキューム作業</h2></div></div></div><span class="original"><!--$-->
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>23.1. 定常的なバキューム作業</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="PostgreSQL 9.5.0文書" /><link rel="up" href="maintenance.html" title="第23章 定常的なデータベース保守作業" /><link rel="prev" href="maintenance.html" title="第23章 定常的なデータベース保守作業" /><link rel="next" href="routine-reindex.html" title="23.2. 定常的なインデックスの再作成" /><link rel="copyright" href="legalnotice.html" title="法的告知" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">23.1. 定常的なバキューム作業</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="maintenance.html">戻る</a> </td><th width="60%" align="center">第23章 定常的なデータベース保守作業</th><td width="20%" align="right"> <a accesskey="n" href="routine-reindex.html">次へ</a></td></tr></table><hr /></div><div class="sect1" id="routine-vacuuming"><div class="titlepage"><div><div><h2 class="title" style="clear: both">23.1. 定常的なバキューム作業</h2></div></div></div><span class="original">
   &lt;title&gt;Routine Vacuuming&lt;/title&gt;
-</span><br /><a id="idp79516352" class="indexterm"></a><p><span class="original"><!--$-->
+</span><br /><a id="idp77363264" class="indexterm"></a><p><span class="original">
    &lt;productname&gt;PostgreSQL&lt;/productname&gt; databases require periodic
    maintenance known as &lt;firstterm&gt;vacuuming&lt;/&gt;.  For many installations, it
    is sufficient to let vacuuming be performed by the &lt;firstterm&gt;autovacuum
@@ -21,35 +21,35 @@
 データベース管理者によっては、<span class="application">cron</span>もしくは<span class="application">タスクスケジューラ</span>スクリプトに従って典型的に実行される、手作業管理の<code class="command">VACUUM</code>コマンドによりデーモンの活動を補足したり、置き換えたりすることを意図するかもしれません。
 手作業管理のバキューム処理を適切に設定するためには、以下のいくつかの小節で説明する問題点を理解することが必須です。
 自動バキューム処理に信頼をおいている管理者にとっても、この資料に目を通すことはそれらの理解と自動バキューム処理の調整に役に立つことでしょう。
-  </p><div class="sect2" id="vacuum-basics"><div class="titlepage"><div><div><h3 class="title">23.1.1. バキューム作業の基本</h3></div></div></div><span class="original"><!--$-->
+  </p><div class="sect2" id="vacuum-basics"><div class="titlepage"><div><div><h3 class="title">23.1.1. バキューム作業の基本</h3></div></div></div><span class="original">
    &lt;title&gt;Vacuuming Basics&lt;/title&gt;
-</span><br /><p><span class="original"><!--$-->
+</span><br /><p><span class="original">
     &lt;productname&gt;PostgreSQL&lt;/productname&gt;'s
     &lt;xref linkend="sql-vacuum"&gt; command has to
     process each table on a regular basis for several reasons:
 </span><br /><span class="productname">PostgreSQL</span>の<a class="xref" href="sql-vacuum.html" title="VACUUM"><span class="refentrytitle">VACUUM</span></a>コマンドは以下の理由により定期的にそれぞれのテーブルを処理しなければなりません。
 
-    </p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><span class="original"><!--$-->
+    </p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><span class="original">
       &lt;simpara&gt;To recover or reuse disk space occupied by updated or deleted
       rows.&lt;/simpara&gt;
-</span><br />更新、あるいは削除された行によって占められたディスク領域の復旧または再利用。</li><li class="listitem"><span class="original"><!--$-->
+</span><br />更新、あるいは削除された行によって占められたディスク領域の復旧または再利用。</li><li class="listitem"><span class="original">
       &lt;simpara&gt;To update data statistics used by the
       &lt;productname&gt;PostgreSQL&lt;/productname&gt; query planner.&lt;/simpara&gt;
-</span><br /><span class="productname">PostgreSQL</span>問い合わせプランナによって使用されるデータ統計情報の更新。</li><li class="listitem"><span class="original"><!--$-->
+</span><br /><span class="productname">PostgreSQL</span>問い合わせプランナによって使用されるデータ統計情報の更新。</li><li class="listitem"><span class="original">
       &lt;simpara&gt;To update the visibility map, which speeds up index-only
       scans.&lt;/simpara&gt;
 </span><br />インデックスオンリースキャンを高速にする、可視性マップの更新。
-      </li><li class="listitem"><span class="original"><!--$-->
+      </li><li class="listitem"><span class="original">
       &lt;simpara&gt;To protect against loss of very old data due to
       &lt;firstterm&gt;transaction ID wraparound&lt;/&gt; or
       &lt;firstterm&gt;multixact ID wraparound&lt;/&gt;.&lt;/simpara&gt;
 </span><br /><em class="firstterm">トランザクションIDの周回</em>または<em class="firstterm">マルチトランザクションIDの周回</em>による非常に古いデータの損失を防止。</li></ol></div><p>
-<span class="original"><!--$-->
+<span class="original">
     Each of these reasons dictates performing &lt;command&gt;VACUUM&lt;/&gt; operations
     of varying frequency and scope, as explained in the following subsections.
 </span><br />
 以降の小節で説明するように、これらの理由の1つ1つは<code class="command">VACUUM</code>操作の実行について、その頻度の変動や対象領域の変動に影響します。
-   </p><p><span class="original"><!--$-->
+   </p><p><span class="original">
     There are two variants of &lt;command&gt;VACUUM&lt;/&gt;: standard &lt;command&gt;VACUUM&lt;/&gt;
     and &lt;command&gt;VACUUM FULL&lt;/&gt;.  &lt;command&gt;VACUUM FULL&lt;/&gt; can reclaim more
     disk space but runs much more slowly.  Also,
@@ -71,7 +71,7 @@
 しかし、バキューム処理中は<code class="command">ALTER TABLE ADD COLUMN</code>などのコマンドを使用してテーブル定義を変更することはできません。）
 <code class="command">VACUUM FULL</code>はそれが作用する全てのテーブルに対し排他ロックを必要とするので、それらテーブルのその他の用途と並行して行うことはできません。
 一般的に、管理者は標準<code class="command">VACUUM</code>の使用に努め、<code class="command">VACUUM FULL</code>の使用を避けるべきです。
-   </p><p><span class="original"><!--$-->
+   </p><p><span class="original">
     &lt;command&gt;VACUUM&lt;/command&gt; creates a substantial amount of I/O
     traffic, which can cause poor performance for other active sessions.
     There are configuration parameters that can be adjusted to reduce the
@@ -81,9 +81,9 @@
 このため、他の実行中のセッションの性能を劣化させる可能性があります。
 バックグラウンドで実行されるバキューム処理による性能への影響を軽減させることを調整できるような設定パラメータがあります。
 <a class="xref" href="runtime-config-resource.html#runtime-config-resource-vacuum-cost" title="18.4.4. コストに基づくVacuum遅延">「コストに基づくVacuum遅延」</a>を参照してください。
-   </p></div><div class="sect2" id="vacuum-for-space-recovery"><div class="titlepage"><div><div><h3 class="title">23.1.2. ディスク容量の復旧</h3></div></div></div><span class="original"><!--$-->
+   </p></div><div class="sect2" id="vacuum-for-space-recovery"><div class="titlepage"><div><div><h3 class="title">23.1.2. ディスク容量の復旧</h3></div></div></div><span class="original">
    &lt;title&gt;Recovering Disk Space&lt;/title&gt;
-</span><br /><a id="idp79549728" class="indexterm"></a><p><span class="original"><!--$-->
+</span><br /><a id="idp77396528" class="indexterm"></a><p><span class="original">
     In &lt;productname&gt;PostgreSQL&lt;/productname&gt;, an
     &lt;command&gt;UPDATE&lt;/&gt; or &lt;command&gt;DELETE&lt;/&gt; of a row does not
     immediately remove the old version of the row.
@@ -100,7 +100,7 @@
 しかし最終的には、更新された前の行や削除された行を参照するトランザクションはなくなります。
 必要なディスク容量が無制限に増加しないように、これらが占める領域は、新しい行で再利用できるように回収されなければなりません。
 これは<code class="command">VACUUM</code>を実行することで行われます。
-   </p><p><span class="original"><!--$-->
+   </p><p><span class="original">
     The standard form of &lt;command&gt;VACUUM&lt;/command&gt; removes dead row
     versions in tables and indexes and marks the space available for
     future reuse.  However, it will not return the space to the operating
@@ -117,7 +117,7 @@
 対照的に<code class="command">VACUUM FULL</code>は、不要な領域のない全く新しいバージョンのテーブルファイルを書き出すことで、積極的にテーブルを圧縮します。
 テーブルの容量を最小化しますが、長い時間がかかる可能性があります。
 また操作が終わるまで、テーブルの新しいコピー用に余計なディスク領域を必要とします。
-   </p><p><span class="original"><!--$-->
+   </p><p><span class="original">
     The usual goal of routine vacuuming is to do standard &lt;command&gt;VACUUM&lt;/&gt;s
     often enough to avoid needing &lt;command&gt;VACUUM FULL&lt;/&gt;.  The
     autovacuum daemon attempts to work this way, and in fact will
@@ -138,7 +138,7 @@
 それぞれのテーブルは、その最小サイズにバキューム作業とバキューム作業の間で使用されることになる容量を加えたのに等しい空間を占有します。
 <code class="command">VACUUM FULL</code>は、テーブルをその最小サイズまで縮小し、ディスク空間をオペレーティングシステムに返却するために使用することができますが、もし将来そのテーブルが再び肥大化するのであれば、大した意味がありません。
 従って、程よい頻度の標準<code class="command">VACUUM</code>を実行するほうが、不定期の<code class="command">VACUUM FULL</code>を実行するより大量の更新テーブルを保守するにはより良い取り組みとなります。
-   </p><p><span class="original"><!--$-->
+   </p><p><span class="original">
     Some administrators prefer to schedule vacuuming themselves, for example
     doing all the work at night when load is low.
     The difficulty with doing vacuuming according to a fixed schedule
@@ -159,7 +159,7 @@
 完全に作業量を予測することができない限り、デーモンを完全に無効化するのは勧められません。
 取り得る妥協案の1つは、いつになく激しい更新作業にのみ反応するよう、デーモンのパラメータを設定することです。
 これにより、抑制可能な範囲を維持しつつ、負荷が標準的な場合に計画化された<code class="command">VACUUM</code>がまとめて作業を行うことを想定することができます。
-   </p><p><span class="original"><!--$-->
+   </p><p><span class="original">
     For those not using autovacuum, a typical approach is to schedule a
     database-wide &lt;command&gt;VACUUM&lt;/&gt; once a day during a low-usage period,
     supplemented by more frequent vacuuming of heavily-updated tables as
@@ -173,7 +173,7 @@
 （非常に高い頻度でデータの更新を行うインストレーションの中では、分間隔位という頻度で高負荷なテーブルの<code class="command">VACUUM</code>を行うこともあります。）
 1つのクラスタで複数のデータベースがある場合、それぞれをバキュームすることを忘れないでください。
 <a class="xref" href="app-vacuumdb.html" title="vacuumdb"><span class="refentrytitle"><span class="application">vacuumdb</span></span></a>プログラムが役に立つかもしれません。
-   </p><div class="tip" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">ヒント</h3><p><span class="original"><!--$-->
+   </p><div class="tip" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">ヒント</h3><p><span class="original">
     Plain &lt;command&gt;VACUUM&lt;/&gt; may not be satisfactory when
     a table contains large numbers of dead row versions as a result of
     massive update or delete activity.  If you have such a table and
@@ -192,7 +192,7 @@
 これらのコマンドはテーブル全体を新しいコピーに書き換え、それに対する新規インデックスを作成します。
 これらの選択肢はすべて排他ロックを必要とします。
 新しいものが完成するまで、テーブルの旧コピーとインデックスは解放されませんので、元のテーブルと同程度の容量の余計なディスク領域も一時的に使用することに注意してください。
-   </p></div><div class="tip" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">ヒント</h3><p><span class="original"><!--$-->
+   </p></div><div class="tip" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">ヒント</h3><p><span class="original">
     If you have a table whose entire contents are deleted on a periodic
     basis, consider doing it with
     &lt;xref linkend="sql-truncate"&gt; rather
@@ -206,9 +206,9 @@
 <code class="command">TRUNCATE</code>はテーブルの全ての内容を即座に削除します。
 また、その後に不要となったディスク容量を回収するために<code class="command">VACUUM</code>や<code class="command">VACUUM FULL</code>を行う必要がありません。
 不利な点は厳格なMVCC動作が違反となることです。
-   </p></div></div><div class="sect2" id="vacuum-for-statistics"><div class="titlepage"><div><div><h3 class="title">23.1.3. プランナ用の統計情報の更新</h3></div></div></div><span class="original"><!--$-->
+   </p></div></div><div class="sect2" id="vacuum-for-statistics"><div class="titlepage"><div><div><h3 class="title">23.1.3. プランナ用の統計情報の更新</h3></div></div></div><span class="original">
    &lt;title&gt;Updating Planner Statistics&lt;/title&gt;
-</span><br /><a id="idp79590432" class="indexterm"></a><a id="idp79592080" class="indexterm"></a><p><span class="original"><!--$-->
+</span><br /><a id="idp77437296" class="indexterm"></a><a id="idp77438944" class="indexterm"></a><p><span class="original">
     The &lt;productname&gt;PostgreSQL&lt;/productname&gt; query planner relies on
     statistical information about the contents of tables in order to
     generate good plans for queries.  These statistics are gathered by
@@ -222,7 +222,7 @@
 このコマンドはそのものを呼び出す以外にも、<code class="command">VACUUM</code>のオプション処理としても呼び出すことができます。
 合理的な精度の統計情報を持つことは重要です。 
 さもないと非効率的な計画を選択してしまい、データベースの性能を悪化させてしまいます。
-   </p><p><span class="original"><!--$-->
+   </p><p><span class="original">
     The autovacuum daemon, if enabled, will automatically issue
     &lt;command&gt;ANALYZE&lt;/&gt; commands whenever the content of a table has
     changed sufficiently.  However, administrators might prefer to rely
@@ -236,7 +236,7 @@
 しかし、特にテーブルの更新作業が<span class="quote">「<span class="quote">興味のある</span>」</span>列の統計情報に影響を与えないことが判っている時、手作業により計画された<code class="command">ANALYZE</code>操作を当てにする方が好ましいと管理者は思うかもしれません。
 デーモンは、挿入または更新された行数の関数として<code class="command">ANALYZE</code>を厳密に計画します。
 しかし、意味のある統計情報の変更につながるかどうかは判りません。
-   </p><p><span class="original"><!--$-->
+   </p><p><span class="original">
     As with vacuuming for space recovery, frequent updates of statistics
     are more useful for heavily-updated tables than for seldom-updated
     ones. But even for a heavily-updated table, there might be no need for
@@ -256,7 +256,7 @@
 例えば、行の更新時刻を保持する<code class="type">timestamp</code>列の場合、最大値は行が追加、更新されるにつれて、単純に増加します。 
 こういった列は、おそらく、例えば、あるWebサイト上のアクセスされたページのURLを保持する列よりも頻繁に統計情報を更新する必要があるでしょう。
 このURL列の更新頻度も高いものかもしれませんが、その値の統計的な分布の変更は相対的に見ておそらく低いものです。
-   </p><p><span class="original"><!--$-->
+   </p><p><span class="original">
     It is possible to run &lt;command&gt;ANALYZE&lt;/&gt; on specific tables and even
     just specific columns of a table, so the flexibility exists to update some
     statistics more frequently than others if your application requires it.
@@ -269,7 +269,7 @@
 ですので、アプリケーションの要求に応じて、他よりも頻繁に一部の統計情報を更新できるような柔軟性があります。
 しかし、実際には、操作が高速であるため、単にデータベース全体を解析することが最善です。
 <code class="command">ANALYZE</code>は、すべての行を読むのではなく、テーブルから統計的にランダムな行を抽出して使用します。
-   </p><div class="tip" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">ヒント</h3><p><span class="original"><!--$-->
+   </p><div class="tip" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">ヒント</h3><p><span class="original">
      Although per-column tweaking of &lt;command&gt;ANALYZE&lt;/&gt; frequency might not be
      very productive, you might find it worthwhile to do per-column
      adjustment of the level of detail of the statistics collected by
@@ -281,7 +281,7 @@
 </span><br />列単位での<code class="command">ANALYZE</code>実行頻度の調整はあまり実用的とは言えるものではありませんが、<code class="command">ANALYZE</code>で集計される統計情報の詳細レベルの調整を列単位で行うことは価値がある場合があります。  
 <code class="literal">WHERE</code>句でよく使用され、データ分布の規則性がほとんどない列は、他の列よりもより細かいデータの度数分布が必要になるでしょう。
 <code class="command">ALTER TABLE SET STATISTICS</code>を参照するか、<a class="xref" href="runtime-config-query.html#guc-default-statistics-target">default_statistics_target</a>設定パラメータでデータベース全体のデフォルトを変更してください。
-    </p><p><span class="original"><!--$-->
+    </p><p><span class="original">
      Also, by default there is limited information available about
      the selectivity of functions.  However, if you create an expression
      index that uses a function call, useful statistics will be
@@ -290,7 +290,7 @@
 </span><br />またデフォルトで、関数の選択性に関して利用可能な制限付きの情報があります。
 しかし、関数呼び出しを使用する式インデックスを作成する場合、有用な統計情報が関数に関して収集されます。
 これにより式インデックスを使用する問い合わせ計画を大きく改良することができます。
-    </p></div><div class="tip" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">ヒント</h3><p><span class="original"><!--$-->
+    </p></div><div class="tip" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">ヒント</h3><p><span class="original">
      The autovacuum daemon does not issue &lt;command&gt;ANALYZE&lt;/&gt; commands for
      foreign tables, since it has no means of determining how often that
      might be useful.  If your queries require statistics on foreign tables
@@ -298,9 +298,9 @@
      &lt;command&gt;ANALYZE&lt;/&gt; commands on those tables on a suitable schedule.
 </span><br />自動バキュームデーモンは、有益になる頻度を決定する手段がありませんので、外部テーブルに対して<code class="command">ANALYZE</code>コマンドを発行しません。
 問い合わせが適切な計画作成のために外部テーブルの統計情報が必要であれば、適当なスケジュールでこれらのテーブルに対して手作業で管理する<code class="command">ANALYZE</code>コマンドを実行することを勧めます。
-    </p></div></div><div class="sect2" id="vacuum-for-visibility-map"><div class="titlepage"><div><div><h3 class="title">23.1.4. 可視性マップの更新</h3></div></div></div><span class="original"><!--$-->
+    </p></div></div><div class="sect2" id="vacuum-for-visibility-map"><div class="titlepage"><div><div><h3 class="title">23.1.4. 可視性マップの更新</h3></div></div></div><span class="original">
    &lt;title&gt;Updating The Visibility Map&lt;/title&gt;
-</span><br /><p><span class="original"><!--$-->
+</span><br /><p><span class="original">
     Vacuum maintains a &lt;link linkend="storage-vm"&gt;visibility map&lt;/&gt; for each
     table to keep track of which pages contain only tuples that are known to be
     visible to all active transactions (and all future transactions, until the
@@ -310,7 +310,7 @@
 </span><br />バキュームは、どのページにすべての有効トランザクション（およびページが再度更新されるまでの将来のトランザクション）で可視であることが分かっているタプルのみが含まれるかを追跡するために、各テーブルの<a class="link" href="storage-vm.html" title="63.4. 可視性マップ">可視性マップ</a>の保守を行います。
 ２つの目的があります。
 １つ目はバキューム自身が、整理するものがありませんので、こうしたページを次回飛ばすことができます。
-   </p><p><span class="original"><!--$-->
+   </p><p><span class="original">
     Second, it allows &lt;productname&gt;PostgreSQL&lt;/productname&gt; to answer some
     queries using only the index, without reference to the underlying table.
     Since &lt;productname&gt;PostgreSQL&lt;/productname&gt; indexes don't contain tuple
@@ -328,9 +328,9 @@
 そのページのタプルがすべて可視であることが分かれば、ヒープの取り出しを省くことができます。
 可視性マップがディスクアクセスを防ぐことができるデータ群が大規模である場合、特に顕著です。
 可視性マップがヒープより非常に小さいため、ヒープが非常に大きい場合であっても簡単にキャッシュすることができます。
-   </p></div><div class="sect2" id="vacuum-for-wraparound"><div class="titlepage"><div><div><h3 class="title">23.1.5. トランザクションIDの周回エラーの防止</h3></div></div></div><span class="original"><!--$-->
+   </p></div><div class="sect2" id="vacuum-for-wraparound"><div class="titlepage"><div><div><h3 class="title">23.1.5. トランザクションIDの周回エラーの防止</h3></div></div></div><span class="original">
    &lt;title&gt;Preventing Transaction ID Wraparound Failures&lt;/title&gt;
-</span><br /><a id="idp79626512" class="indexterm"></a><a id="idp79628176" class="indexterm"></a><p><span class="original"><!--$-->
+</span><br /><a id="idp77473488" class="indexterm"></a><a id="idp77475152" class="indexterm"></a><p><span class="original">
     &lt;productname&gt;PostgreSQL&lt;/productname&gt;'s MVCC transaction semantics
     depend on being able to compare transaction ID (&lt;acronym&gt;XID&lt;/&gt;)
     numbers: a row version with an insertion XID greater than the current
@@ -351,7 +351,7 @@ XIDのカウンタが一周して0に戻り、そして、突然に、過去に�
 端的に言うと、破滅的なデータの損失です。
 （実際はデータは保持されていますが、それを入手することができなければ、慰めにならないでしょう。）
 これを防ぐためには、すべてのデータベースにあるすべてのテーブルを少なくとも20億トランザクションごとにバキュームする必要があります。
-   </p><p><span class="original"><!--$-->
+   </p><p><span class="original">
     The reason that periodic vacuuming solves the problem is that
     &lt;command&gt;VACUUM&lt;/&gt; will mark rows as &lt;emphasis&gt;frozen&lt;/&gt;, indicating that
     they were inserted by a transaction which committed sufficiently far in
@@ -384,7 +384,7 @@ XIDのカウンタが一周して0に戻り、そして、突然に、過去に�
 そのため、ある特定のXIDであるバージョンの行を作成すると、そのバージョンの行は、以降の20億トランザクションからはどの通常のXIDについて比較しているのかには関係なく、 <span class="quote">「<span class="quote">過去のもの</span>」</span>と認識されます。
 そのバージョンの行が20億トランザクション以上後にも存在していた場合、それは突然に未来のものとして認識されます。
 これを防ぐために、凍結された行バージョンは挿入XIDが<code class="literal">FrozenTransactionId</code>であるかのように扱われ、それで、周回問題に関係なく、すべての通常のトランザクションから<span class="quote">「<span class="quote">過去のもの</span>」</span>として認識され、また、そのバージョンの行はどれだけ古いものであろうと、削除されるまで有効状態となります。
-   </p><p><span class="original"><!--$-->
+   </p><p><span class="original">
     &lt;xref linkend="guc-vacuum-freeze-min-age"&gt;
     controls how old an XID value has to be before its row version will be
     frozen.  Increasing this setting may avoid unnecessary work if the
@@ -394,7 +394,7 @@ XIDのカウンタが一周して0に戻り、そして、突然に、過去に�
     vacuumed again.
 </span><br /><code class="varname">vacuum_freeze_min_age</code>は、その行バージョンが凍結される前に、XID値がどのくらい経過しているのかを制御します。
 この設定値を大きくすることで、そうでなければ凍結状態になる行がすぐに再び修正されるのであれば、不必要な作業を避けられるかもしれませんが、この設定値を小さくすることでテーブルを次にバキュームする必要が起こるまで継続できるトランザクション数が増加します。
-   </p><p><span class="original"><!--$-->
+   </p><p><span class="original">
     &lt;command&gt;VACUUM&lt;/&gt; normally skips pages that don't have any dead row
     versions, but those pages might still have row versions with old XID
     values.  To ensure all old row versions have been frozen, a
@@ -410,7 +410,7 @@ XIDのカウンタが一周して0に戻り、そして、突然に、過去に�
 <a class="xref" href="runtime-config-client.html#guc-vacuum-freeze-table-age">vacuum_freeze_table_age</a>は<code class="command">VACUUM</code>がいつこれを行うかを制御します。
 つまり、テーブル全体にわたる清掃は<code class="varname">vacuum_freeze_table_age</code>から<code class="varname">vacuum_freeze_min_age</code>を差し引いたトランザクションに対しテーブルが完全に走査されていない場合に強制されます。
 0に設定することで<code class="command">VACUUM</code>は可視性マップを実質無視し、常に全てのページを走査するようになります。
-   </p><p><span class="original"><!--$-->
+   </p><p><span class="original">
     The maximum time that a table can go unvacuumed is two billion
     transactions minus the &lt;varname&gt;vacuum_freeze_min_age&lt;/&gt; value at
     the time &lt;command&gt;VACUUM&lt;/&gt; last scanned the whole table.  If it were to go
@@ -424,7 +424,7 @@ XIDのカウンタが一周して0に戻り、そして、突然に、過去に�
 この時間よりも長期間バキュームを行わないと、データ損失が発生します。
 これを確実に防止するために、自動バキュームが<a class="xref" href="runtime-config-autovacuum.html#guc-autovacuum-freeze-max-age">autovacuum_freeze_max_age</a>設定パラメータで指定された時代より古いXIDを持つ、凍結状態でない行を含む可能性がある任意のテーブルに対して呼び出されます。
 （これは自動バキュームが無効であっても起こります。）
-   </p><p><span class="original"><!--$-->
+   </p><p><span class="original">
     This implies that if a table is not otherwise vacuumed,
     autovacuum will be invoked on it approximately once every
     &lt;varname&gt;autovacuum_freeze_max_age&lt;/&gt; minus
@@ -441,7 +441,7 @@ XIDのカウンタが一周して0に戻り、そして、突然に、過去に�
 領域確保のために定常的にバキューム処理を行うテーブルでは、これは重要ではありません。
 しかし、（挿入のみで更新や削除が行われないテーブルを含む）静的なテーブルでは、領域確保のためのバキューム処理を行う必要がなくなりますので、非常に長期間静的なテーブルでは、強制的な自動バキューム間の間隔を最大まで延ばすことができます。
 記載するまでもありませんが、<code class="varname">autovacuum_freeze_max_age</code>を増やすことでも<code class="varname">vacuum_freeze_min_age</code>を減らすことでも、これを行うことができます。
-   </p><p><span class="original"><!--$-->
+   </p><p><span class="original">
     The effective maximum for &lt;varname&gt;vacuum_freeze_table_age&lt;/&gt; is 0.95 *
     &lt;varname&gt;autovacuum_freeze_max_age&lt;/&gt;; a setting higher than that will be
     capped to the maximum. A value higher than
@@ -462,7 +462,7 @@ XIDのカウンタが一周して0に戻り、そして、突然に、過去に�
 経験則に従うと、定期的に計画された<code class="command">VACUUM</code>もしくは通常の削除・更新作業により誘発された自動バキュームがその期間で実行されるように十分な間隔を残しておくように、<code class="command">vacuum_freeze_table_age</code>は<code class="varname">autovacuum_freeze_max_age</code>より多少低い値に設定されるべきです。
 これを余りにも近い値に設定すると、たとえ領域を回収するために最近テーブルがバキュームされたとしても、周回防止用の自動バキュームに帰着します。
 一方より低い値はより頻繁なテーブル全体の走査を引き起こします。
-   </p><p><span class="original"><!--$-->
+   </p><p><span class="original">
     The sole disadvantage of increasing &lt;varname&gt;autovacuum_freeze_max_age&lt;/&gt;
     (and &lt;varname&gt;vacuum_freeze_table_age&lt;/&gt; along with it)
     is that the &lt;filename&gt;pg_clog&lt;/&gt; subdirectory of the database cluster
@@ -483,7 +483,7 @@ XIDのカウンタが一周して0に戻り、そして、突然に、過去に�
 これがデータベースサイズ全体に対してとるに足らないものであれば、<code class="varname">autovacuum_freeze_max_age</code>を最大許容値に設定することを勧めます。
 さもなければ、<code class="filename">pg_clog</code>の容量として許容できる値に応じてそれらを設定してください。
 （デフォルトは2億トランザクションです。換算すると<code class="filename">pg_clog</code>はおよそ50メガバイトの容量となります。）
-   </p><p><span class="original"><!--$-->
+   </p><p><span class="original">
     One disadvantage of decreasing &lt;varname&gt;vacuum_freeze_min_age&lt;/&gt; is that
     it might cause &lt;command&gt;VACUUM&lt;/&gt; to do useless work: freezing a row
     version is a waste of time if the row is modified
@@ -494,7 +494,7 @@ XIDのカウンタが一周して0に戻り、そして、突然に、過去に�
 これにより<code class="command">VACUUM</code>が大して役に立たなくなるかもしれません。
 テーブル行がすぐに変更される場合（新しいXIDを獲得することになります）、行バージョンを凍結することは時間の無駄です。
 そのため、この設定は、行の変更が起こらなくなるまで凍結されない程度に大きくすべきです。
-   </p><p><span class="original"><!--$-->
+   </p><p><span class="original">
     To track the age of the oldest unfrozen XIDs in a database,
     &lt;command&gt;VACUUM&lt;/&gt; stores XID
     statistics in the system tables &lt;structname&gt;pg_class&lt;/&gt; and
@@ -524,12 +524,12 @@ LEFT JOIN pg_class t ON c.reltoastrelid = t.oid
 WHERE c.relkind IN ('r', 'm');
 
 SELECT datname, age(datfrozenxid) FROM pg_database;</pre><p>
-<span class="original"><!--$-->
+<span class="original">
     The &lt;literal&gt;age&lt;/&gt; column measures the number of transactions from the
     cutoff XID to the current transaction's XID.
 </span><br />
 <code class="literal">age</code>列は切り捨てXIDから現在のトランザクションXIDまでのトランザクション数を測ります。
-   </p><p><span class="original"><!--$-->
+   </p><p><span class="original">
     &lt;command&gt;VACUUM&lt;/&gt; normally
     only scans pages that have been modified since the last vacuum, but
     &lt;structfield&gt;relfrozenxid&lt;/&gt; can only be advanced when the whole table is
@@ -549,7 +549,7 @@ SELECT datname, age(datfrozenxid) FROM pg_database;</pre><p>
 <code class="command">VACUUM</code>がテーブル全体を走査した直後、<code class="literal">age(relfrozenxid)</code>は、使用された<code class="varname">vacuum_freeze_min_age</code>設定より若干大きくなるはずです
 （<code class="command">VACUUM</code>を起動してから始まったトランザクションの数分大きくなります）。
 もしテーブル全体を走査する<code class="command">VACUUM</code>が<code class="varname">autovacuum_freeze_max_age</code>に達するまでにテーブルに対して発行されない場合、そのテーブルに対して自動バキュームが早急に強制されます。
-   </p><p><span class="original"><!--$-->
+   </p><p><span class="original">
     If for some reason autovacuum fails to clear old XIDs from a table,
     the system will begin to emit warning messages like this when the
     database's oldest XIDs reach ten million transactions from the wraparound
@@ -558,7 +558,7 @@ SELECT datname, age(datfrozenxid) FROM pg_database;</pre><p>
 
 </p><pre class="programlisting">WARNING:  database "mydb" must be vacuumed within 177009986 transactions
 HINT:  To avoid a database shutdown, execute a database-wide VACUUM in "mydb".</pre><p>
-<span class="original"><!--$-->
+<span class="original">
     (A manual &lt;command&gt;VACUUM&lt;/&gt; should fix the problem, as suggested by the
     hint; but note that the &lt;command&gt;VACUUM&lt;/&gt; must be performed by a
     superuser, else it will fail to process system catalogs and thus not
@@ -575,7 +575,7 @@ HINT:  To avoid a database shutdown, execute a database-wide VACUUM in "mydb".</
 
 </p><pre class="programlisting">ERROR:  database is not accepting commands to avoid wraparound data loss in database "mydb"
 HINT:  Stop the postmaster and vacuum that database in single-user mode.</pre><p>
-<span class="original"><!--$-->
+<span class="original">
     The 1-million-transaction safety margin exists to let the
     administrator recover without data loss, by manually executing the
     required &lt;command&gt;VACUUM&lt;/&gt; commands.  However, since the system will not
@@ -589,9 +589,9 @@ HINT:  Stop the postmaster and vacuum that database in single-user mode.</pre><p
 しかし、システムがこの安全のための停止モードになると、コマンドを実行しませんので、実行するためには、サーバを停止し、シングルユーザモードでサーバを起動して<code class="command">VACUUM</code>を行う他ありません。
 この停止モードはシングルユーザモードでは強制されません。
 シングルユーザモードの使用に関する詳細は<a class="xref" href="app-postgres.html" title="postgres"><span class="refentrytitle"><span class="application">postgres</span></span></a>マニュアルページを参照してください。
-   </p><div class="sect3" id="vacuum-for-multixact-wraparound"><div class="titlepage"><div><div><h4 class="title">23.1.5.1. マルチトランザクションと周回</h4></div></div></div><span class="original"><!--$-->
+   </p><div class="sect3" id="vacuum-for-multixact-wraparound"><div class="titlepage"><div><div><h4 class="title">23.1.5.1. マルチトランザクションと周回</h4></div></div></div><span class="original">
     &lt;title&gt;Multixacts and Wraparound&lt;/title&gt;
-</span><br /><a id="idp79704752" class="indexterm"></a><a id="idp79705408" class="indexterm"></a><p><span class="original"><!--$-->
+</span><br /><a id="idp77551728" class="indexterm"></a><a id="idp77552384" class="indexterm"></a><p><span class="original">
      &lt;firstterm&gt;Multixact IDs&lt;/&gt; are used to support row locking by
      multiple transactions.  Since there is only limited space in a tuple
      header to store lock information, that information is encoded as
@@ -612,7 +612,7 @@ HINT:  Stop the postmaster and vacuum that database in single-user mode.</pre><p
 あるマルチトランザクションIDにどのトランザクションIDが含まれているかという情報は<code class="filename">pg_multixact</code>サブディレクトリに別に格納されており、マルチトランザクションIDのみがタプルヘッダの<code class="structfield">xmax</code>フィールドに現れます。
 トランザクションIDと同様に、マルチトランザクションIDは32ビットカウンタと対応する記憶領域として実装されており、どちらも注意深い年代管理や記憶領域の整理、周回の取り扱いが必要です。
 各マルチトランザクションにはメンバの一覧を保持する独立した記憶領域があり、そこでも32ビットカウンタを使っているので同じように管理しなければなりません。
-    </p><p><span class="original"><!--$-->
+    </p><p><span class="original">
      During a &lt;command&gt;VACUUM&lt;/&gt; table scan, either partial or of the whole
      table, any multixact ID older than
      &lt;xref linkend="guc-vacuum-multixact-freeze-min-age"&gt;
@@ -629,7 +629,7 @@ HINT:  Stop the postmaster and vacuum that database in single-user mode.</pre><p
 各テーブルでは、<code class="structname">pg_class</code>.<code class="structfield">relminmxid</code>がそのテーブルのタプルにまだ現れるマルチトランザクションIDのうちできるだけ古いものを保持しています。
 この値が<a class="xref" href="runtime-config-client.html#guc-vacuum-multixact-freeze-table-age">vacuum_multixact_freeze_table_age</a>よりも古ければ、テーブル全体の走査が強制されます。
 <code class="structname">pg_class</code>.<code class="structfield">relminmxid</code>に対してその年代を調べるのに<code class="function">mxid_age()</code>を使えます。
-    </p><p><span class="original"><!--$-->
+    </p><p><span class="original">
      Whole-table &lt;command&gt;VACUUM&lt;/&gt; scans, regardless of
      what causes them, enable advancing the value for that table.
      Eventually, as all tables in all databases are scanned and their
@@ -637,7 +637,7 @@ HINT:  Stop the postmaster and vacuum that database in single-user mode.</pre><p
      multixacts can be removed.
 </span><br />テーブル全体の<code class="command">VACUUM</code>走査は、その原因が何かに関わらず、そのテーブルのその値を進めることができます。
 結局、データベースすべてのテーブルすべてが走査され、最も古いマルチトランザクション値が進められますので、ディスク上でより古いマルチトランザクションを保持している領域は削除できます。
-    </p><p><span class="original"><!--$-->
+    </p><p><span class="original">
      As a safety device, a whole-table vacuum scan will occur for any table
      whose multixact-age is greater than
      &lt;xref linkend="guc-autovacuum-multixact-freeze-max-age"&gt;.  Whole-table
@@ -648,9 +648,9 @@ HINT:  Stop the postmaster and vacuum that database in single-user mode.</pre><p
      nominally disabled.
 </span><br />安全装置として、<a class="xref" href="runtime-config-autovacuum.html#guc-autovacuum-multixact-freeze-max-age">autovacuum_multixact_freeze_max_age</a>よりもそのマルチトランザクション年代が大きいどのテーブルに対しても、テーブル全体のバキューム走査が起こります。
 メンバ記憶領域の使用量がアドレス指定可能な記憶領域の50%を越えた場合にも、テーブル全体のバキューム走査は、マルチトランザクション年代の一番古いものから始めて、すべてのテーブルに対して段階的に起こります。
-    </p></div></div><div class="sect2" id="autovacuum"><div class="titlepage"><div><div><h3 class="title">23.1.6. 自動バキュームデーモン</h3></div></div></div><span class="original"><!--$-->
+    </p></div></div><div class="sect2" id="autovacuum"><div class="titlepage"><div><div><h3 class="title">23.1.6. 自動バキュームデーモン</h3></div></div></div><span class="original">
    &lt;title&gt;The Autovacuum Daemon&lt;/title&gt;
-</span><br /><a id="idp79724752" class="indexterm"></a><p><span class="original"><!--$-->
+</span><br /><a id="idp77571728" class="indexterm"></a><p><span class="original">
     &lt;productname&gt;PostgreSQL&lt;/productname&gt; has an optional but highly
     recommended feature called &lt;firstterm&gt;autovacuum&lt;/firstterm&gt;,
     whose purpose is to automate the execution of
@@ -668,7 +668,7 @@ HINT:  Stop the postmaster and vacuum that database in single-user mode.</pre><p
 この検査は統計情報収集機能を使用します。
 したがって、<a class="xref" href="runtime-config-statistics.html#guc-track-counts">track_counts</a>が<code class="literal">true</code>に設定されていないと、自動バキュームを使用することができません。
 デフォルトの設定では、自動バキュームは有効で、関連するパラメータも適切に設定されています。
-   </p><p><span class="original"><!--$-->
+   </p><p><span class="original">
     The &lt;quote&gt;autovacuum daemon&lt;/&gt; actually consists of multiple processes.
     There is a persistent daemon process, called the
     &lt;firstterm&gt;autovacuum launcher&lt;/firstterm&gt;, which is in charge of starting
@@ -694,7 +694,7 @@ HINT:  Stop the postmaster and vacuum that database in single-user mode.</pre><p
 処理対象のデータベースが<code class="varname">autovacuum_max_workers</code>より多くある場合、次のデータベースは最初のワーカが終了するとすぐに処理されます。
 それぞれのワーカプロセスはデータベース内の各テーブルを検査し、必要に応じて<code class="command">VACUUM</code>または<code class="command">ANALYZE</code>コマンドを発行します。
 <a class="xref" href="runtime-config-autovacuum.html#guc-log-autovacuum-min-duration">log_autovacuum_min_duration</a>も自動バキュームワーカの活動を監視するために設定できます。
-   </p><p><span class="original"><!--$-->
+   </p><p><span class="original">
     If several large tables all become eligible for vacuuming in a short
     amount of time, all autovacuum workers might become occupied with
     vacuuming those tables for a long period.  This would result
@@ -708,7 +708,7 @@ HINT:  Stop the postmaster and vacuum that database in single-user mode.</pre><p
 これにより、ワーカが利用できるようになるまで、他のテーブルやデータベースに対するバキュームが行われなくなります。
 また、単一データベースに対するワーカ数には制限はありませんが、ワーカはすでに他のワーカによって実行された作業を繰り返さないように試みます。
 ワーカの実行数は<a class="xref" href="runtime-config-connection.html#guc-max-connections">max_connections</a>制限にも<a class="xref" href="runtime-config-connection.html#guc-superuser-reserved-connections">superuser_reserved_connections</a>制限にも計上されないことに注意してください。
-   </p><p><span class="original"><!--$-->
+   </p><p><span class="original">
     Tables whose &lt;structfield&gt;relfrozenxid&lt;/&gt; value is more than
     &lt;xref linkend="guc-autovacuum-freeze-max-age"&gt; transactions old are always
     vacuumed (this also applies to those tables whose freeze max age has
@@ -720,9 +720,9 @@ HINT:  Stop the postmaster and vacuum that database in single-user mode.</pre><p
 （これはfreeze max ageがストレージパラメータにより変更されたテーブルに対しても適用されます。以下を参照）。
 さもなければ、直前の<code class="command">VACUUM</code>の後に不要となったタプル数が<span class="quote">「<span class="quote">バキューム閾値</span>」</span>を超えると、テーブルはバキュームされます。
 このバキューム閾値は以下のように定義されます。
-</p><pre class="programlisting"><span class="original"><!--$-->
+</p><pre class="programlisting"><span class="original">
 vacuum threshold = vacuum base threshold + vacuum scale factor * number of tuples
-</span><br />バキューム閾値 = バキューム基礎閾値 + バキューム規模係数 * タプル数</pre><p><span class="original"><!--$-->
+</span><br />バキューム閾値 = バキューム基礎閾値 + バキューム規模係数 * タプル数</pre><p><span class="original">
     where the vacuum base threshold is
     &lt;xref linkend="guc-autovacuum-vacuum-threshold"&gt;,
     the vacuum scale factor is
@@ -745,23 +745,23 @@ vacuum threshold = vacuum base threshold + vacuum scale factor * number of tuple
 （負荷が高いと一部の情報が失われる可能性があることから、これはほぼ正確な数でしかありません。）
 テーブルの<code class="structfield">relfrozenxid</code>値が<code class="varname">vacuum_freeze_table_age</code>トランザクション年齢より大きい場合、テーブル全体は古いタプルを凍結するため走査され、<code class="structfield">relfrozenxid</code>を繰り上げます。
 そうでなければ最後のバキュームの後に変更されたページのみ走査されます。
-   </p><p><span class="original"><!--$-->
+   </p><p><span class="original">
     For analyze, a similar condition is used: the threshold, defined as:
 </span><br />解析でも似たような条件が使用されます。
 以下で定義される閾値が、前回の<code class="command">ANALYZE</code>の後に挿入、更新、削除されたタプル数と比較されます。
-</p><pre class="programlisting"><span class="original"><!--$-->
+</p><pre class="programlisting"><span class="original">
 analyze threshold = analyze base threshold + analyze scale factor * number of tuples
-</span><br />解析閾値 = 解析基礎閾値 + 解析規模係数 * タプル数</pre><p><span class="original"><!--$-->
+</span><br />解析閾値 = 解析基礎閾値 + 解析規模係数 * タプル数</pre><p><span class="original">
     is compared to the total number of tuples inserted, updated, or deleted
     since the last &lt;command&gt;ANALYZE&lt;/command&gt;.
 </span><br />
-   </p><p><span class="original"><!--$-->
+   </p><p><span class="original">
     Temporary tables cannot be accessed by autovacuum.  Therefore,
     appropriate vacuum and analyze operations should be performed via
     session SQL commands.
 </span><br />一時テーブルには自動バキュームでアクセスすることはできません。
 したがってセッションのSQLコマンドを用いて適切なバキュームおよび解析操作を行わなければなりません。
-   </p><p><span class="original"><!--$-->
+   </p><p><span class="original">
     The default thresholds and scale factors are taken from
     &lt;filename&gt;postgresql.conf&lt;/filename&gt;, but it is possible to override them
     (and many other autovacuum control parameters) on a per-table basis; see
@@ -776,7 +776,7 @@ analyze threshold = analyze base threshold + analyze scale factor * number of tu
 テーブルのストレージパラメータで設定が変更されると、そのテーブルを処理する時にその値が使用されます。
 そうでなければ、全体設定が使われます。
 全体設定についての詳細な情報は<a class="xref" href="runtime-config-autovacuum.html" title="18.10. 自動Vacuum作業">「自動Vacuum作業」</a>を参照してください。
-   </p><p><span class="original"><!--$-->
+   </p><p><span class="original">
     When multiple workers are running, the autovacuum cost delay parameters
     (see &lt;xref linkend="runtime-config-resource-vacuum-cost"&gt;) are
     &lt;quote&gt;balanced&lt;/quote&gt; among all the running workers, so that the

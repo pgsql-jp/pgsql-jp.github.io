@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>24.3. 継続的アーカイブとポイントインタイムリカバリ（PITR）</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="PostgreSQL 9.5.0文書" /><link rel="up" href="backup.html" title="第24章 バックアップとリストア" /><link rel="prev" href="backup-file.html" title="24.2. ファイルシステムレベルのバックアップ" /><link rel="next" href="high-availability.html" title="第25章 高可用性、負荷分散およびレプリケーション" /><link rel="copyright" href="legalnotice.html" title="法的告知" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">24.3. 継続的アーカイブとポイントインタイムリカバリ（PITR）</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="backup-file.html">戻る</a> </td><th width="60%" align="center">第24章 バックアップとリストア</th><td width="20%" align="right"> <a accesskey="n" href="high-availability.html">次へ</a></td></tr></table><hr /></div><div class="sect1" id="continuous-archiving"><div class="titlepage"><div><div><h2 class="title" style="clear: both">24.3. 継続的アーカイブとポイントインタイムリカバリ（PITR）</h2></div></div></div><span class="original"><!--$-->
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>24.3. 継続的アーカイブとポイントインタイムリカバリ（PITR）</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="PostgreSQL 9.5.0文書" /><link rel="up" href="backup.html" title="第24章 バックアップとリストア" /><link rel="prev" href="backup-file.html" title="24.2. ファイルシステムレベルのバックアップ" /><link rel="next" href="high-availability.html" title="第25章 高可用性、負荷分散およびレプリケーション" /><link rel="copyright" href="legalnotice.html" title="法的告知" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">24.3. 継続的アーカイブとポイントインタイムリカバリ（PITR）</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="backup-file.html">戻る</a> </td><th width="60%" align="center">第24章 バックアップとリストア</th><td width="20%" align="right"> <a accesskey="n" href="high-availability.html">次へ</a></td></tr></table><hr /></div><div class="sect1" id="continuous-archiving"><div class="titlepage"><div><div><h2 class="title" style="clear: both">24.3. 継続的アーカイブとポイントインタイムリカバリ（PITR）</h2></div></div></div><span class="original">
   &lt;title&gt;Continuous Archiving and Point-in-Time Recovery (PITR)&lt;/title&gt;
-</span><br /><a id="idp79997056" class="indexterm"></a><a id="idp79998368" class="indexterm"></a><a id="idp79999584" class="indexterm"></a><p><span class="original"><!--$-->
+</span><br /><a id="idp77844144" class="indexterm"></a><a id="idp77845456" class="indexterm"></a><a id="idp77846672" class="indexterm"></a><p><span class="original">
    At all times, &lt;productname&gt;PostgreSQL&lt;/&gt; maintains a
    &lt;firstterm&gt;write ahead log&lt;/&gt; (WAL) in the &lt;filename&gt;pg_xlog/&lt;/&gt;
    subdirectory of the cluster's data directory. The log records
@@ -24,7 +24,7 @@
 ファイルシステムレベルのバックアップとWALファイルのバックアップを組み合わせるという戦略です。
 復旧が必要ならば、ファイルシステムバックアップをリストアし、その後にバックアップされたWALファイルを再生することで、システムを最新の状態にできます。
 管理者にとって、この方法はこれまで説明した方法よりかなり複雑になりますが、以下のような大きな利点が複数あります。
-  </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p><span class="original"><!--$-->
+  </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p><span class="original">
      We do not need a perfectly consistent file system backup as the starting point.
      Any internal inconsistency in the backup will be corrected by log
      replay (this is not significantly different from what happens during
@@ -35,14 +35,14 @@
 （これは、クラッシュからの復旧時に行われることと大きな違いはありません）。
 ですので、ファイルシステムのスナップショット機能を必要としません。
 単に<span class="application">tar</span>などのアーカイブツールが必要です。
-    </p></li><li class="listitem"><p><span class="original"><!--$-->
+    </p></li><li class="listitem"><p><span class="original">
      Since we can combine an indefinitely long sequence of WAL files
      for replay, continuous backup can be achieved simply by continuing to archive
      the WAL files.  This is particularly valuable for large databases, where
      it might not be convenient to take a full backup frequently.
 </span><br />再生の際にWALファイルの並びを数に制限なく連ねて組み合わせられますので、単にWALファイルのアーカイブを続けることで連続したバックアップを達成できます。
 これは、頻繁に完全なバックアップを行うことが困難な、大規模なデータベースでは特に価値があります。
-    </p></li><li class="listitem"><p><span class="original"><!--$-->
+    </p></li><li class="listitem"><p><span class="original">
      It is not necessary to replay the WAL entries all the
      way to the end.  We could stop the replay at any point and have a
      consistent snapshot of the database as it was at that time.  Thus,
@@ -52,7 +52,7 @@
 </span><br />WAL項目の再生を最後まで行わなければならないということはありません。
 やり直しを任意の時点までで停止することができ、それにより、その時点までのデータベースの整合性を持ったスナップショットを得ることができます。
 このような技術が<em class="firstterm">ポイントインタイムリカバリ</em>を補助するものであり、元となるベースバックアップの取得時点以降の任意の時点の状態にデータベースをリストアすることが可能になります。
-    </p></li><li class="listitem"><p><span class="original"><!--$-->
+    </p></li><li class="listitem"><p><span class="original">
      If we continuously feed the series of WAL files to another
      machine that has been loaded with the same base backup file, we
      have a &lt;firstterm&gt;warm standby&lt;/&gt; system: at any point we can bring up
@@ -61,7 +61,7 @@
 </span><br />連続的に一連のWALファイルを、同一のベースバックアップをロードしている別のマシンに配送することで、<span class="quote">「<span class="quote">ウォームスタンバイ</span>」</span>システムを保有することができます。
 つまり、任意の時点でその2番目のマシンを、ほぼ現時点のデータベースの複製を持った状態で有効にすることができます。
     </p></li></ul></div><p>
-  </p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">注記</h3><p><span class="original"><!--$-->
+  </p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">注記</h3><p><span class="original">
     &lt;application&gt;pg_dump&lt;/application&gt; and
     &lt;application&gt;pg_dumpall&lt;/application&gt; do not produce file-system-level
     backups and cannot be used as part of a continuous-archiving solution.
@@ -69,7 +69,7 @@
     information to be used by WAL replay.
 </span><br /><span class="application">pg_dump</span>と<span class="application">pg_dumpall</span>はファイルシステムレベルのバックアップを生成しませんので、継続的アーカイブ方式の一部として使うことはできません。
 そのダンプは<span class="emphasis"><em>論理的</em></span>なものであり、WALのやり直しで使うのに十分な情報を含んでいません。
-   </p></div><p><span class="original"><!--$-->
+   </p></div><p><span class="original">
    As with the plain file-system-backup technique, this method can only
    support restoration of an entire database cluster, not a subset.
    Also, it requires a lot of archival storage: the base backup might be bulky,
@@ -80,7 +80,7 @@
 また、アーカイブ用に大量の格納領域を必要とします。
 ベースバックアップはかさばる場合があり、また、高負荷なシステムではアーカイブしなければならないWALの流量をメガバイト単位で生成します。
 しかし、これは、高信頼性が必要な、多くの状況でむしろ好まれるバックアップ手法です。
-  </p><p><span class="original"><!--$-->
+  </p><p><span class="original">
    To recover successfully using continuous archiving (also called
    &lt;quote&gt;online backup&lt;/&gt; by many database vendors), you need a continuous
    sequence of archived WAL files that extends back at least as far as the
@@ -91,9 +91,9 @@
 </span><br />継続的アーカイブ（多くのデータベースベンダで<span class="quote">「<span class="quote">オンラインバックアップ</span>」</span>とも呼ばれます）を使用して復旧を成功させるためには、少なくともバックアップの開始時点まで遡る、連続した一連のアーカイブ済みWALファイルが必要です。
 ですので、運用するためには、最初のベースバックアップを取得する<span class="emphasis"><em>前</em></span>にWALファイルをアーカイブする手順を設定し試験しなければなりません。
 したがって、まずWALファイルのアーカイブ機構について説明します。
-  </p><div class="sect2" id="backup-archiving-wal"><div class="titlepage"><div><div><h3 class="title">24.3.1. WALアーカイブの設定</h3></div></div></div><span class="original"><!--$-->
+  </p><div class="sect2" id="backup-archiving-wal"><div class="titlepage"><div><div><h3 class="title">24.3.1. WALアーカイブの設定</h3></div></div></div><span class="original">
    &lt;title&gt;Setting Up WAL Archiving&lt;/title&gt;
-</span><br /><p><span class="original"><!--$-->
+</span><br /><p><span class="original">
     In an abstract sense, a running &lt;productname&gt;PostgreSQL&lt;/&gt; system
     produces an indefinitely long sequence of WAL records.  The system
     physically divides this sequence into WAL &lt;firstterm&gt;segment
@@ -111,7 +111,7 @@
 このセグメントファイルには、概念的なWALの並び内の位置を反映した、数字の名前が付与されます。
 WALアーカイブを行わない場合、システムは通常数個のセグメントファイルを生成し、また、不要となったセグメントファイルの名前をより大きなセグメント番号に変更することでそれを<span class="quote">「<span class="quote">再回収</span>」</span>します。
 直前のチェックポイントより前の内容を持つセグメントファイルは使用されないと仮定され、再回収されます。
-   </p><p><span class="original"><!--$-->
+   </p><p><span class="original">
     When archiving WAL data, we need to capture the contents of each segment
     file once it is filled, and save that data somewhere before the segment
     file is recycled for reuse.  Depending on the application and the
@@ -134,7 +134,7 @@ WALアーカイブを行わない場合、システムは通常数個のセグ�
 その代わりに<span class="productname">PostgreSQL</span>は、管理者に完全なセグメントファイルをどこか必要な場所にコピーするシェルコマンドを指定させます。
 このコマンドは単純な<code class="literal">cp</code>でも構いませんし、また、複雑なシェルスクリプトを呼び出しても構いません。
 全て管理者に任されています。
-   </p><p><span class="original"><!--$-->
+   </p><p><span class="original">
     To enable WAL archiving, set the &lt;xref linkend="guc-wal-level"&gt;
     configuration parameter to &lt;literal&gt;archive&lt;/&gt; or higher,
     &lt;xref linkend="guc-archive-mode"&gt; to &lt;literal&gt;on&lt;/&gt;,
@@ -157,7 +157,7 @@ WALアーカイブを行わない場合、システムは通常数個のセグ�
 コマンド内に<code class="literal">%</code>文字自体を埋め込む必要があれば<code class="literal">%%</code>を使ってください。
 最も簡単でよく使用されるコマンドは以下のようなものになります。
 </p><pre class="programlisting">archive_command = 'test ! -f /mnt/server/archivedir/%f &amp;&amp; cp %p /mnt/server/archivedir/%f'  # Unix
-archive_command = 'copy "%p" "C:\\server\\archivedir\\%f"'  # Windows</pre><p><span class="original"><!--$-->
+archive_command = 'copy "%p" "C:\\server\\archivedir\\%f"'  # Windows</pre><p><span class="original">
     which will copy archivable WAL segments to the directory
     &lt;filename&gt;/mnt/server/archivedir&lt;/&gt;.  (This is an example, not a
     recommendation, and might not work on all platforms.)  After the
@@ -166,11 +166,11 @@ archive_command = 'copy "%p" "C:\\server\\archivedir\\%f"'  # Windows</pre><p><s
 </span><br />
 これは、アーカイブ可能なWALセグメントを<code class="literal">/mnt/server/archivedir</code>ディレクトリにコピーします
 （これは一例です。推奨するものではなく、また、全てのプラットフォームで動作しない可能性があります）。<code class="literal">%p</code>および<code class="literal">%f</code>パラメータが置き換えられたあと、実行された実コマンドは以下のようになります。
-</p><pre class="programlisting">test ! -f /mnt/server/archivedir/00000001000000A900000065 &amp;&amp; cp pg_xlog/00000001000000A900000065 /mnt/server/archivedir/00000001000000A900000065</pre><p><span class="original"><!--$-->
+</p><pre class="programlisting">test ! -f /mnt/server/archivedir/00000001000000A900000065 &amp;&amp; cp pg_xlog/00000001000000A900000065 /mnt/server/archivedir/00000001000000A900000065</pre><p><span class="original">
     A similar command will be generated for each new file to be archived.
 </span><br />
 類似したコマンドがアーカイブされるそれぞれの新規ファイルに生成されます。
-   </p><p><span class="original"><!--$-->
+   </p><p><span class="original">
     The archive command will be executed under the ownership of the same
     user that the &lt;productname&gt;PostgreSQL&lt;/&gt; server is running as.  Since
     the series of WAL files being archived contains effectively everything
@@ -180,7 +180,7 @@ archive_command = 'copy "%p" "C:\\server\\archivedir\\%f"'  # Windows</pre><p><s
 </span><br />このアーカイブ用コマンドは<span class="productname">PostgreSQL</span>サーバを稼動させるユーザと同じ所有権で実行されます。
 アーカイブされる一連のWALファイルには、実質、データベース内の全てが含まれていますので、アーカイブしたデータをのぞき見から確実に保護しなければならないでしょう。
 例えば、グループや全員に読み込み権限を付与していないディレクトリにデータをアーカイブしてください。
-   </p><p><span class="original"><!--$-->
+   </p><p><span class="original">
     It is important that the archive command return zero exit status if and
     only if it succeeds.  Upon getting a zero result,
     &lt;productname&gt;PostgreSQL&lt;/&gt; will assume that the file has been
@@ -190,7 +190,7 @@ archive_command = 'copy "%p" "C:\\server\\archivedir\\%f"'  # Windows</pre><p><s
 </span><br />アーカイブ用コマンドが成功した場合のみにゼロという終了ステータスを返すことが重要です。
 <span class="productname">PostgreSQL</span>は、ゼロという結果に基づいて、そのファイルのアーカイブが成功したことを想定し、そのファイルを削除したり回収するかもしれません。
 しかし、非ゼロのステータスは、<span class="productname">PostgreSQL</span>に対してファイルがアーカイブされなかったことを通知し、成功するまで定期的に再試行させます。
-   </p><p><span class="original"><!--$-->
+   </p><p><span class="original">
     The archive command should generally be designed to refuse to overwrite
     any pre-existing archive file.  This is an important safety feature to
     preserve the integrity of your archive in case of administrator error
@@ -199,7 +199,7 @@ archive_command = 'copy "%p" "C:\\server\\archivedir\\%f"'  # Windows</pre><p><s
 
 </span><br />通常アーカイブ用コマンドは既存のアーカイブ済みファイルの上書きを行わないように設計されなければなりません。
 これは、管理者のミス（例えば2つの異なるサーバの出力を同一のアーカイブ用ディレクトリに送信してしまうなど）といった場合からアーカイブ状況の整合性を保護するための安全策として重要です。
-   </p><p><span class="original"><!--$-->
+   </p><p><span class="original">
     It is advisable to test your proposed archive command to ensure that it
     indeed does not overwrite an existing file, &lt;emphasis&gt;and that it returns
     nonzero status in this case&lt;/&gt;.
@@ -212,7 +212,7 @@ archive_command = 'copy "%p" "C:\\server\\archivedir\\%f"'  # Windows</pre><p><s
     already exists, which is &lt;emphasis&gt;not&lt;/&gt; the desired behavior.)
 </span><br />実際に既存のファイルを上書きしないこと、<span class="emphasis"><em>かつ、その場合に非ゼロのステータスを返すこと</em></span>を確認するために使用するアーカイブ用コマンドを試験することを勧めます。
 上のUnix用のコマンド例では、別途<code class="command">test</code>という段階を含めることでこれを確認しています。いくつかのUnixプラットフォームでは<code class="command">cp</code>コマンドには<code class="option">-i</code> 引数を使うことで煩雑な出力を少なくし使うことができますが、正しい終了コードが返ることを確認せずに使用するべきではありません。(具体的にはGNUの<code class="command">cp</code>コマンドは<code class="option">-i</code> オプションを使い、ターゲットファイルがすでに存在している場合、ゼロのステータスを返します。これは<span class="emphasis"><em>期待していない</em></span>動作です。）
-   </p><p><span class="original"><!--$-->
+   </p><p><span class="original">
     While designing your archiving setup, consider what will happen if
     the archive command fails repeatedly because some aspect requires
     operator intervention or the archive runs out of space. For example, this
@@ -231,7 +231,7 @@ archive_command = 'copy "%p" "C:\\server\\archivedir\\%f"'  # Windows</pre><p><s
 テープが一杯になった場合、テープを交換するまでアーカイブを行うことができなくなります。
 こうした状況を相応の早さで解消できるよう、適切に操作者に対しエラーや要求を確実に連絡できるようにしなければなりません。
 この状況が解消するまで、WALセグメントファイルは<code class="filename">pg_xlog/</code>ディレクトリ内に格納され続けます。（<code class="filename">pg_xlog/</code>を含むファイルシステムがいっぱいになると、<span class="productname">PostgreSQL</span>はパニック停止します。コミットされたトランザクションは失われませんが、データベースはいくらかの容量を開放するまでオフラインのままです。）
-   </p><p><span class="original"><!--$-->
+   </p><p><span class="original">
     The speed of the archiving command is unimportant as long as it can keep up
     with the average rate at which your server generates WAL data.  Normal
     operation continues even if the archiving process falls a little behind.
@@ -246,7 +246,7 @@ archive_command = 'copy "%p" "C:\\server\\archivedir\\%f"'  # Windows</pre><p><s
 アーカイブ処理がかなり遅くれると、災害時に損失するデータの量が増加することになります。
 また、これは<code class="filename">pg_xlog/</code>ディレクトリ内に多くのアーカイブ処理待ちのセグメントファイルが格納され、ディスク容量が不足する状況になる可能性があることを意味します。
 アーカイブ処理が確実に意図通りに動作しているかを監視することを推奨します。
-   </p><p><span class="original"><!--$-->
+   </p><p><span class="original">
     In writing your archive command, you should assume that the file names to
     be archived can be up to 64 characters long and can contain any
     combination of ASCII letters, digits, and dots.  It is not necessary to
@@ -254,7 +254,7 @@ archive_command = 'copy "%p" "C:\\server\\archivedir\\%f"'  # Windows</pre><p><s
     preserve the file name (&lt;literal&gt;%f&lt;/&gt;).
 </span><br />アーカイブ用コマンドを作成する時、アーカイブされるファイル名は最長64文字までで、ASCII文字と数字とドットのどんな組合せを使用しても構いません。
 元の相対パス（<code class="literal">%p</code>）を保存する必要はありませんが、ファイル名（<code class="literal">%f</code>）を保存する必要はあります。
-   </p><p><span class="original"><!--$-->
+   </p><p><span class="original">
     Note that although WAL archiving will allow you to restore any
     modifications made to the data in your &lt;productname&gt;PostgreSQL&lt;/&gt; database,
     it will not restore changes made to configuration files (that is,
@@ -268,7 +268,7 @@ archive_command = 'copy "%p" "C:\\server\\archivedir\\%f"'  # Windows</pre><p><s
 </span><br />WALアーカイブによって<span class="productname">PostgreSQL</span>データベースでなされた変更は全てリストアすることができますが、設定ファイルはSQL操作ではなく手作業で変更されますので、設定ファイル（<code class="filename">postgresql.conf</code>、<code class="filename">pg_hba.conf</code>、および<code class="filename">pg_ident.conf</code>）になされた変更までリストアしないことに注意してください。
 通常のファイルシステムバックアップ手続きでバックアップされる場所に設定ファイルを保持したい場合があります。
 設定ファイルの設置場所を変更するには<a class="xref" href="runtime-config-file-locations.html" title="18.2. ファイルの場所">「ファイルの場所」</a>を参照してください。
-   </p><p><span class="original"><!--$-->
+   </p><p><span class="original">
     The archive command is only invoked on completed WAL segments.  Hence,
     if your server generates only little WAL traffic (or has slack periods
     where it does so), there could be a long delay between the completion
@@ -288,7 +288,7 @@ archive_command = 'copy "%p" "C:\\server\\archivedir\\%f"'  # Windows</pre><p><s
 そのため、非常に小さな<code class="varname">archive_timeout</code>を使用することはお勧めしません。
 格納領域を膨張させてしまいます。
 通常ならば分単位の<code class="varname">archive_timeout</code>設定が合理的です。
-   </p><p><span class="original"><!--$-->
+   </p><p><span class="original">
     Also, you can force a segment switch manually with
     &lt;function&gt;pg_switch_xlog&lt;/&gt; if you want to ensure that a
     just-finished transaction is archived as soon as possible.  Other utility
@@ -296,7 +296,7 @@ archive_command = 'copy "%p" "C:\\server\\archivedir\\%f"'  # Windows</pre><p><s
     linkend="functions-admin-backup-table"&gt;.
 </span><br />終わったばかりのトランザクションをできるだけ早くアーカイブさせたい場合、<code class="function">pg_switch_xlog</code>を使用して手作業でセグメント切り替えを強制することができます。
 この他のWAL管理に関連した関数を<a class="xref" href="functions-admin.html#functions-admin-backup-table" title="表9.68 バックアップ制御関数">表9.68「バックアップ制御関数」</a>に列挙します。
-   </p><p><span class="original"><!--$-->
+   </p><p><span class="original">
     When &lt;varname&gt;wal_level&lt;/&gt; is &lt;literal&gt;minimal&lt;/&gt; some SQL commands
     are optimized to avoid WAL logging, as described in &lt;xref
     linkend="populate-pitr"&gt;.  If archiving or streaming replication were
@@ -312,9 +312,9 @@ archive_command = 'copy "%p" "C:\\server\\archivedir\\%f"'  # Windows</pre><p><s
 </span><br /><code class="varname">wal_level</code>が<code class="literal">minimal</code>の場合、<a class="xref" href="populate.html#populate-pitr" title="14.4.7. WALアーカイブ処理とストリーミングレプリケーションの無効化">「WALアーカイブ処理とストリーミングレプリケーションの無効化」</a>に書かれているように、いくつかのSQLコマンドはWALロギングを回避するため最適化されます。
 アーカイビングもしくはストリーミングレプリケーションがこれら構文の１つを実行中に作動させられると、アーカイブ復旧のための十分な情報をWALが含まなくなります。（クラッシュ復旧は影響を受けません。）
 このことにより、<code class="varname">wal_level</code>はサーバの起動時のみ変更可能です。とは言っても、<code class="varname">archive_command</code>は構成ファイルを再読み込みすることで変更できます。一時的にアーカイビングを停止したい場合、１つの方法は<code class="varname">archive_command</code>を空文字列（<code class="literal">''</code>）に設定することです。このようにすると、動作する<code class="varname">archive_command</code>が再構築されるまでWALファイルは<code class="filename">pg_xlog/</code>に蓄積します。
-   </p></div><div class="sect2" id="backup-base-backup"><div class="titlepage"><div><div><h3 class="title">24.3.2. ベースバックアップの作成</h3></div></div></div><span class="original"><!--$-->
+   </p></div><div class="sect2" id="backup-base-backup"><div class="titlepage"><div><div><h3 class="title">24.3.2. ベースバックアップの作成</h3></div></div></div><span class="original">
    &lt;title&gt;Making a Base Backup&lt;/title&gt;
-</span><br /><p><span class="original"><!--$--> 
+</span><br /><p><span class="original"> 
     The easiest way to perform a base backup is to use the
     &lt;xref linkend="app-pgbasebackup"&gt; tool. It can create
     a base backup either as regular files or as a tar archive. If more
@@ -322,14 +322,14 @@ archive_command = 'copy "%p" "C:\\server\\archivedir\\%f"'  # Windows</pre><p><s
     required, you can also make a base backup using the low level API
     (see &lt;xref linkend="backup-lowlevel-base-backup"&gt;).
 </span><br />ベースバックアップを取得する最も簡単な方法は<a class="xref" href="app-pgbasebackup.html" title="pg_basebackup"><span class="refentrytitle">pg_basebackup</span></a> を実行する方法です。通常のファイルやTAR形式のファイルとしてベースバックアップを取得することができます。もし、<a class="xref" href="app-pgbasebackup.html" title="pg_basebackup"><span class="refentrytitle">pg_basebackup</span></a>より柔軟性が求められる場合は、低レベルなAPIを使ってバックアップを作成することもできます。(詳細は <a class="xref" href="continuous-archiving.html#backup-lowlevel-base-backup" title="24.3.3. 低レベルAPIを使用したベースバックアップの作成">「低レベルAPIを使用したベースバックアップの作成」</a>を参照)
-   </p><p><span class="original"><!--$--> 
+   </p><p><span class="original"> 
     It is not necessary to be concerned about the amount of time it takes
     to make a base backup. However, if you normally run the
     server with &lt;varname&gt;full_page_writes&lt;/&gt; disabled, you might notice a drop
     in performance while the backup runs since &lt;varname&gt;full_page_writes&lt;/&gt; is
     effectively forced on during backup mode.
 </span><br />ベースバックアップを取得するための時間を考慮する必要はありません。しかし、普段、<code class="varname">full_page_writes</code>を無効にして運用している場合、バックアップ取得中は強制的に<code class="varname">full_page_writes</code>が有効になるため、パフォーマンスが落ちていると感じる可能性があります。
-   </p><p><span class="original"><!--$--> 
+   </p><p><span class="original"> 
     To make use of the backup, you will need to keep all the WAL
     segment files generated during and after the file system backup.
     To aid you in doing this, the base backup process
@@ -351,7 +351,7 @@ archive_command = 'copy "%p" "C:\\server\\archivedir\\%f"'  # Windows</pre><p><s
 </span><br />バックアップを使用するためには、ファイルシステムのバックアップ取得中、および、その後に生成されるWALセグメントファイル全てが保存されている必要があります。この目的のために、ベースバックアップの過程で即座にWALアーカイブ領域に<em class="firstterm">バックアップ履歴ファイル</em>が作成されます。このファイルにはファイルシステムのバックアップに最初に必要とされるWALセグメントの名前が付けられます。
 例えば、最初のWALファイルが <code class="literal">0000000100001234000055CD</code>である場合、バックアップ履歴ファイルは<code class="literal">0000000100001234000055CD.007C9330.backup</code>というように名付けられます。(ファイル名の2番目のパートはWALファイルの厳密な位置が記載されます。通常は無視することができます。)一旦、安全にファイルシステムのバックアップとそのバックアップ中に使用されたWALセグメントファイル(バックアップ履歴ファイルから特定できます)を取得すると、それより数値の小さな全てのWALアーカイブセグメントはファイルシステムのリカバリには必要が無く、削除することができます。しかし、データを確実に復旧させるためには数世代のバックアップセットを保持することを考慮すべきです。
 
-   </p><p><span class="original"><!--$--> 
+   </p><p><span class="original"> 
     The backup history file is just a small text file. It contains the
     label string you gave to &lt;xref linkend="app-pgbasebackup"&gt;, as well as
     the starting and ending times and WAL segments of the backup.
@@ -360,7 +360,7 @@ archive_command = 'copy "%p" "C:\\server\\archivedir\\%f"'  # Windows</pre><p><s
     restore.
 </span><br />バックアップ履歴ファイルは、ほんの小さなテキストファイルです。これには<a class="xref" href="app-pgbasebackup.html" title="pg_basebackup"><span class="refentrytitle">pg_basebackup</span></a>で与えたラベル文字列の他、バックアップの開始、終了時間およびバックアップのWALセグメントが含まれます。
 このラベルをバックアップを構成するために使うことで、アーカイブ履歴ファイルはどのバックアップをリストアするべきか間違いなく判断することができます。
-   </p><p><span class="original"><!--$--> 
+   </p><p><span class="original"> 
     Since you have to keep around all the archived WAL files back to your
     last base backup, the interval between base backups should usually be
     chosen based on how much storage you want to expend on archived WAL
@@ -369,9 +369,9 @@ archive_command = 'copy "%p" "C:\\server\\archivedir\\%f"'  # Windows</pre><p><s
     replay all those WAL segments, and that could take awhile if it has
     been a long time since the last base backup.
 </span><br />最後のベースバックアップ以降のWALアーカイブを保持し続ける必要があるため、通常、ベースバックアップを取得すべき期間は、WALアーカイブを保持するためにどのくらいのストレージを拡張できるかによって決定されます。また、リカバリが必要になった場合に、どのくらいの時間をリカバリに使うと覚悟するのかも考慮すべきです。—システムは全てのWALセグメントを適用する必要があるため、もし、最後のベースバックアップを取得してから長い時間が経過している場合、適用に時間を要する可能性があります。
-   </p></div><div class="sect2" id="backup-lowlevel-base-backup"><div class="titlepage"><div><div><h3 class="title">24.3.3. 低レベルAPIを使用したベースバックアップの作成</h3></div></div></div><span class="original"><!--$-->
+   </p></div><div class="sect2" id="backup-lowlevel-base-backup"><div class="titlepage"><div><div><h3 class="title">24.3.3. 低レベルAPIを使用したベースバックアップの作成</h3></div></div></div><span class="original">
    &lt;title&gt;Making a Base Backup Using the Low Level API&lt;/title&gt;
-</span><br /><p><span class="original"><!--$-->
+</span><br /><p><span class="original">
     The procedure for making a base backup using the low level
     APIs contains a few more steps than
     the &lt;xref linkend="app-pgbasebackup"&gt; method, but is relatively
@@ -379,13 +379,13 @@ archive_command = 'copy "%p" "C:\\server\\archivedir\\%f"'  # Windows</pre><p><s
     sequence, and that the success of a step is verified before
     proceeding to the next step.
 </span><br />低レベルのAPIを使ったベースバックアップを取得するには<a class="xref" href="app-pgbasebackup.html" title="pg_basebackup"><span class="refentrytitle">pg_basebackup</span></a> を使う方法に加えて数ステップが必要ですが、比較的簡単です。これらのステップは順番に実行することが重要で、次のステップに進む前にこれらのステップが成功していることを確認する必要があります。
-  </p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p><span class="original"><!--$-->
+  </p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p><span class="original">
      Ensure that WAL archiving is enabled and working.
 </span><br />WALアーカイブが有効であり、正常に動作することを確認してください。
-    </p></li><li class="listitem"><p><span class="original"><!--$-->
+    </p></li><li class="listitem"><p><span class="original">
      Connect to the database as a superuser and issue the command:
 </span><br />データベースにスーパーユーザとして接続し、以下のコマンドを発行してください。
-</p><pre class="programlisting">SELECT pg_start_backup('label');</pre><p><span class="original"><!--$-->
+</p><pre class="programlisting">SELECT pg_start_backup('label');</pre><p><span class="original">
      where &lt;literal&gt;label&lt;/&gt; is any string you want to use to uniquely
      identify this backup operation.  (One good practice is to use the
      full path where you intend to put the backup dump file.)
@@ -403,13 +403,13 @@ archive_command = 'copy "%p" "C:\\server\\archivedir\\%f"'  # Windows</pre><p><s
 <code class="function">pg_start_backup</code>は、開始時刻やラベル文字列などのバックアップ情報を持つ<code class="filename">backup_label</code>という名前の<em class="firstterm">バックアップラベル</em>ファイルを、クラスタディレクトリ内に作成します。
 この関数は<code class="filename">tablespace_map</code>という名前の<em class="firstterm">テーブル空間マップ</em>ファイルもクラスタディレクトリ内に作ります。テーブル空間マップファイルには、もしそのようなリンクが1つ以上存在すれば<code class="filename">pg_tblspc/</code>内のテーブル空間シンボリックリンクに関する情報が入っています。
 どちらのファイルもバックアップの完全性保持のために重要な意味を持ちますので、バックアップから必ずリストアする必要があるでしょう。
-    </p><p><span class="original"><!--$-->
+    </p><p><span class="original">
      It does not matter which database within the cluster you connect to to
      issue this command.  You can ignore the result returned by the function;
      but if it reports an error, deal with that before proceeding.
 </span><br />このコマンドを実行した時にクラスタ内のどのデータベースに接続したのかは注意する必要はありません。
 この関数が返す結果は無視できますが、エラーが発生した場合は作業を進める前に対応してください。
-    </p><p><span class="original"><!--$-->
+    </p><p><span class="original">
      By default, &lt;function&gt;pg_start_backup&lt;/&gt; can take a long time to finish.
      This is because it performs a checkpoint, and the I/O
      required for the checkpoint will be spread out over a significant
@@ -420,11 +420,11 @@ archive_command = 'copy "%p" "C:\\server\\archivedir\\%f"'  # Windows</pre><p><s
      processing.  If you want to start the backup as soon as
      possible, use:
 </span><br />デフォルトで、<code class="function">pg_start_backup</code>は終了までに長い時間がかかる場合があります。その理由はあるチェックポイントを実行し、そして、デフォルトでは設定したチェックポイント間隔の半分である、そのチェックポイントに必要なI/Oがかなりの時間にわたって広がるためです（設定パラメータについては<a class="xref" href="runtime-config-wal.html#guc-checkpoint-completion-target">checkpoint_completion_target</a>を参照してください）。通常これは、問い合わせ処理における影響を極小化するので望ましいことです。バックアップをなるべく早く行いたいのであれば、以下を使用します。
-</p><pre class="programlisting">SELECT pg_start_backup('label', true);</pre><p><span class="original"><!--$-->
+</p><pre class="programlisting">SELECT pg_start_backup('label', true);</pre><p><span class="original">
      This forces the checkpoint to be done as quickly as possible.
 </span><br />
 これはチェックポイントをできる限り早く行うよう強制します。
-    </p></li><li class="listitem"><p><span class="original"><!--$-->
+    </p></li><li class="listitem"><p><span class="original">
      Perform the backup, using any convenient file-system-backup tool
      such as &lt;application&gt;tar&lt;/&gt; or &lt;application&gt;cpio&lt;/&gt; (not
      &lt;application&gt;pg_dump&lt;/application&gt; or
@@ -433,10 +433,10 @@ archive_command = 'copy "%p" "C:\\server\\archivedir\\%f"'  # Windows</pre><p><s
      while you do this.
 </span><br />(<span class="application">pg_dump</span>や<span class="application">pg_dumpall</span>ではなく)<span class="application">tar</span>や<span class="application">cpio</span>などの使い慣れた任意のファイルシステムバックアップツールを使用して、バックアップを実行してください。
 この作業時に、データベースの通常の操作を停止することは不要ですし、望ましい方法でもありません。
-    </p></li><li class="listitem"><p><span class="original"><!--$-->
+    </p></li><li class="listitem"><p><span class="original">
      Again connect to the database as a superuser, and issue the command:
 </span><br />再度、スーパーユーザとしてデータベースに接続し、以下のコマンドを発行してください。
-</p><pre class="programlisting">SELECT pg_stop_backup();</pre><p><span class="original"><!--$-->
+</p><pre class="programlisting">SELECT pg_stop_backup();</pre><p><span class="original">
      This terminates the backup mode and performs an automatic switch to
      the next WAL segment.  The reason for the switch is to arrange for
      the last WAL segment file written during the backup interval to be
@@ -444,7 +444,7 @@ archive_command = 'copy "%p" "C:\\server\\archivedir\\%f"'  # Windows</pre><p><s
 </span><br />
 これはバックアップモードを終了し、次のWALセグメントへの自動切換えを行います。
 この切換えの理由は、バックアップ期間中に書き出された最後のWALファイルがアーカイブできるよう準備することです。
-    </p></li><li class="listitem"><p><span class="original"><!--$-->
+    </p></li><li class="listitem"><p><span class="original">
      Once the WAL segment files active during the backup are archived, you are
      done.  The file identified by &lt;function&gt;pg_stop_backup&lt;/&gt;'s result is
      the last segment that is required to form a complete set of backup files.
@@ -466,7 +466,7 @@ archive_command = 'copy "%p" "C:\\server\\archivedir\\%f"'  # Windows</pre><p><s
 アーカイブコマンドの失敗によりアーカイブ処理が遅れてしまったとしても、アーカイブが成功し、そしてバックアップが完了するまで再試行を繰り返すようになっています。
 <code class="function">pg_stop_backup</code>実行においての時間期限を設けたい場合、適切な<code class="varname">statement_timeout</code>の値を設定してください。
     </p></li></ol></div><p>
-   </p><p><span class="original"><!--$-->
+   </p><p><span class="original">
     Some file system backup tools emit warnings or errors
     if the files they are trying to copy change while the copy proceeds.
     When taking a base backup of an active database, this situation is normal
@@ -490,7 +490,7 @@ archive_command = 'copy "%p" "C:\\server\\archivedir\\%f"'  # Windows</pre><p><s
 同時にGNU <span class="application">tar</span>のバージョンによっては、<span class="application">tar</span>がそれを複写していた途中でファイルが切り詰められると、致命的エラーと識別できないエラーコードを返します。
 ありがたいことに、GNU <span class="application">tar</span>のバージョン1.16もしくはそれ以降では、バックアップ中にファイルが変更されると1で、それ以外のエラーの時は2でプログラムから抜けます。
 GNUの <span class="application">tar</span>で1.23以降のバージョンを使用しているのであれば、<code class="literal">--warning=no-file-changed --warning=no-file-removed</code>オプションをつけることで関連する警告メッセージを隠すオプションを使用することができます。
-   </p><p><span class="original"><!--$-->
+   </p><p><span class="original">
     Be certain that your backup dump includes all of the files under
     the database cluster directory (e.g., &lt;filename&gt;/usr/local/pgsql/data&lt;/&gt;).
     If you are using tablespaces that do not reside underneath this directory,
@@ -501,7 +501,7 @@ GNUの <span class="application">tar</span>で1.23以降のバージョンを使
 このディレクトリ以下に存在しないテーブル空間を使用している場合、注意して、同様にそれらを含めてください
 （そして、バックアップダンプがリンクとしてシンボリックリンクをアーカイブしていることを確認してください。
 さもないとリストアはテーブル空間を壊してしまいます）。
-   </p><p><span class="original"><!--$-->
+   </p><p><span class="original">
     You can, however, omit from the backup dump the files within the
     cluster's &lt;filename&gt;pg_xlog/&lt;/&gt; subdirectory.  This
     slight adjustment is worthwhile because it reduces the risk
@@ -519,7 +519,7 @@ GNUの <span class="application">tar</span>で1.23以降のバージョンを使
 これは性能上の理由でよく使用される設定です。
 また、いずれこのバックアップを使う<span class="application">postmaster</span>ではなく、今起動している<span class="application">postmaster</span>の情報を記録している<code class="filename">postmaster.pid</code>と<code class="filename">postmaster.opts</code>も除外できます。
 (これらのファイルは<span class="application">pg_ctl</span>を誤作動させる可能性があります。)
-   </p><p><span class="original"><!--$-->
+   </p><p><span class="original">
     It is often a good idea to also omit from the backup dump the files
     within the cluster's &lt;filename&gt;pg_replslot/&lt;/&gt; directory, so that
     replication slots that exist on the master do not become part of the
@@ -534,7 +534,7 @@ GNUの <span class="application">tar</span>で1.23以降のバージョンを使
     the new master comes on line.
 </span><br />マスター上に存在するレプリケーションスロットがバックアップに含まれないようにするために、クラスタの中の<code class="filename">pg_replslot/</code>ディレクトリをバックアップから除くのもしばしば良い考えです。
 もし、スタンバイを作成するためのバックアップを続けて使用すると、スタンバイのWALファイルの保持を無制限に保留する結果になり、ホットスタンバイからのフィードバックを有効にしている場合、マスターのWALを膨張させます。これは、これらのレプリケーションスロットを使っているクライアントはまだ、スタンバイではなく、マスターのスロットを接続し続け、更新しているからです。バックアップが新しいマスターを作成するためだけに作成されたとしても、レプリケーションスロットをコピーすることは特に有益であるとは考えられません。このようにバックアップにレプリケーションスロットを含むことは、新しいマスターがオンラインになったときにはスロットの内容が期限切れしており、有害である可能性があります。
-   </p><p><span class="original"><!--$-->
+   </p><p><span class="original">
     It's also worth noting that the &lt;function&gt;pg_start_backup&lt;/&gt; function
     makes files named &lt;filename&gt;backup_label&lt;/&gt; and
     &lt;filename&gt;tablespace_map&lt;/&gt; in the database cluster directory,
@@ -557,7 +557,7 @@ GNUの <span class="application">tar</span>で1.23以降のバージョンを使
 したがって、当惑した時にバックアップダンプファイルの中身を検索し、そのダンプファイルがどのバックアップセッションに由来したものかを確認することができます。
 テーブル空間マップファイルにはディレクトリ<code class="filename">pg_tblspc/</code>に存在するシンボリックリンク名と各シンボリックリンクのフルパスが含まれています。
 このファイルはあなたのためだけの情報ではありません。その存在と内容はシステムのリカバリプロセスが適切に動作するために非常に重要です。
-   </p><p><span class="original"><!--$-->
+   </p><p><span class="original">
     It is also possible to make a backup dump while the server is
     stopped.  In this case, you obviously cannot use
     &lt;function&gt;pg_start_backup&lt;/&gt; or &lt;function&gt;pg_stop_backup&lt;/&gt;, and
@@ -568,17 +568,17 @@ GNUの <span class="application">tar</span>で1.23以降のバージョンを使
 この場合、わかりきったことですが、<code class="function">pg_start_backup</code>や<code class="function">pg_stop_backup</code>を使用することができません。
 そのため、どのバックアップダンプが、どのWALファイルと関連し、どこまで戻せばよいかを独自の方法で残さなければなりません。
 通常は、上述の継続的アーカイブ手順に従う方をお勧めします。
-   </p></div><div class="sect2" id="backup-pitr-recovery"><div class="titlepage"><div><div><h3 class="title">24.3.4. 継続的アーカイブによるバックアップを使用した復旧</h3></div></div></div><span class="original"><!--$-->
+   </p></div><div class="sect2" id="backup-pitr-recovery"><div class="titlepage"><div><div><h3 class="title">24.3.4. 継続的アーカイブによるバックアップを使用した復旧</h3></div></div></div><span class="original">
    &lt;title&gt;Recovering Using a Continuous Archive Backup&lt;/title&gt;
-</span><br /><p><span class="original"><!--$-->
+</span><br /><p><span class="original">
     Okay, the worst has happened and you need to recover from your backup.
     Here is the procedure:
 </span><br />さて、最悪の事態が発生し、バックアップから復旧する必要が出てきたものとします。
 以下にその手順を説明します。
-  </p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p><span class="original"><!--$-->
+  </p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p><span class="original">
      Stop the server, if it's running.
 </span><br />もし稼動しているのであればサーバを停止してください。
-    </p></li><li class="listitem"><p><span class="original"><!--$-->
+    </p></li><li class="listitem"><p><span class="original">
      If you have the space to do so,
      copy the whole cluster data directory and any tablespaces to a temporary
      location in case you need them later. Note that this precaution will
@@ -591,11 +591,11 @@ GNUの <span class="application">tar</span>で1.23以降のバージョンを使
 この予防措置は、既存のデータベースを2つ分保持できるだけの空き領域を必要とします。
 十分な領域がない場合でも、少なくともクラスタの<code class="filename">pg_xlog</code>サブディレクトリの内容は保存すべきです。
 ここには、システムが停止する前にアーカイブされなかったログファイルが含まれているかも知れないからです。
-    </p></li><li class="listitem"><p><span class="original"><!--$-->
+    </p></li><li class="listitem"><p><span class="original">
      Remove all existing files and subdirectories under the cluster data
      directory and under the root directories of any tablespaces you are using.
 </span><br />クラスタデータディレクトリ以下、および、使用中のテーブル空間の最上位ディレクトリ以下にある既存の全てのファイルとサブディレクトリを削除してください。
-    </p></li><li class="listitem"><p><span class="original"><!--$-->
+    </p></li><li class="listitem"><p><span class="original">
      Restore the database files from your file system backup.  Be sure that they
      are restored with the right ownership (the database system user, not
      &lt;literal&gt;root&lt;/&gt;!) and with the right permissions.  If you are using
@@ -603,7 +603,7 @@ GNUの <span class="application">tar</span>で1.23以降のバージョンを使
      you should verify that the symbolic links in &lt;filename&gt;pg_tblspc/&lt;/&gt;
      were correctly restored.
 </span><br />ファイルシステムバックアップからデータベースファイルをリストアします。ファイルが正しい所有権（<code class="literal">root</code>ではなくデータベースシステムユーザです！）でリストアされていることを確認してください。テーブル空間を使用している場合は、<code class="filename">pg_tblspc/</code>内のシンボリックリンクが正しくリストアされていることを検証する必要があります。
-    </p></li><li class="listitem"><p><span class="original"><!--$-->
+    </p></li><li class="listitem"><p><span class="original">
      Remove any files present in &lt;filename&gt;pg_xlog/&lt;/&gt;; these came from the
      file system backup and are therefore probably obsolete rather than current.
      If you didn't archive &lt;filename&gt;pg_xlog/&lt;/&gt; at all, then recreate
@@ -613,21 +613,21 @@ GNUの <span class="application">tar</span>で1.23以降のバージョンを使
 </span><br /><code class="filename">pg_xlog/</code>内にあるファイルをすべて削除してください。
 これらはファイルシステムバックアップから生成されたものであり、おそらく現在のものより古く使用できないものです。
 <code class="filename">pg_xlog/</code>をまったくアーカイブしていなければ、適切な権限で再作成してください。以前シンボリックリンクとして設定していたのであれば、そのように確実に再構築するように注意してください。
-    </p></li><li class="listitem"><p><span class="original"><!--$-->
+    </p></li><li class="listitem"><p><span class="original">
      If you have unarchived WAL segment files that you saved in step 2,
      copy them into &lt;filename&gt;pg_xlog/&lt;/&gt;.  (It is best to copy them,
      not move them, so you still have the unmodified files if a
      problem occurs and you have to start over.)
 </span><br />手順2で退避させた未アーカイブのWALセグメントファイルがあるのであれば、<code class="filename">pg_xlog/</code>にコピーしてください。
 （問題が発生し、初めからやり直さなければならない場合に未変更のファイルが残るように、移動させるのではなくコピーすることが最善です。）
-    </p></li><li class="listitem"><p><span class="original"><!--$-->
+    </p></li><li class="listitem"><p><span class="original">
      Create a recovery command file &lt;filename&gt;recovery.conf&lt;/&gt; in the cluster
      data directory (see &lt;xref linkend="recovery-config"&gt;). You might
      also want to temporarily modify &lt;filename&gt;pg_hba.conf&lt;/&gt; to prevent
      ordinary users from connecting until you are sure the recovery was successful.
 </span><br />復旧コマンドファイル<code class="filename">recovery.conf</code>（<a class="xref" href="recovery-config.html" title="第26章 リカバリの設定">26章<em>リカバリの設定</em></a>を参照）をクラスタデータディレクトリに作成してください。
 また、一時的に<code class="filename">pg_hba.conf</code>を編集し、復旧の成功を確認できるまで一般ユーザが接続できないようにする必要があるかもしれません。
-    </p></li><li class="listitem"><p><span class="original"><!--$-->
+    </p></li><li class="listitem"><p><span class="original">
      Start the server.  The server will go into recovery mode and
      proceed to read through the archived WAL files it needs.  Should the
      recovery be terminated because of an external error, the server can
@@ -641,7 +641,7 @@ GNUの <span class="application">tar</span>で1.23以降のバージョンを使
 外部的なエラーにより復旧が中断したら、サーバを単に再起動させて、復旧処理を継続してください。
 復旧処理が完了したら、（誤って後で復旧モードに再度入らないように）postmasterは<code class="filename">recovery.conf</code>の名前を<code class="filename">recovery.done</code>に変更します。
 その後通常のデータベース操作を開始します。
-    </p></li><li class="listitem"><p><span class="original"><!--$-->
+    </p></li><li class="listitem"><p><span class="original">
      Inspect the contents of the database to ensure you have recovered to
      the desired state.  If not, return to step 1.  If all is well,
      allow your users to connect by restoring &lt;filename&gt;pg_hba.conf&lt;/&gt; to normal.
@@ -649,7 +649,7 @@ GNUの <span class="application">tar</span>で1.23以降のバージョンを使
 復旧できなかった場合は手順1に戻ってください。
 全て問題なければ、ユーザが接続できるように<code class="filename">pg_hba.conf</code>を正常状態に戻してください。
     </p></li></ol></div><p>
-   </p><p><span class="original"><!--$-->
+   </p><p><span class="original">
     The key part of all this is to set up a recovery configuration file that
     describes how you want to recover and how far the recovery should
     run.  You can use &lt;filename&gt;recovery.conf.sample&lt;/&gt; (normally
@@ -675,7 +675,7 @@ GNUの <span class="application">tar</span>で1.23以降のバージョンを使
 （パス名は現在の作業用ディレクトリ、つまり、クラスタのデータディレクトリから見た相対パスです。）
 コマンド内に<code class="literal">%</code>文字自体を埋め込む必要があれば<code class="literal">%%</code>と記載してください。
 最も簡単でよく使われるコマンドは以下のようなものです。
-</p><pre class="programlisting">restore_command = 'cp /mnt/server/archivedir/%f %p'</pre><p><span class="original"><!--$-->
+</p><pre class="programlisting">restore_command = 'cp /mnt/server/archivedir/%f %p'</pre><p><span class="original">
     which will copy previously archived WAL segments from the directory
     &lt;filename&gt;/mnt/server/archivedir&lt;/&gt;.  Of course, you can use something
     much more complicated, perhaps even a shell script that requests the
@@ -684,7 +684,7 @@ GNUの <span class="application">tar</span>で1.23以降のバージョンを使
 これは事前にアーカイブされたWALセグメントを<code class="filename">/mnt/server/archivedir</code>ディレクトリからコピーします。
 当然ながら、もっと複雑なものを使用することができます。
 例えば、操作者に適切なテープをマウントさせることを要求するようなシェルスクリプトでさえ可能です。
-   </p><p><span class="original"><!--$-->
+   </p><p><span class="original">
     It is important that the command return nonzero exit status on failure.
     The command &lt;emphasis&gt;will&lt;/&gt; be called requesting files that are not
     present in the archive; it must return nonzero when so asked.  This is not
@@ -696,7 +696,7 @@ GNUの <span class="application">tar</span>で1.23以降のバージョンを使
 </span><br />このコマンドが失敗した時に非ゼロの終了ステータスを返すことが重要です。
 このコマンドは、アーカイブに存在しないファイルを要求する<span class="emphasis"><em>かもしれません</em></span>が、その場合でも非ゼロを返さなければなりません。
 これはエラー状態ではありません。例外は、コマンドがシグナルによって中断された場合(データベースの停止に使用される<span class="systemitem">SIGTERM</span>以外)か、シェルによるエラー(コマンドが見つかりませんなど)でリカバリが中断され、サーバが起動しない場合です。
-   </p><p><span class="original"><!--$-->
+   </p><p><span class="original">
     Not all of the requested files will be WAL segment
     files; you should also expect requests for files with a suffix of
     &lt;literal&gt;.backup&lt;/&gt; or &lt;literal&gt;.history&lt;/&gt;. Also be aware that
@@ -705,7 +705,7 @@ GNUの <span class="application">tar</span>で1.23以降のバージョンを使
 </span><br />要求されるファイルはWALセグメントファイルだけではありません。
 <code class="literal">.backup</code>、または<code class="literal">.history</code>が付いているファイルが要求されることも想定しなければなりません。
 同時に、<code class="literal">%p</code>パスのファイル名部分は<code class="literal">%f</code>と異なることに注意してください。これらが相互に置き換え可能であるとは考えないでください。
-   </p><p><span class="original"><!--$-->
+   </p><p><span class="original">
     WAL segments that cannot be found in the archive will be sought in
     &lt;filename&gt;pg_xlog/&lt;/&gt;; this allows use of recent un-archived segments.
     However, segments that are available from the archive will be used in
@@ -713,7 +713,7 @@ GNUの <span class="application">tar</span>で1.23以降のバージョンを使
 </span><br />アーカイブ場所で見つけられなかったWALセグメントは<code class="filename">pg_xlog/</code>から検索されます。
 これにより、最近の未アーカイブのセグメントを使用することができます。
 しかし、アーカイブ場所から利用できるセグメントは<code class="filename">pg_xlog/</code>内のファイルよりも優先的に使用されます。
-   </p><p><span class="original"><!--$-->
+   </p><p><span class="original">
     Normally, recovery will proceed through all available WAL segments,
     thereby restoring the database to the current point in time (or as
     close as possible given the available WAL segments).  Therefore, a normal
@@ -725,7 +725,7 @@ GNUの <span class="application">tar</span>で1.23以降のバージョンを使
     indicate a problem in simple recovery situations; see
     &lt;xref linkend="backup-timelines"&gt; for discussion.
 </span><br />通常は利用可能な全てのWALセグメントを使用して復旧処理が行われます。その結果、データベースを現時点まで（もしくは、利用可能なWALセグメントで得られる限り現在に近い時点まで）リストアします。従って、通常の復旧は<span class="quote">「<span class="quote">file not found</span>」</span>メッセージで終了します。エラーメッセージの正確な文言は<code class="varname">restore_command</code>の選択によります。また、復旧の開始時点で<code class="filename">00000001.history</code>のようなファイル名のエラーメッセージが出ることがあります。これも単純な復旧作業では不具合を意味するものでなく正常です。論議については<a class="xref" href="continuous-archiving.html#backup-timelines" title="24.3.5. タイムライン">「タイムライン」</a>を参照してください。
-   </p><p><span class="original"><!--$-->
+   </p><p><span class="original">
     If you want to recover to some previous point in time (say, right before
     the junior DBA dropped your main transaction table), just specify the
     required &lt;link linkend="recovery-target-settings"&gt;stopping point&lt;/link&gt; in &lt;filename&gt;recovery.conf&lt;/&gt;.  You can specify
@@ -736,7 +736,7 @@ GNUの <span class="application">tar</span>で1.23以降のバージョンを使
     accuracy which transaction ID to use.
 </span><br />もし以前のある時点まで復旧させたい場合（例えば、経験不足のデータベース管理者が主トランザクションテーブルを消去した直前）、<code class="filename">recovery.conf</code>に要求する<a class="link" href="recovery-target-settings.html" title="26.2. リカバリ対象の設定">停止時点</a>を指定するだけです。停止時点は、<span class="quote">「<span class="quote">recovery target</span>」</span>として既知の停止時点で指定することも、日付と時刻で指定することも、リストアポイントか完了した特定のトランザクションIDで指定することもできます。
 本ドキュメントの執筆時点では使用するトランザクションIDの識別を補助するツールがありませんので、ほとんどの場合は日付と時刻による指定のみを使用することになるでしょう。
-   </p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">注記</h3><p><span class="original"><!--$-->
+   </p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">注記</h3><p><span class="original">
       The stop point must be after the ending time of the base backup, i.e.,
       the end time of &lt;function&gt;pg_stop_backup&lt;/&gt;.  You cannot use a base backup
       to recover to a time when that backup was in progress.  (To
@@ -745,7 +745,7 @@ GNUの <span class="application">tar</span>で1.23以降のバージョンを使
 </span><br />停止時点はバックアップの終了時刻、つまり、<code class="function">pg_stop_backup</code>の最終時刻より後の時点でなければなりません。
 バックアップを行っている最中のある時点までベースバックアップを使用して復旧させることはできません
 （こうした時点まで復旧させるには、その前のベースバックアップまで戻って、そこからロールフォワードしてください）。
-     </p></div><p><span class="original"><!--$-->
+     </p></div><p><span class="original">
     If recovery finds corrupted WAL data, recovery will
     halt at that point and the server will not start. In such a case the
     recovery process could be re-run from the beginning, specifying a
@@ -764,9 +764,9 @@ GNUの <span class="application">tar</span>で1.23以降のバージョンを使
 この場合は失敗した時点とほぼ同じところから再開します。
 復旧処理の再起動は、次のような通常操作時のチェックポイント処理とほぼ同様に動作します。
 サーバは定期的にすべての状態をディスクに強制し、再度スキャンする必要がない処理済みのWALデータを示す<code class="filename">pg_control</code>ファイルを更新します。
-   </p></div><div class="sect2" id="backup-timelines"><div class="titlepage"><div><div><h3 class="title">24.3.5. タイムライン</h3></div></div></div><span class="original"><!--$-->
+   </p></div><div class="sect2" id="backup-timelines"><div class="titlepage"><div><div><h3 class="title">24.3.5. タイムライン</h3></div></div></div><span class="original">
    &lt;title&gt;Timelines&lt;/title&gt;
-</span><br /><a id="idp80229904" class="indexterm"></a><p><span class="original"><!--$-->
+</span><br /><a id="idp78077008" class="indexterm"></a><p><span class="original">
     The ability to restore the database to a previous point in time creates
     some complexities that are akin to science-fiction stories about time
     travel and parallel universes.  For example, in the original history of the database,
@@ -790,7 +790,7 @@ GNUの <span class="application">tar</span>で1.23以降のバージョンを使
 しかし、後になって、これは大した問題ではなかったことが分かり、元の履歴における水曜日に朝の何時かにまで戻したいと考えたと仮定しましょう。
 データベースは既に起動していますので、元に戻したい時点に至るWALセグメントファイルの一部は上書きされていて、戻すことはできないかもしれません。
 ですので、このことを避けるために、ポイントインタイムで復旧させた後に生成された一連のWAL記録と元のデータベースの履歴において生成されたWAL記録とを区別する必要があります。 
-   </p><p><span class="original"><!--$-->
+   </p><p><span class="original">
     To deal with this problem, &lt;productname&gt;PostgreSQL&lt;/&gt; has a notion
     of &lt;firstterm&gt;timelines&lt;/&gt;.  Whenever an archive recovery completes,
     a new timeline is created to identify the series of WAL records
@@ -815,7 +815,7 @@ GNUの <span class="application">tar</span>で1.23以降のバージョンを使
 その時は、過去の履歴からの分岐点として最善の時点を見つけるために、試行錯誤して何度もポイントインタイムの復旧を行う必要があるでしょう。
 タイムラインがないと、この手続きはすぐに管理不能な混乱を招いてしまいます。
 タイムラインを使用して、以前捨てたタイムライン分岐における状態を含む、過去の<span class="emphasis"><em>任意</em></span>の状態に復旧させることができます。
-   </p><p><span class="original"><!--$-->
+   </p><p><span class="original">
     Every time a new timeline is created, &lt;productname&gt;PostgreSQL&lt;/&gt; creates
     a &lt;quote&gt;timeline history&lt;/&gt; file that shows which timeline it branched
     off from and when.  These history files are necessary to allow the system
@@ -834,7 +834,7 @@ GNUの <span class="application">tar</span>で1.23以降のバージョンを使
 履歴ファイルは（巨大になるセグメントファイルとは異なり）単なる小さなテキストファイルですので、安価かつ適切に無期限で保管できます。
 必要ならば、履歴ファイルにコメントを追加し、この特定のタイムラインがどのように、なぜ生成されたかについて独自の注釈を付与することができます。
 特にこうしたコメントは、実験の結果いくつものタイムラインのもつれがある場合に有用です。
-   </p><p><span class="original"><!--$-->
+   </p><p><span class="original">
     The default behavior of recovery is to recover along the same timeline
     that was current when the base backup was taken.  If you wish to recover
     into some child timeline (that is, you want to return to some state that
@@ -844,14 +844,14 @@ GNUの <span class="application">tar</span>で1.23以降のバージョンを使
 </span><br />復旧処理のデフォルトは、ベースバックアップが取得された時点のタイムラインと同一のタイムラインに沿った復旧です。
 別の子タイムラインに沿って復旧させたい（つまり、復旧試行以降に生成されたある状態に戻りたい）場合は<code class="filename">recovery.conf</code>で対象のタイムラインIDを指定しなければなりません。
 ベースバックアップより前に分岐したタイムラインに沿って復旧することはできません。
-   </p></div><div class="sect2" id="backup-tips"><div class="titlepage"><div><div><h3 class="title">24.3.6. ヒントと例</h3></div></div></div><span class="original"><!--$-->
+   </p></div><div class="sect2" id="backup-tips"><div class="titlepage"><div><div><h3 class="title">24.3.6. ヒントと例</h3></div></div></div><span class="original">
    &lt;title&gt;Tips and Examples&lt;/title&gt;
-</span><br /><p><span class="original"><!--$-->
+</span><br /><p><span class="original">
     Some tips for configuring continuous archiving are given here.
 </span><br />継続的アーカイブを構成するいくつかのヒントを以下にあげます。
-   </p><div class="sect3" id="backup-standalone"><div class="titlepage"><div><div><h4 class="title">24.3.6.1. スタンドアローンホットバックアップ</h4></div></div></div><span class="original"><!--$-->
+   </p><div class="sect3" id="backup-standalone"><div class="titlepage"><div><div><h4 class="title">24.3.6.1. スタンドアローンホットバックアップ</h4></div></div></div><span class="original">
      &lt;title&gt;Standalone Hot Backups&lt;/title&gt;
-</span><br /><p><span class="original"><!--$-->
+</span><br /><p><span class="original">
       It is possible to use &lt;productname&gt;PostgreSQL&lt;/&gt;'s backup facilities to
       produce standalone hot backups. These are backups that cannot be used
       for point-in-time recovery, yet are typically much faster to backup and
@@ -859,7 +859,7 @@ GNUの <span class="application">tar</span>で1.23以降のバージョンを使
       than &lt;application&gt;pg_dump&lt;/&gt; dumps, so in some cases the speed advantage
       might be negated.)
 </span><br />スタンドアローンホットバックアップを形成するため<span class="productname">PostgreSQL</span>のバックアップ基盤を使用することができます。これらのバックアップはポイントインタイムリカバリに使用することはできないのですが、<span class="application">pg_dump</span>によるダンプよりバックアップとリストアが概してより速く行われます。（同時に<span class="application">pg_dump</span>のダンプより大きくなるので、場合によっては速度による利点が打ち消されるかもしれません。）
-     </p><p><span class="original"><!--$-->
+     </p><p><span class="original">
       As with base backups, the easiest way to produce a standalone
       hot backup is to use the &lt;xref linkend="app-pgbasebackup"&gt;
       tool. If you include the &lt;literal&gt;-X&lt;/&gt; parameter when calling
@@ -868,7 +868,7 @@ GNUの <span class="application">tar</span>で1.23以降のバージョンを使
       required to restore the backup.
 </span><br />ベースバックアップと同様に、スタンドアローンホットバックアップを作成する最も簡単な方法は <a class="xref" href="app-pgbasebackup.html" title="pg_basebackup"><span class="refentrytitle">pg_basebackup</span></a>ツールを使用する方法です。
 実行時に<code class="literal">-X</code>オプションをつけることでバックアップに必要な全てのトランザクションログを自動的にバックアップに含めることができ、リストアするときには特に特別な作業を行う必要がありません。
-     </p><p><span class="original"><!--$-->
+     </p><p><span class="original">
       If more flexibility in copying the backup files is needed, a lower
       level process can be used for standalone hot backups as well.
       To prepare for low level standalone hot backups, set &lt;varname&gt;wal_level&lt;/&gt; to
@@ -878,14 +878,14 @@ GNUの <span class="application">tar</span>で1.23以降のバージョンを使
 </span><br />バックアップファイルをコピーするのにより柔軟性が必要な場合、スタンドアローンホットバックアップのために低レベルのプロセスを使うこともできます。
 低レベルのスタンドアローンホットバックアップを取得するためには、準備として<code class="varname">wal_level</code>を<code class="literal">archive</code>以上にセットし、<code class="varname">archive_mode</code>を<code class="literal">on</code>にセットし、<span class="emphasis"><em>switch ファイル</em></span>が存在する時のみに実行される<code class="varname">archive_command</code>をセットします。
 例：
-</p><pre class="programlisting">archive_command = 'test ! -f /var/lib/pgsql/backup_in_progress || (test ! -f /var/lib/pgsql/archive/%f &amp;&amp; cp %p /var/lib/pgsql/archive/%f)'</pre><p><span class="original"><!--$-->
+</p><pre class="programlisting">archive_command = 'test ! -f /var/lib/pgsql/backup_in_progress || (test ! -f /var/lib/pgsql/archive/%f &amp;&amp; cp %p /var/lib/pgsql/archive/%f)'</pre><p><span class="original">
       This command will perform archiving when
       &lt;filename&gt;/var/lib/pgsql/backup_in_progress&lt;/&gt; exists, and otherwise
       silently return zero exit status (allowing &lt;productname&gt;PostgreSQL&lt;/&gt;
       to recycle the unwanted WAL file).
 </span><br />
 このコマンドは<code class="filename">/var/lib/pgsql/backup_in_progress</code> が存在する時のみ実行され、存在しない時は単に0の終了コードを返します(<span class="productname">PostgreSQL</span>に必要の無いWALファイルを再利用することを許可します)。
-     </p><p><span class="original"><!--$-->
+     </p><p><span class="original">
       With this preparation, a backup can be taken using a script like the
       following:
 </span><br />この準備によって、バックアップは以下のようなスクリプトを使用して取得されます。
@@ -894,7 +894,7 @@ psql -c "select pg_start_backup('hot_backup');"
 tar -cf /var/lib/pgsql/backup.tar /var/lib/pgsql/data/
 psql -c "select pg_stop_backup();"
 rm /var/lib/pgsql/backup_in_progress
-tar -rf /var/lib/pgsql/backup.tar /var/lib/pgsql/archive/</pre><p><span class="original"><!--$-->
+tar -rf /var/lib/pgsql/backup.tar /var/lib/pgsql/archive/</pre><p><span class="original">
       The switch file &lt;filename&gt;/var/lib/pgsql/backup_in_progress&lt;/&gt; is
       created first, enabling archiving of completed WAL files to occur.
       After the backup the switch file is removed. Archived WAL files are
@@ -906,26 +906,26 @@ tar -rf /var/lib/pgsql/backup.tar /var/lib/pgsql/archive/</pre><p><span class="o
 バックアップの後、スイッチファイルは削除されます。
 その後、ベースバックアップとすべての必要なWALファイルが共に同じ<span class="application">tar</span>ファイルの一部になるよう、アーカイブされたWALファイルはバックアップに追加されます。
 バックアップスクリプトにエラー処理を加えておくことを忘れないでください。
-     </p></div><div class="sect3" id="compressed-archive-logs"><div class="titlepage"><div><div><h4 class="title">24.3.6.2. 圧縮アーカイブログ</h4></div></div></div><span class="original"><!--$-->
+     </p></div><div class="sect3" id="compressed-archive-logs"><div class="titlepage"><div><div><h4 class="title">24.3.6.2. 圧縮アーカイブログ</h4></div></div></div><span class="original">
      &lt;title&gt;Compressed Archive Logs&lt;/title&gt;
- </span><br /><p><span class="original"><!--$-->
+ </span><br /><p><span class="original">
       If archive storage size is a concern, you can use
       &lt;application&gt;gzip&lt;/application&gt; to compress the archive files:
 </span><br />もし、アーカイブのストレージ容量に懸念がある場合、アーカイブファイルを圧縮するために<span class="application">gzip</span>を使用することもできます。
 
-</p><pre class="programlisting">archive_command = 'gzip &lt; %p &gt; /var/lib/pgsql/archive/%f'</pre><p><span class="original"><!--$-->
+</p><pre class="programlisting">archive_command = 'gzip &lt; %p &gt; /var/lib/pgsql/archive/%f'</pre><p><span class="original">
       You will then need to use &lt;application&gt;gunzip&lt;/&gt; during recovery:
 </span><br />
 リカバリ中は <span class="application">gunzip</span>を使う必要があります。
 </p><pre class="programlisting">restore_command = 'gunzip &lt; /mnt/server/archivedir/%f &gt; %p'</pre><p>
-     </p></div><div class="sect3" id="backup-scripts"><div class="titlepage"><div><div><h4 class="title">24.3.6.3. <code class="varname">archive_command</code>スクリプト</h4></div></div></div><span class="original"><!--$-->
+     </p></div><div class="sect3" id="backup-scripts"><div class="titlepage"><div><div><h4 class="title">24.3.6.3. <code class="varname">archive_command</code>スクリプト</h4></div></div></div><span class="original">
      &lt;title&gt;&lt;varname&gt;archive_command&lt;/varname&gt; Scripts&lt;/title&gt;
-</span><br /><p><span class="original"><!--$-->
+</span><br /><p><span class="original">
       Many people choose to use scripts to define their
       &lt;varname&gt;archive_command&lt;/varname&gt;, so that their
       &lt;filename&gt;postgresql.conf&lt;/&gt; entry looks very simple:
 </span><br /><code class="filename">postgresql.conf</code>の記入事項が以下のように簡素となるため、多くの人が<code class="varname">archive_command</code>の定義にスクリプトの使用を選択します。
-</p><pre class="programlisting">archive_command = 'local_backup_script.sh "%p" "%f"'</pre><p><span class="original"><!--$-->
+</p><pre class="programlisting">archive_command = 'local_backup_script.sh "%p" "%f"'</pre><p><span class="original">
       Using a separate script file is advisable any time you want to use
       more than a single command in the archiving process.
       This allows all complexity to be managed within the script, which
@@ -933,24 +933,24 @@ tar -rf /var/lib/pgsql/backup.tar /var/lib/pgsql/archive/</pre><p><span class="o
       &lt;application&gt;bash&lt;/&gt; or &lt;application&gt;perl&lt;/&gt;.
 </span><br />
 アーカイブ処理手順において単一ではなくそれ以上の数のコマンドを使用したい場合はいつでも、別のスクリプトファイルの使用が推奨されます。そうするとスクリプト内で全ての複雑性が管理されます。スクリプトは<span class="application">bash</span>または<span class="application">perl</span>のようなよくあるスクリプト言語で記載できます。
-     </p><p><span class="original"><!--$-->
+     </p><p><span class="original">
       Examples of requirements that might be solved within a script include:
 </span><br />スクリプト内で解決される要件の例として以下があります。
-      </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p><span class="original"><!--$-->
+      </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p><span class="original">
          Copying data to secure off-site data storage
 </span><br />セキュアなオフサイトデータストレージへのデータのコピー
-        </p></li><li class="listitem"><p><span class="original"><!--$-->
+        </p></li><li class="listitem"><p><span class="original">
          Batching WAL files so that they are transferred every three hours,
          rather than one at a time
 </span><br />一回に全てではなく３時間毎に転送されるようにWALファイルのバッチ
-        </p></li><li class="listitem"><p><span class="original"><!--$-->
+        </p></li><li class="listitem"><p><span class="original">
          Interfacing with other backup and recovery software
 </span><br />その他のバックアップとリカバリーソフトウェアとのインターフェイス
-        </p></li><li class="listitem"><p><span class="original"><!--$-->
+        </p></li><li class="listitem"><p><span class="original">
          Interfacing with monitoring software to report errors
 </span><br />エラー報告を行う監視ソフトとのインターフェイス
         </p></li></ul></div><p>
-     </p><div class="tip" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">ヒント</h3><p><span class="original"><!--$-->
+     </p><div class="tip" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">ヒント</h3><p><span class="original">
        When using an &lt;varname&gt;archive_command&lt;/varname&gt; script, it's desirable
        to enable &lt;xref linkend="guc-logging-collector"&gt;.
        Any messages written to &lt;systemitem&gt;stderr&lt;/&gt; from the script will then
@@ -958,15 +958,15 @@ tar -rf /var/lib/pgsql/backup.tar /var/lib/pgsql/archive/</pre><p><span class="o
        be diagnosed easily if they fail.
 </span><br /><code class="varname">archive_command</code>スクリプトを使うときは<a class="xref" href="runtime-config-logging.html#guc-logging-collector">logging_collector</a>を使えるようにすることが望ましい方法です。
 そのスクリプトはメッセージを<span class="systemitem">stderr</span>で書き出し、それはデータベースのサーバーログとして書かれます。このためスクリプトでエラーが発生した時に簡単に検知するための細かな設定を行なうことができるからです。
-      </p></div></div></div><div class="sect2" id="continuous-archiving-caveats"><div class="titlepage"><div><div><h3 class="title">24.3.7. 警告</h3></div></div></div><span class="original"><!--$-->
+      </p></div></div></div><div class="sect2" id="continuous-archiving-caveats"><div class="titlepage"><div><div><h3 class="title">24.3.7. 警告</h3></div></div></div><span class="original">
    &lt;title&gt;Caveats&lt;/title&gt;
-</span><br /><p><span class="original"><!--$-->
+</span><br /><p><span class="original">
     At this writing, there are several limitations of the continuous archiving
     technique.  These will probably be fixed in future releases:
 </span><br />本ドキュメント作成時点では、継続的アーカイブ技術にいくつかの制限があります。
 将来のリリースでは修正されるはずです。
 
-  </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p><span class="original"><!--$-->
+  </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p><span class="original">
      Operations on hash indexes are not presently WAL-logged, so
      replay will not update these indexes.  This will mean that any new inserts
      will be ignored by the index, updated rows will apparently disappear and
@@ -979,7 +979,7 @@ tar -rf /var/lib/pgsql/backup.tar /var/lib/pgsql/archive/</pre><p><span class="o
 これは、新しい挿入はインデックスにより無視され、更新された行は見かけ上消え、削除された行はポインタを保持し続けるということです。
 すなわち、ハッシュインデックス付きのテーブルを変更すると、スタンバイサーバでは不正確な問い合わせ結果が得られます。
 復旧処理が終わった後に手作業でそうしたインデックスそれぞれに対して<a class="xref" href="sql-reindex.html" title="REINDEX"><span class="refentrytitle">REINDEX</span></a>を行うことが推奨されます。
-    </p></li><li class="listitem"><p><span class="original"><!--$-->
+    </p></li><li class="listitem"><p><span class="original">
      If a &lt;xref linkend="sql-createdatabase"&gt;
      command is executed while a base backup is being taken, and then
      the template database that the &lt;command&gt;CREATE DATABASE&lt;/&gt; copied
@@ -991,7 +991,7 @@ tar -rf /var/lib/pgsql/backup.tar /var/lib/pgsql/archive/</pre><p><span class="o
 </span><br />もしもベースバックアップが行われている時、<a class="xref" href="sql-createdatabase.html" title="CREATE DATABASE"><span class="refentrytitle">CREATE DATABASE</span></a>コマンドが実行され、ベースバックアップが処理を実行している期間に<code class="command">CREATE DATABASE</code>がコピーしているtemplateデータベースが変更されると、復旧処理はこれらの変更を作成されたデータベースにも同時に伝播させることは確実です。
 もちろん、これは望まれる事ではありません。
 この危険を回避するには、ベースバックアップ期間中にはすべてのtemplateデータベースを変更しないことが一番です。
-    </p></li><li class="listitem"><p><span class="original"><!--$-->
+    </p></li><li class="listitem"><p><span class="original">
      &lt;xref linkend="sql-createtablespace"&gt;
      commands are WAL-logged with the literal absolute path, and will
      therefore be replayed as tablespace creations with the same
@@ -1008,7 +1008,7 @@ tar -rf /var/lib/pgsql/backup.tar /var/lib/pgsql/archive/</pre><p><span class="o
 なぜなら、再生は元のテーブル空間の内容を上書きし続けるからです。
 この種の潜在的な振舞いを防ぐためには、テーブル空間を作成もしくは削除後に新規ベースバックアップを行うのが最良の手段です。
     </p></li></ul></div><p>
-   </p><p><span class="original"><!--$-->
+   </p><p><span class="original">
     It should also be noted that the default &lt;acronym&gt;WAL&lt;/acronym&gt;
     format is fairly bulky since it includes many disk page snapshots.
     These page snapshots are designed to support crash recovery, since

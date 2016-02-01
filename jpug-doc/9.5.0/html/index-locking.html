@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>58.4. インデックスのロック処理に関する検討</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="PostgreSQL 9.5.0文書" /><link rel="up" href="indexam.html" title="第58章 インデックスアクセスメソッドのインタフェース定義" /><link rel="prev" href="index-scanning.html" title="58.3. インデックススキャン" /><link rel="next" href="index-unique-checks.html" title="58.5. インデックス一意性検査" /><link rel="copyright" href="legalnotice.html" title="法的告知" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">58.4. インデックスのロック処理に関する検討</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="index-scanning.html">戻る</a> </td><th width="60%" align="center">第58章 インデックスアクセスメソッドのインタフェース定義</th><td width="20%" align="right"> <a accesskey="n" href="index-unique-checks.html">次へ</a></td></tr></table><hr /></div><div class="sect1" id="index-locking"><div class="titlepage"><div><div><h2 class="title" style="clear: both">58.4. インデックスのロック処理に関する検討</h2></div></div></div><span class="original"><!--$-->
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>58.4. インデックスのロック処理に関する検討</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="PostgreSQL 9.5.0文書" /><link rel="up" href="indexam.html" title="第58章 インデックスアクセスメソッドのインタフェース定義" /><link rel="prev" href="index-scanning.html" title="58.3. インデックススキャン" /><link rel="next" href="index-unique-checks.html" title="58.5. インデックス一意性検査" /><link rel="copyright" href="legalnotice.html" title="法的告知" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">58.4. インデックスのロック処理に関する検討</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="index-scanning.html">戻る</a> </td><th width="60%" align="center">第58章 インデックスアクセスメソッドのインタフェース定義</th><td width="20%" align="right"> <a accesskey="n" href="index-unique-checks.html">次へ</a></td></tr></table><hr /></div><div class="sect1" id="index-locking"><div class="titlepage"><div><div><h2 class="title" style="clear: both">58.4. インデックスのロック処理に関する検討</h2></div></div></div><span class="original">
   &lt;title&gt;Index Locking Considerations&lt;/title&gt;
-</span><br /><p><span class="original"><!--$-->
+</span><br /><p><span class="original">
    Index access methods must handle concurrent updates
    of the index by multiple processes.
    The core &lt;productname&gt;PostgreSQL&lt;/productname&gt; system obtains
@@ -16,7 +16,7 @@
 また、（通常の<code class="command">VACUUM</code>を含む）インデックスの更新中に<code class="literal">RowExclusiveLock</code>を獲得します。
 これらの種類のロックは競合しませんので、アクセスメソッドは必要になるかもしれない粒度の細かなロック処理に関して責任を持ちます。
 インデックスの生成、破棄、<code class="literal">REINDEX</code>時にインデックス全体に対する排他ロックが獲得されます。
-  </p><p><span class="original"><!--$-->
+  </p><p><span class="original">
    Building an index type that supports concurrent updates usually requires
    extensive and subtle analysis of the required behavior.  For the b-tree
    and hash index types, you can read about the design decisions involved in
@@ -24,7 +24,7 @@
    &lt;filename&gt;src/backend/access/hash/README&lt;/&gt;.
 </span><br />同時更新をサポートするインデックス種類を構築することは通常、必要な動作について広範かつ微細にわたる解析が必要です。
 B-treeおよびハッシュインデックス種類では、<code class="filename">src/backend/access/nbtree/README</code>と <code class="filename">src/backend/access/hash/README</code>にある設計に関する決定事項を読むことができます。
-  </p><p><span class="original"><!--$-->
+  </p><p><span class="original">
    Aside from the index's own internal consistency requirements, concurrent
    updates create issues about consistency between the parent table (the
    &lt;firstterm&gt;heap&lt;/&gt;) and the index.  Because
@@ -36,7 +36,7 @@ B-treeおよびハッシュインデックス種類では、<code class="filenam
 <span class="productname">PostgreSQL</span>はヒープへのアクセスおよび更新とインデックスへのアクセスおよび更新を分離していますので、インデックスとヒープとの間の一貫性が無くなる間隔が存在します。
 以下の規則でこうした問題を扱います。
 
-    </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p><span class="original"><!--$-->
+    </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p><span class="original">
        A new heap entry is made before making its index entries.  (Therefore
        a concurrent index scan is likely to fail to see the heap entry.
        This is okay because the index reader would be uninterested in an
@@ -45,11 +45,11 @@ B-treeおよびハッシュインデックス種類では、<code class="filenam
 （このため、同時実行インデックススキャンはヒープエントリを確認する時によく失敗します。
 インデックスの読み取りは、未コミットの行を対象としませんので問題ありません。
 しかし、<a class="xref" href="index-unique-checks.html" title="58.5. インデックス一意性検査">「インデックス一意性検査」</a>を参照してください。）
-      </p></li><li class="listitem"><p><span class="original"><!--$-->
+      </p></li><li class="listitem"><p><span class="original">
        When a heap entry is to be deleted (by &lt;command&gt;VACUUM&lt;/&gt;), all its
        index entries must be removed first.
 </span><br />ヒープエントリが（<code class="command">VACUUM</code>によって）削除される時、これに対するすべてのインデックス項目が先に削除されます。
-      </p></li><li class="listitem"><p><span class="original"><!--$-->
+      </p></li><li class="listitem"><p><span class="original">
        An index scan must maintain a pin
        on the index page holding the item last returned by
        &lt;function&gt;amgettuple&lt;/&gt;, and &lt;function&gt;ambulkdelete&lt;/&gt; cannot delete
@@ -59,7 +59,7 @@ B-treeおよびハッシュインデックス種類では、<code class="filenam
 また、<code class="function">ambulkdelete</code>は、他のバックエンドがピンを持つページから項目を削除することはできません。
 この規則の必要性については後で説明します。
       </p></li></ul></div><p>
-<span class="original"><!--$-->
+<span class="original">
    Without the third rule, it is possible for an index reader to
    see an index entry just before it is removed by &lt;command&gt;VACUUM&lt;/&gt;, and
    then to arrive at the corresponding heap entry after that was removed by
@@ -91,7 +91,7 @@ B-treeおよびハッシュインデックス種類では、<code class="filenam
 代わりに、読み取りがまだ一致するヒープ項目へのインデックス項目の<span class="quote">「<span class="quote">作業中</span>」</span>であることを示す代理として、インデックスページに対するピンを使用します。
 このピンに対して<code class="function">ambulkdelete</code>がブロックするようにすることで、読み取りの作業が終わる前に<code class="command">VACUUM</code>がそのヒープ項目を削除できないことを確実にします。
 実行時におけるこの対策のコストは小さく、実際に競合が発生するごく稀な場合にのみブロックするためのオーバーヘッドが加わります。
-  </p><p><span class="original"><!--$-->
+  </p><p><span class="original">
    This solution requires that index scans be &lt;quote&gt;synchronous&lt;/&gt;: we have
    to fetch each heap tuple immediately after scanning the corresponding index
    entry.  This is expensive for a number of reasons.  An
@@ -106,13 +106,13 @@ B-treeおよびハッシュインデックス種類では、<code class="filenam
 多くの理由のため、これは高価です。
 インデックスから多くのTIDを収集し、少し後でのみヒープタプルにアクセスする<span class="quote">「<span class="quote">非同期</span>」</span>スキャンでは、必要なロック処理オーバーヘッドがかなり少なくなり、また、より効率的なヒープへのアクセスパターンを取ることができます。
 上の解析に従うと、MVCCに則らないスナップショットでは同期方式を使用しなければなりませんが、問い合わせがMVCCスナップショットを使用する場合は非同期スキャンを使用することができます。
-  </p><p><span class="original"><!--$-->
+  </p><p><span class="original">
    In an &lt;function&gt;amgetbitmap&lt;/&gt; index scan, the access method does not
    keep an index pin on any of the returned tuples.  Therefore
    it is only safe to use such scans with MVCC-compliant snapshots.
 </span><br /><code class="function">amgetbitmap</code>インデックススキャンでは、アクセスメソッドは返されるタプル上にインデックスピンをまったく保持しません。
 したがって、MVCCに則ったスナップショットでこうしたスキャンを使用することのみが安全です。
-  </p><p><span class="original"><!--$-->
+  </p><p><span class="original">
    When the &lt;structfield&gt;ampredlocks&lt;/&gt; flag is not set, any scan using that
    index access method within a serializable transaction will acquire a
    nonblocking predicate lock on the full index.  This will generate a

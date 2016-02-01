@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>13.2. トランザクションの分離</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="PostgreSQL 9.5.0文書" /><link rel="up" href="mvcc.html" title="第13章 同時実行制御" /><link rel="prev" href="mvcc-intro.html" title="13.1. 序文" /><link rel="next" href="explicit-locking.html" title="13.3. 明示的ロック" /><link rel="copyright" href="legalnotice.html" title="法的告知" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">13.2. トランザクションの分離</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="mvcc-intro.html">戻る</a> </td><th width="60%" align="center">第13章 同時実行制御</th><td width="20%" align="right"> <a accesskey="n" href="explicit-locking.html">次へ</a></td></tr></table><hr /></div><div class="sect1" id="transaction-iso"><div class="titlepage"><div><div><h2 class="title" style="clear: both">13.2. トランザクションの分離</h2></div></div></div><span class="original"><!--$-->
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>13.2. トランザクションの分離</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="PostgreSQL 9.5.0文書" /><link rel="up" href="mvcc.html" title="第13章 同時実行制御" /><link rel="prev" href="mvcc-intro.html" title="13.1. 序文" /><link rel="next" href="explicit-locking.html" title="13.3. 明示的ロック" /><link rel="copyright" href="legalnotice.html" title="法的告知" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">13.2. トランザクションの分離</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="mvcc-intro.html">戻る</a> </td><th width="60%" align="center">第13章 同時実行制御</th><td width="20%" align="right"> <a accesskey="n" href="explicit-locking.html">次へ</a></td></tr></table><hr /></div><div class="sect1" id="transaction-iso"><div class="titlepage"><div><div><h2 class="title" style="clear: both">13.2. トランザクションの分離</h2></div></div></div><span class="original">
    &lt;title&gt;Transaction Isolation&lt;/title&gt;
-</span><br /><a id="idp72563664" class="indexterm"></a><p><span class="original"><!--$-->
+</span><br /><a id="idp70410624" class="indexterm"></a><p><span class="original">
     The &lt;acronym&gt;SQL&lt;/acronym&gt; standard defines four levels of
     transaction isolation.  The most strict is Serializable,
     which is defined by the standard in a paragraph which says that any
@@ -20,132 +20,132 @@
 他の3レベルは、同時実行しているトランザクション間の相互作用に起因する、各レベルでは発生してはならない現象面に基づき定義されます。
 標準規格のシリアライザブルの定義では、このレベルではこれらの現象が起こりえないと述べています。
 (これは驚くことではありません。トランザクションの効果がひとつずつ実行された場合と一貫性を持たなければならないとしたら、相互作用によって発生した現象はどうやっても見つけ出すことはできないでしょう。)
-   </p><p><span class="original"><!--$-->
+   </p><p><span class="original">
     The phenomena which are prohibited at various levels are:
 </span><br />各種レベルにおける禁止される現象を以下に示します。
 
-    </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><span class="original"><!--$-->
+    </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><span class="original">
        dirty read
        &lt;indexterm&gt;&lt;primary&gt;dirty read&lt;/primary&gt;&lt;/indexterm&gt;
 </span><br />ダーティリード
-       <a id="idp72568784" class="indexterm"></a>
-      </span></dt><dd><p><span class="original"><!--$-->
+       <a id="idp70415744" class="indexterm"></a>
+      </span></dt><dd><p><span class="original">
         A transaction reads data written by a concurrent uncommitted transaction.
 </span><br />同時に実行されている他のトランザクションが書き込んで未だコミットしていないデータを読み込んでしまう。
-       </p></dd><dt><span class="term"><span class="original"><!--$-->
+       </p></dd><dt><span class="term"><span class="original">
        nonrepeatable read
        &lt;indexterm&gt;&lt;primary&gt;nonrepeatable read&lt;/primary&gt;&lt;/indexterm&gt;
 </span><br />反復不能読み取り
-       <a id="idp72571056" class="indexterm"></a>
-      </span></dt><dd><p><span class="original"><!--$-->
+       <a id="idp70418016" class="indexterm"></a>
+      </span></dt><dd><p><span class="original">
         A transaction re-reads data it has previously read and finds that data
         has been modified by another transaction (that committed since the
         initial read).
 </span><br />トランザクションが、以前読み込んだデータを再度読み込み、そのデータが(最初の読み込みの後にコミットした)別のトランザクションによって更新されたことを見出す。
-       </p></dd><dt><span class="term"><span class="original"><!--$-->
+       </p></dd><dt><span class="term"><span class="original">
        phantom read
        &lt;indexterm&gt;&lt;primary&gt;phantom read&lt;/primary&gt;&lt;/indexterm&gt;
 </span><br />ファントムリード
-       <a id="idp72573424" class="indexterm"></a>
-      </span></dt><dd><p><span class="original"><!--$-->
+       <a id="idp70420384" class="indexterm"></a>
+      </span></dt><dd><p><span class="original">
         A transaction re-executes a query returning a set of rows that satisfy a
         search condition and finds that the set of rows satisfying the condition
         has changed due to another recently-committed transaction.
 </span><br />トランザクションが、複数行のある集合を返す検索条件で問い合わせを再実行した時、別のトランザクションがコミットしてしまったために、同じ検索条件で問い合わせを実行しても異なる結果を得てしまう。
-       </p></dd><dt><span class="term"><span class="original"><!--$-->
+       </p></dd><dt><span class="term"><span class="original">
        serialization anomaly
        &lt;indexterm&gt;&lt;primary&gt;serialization anomaly&lt;/primary&gt;&lt;/indexterm&gt;
 </span><br />直列化異常
-       <a id="idp72576064" class="indexterm"></a>
-      </span></dt><dd><p><span class="original"><!--$-->
+       <a id="idp70423024" class="indexterm"></a>
+      </span></dt><dd><p><span class="original">
         The result of successfully committing a group of transactions
         is inconsistent with all possible orderings of running those
         transactions one at a time.
 </span><br />複数のトランザクションを正常にコミットした結果が、それらのトランザクションを1つずつあらゆる可能な順序で実行する場合とは一貫性がない。
        </p></dd></dl></div><p>
-   </p><p>    <a id="idp72578144" class="indexterm"></a><span class="original"><!--$-->
+   </p><p>    <a id="idp70425104" class="indexterm"></a><span class="original">
     The SQL standard and PostgreSQL-implemented transaction isolation levels
     are described in &lt;xref linkend="mvcc-isolevel-table"&gt;.
 </span><br />
 標準SQLおよびPostgreSQLで実装されているトランザクション分離レベルを<a class="xref" href="transaction-iso.html#mvcc-isolevel-table" title="表13.1 トランザクション分離レベル">表13.1「トランザクション分離レベル」</a>に示します。
-   </p><div class="table" id="mvcc-isolevel-table"><p class="title"><strong>表13.1 トランザクション分離レベル</strong></p><div class="table-contents"><span class="original"><!--$-->
+   </p><div class="table" id="mvcc-isolevel-table"><p class="title"><strong>表13.1 トランザクション分離レベル</strong></p><div class="table-contents"><span class="original">
      &lt;title&gt;Transaction Isolation Levels&lt;/title&gt;
-</span><br /><table summary="トランザクション分離レベル" border="1"><colgroup><col /><col /><col /><col /><col /></colgroup><thead><tr><th><span class="original"><!--$-->
+</span><br /><table summary="トランザクション分離レベル" border="1"><colgroup><col /><col /><col /><col /><col /></colgroup><thead><tr><th><span class="original">
          Isolation Level
 </span><br />分離レベル
-        </th><th><span class="original"><!--$-->
+        </th><th><span class="original">
          Dirty Read
 </span><br />ダーティリード
-        </th><th><span class="original"><!--$-->
+        </th><th><span class="original">
          Nonrepeatable Read
 </span><br />反復不能読み取り
-        </th><th><span class="original"><!--$-->
+        </th><th><span class="original">
          Phantom Read
 </span><br />ファントムリード
-        </th><th><span class="original"><!--$-->
+        </th><th><span class="original">
          Serialization Anomaly
 </span><br />直列化異常
-        </th></tr></thead><tbody><tr><td><span class="original"><!--$-->
+        </th></tr></thead><tbody><tr><td><span class="original">
          Read uncommitted
 </span><br />リードアンコミッティド
-        </td><td><span class="original"><!--$-->
+        </td><td><span class="original">
          Allowed, but not in PG
 </span><br />許容されるが、PostgreSQLでは発生しない
-        </td><td><span class="original"><!--$-->
+        </td><td><span class="original">
          Possible
 </span><br />可能性あり
-        </td><td><span class="original"><!--$-->
+        </td><td><span class="original">
          Possible
 </span><br />可能性あり
-        </td><td><span class="original"><!--$-->
+        </td><td><span class="original">
          Possible
 </span><br />可能性あり
-        </td></tr><tr><td><span class="original"><!--$-->
+        </td></tr><tr><td><span class="original">
          Read committed
 </span><br />リードコミッティド
-        </td><td><span class="original"><!--$-->
+        </td><td><span class="original">
          Not possible
 </span><br />安全
-        </td><td><span class="original"><!--$-->
+        </td><td><span class="original">
          Possible
 </span><br />可能性あり
-        </td><td><span class="original"><!--$-->
+        </td><td><span class="original">
          Possible
 </span><br />可能性あり
-        </td><td><span class="original"><!--$-->
+        </td><td><span class="original">
          Possible
 </span><br />可能性あり
-        </td></tr><tr><td><span class="original"><!--$-->
+        </td></tr><tr><td><span class="original">
          Repeatable read
 </span><br />リピータブルリード
-        </td><td><span class="original"><!--$-->
+        </td><td><span class="original">
          Not possible
 </span><br />安全
-        </td><td><span class="original"><!--$-->
+        </td><td><span class="original">
          Not possible
 </span><br />安全
-        </td><td><span class="original"><!--$-->
+        </td><td><span class="original">
          Allowed, but not in PG
 </span><br />許容されるが、PostgreSQLでは発生しない
-        </td><td><span class="original"><!--$-->
+        </td><td><span class="original">
          Possible
 </span><br />可能性あり
-        </td></tr><tr><td><span class="original"><!--$-->
+        </td></tr><tr><td><span class="original">
          Serializable
 </span><br />シリアライザブル
-        </td><td><span class="original"><!--$-->
+        </td><td><span class="original">
          Not possible
 </span><br />安全
-        </td><td><span class="original"><!--$-->
+        </td><td><span class="original">
          Not possible
 </span><br />安全
-        </td><td><span class="original"><!--$-->
+        </td><td><span class="original">
          Not possible
 </span><br />安全
-        </td><td><span class="original"><!--$-->
+        </td><td><span class="original">
          Not possible
 </span><br />安全
-        </td></tr></tbody></table></div></div><br class="table-break" /><p><span class="original"><!--$-->
+        </td></tr></tbody></table></div></div><br class="table-break" /><p><span class="original">
     In &lt;productname&gt;PostgreSQL&lt;/productname&gt;, you can request any of
     the four standard transaction isolation levels, but internally only
     three distinct isolation levels are implemented, i.e. PostgreSQL's
@@ -156,7 +156,7 @@
 しかし、内部的には3つの分離レベルしか実装されていません。
 つまり、PostgreSQLのリードアンコミッティドモードは、リードコミッティドのように動作します。
 これは、PostgreSQLの多版型同時実行制御という仕組みに標準の分離レベルを関連付ける実際的な方法がこれしかないからです。
-   </p><p><span class="original"><!--$-->
+   </p><p><span class="original">
     The table also shows that PostgreSQL's Repeatable Read implementation
     does not allow phantom reads.  Stricter behavior is permitted by the
     SQL standard: the four isolation levels only define which phenomena
@@ -167,11 +167,11 @@
 より厳密な動作をすることは標準SQLでも許されています。
 つまり、この4つの分離レベルでは、発生してはならない事象のみが定義され、発生<span class="emphasis"><em>しなければならない</em></span>事象は定義されていません。
 利用可能な分離レベルでの動作については後で詳細に説明します。
-   </p><p><span class="original"><!--$-->
+   </p><p><span class="original">
     To set the transaction isolation level of a transaction, use the
     command &lt;xref linkend="sql-set-transaction"&gt;.
 </span><br />トランザクションのトランザクション分離レベルを設定するには<a class="xref" href="sql-set-transaction.html" title="SET TRANSACTION"><span class="refentrytitle">SET TRANSACTION</span></a>コマンドを使用してください。
-   </p><div class="important" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">重要</h3><p><span class="original"><!--$-->
+   </p><div class="important" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">重要</h3><p><span class="original">
        Some &lt;productname&gt;PostgreSQL&lt;/productname&gt; data types and functions have
        special rules regarding transactional behavior.  In particular, changes
        made to a sequence (and therefore the counter of a
@@ -182,9 +182,9 @@
 </span><br />いくつかの<span class="productname">PostgreSQL</span>データ型と関数はトランザクションの振る舞いに関して特別の規則があります。
 特に、シーケンスに対しての変更は（従い、<code class="type">serial</code>を使用して宣言された列のカウンタ）は直後に全ての他のトランザクションで可視となり、変更を行ったトランザクションが中止されるとロールバックはできません。
 <a class="xref" href="functions-sequence.html" title="9.16. シーケンス操作関数">「シーケンス操作関数」</a>および<a class="xref" href="datatype-numeric.html#datatype-serial" title="8.1.4. 連番型">「連番型」</a>を参照してください。
-     </p></div><div class="sect2" id="xact-read-committed"><div class="titlepage"><div><div><h3 class="title">13.2.1. リードコミッティド分離レベル</h3></div></div></div><span class="original"><!--$-->
+     </p></div><div class="sect2" id="xact-read-committed"><div class="titlepage"><div><div><h3 class="title">13.2.1. リードコミッティド分離レベル</h3></div></div></div><span class="original">
    &lt;title&gt;Read Committed Isolation Level&lt;/title&gt;
-</span><br /><a id="idp72605280" class="indexterm"></a><a id="idp72606608" class="indexterm"></a><p><span class="original"><!--$-->
+</span><br /><a id="idp70452352" class="indexterm"></a><a id="idp70453680" class="indexterm"></a><p><span class="original">
     &lt;firstterm&gt;Read Committed&lt;/firstterm&gt; is the default isolation
     level in &lt;productname&gt;PostgreSQL&lt;/productname&gt;.  When a transaction
     uses this isolation level, a &lt;command&gt;SELECT&lt;/command&gt; query
@@ -205,7 +205,7 @@
 結果として、<code class="command">SELECT</code>問い合わせはその問い合わせが実行を開始した時点のデータベースのスナップショットを参照することになります。
 しかし<code class="command">SELECT</code>文は、自分自身のトランザクション内で実行され更新された結果はたとえまだコミットされていなくても参照します。
 単一のトランザクション内であっても、<code class="command">SELECT</code>文を2回連続して発行した場合、最初の<code class="command">SELECT</code>文が開始した後で2番目の<code class="command">SELECT</code>文が開始する前に他のトランザクションが更新をコミットすると、最初とその次に発行した<code class="command">SELECT</code>問い合わせは異なるデータを参照してしまうことにも注意してください。
-   </p><p><span class="original"><!--$-->
+   </p><p><span class="original">
     &lt;command&gt;UPDATE&lt;/command&gt;, &lt;command&gt;DELETE&lt;/command&gt;, &lt;command&gt;SELECT
     FOR UPDATE&lt;/command&gt;, and &lt;command&gt;SELECT FOR SHARE&lt;/command&gt; commands
     behave the same as &lt;command&gt;SELECT&lt;/command&gt;
@@ -236,7 +236,7 @@
 コマンドの検索条件（<code class="literal">WHERE</code>句）は、更新された行がまだその検索条件に一致するかどうかの確認のため再評価されます。
 検索条件と一致している場合、2番目の更新処理は、更新された行を使用して処理を開始します。
 <code class="command">SELECT FOR UPDATE</code>および<code class="command">SELECT FOR SHARE</code>の場合、ロックされクライアントに返されるのは、更新されるバージョンの行であることを意味します。
-   </p><p><span class="original"><!--$-->
+   </p><p><span class="original">
     &lt;command&gt;INSERT&lt;/command&gt; with an &lt;literal&gt;ON CONFLICT DO UPDATE&lt;/&gt; clause
     behaves similarly. In Read Committed mode, each row proposed for insertion
     will either insert or update. Unless there are unrelated errors, one of
@@ -249,7 +249,7 @@
 リードコミッティドモードでは、挿入を提案された各行は挿入または更新されます。
 無関係なエラーが発生しなければ、それら2つの結果のうち1つが保証されます。
 まだその結果が<code class="command">INSERT</code>に対して可視になっていない他のトランザクションに起因する競合では、慣習的な意味でそのコマンドに対して可視のバージョンの行が存在<span class="emphasis"><em>しない</em></span>にも関わらず、<code class="command">UPDATE</code>句がその行に対して動作します。
-   </p><p><span class="original"><!--$-->
+   </p><p><span class="original">
     &lt;command&gt;INSERT&lt;/command&gt; with an &lt;literal&gt;ON CONFLICT DO
     NOTHING&lt;/&gt; clause may have insertion not proceed for a row due to
     the outcome of another transaction whose effects are not visible
@@ -277,7 +277,7 @@
 UPDATE accounts SET balance = balance + 100.00 WHERE acctnum = 12345;
 UPDATE accounts SET balance = balance - 100.00 WHERE acctnum = 7534;
 COMMIT;</pre><p>
-<span class="original"><!--$-->
+<span class="original">
     If two such transactions concurrently try to change the balance of account
     12345, we clearly want the second transaction to start with the updated
     version of the account's row.  Because each command is affecting only a
@@ -286,7 +286,7 @@ COMMIT;</pre><p>
 </span><br />
 同時に実行される2つのトランザクションが、口座番号12345の残高を変更しようとした場合、口座12345の行の更新に伴って２番目のトランザクションを開始することは明らかに望まれるところです。
 各コマンドが事前に決定していた行にのみ処理を行うため、更新されたバージョンの行は問題となる不整合を引き起こしません。
-   </p><p><span class="original"><!--$-->
+   </p><p><span class="original">
     More complex usage can produce undesirable results in Read Committed
     mode.  For example, consider a &lt;command&gt;DELETE&lt;/command&gt; command
     operating on data that is being both added and removed from its
@@ -297,12 +297,12 @@ COMMIT;</pre><p>
 </span><br />より複雑な用法によりリードコミッティドモードでは好ましくない結果を生成します。例えば、別のコマンドによりその制約条件から追加・削除の両方が行われようとしているデータに作用する<code class="command">DELETE</code>コマンドを考えます。例を挙げると、<code class="literal">website</code>は２行のテーブルで、そこに<code class="literal">9</code> と <code class="literal">10</code>の値を持つ<code class="literal">website.hits</code>があります。
 
 </p><pre class="screen">BEGIN;
-UPDATE website SET hits = hits + 1;<span class="original"><!--$-->
+UPDATE website SET hits = hits + 1;<span class="original">
 &amp;#045;&amp;#045; run from another session:  DELETE FROM website WHERE hits = 10;
 </span><br />
 -- 別のセッションから DELETE FROM website WHERE hits = 10; を実行します
 COMMIT;</pre><p>
-<span class="original"><!--$-->
+<span class="original">
     The &lt;command&gt;DELETE&lt;/command&gt; will have no effect even though
     there is a &lt;literal&gt;website.hits = 10&lt;/literal&gt; row before and
     after the &lt;command&gt;UPDATE&lt;/command&gt;. This occurs because the
@@ -312,7 +312,7 @@ COMMIT;</pre><p>
     &lt;literal&gt;11&lt;/&gt;, which no longer matches the criteria.
 </span><br />
 <code class="command">UPDATE</code>前後に<code class="literal">website.hits = 10</code>行が存在したとしても<code class="command">DELETE</code>は効果を生みません。なぜこうなるのかと言うと、事前更新された行の値<code class="literal">9</code>は読み飛ばされ、<code class="command">UPDATE</code>が完了し、<code class="command">DELETE</code>がロックを取得した時点では、新規行の値はもはや<code class="literal">10</code>ではなく<code class="literal">11</code>となり、判定基準にもはや一致しません。
-   </p><p><span class="original"><!--$-->
+   </p><p><span class="original">
     Because Read Committed mode starts each command with a new snapshot
     that includes all transactions committed up to that instant,
     subsequent commands in the same transaction will see the effects
@@ -321,7 +321,7 @@ COMMIT;</pre><p>
     sees an absolutely consistent view of the database.
 </span><br />リードコミッティドモードは、それぞれのコマンドをその時点までにコミットされた全てのトランザクションを含む新規スナップショットを伴って開始するので、同一のトランザクション内でそれに続くコマンドは、いかなる場合でもコミットされた同時実行トランザクションの結果を参照します。
 上記問題の要点は<span class="emphasis"><em>単一の</em></span>コマンドがデータベースの厳密に一貫性のある見え方を見るか否かです。
-   </p><p><span class="original"><!--$-->
+   </p><p><span class="original">
     The partial transaction isolation provided by Read Committed mode
     is adequate for many applications, and this mode is fast and simple
     to use;  however, it is not sufficient for all cases.  Applications
@@ -330,9 +330,9 @@ COMMIT;</pre><p>
 </span><br />リードコミッティドモードで提供されている部分的なトランザクション分離は、多くのアプリケーションでは適切です。
 またこのモードは高速で、使い方も簡単ですが、全ての場合に対して充分ではありません。
 複雑な問い合わせや更新を行うアプリケーションは、リードコミッティドモードが提供する以上のより厳正なデータベースの厳密に一貫性のある見え方を必要とします。
-   </p></div><div class="sect2" id="xact-repeatable-read"><div class="titlepage"><div><div><h3 class="title">13.2.2. リピータブルリード分離レベル</h3></div></div></div><span class="original"><!--$-->
+   </p></div><div class="sect2" id="xact-repeatable-read"><div class="titlepage"><div><div><h3 class="title">13.2.2. リピータブルリード分離レベル</h3></div></div></div><span class="original">
    &lt;title&gt;Repeatable Read Isolation Level&lt;/title&gt;
-</span><br /><a id="idp72656544" class="indexterm"></a><a id="idp72657872" class="indexterm"></a><p><span class="original"><!--$-->
+</span><br /><a id="idp70503664" class="indexterm"></a><a id="idp70504992" class="indexterm"></a><p><span class="original">
     The &lt;firstterm&gt;Repeatable Read&lt;/firstterm&gt; isolation level only sees
     data committed before the transaction began; it never sees either
     uncommitted data or changes committed during transaction execution
@@ -349,7 +349,7 @@ COMMIT;</pre><p>
 コミットされていないデータや、そのトランザクションの実行中に別のトランザクションでコミットされた変更を参照しません。
 （しかし、まだコミットされていないとしても、その問い合わせはそのトランザクション自身内で行われた過去の更新を参照します。）
 これは<acronym class="acronym">SQL</acronym>の標準規格で求められるものよりもより強く保証するもので、<a class="xref" href="transaction-iso.html#mvcc-isolevel-table" title="表13.1 トランザクション分離レベル">表13.1「トランザクション分離レベル」</a>で述べている現象をすべて防ぎます。上で述べたように、これは標準規格によって特に許容されており、それぞれの分離レベルが提供しなくてはならない<span class="emphasis"><em>最小</em></span>の保護が示されています。
-   </p><p><span class="original"><!--$-->
+   </p><p><span class="original">
     This level is different from Read Committed in that a query in a
     repeatable read transaction sees a snapshot as of the start of the
     first non-transaction-control statement in the
@@ -360,12 +360,12 @@ COMMIT;</pre><p>
     other transactions that committed after their own transaction started.
 </span><br />リピータブルリードのトランザクション内の問い合わせは、トランザクション内の現在の文の開始時点ではなく、<span class="emphasis"><em>トランザクション</em></span>の最初のトランザクション制御以外の文の開始時点のスナップショットを見る、という点でこのレベルはリードコミッティドと異なります。
 従って、<span class="emphasis"><em>単一</em></span>トランザクション内の連続する<code class="command">SELECT</code>文は、同じデータを参照します。つまり、自身のトランザクションが開始した後にコミットされた他のトランザクションによる変更を参照しません。
-   </p><p><span class="original"><!--$-->
+   </p><p><span class="original">
     Applications using this level must be prepared to retry transactions
     due to serialization failures.
 </span><br />このレベルを使ったアプリケーションでは、直列化の失敗によるトランザクションの再実行に備えておく必要があります。
 
-   </p><p><span class="original"><!--$-->
+   </p><p><span class="original">
     &lt;command&gt;UPDATE&lt;/command&gt;, &lt;command&gt;DELETE&lt;/command&gt;, &lt;command&gt;SELECT
     FOR UPDATE&lt;/command&gt;, and &lt;command&gt;SELECT FOR SHARE&lt;/command&gt; commands
     behave the same as &lt;command&gt;SELECT&lt;/command&gt;
@@ -387,12 +387,12 @@ COMMIT;</pre><p>
 しかし、最初の更新処理がコミット（かつ、単にロックされるだけでなく、実際に行が更新または削除）されると、リピータブルリードトランザクションでは、以下のようなメッセージを出力してロールバックを行います。
 
 </p><pre class="screen">ERROR:  could not serialize access due to concurrent update</pre><p>
-<span class="original"><!--$-->
+<span class="original">
     because a repeatable read transaction cannot modify or lock rows changed by
     other transactions after the repeatable read transaction began.
 </span><br />
 これは、リピータブルリードトランザクションでは、トランザクションが開始された後に別のトランザクションによって更新されたデータは変更またはロックすることができないためです。
-   </p><p><span class="original"><!--$-->
+   </p><p><span class="original">
     When an application receives this error message, it should abort
     the current transaction and retry the whole transaction from
     the beginning.  The second time through, the transaction will see the
@@ -401,12 +401,12 @@ COMMIT;</pre><p>
     as the starting point for the new transaction's update.
 </span><br />アプリケーションがこのエラーメッセージを受け取った場合、現在のトランザクションを中断して、トランザクション全体を始めからやり直されなければなりません。
 2回目では、トランザクションはコミットされた変更を含めてデータベースの最初の状態とみなすので、新しいバージョンの行を新しいトランザクションにおける更新の始点としても、論理的矛盾は起こりません。
-   </p><p><span class="original"><!--$-->
+   </p><p><span class="original">
     Note that only updating transactions might need to be retried; read-only
     transactions will never have serialization conflicts.
 </span><br />更新トランザクションのみ再実行する必要があるかもしれません。
 読み込み専用トランザクションでは直列化の衝突は決して起こりません。
-   </p><p><span class="original"><!--$-->
+   </p><p><span class="original">
     The Repeatable Read mode provides a rigorous guarantee that each
     transaction sees a completely stable view of the database.  However,
     this view will not necessarily always be consistent with some serial
@@ -423,7 +423,7 @@ COMMIT;</pre><p>
 例えば、このレベルの読み取りのみのトランザクションは、バッチが完了したことを示すために更新された制御レコードを参照することができますが、
 制御レコードのより以前のバージョンを読み取るため、論理的にそのバッチの一部となる詳細なレコードの１つを参照することは<span class="emphasis"><em>できません</em></span>。
 この分離レベルで実行するトランザクションによりビジネスルールを強制しようとすることは、競合するトランザクションをブロックするために注意深く明示的なロックを持たないと、正確に動作しないことが多くあります。
-   </p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">注記</h3><p><span class="original"><!--$-->
+   </p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">注記</h3><p><span class="original">
      Prior to &lt;productname&gt;PostgreSQL&lt;/productname&gt; version 9.1, a request
      for the Serializable transaction isolation level provided exactly the
      same behavior described here.  To retain the legacy Serializable
@@ -431,9 +431,9 @@ COMMIT;</pre><p>
 </span><br />
 <span class="productname">PostgreSQL</span> version 9.1より前まででは、シリアライザブル分離レベルの要求はここで説明した通りの動作をそのまま提供していました。
 以前のシリアライザブルの動作を維持するためには、リピータブルリードを要求しなければならなくなりました。
-    </p></div></div><div class="sect2" id="xact-serializable"><div class="titlepage"><div><div><h3 class="title">13.2.3. シリアライザブル分離レベル</h3></div></div></div><span class="original"><!--$-->
+    </p></div></div><div class="sect2" id="xact-serializable"><div class="titlepage"><div><div><h3 class="title">13.2.3. シリアライザブル分離レベル</h3></div></div></div><span class="original">
    &lt;title&gt;Serializable Isolation Level&lt;/title&gt;
-</span><br /><a id="idp72683904" class="indexterm"></a><a id="idp72685232" class="indexterm"></a><a id="idp72686000" class="indexterm"></a><a id="idp72686880" class="indexterm"></a><p><span class="original"><!--$-->
+</span><br /><a id="idp70531136" class="indexterm"></a><a id="idp70532464" class="indexterm"></a><a id="idp70533232" class="indexterm"></a><a id="idp70534112" class="indexterm"></a><p><span class="original">
     The &lt;firstterm&gt;Serializable&lt;/firstterm&gt; isolation level provides
     the strictest transaction isolation.  This level emulates serial
     transaction execution for all committed transactions;
@@ -456,7 +456,7 @@ COMMIT;</pre><p>
 しかし、このレベルを使ったアプリケーションでは、リピータブルリードレベルと同様に、直列化の失敗によるトランザクションの再実行に備えておく必要があります。
 実際、この分離レベルは、（ある時点で）逐次実行可能なすべてのトランザクションにおいて、シリアライザブルトランザクションの同時実行の組が一貫性のないような振る舞いをしていないか監視することを除き、リピータブルリードと全く同じ動きをします。
 この監視では、リピータブルリードが示すものを越えてブロックすることはありませんが、監視によりいくらかのオーバーヘッドがあり、<em class="firstterm">直列化異常</em>を引き起こすような状態の検知は、<em class="firstterm">直列化の失敗</em>を引き起こすでしょう。
-   </p><p><span class="original"><!--$-->
+   </p><p><span class="original">
     As an example,
     consider a table &lt;structname&gt;mytab&lt;/&gt;, initially containing:
 </span><br />例えば、以下の初期データを持つ<code class="structname">mytab</code>というテーブルを考えてみます。
@@ -465,18 +465,18 @@ COMMIT;</pre><p>
      1 |    10
      1 |    20
      2 |   100
-     2 |   200</pre><p><span class="original"><!--$-->
+     2 |   200</pre><p><span class="original">
     Suppose that serializable transaction A computes:
 </span><br />
 ここでシリアライザブルトランザクションAが以下を計算し、
-</p><pre class="screen">SELECT SUM(value) FROM mytab WHERE class = 1;</pre><p><span class="original"><!--$-->
+</p><pre class="screen">SELECT SUM(value) FROM mytab WHERE class = 1;</pre><p><span class="original">
     and then inserts the result (30) as the &lt;structfield&gt;value&lt;/&gt; in a
     new row with &lt;structfield&gt;class&lt;/&gt;&lt;literal&gt; = 2&lt;/&gt;.  Concurrently, serializable
     transaction B computes:
 </span><br />
 そして、<code class="structfield">value</code>にその結果（30）を、<code class="structfield">class</code><code class="literal"> = 2</code>の行として新たに挿入したとします。
 同時にシリアライザブルトランザクションBが以下を計算し、
-</p><pre class="screen">SELECT SUM(value) FROM mytab WHERE class = 2;</pre><p><span class="original"><!--$-->
+</p><pre class="screen">SELECT SUM(value) FROM mytab WHERE class = 2;</pre><p><span class="original">
     and obtains the result 300, which it inserts in a new row with
     &lt;structfield&gt;class&lt;/&gt;&lt;literal&gt; = 1&lt;/&gt;.  Then both transactions try to commit.
     If either transaction were running at the Repeatable Read isolation level,
@@ -490,7 +490,7 @@ COMMIT;</pre><p>
 しかし、結果と一致する順序で実行されたものがないため、シリアライザブルトランザクションを使用した場合は、ひとつのトランザクションがコミットを許され、他方はこのメッセージとともにロールバックされることになります。
 
 </p><pre class="screen">ERROR:  could not serialize access due to read/write dependencies among transactions</pre><p>
-<span class="original"><!--$-->
+<span class="original">
     This is because if A had
     executed before B, B would have computed the sum 330, not 300, and
     similarly the other order would have resulted in a different sum
@@ -498,7 +498,7 @@ COMMIT;</pre><p>
 </span><br />
 この理由は、もしAがBよりも前に実行が完了していた場合、Bの総和は300ではなく330と計算されるためです。
 同様に別の順序で実行されたとしてもAで計算される総和は異なる結果になります。
-   </p><p><span class="original"><!--$-->
+   </p><p><span class="original">
     When relying on Serializable transactions to prevent anomalies, it is
     important that any data read from a permanent user table not be
     considered valid until the transaction which read it has successfully
@@ -515,7 +515,7 @@ COMMIT;</pre><p>
 何故かと言うと、それらのトランザクションは他のデータを読み込む前に言われる問題から免がれている保証付きのスナップショットを取得可能となるまで待機するからです。
 その他の全ての場合、後に中断されるトランザクションにおいて読み込まれた結果をアプリケーションは信用してはならないことです。
 その代わりとして、アプリケーションはトランザクションが成功するまで再試行すべきです。
-   </p><p><span class="original"><!--$-->
+   </p><p><span class="original">
     To guarantee true serializability &lt;productname&gt;PostgreSQL&lt;/productname&gt;
     uses &lt;firstterm&gt;predicate locking&lt;/&gt;, which means that it keeps locks
     which allow it to determine when a write would have had an impact on
@@ -535,7 +535,7 @@ COMMIT;</pre><p>
 それらは、同時実行中のシリアライザブルトランザクションが、直列化異常につながる組み合わせであることを識別しフラグを立てることに使用されます。
 
 それとは対照的に、データの一貫性を保証したいリードコミッティドあるいはリピータブルリードトランザクションでは、(そのテーブルを使用しようとしている他のユーザをブロックすることができた)テーブル全体のロックを必要とするかもしれません。あるいは、他のトランザクションをブロックするだけでなくディスク・アクセスを引き起こす<code class="literal">SELECT FOR UPDATE</code>あるいは<code class="literal">SELECT FOR SHARE</code>を使用するかもしれません。
-   </p><p><span class="original"><!--$-->
+   </p><p><span class="original">
     Predicate locks in &lt;productname&gt;PostgreSQL&lt;/productname&gt;, like in most
     other database systems, are based on data actually accessed by a
     transaction.  These will show up in the
@@ -563,7 +563,7 @@ COMMIT;</pre><p>
 直列化異常につながるような競合が継続して生じないことを検知すると、<code class="literal">READ ONLY</code>トランザクションが完了する前にSIReadロックを解除するかもしれません。
 実際、<code class="literal">READ ONLY</code>トランザクションは、よく開始時点でその事実を確証し、どんな述語ロックもとらないこともあります。<code class="literal">SERIALIZABLE READ ONLY DEFERRABLE</code>トランザクションを明示的に要求した場合には、この事実を確証できるまでブロックします。(これは、シリアライザブルトランザクションはブロックするけれども、リピータブルリードトランザクションはブロックしない<span class="emphasis"><em>唯一</em></span>のケースです。)
 他方で、SIReadロックは、しばしば読み取りと書き込みが重なっているトランザクションが完了するまで、過去のトランザクションのコミットに保持される必要があります。
-   </p><p><span class="original"><!--$-->
+   </p><p><span class="original">
     Consistent use of Serializable transactions can simplify development.
     The guarantee that any set of concurrent serializable transactions will
     have the same effect as if they were run one at a time means that if
@@ -589,35 +589,35 @@ COMMIT;</pre><p>
 なぜなら、トランザクションが読み取り/書き込みの依存性にどれだけ影響する可能性があるかということと、直列化異常を防ぐためにロールバックさせる必要があるかといこうとを、正確に予測することは非常に困難だからです。
 読み取り/書き込みの依存性を監視したり、直列化異常で終了したトランザクションを再起動することはコストがかかります。
 しかしながら、このコストと、明示的なロックと<code class="literal">SELECT FOR UPDATE</code>または<code class="literal">SELECT FOR SHARE</code>を使用したブロッキングとで比較検討すると、シリアライザブルトランザクションはいくつかの環境において最良な実行を選択することになります。
-   </p><p><span class="original"><!--$-->
+   </p><p><span class="original">
     For optimal performance when relying on Serializable transactions for
     concurrency control, these issues should be considered:
 </span><br />同時実行制御のためにシリアライザブルトランザクションを使用する場合、最適に実行するためには、以下の問題を考慮すべきです。
 
-    </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p><span class="original"><!--$-->
+    </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p><span class="original">
        Declare transactions as &lt;literal&gt;READ ONLY&lt;/&gt; when possible.
 </span><br />できる限り<code class="literal">READ ONLY</code>として宣言してください。
-      </p></li><li class="listitem"><p><span class="original"><!--$-->
+      </p></li><li class="listitem"><p><span class="original">
        Control the number of active connections, using a connection pool if
        needed.  This is always an important performance consideration, but
        it can be particularly important in a busy system using Serializable
        transactions.
 </span><br />もし必要ならばコネクションプールを使用して、活動中の接続数を制御してください。
 これは常に重要な実行時の考慮点ですが、シリアライザブルトランザクションを使用した多忙なシステムにおいては、特に重要になる可能性があります。
-      </p></li><li class="listitem"><p><span class="original"><!--$-->
+      </p></li><li class="listitem"><p><span class="original">
        Don't put more into a single transaction than needed for integrity
        purposes.
 </span><br />完全性を目的とした必要以上の単一トランザクションを置かないようにしてください。
-      </p></li><li class="listitem"><p><span class="original"><!--$-->
+      </p></li><li class="listitem"><p><span class="original">
        Don't leave connections dangling &lt;quote&gt;idle in transaction&lt;/quote&gt;
        longer than necessary.
 </span><br />必要以上に長く<span class="quote">「<span class="quote">トランザクション内で待機状態</span>」</span>で接続したまま放置しておかないようにしてください。
-      </p></li><li class="listitem"><p><span class="original"><!--$-->
+      </p></li><li class="listitem"><p><span class="original">
        Eliminate explicit locks, &lt;literal&gt;SELECT FOR UPDATE&lt;/&gt;, and
        &lt;literal&gt;SELECT FOR SHARE&lt;/&gt; where no longer needed due to the
        protections automatically provided by Serializable transactions.
 </span><br />シリアライザブルトランザクションにより自動的に提供される保護により、不必要な、明示的なロック、<code class="literal">SELECT FOR UPDATE</code>および<code class="literal">SELECT FOR SHARE</code>を取り除いてください。
-      </p></li><li class="listitem"><p><span class="original"><!--$-->
+      </p></li><li class="listitem"><p><span class="original">
        When the system is forced to combine multiple page-level predicate
        locks into a single relation-level predicate lock because the predicate
        lock table is short of memory, an increase in the rate of serialization
@@ -625,7 +625,7 @@ COMMIT;</pre><p>
        &lt;xref linkend="guc-max-pred-locks-per-transaction"&gt;.
 </span><br />システムが、単一の関係レベルでの述語ロックに、多数のページレベルでの述語ロックを組み合わせることを強いられる場合、述語ロックのテーブルはメモリが不足するため、直列化失敗の割合が増加する恐れがあります。
 これは、<a class="xref" href="runtime-config-locks.html#guc-max-pred-locks-per-transaction">max_pred_locks_per_transaction</a>を増やすことにより回避することができます。
-      </p></li><li class="listitem"><p><span class="original"><!--$-->
+      </p></li><li class="listitem"><p><span class="original">
        A sequential scan will always necessitate a relation-level predicate
        lock.  This can result in an increased rate of serialization failures.
        It may be helpful to encourage the use of index scans by reducing
