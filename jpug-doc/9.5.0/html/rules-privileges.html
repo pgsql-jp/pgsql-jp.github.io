@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>38.5. ルールと権限</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="PostgreSQL 9.5.0文書" /><link rel="up" href="rules.html" title="第38章 ルールシステム" /><link rel="prev" href="rules-update.html" title="38.4. INSERT、UPDATE、DELETEについてのルール" /><link rel="next" href="rules-status.html" title="38.6. ルールおよびコマンドの状態" /><link rel="copyright" href="legalnotice.html" title="法的告知" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">38.5. ルールと権限</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="rules-update.html">戻る</a> </td><th width="60%" align="center">第38章 ルールシステム</th><td width="20%" align="right"> <a accesskey="n" href="rules-status.html">次へ</a></td></tr></table><hr /></div><div class="sect1" id="rules-privileges"><div class="titlepage"><div><div><h2 class="title" style="clear: both">38.5. ルールと権限</h2></div></div></div><span class="original">
 &lt;title&gt;Rules and Privileges&lt;/title&gt;
-</span><br /><a id="idp90625408" class="indexterm"></a><a id="idp90627440" class="indexterm"></a><p><span class="original">
+</span><br /><a id="idp90690624" class="indexterm"></a><a id="idp90692592" class="indexterm"></a><p><span class="original">
     Due to rewriting of queries by the &lt;productname&gt;PostgreSQL&lt;/productname&gt;
     rule system, other tables/views than those used in the original
     query get accessed. When update rules are used, this can include write access
@@ -145,14 +145,14 @@ SELECT * FROM phone_number WHERE tricky(person, phone);</pre><p><span class="ori
 しかし、他のユーザは項目を捏造したり、既に存在する項目を操作する、あるいは削除することはできません。
 この場合、<code class="literal">shoelace_log</code>を参照しているルールは条件のない<code class="literal">INSERT</code>だけですので、操作の順序を変えるようにプランナを説得することでルールを破壊する可能性はありません。
 これはより複雑な状況では正しくないかもしれません。</p><p><span class="original">
-    When it is necessary for a view to provide row level security, the
+    When it is necessary for a view to provide row-level security, the
     &lt;literal&gt;security_barrier&lt;/literal&gt; attribute should be applied to
     the view.  This prevents maliciously-chosen functions and operators from
     being passed values from rows until after the view has done its work.  For
     example, if the view shown above had been created like this, it would
     be secure:
-</span><br />ビューが行レベルセキュリティを提供する場合には、そのビューには<code class="literal">security_barrier</code>属性を付与するべきです。
-これは、悪意を持って選ばれた関数や演算子が、ビューが適用されるより前に取り出された行に対して実行されないようにします。
+</span><br />ビューが行単位セキュリティを提供する場合には、そのビューには<code class="literal">security_barrier</code>属性を付与するべきです。
+これは、悪意を持って選ばれた関数や演算子が、ビューが適用されるより前に渡された行に対して実行されないようにします。
 例えば、上記のビューが次のように定義された場合、これは安全です。
 </p><pre class="programlisting">CREATE VIEW phone_number WITH (security_barrier) AS
     SELECT person, phone FROM phone_data WHERE phone NOT LIKE '412%';</pre><p><span class="original">
@@ -162,7 +162,7 @@ SELECT * FROM phone_number WHERE tricky(person, phone);</pre><p><span class="ori
     if it may compromise security.  For this reason, this option is not
     enabled by default.
 </span><br />
-<code class="literal">security_barrier</code>を付けて定義されたビューは、このオプションなしのビューよりも性能の劣るクエリ実行プランを生成します。一般的に、最も高速だが、セキュリティ上の問題があるクエリ実行プランを破棄しなければならないという状況は不可避です。そのため、このオプションはデフォルトでは有効になっていません。</p><p><span class="original">
+<code class="literal">security_barrier</code>を付けて定義されたビューは、このオプションなしのビューよりも性能の劣る問い合わせ実行プランを生成します。一般的に、最も高速だが、セキュリティ上の問題がある問い合わせ実行プランを破棄しなければならないという状況は不可避です。そのため、このオプションはデフォルトでは有効になっていません。</p><p><span class="original">
     The query planner has more flexibility when dealing with functions that
     have no side effects.  Such functions are referred to as &lt;literal&gt;LEAKPROOF&lt;/literal&gt;, and
     include many simple, commonly used operators, such as many equality
@@ -177,8 +177,12 @@ SELECT * FROM phone_number WHERE tricky(person, phone);</pre><p><span class="ori
     event of overflow or division by zero) is not leak-proof, and could provide
     significant information about the unseen rows if applied before the security
     view's row filters.
-</span><br />   プランナは副作用のない関数をもう少し柔軟に扱います。これらの関数は<code class="literal">LEAKPROOF</code>属性を持っており、等価演算子など、単純で広く用いられる演算子も多く含まれます。利用者に対して不可視な行に対するこれら関数の呼び出しはいかなる情報も漏えいさせないため、プランナはこれらの関数をどのような場所でも安全に実行させる事ができます。
-一方、例えばオーバーフローやゼロ除算のよう、受け取った引数の値に応じてエラーを発生させるような関数は leak-proof ではありません。これがもしセキュリティ・ビューの条件句でフィルタリングされるより前に適用されたなら、不可視行に関する何か重要な情報を与える事ができてしまいます。</p><p><span class="original">
+</span><br />プランナは副作用が無い関数をもう少し柔軟に扱います。
+これらの関数は<code class="literal">LEAKPROOF</code>属性を持っており、等価演算子など、単純で広く用いられる演算子も多く含まれます。
+利用者に対して不可視な行に対するこれら関数の呼び出しはいかなる情報も漏えいさせないため、プランナはこれらの関数をどのような場所でも安全に実行させる事ができます。
+さらに、引数をとらなかったり、セキュリティバリアビューから引数を渡されない関数は、ビューからデータを渡されることは決して無いため、プッシュダウンされるための<code class="literal">LEAKPROOF</code>をマークする必要はありません。
+一方、受け取った引数の値に応じてエラー（例えばオーバーフローやゼロ除算など）を発生させるかもしれない関数は leak-proof ではありません。
+これがもしセキュリティ・ビューの条件句でフィルタリングされるより前に適用されたなら、不可視行に関する何か重要な情報を与える事ができてしまいます。</p><p><span class="original">
     It is important to understand that even a view created with the
     &lt;literal&gt;security_barrier&lt;/literal&gt; option is intended to be secure only
     in the limited sense that the contents of the invisible tuples will not be
@@ -193,6 +197,6 @@ SELECT * FROM phone_number WHERE tricky(person, phone);</pre><p><span class="ori
     channel" attacks are of concern, it is probably unwise to grant any access
     to the data at all.
 </span><br />   ビューが<code class="literal">security_barrier</code>属性付きで定義されたとしても、それは限定的な意味で安全である、つまり不可視な行の内容が潜在的に安全でない関数に渡される事がないという事を意図しているにすぎません。
-利用者には不可視な行に対して何らかの推測を行う他の手段があるかもしれません。例えば、<code class="command">EXPLAIN</code>を用いてクエリ実行プランを見たり、ビューに対するクエリ実行時間を計測したりすることです。
+利用者には不可視な行に対して何らかの推測を行う他の手段があるかもしれません。例えば、<code class="command">EXPLAIN</code>を用いて問い合わせ実行プランを見たり、ビューに対する問い合わせ実行時間を計測したりすることです。
    悪意の攻撃者は不可視データの量を推測したり、分散や最頻値（なぜなら、これらは統計情報を通じて実行プランの選択、ひいては実行時間に影響するかもしれません）に関する何らかの情報を得る事ができるかもしれません。
    もし、この種の"隠れチャネル"に対する対策が必要であれば、とにかくデータに対するアクセスを許可するのは得策ではありません。</p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="rules-update.html">戻る</a> </td><td width="20%" align="center"><a accesskey="u" href="rules.html">上に戻る</a></td><td width="40%" align="right"> <a accesskey="n" href="rules-status.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">38.4. <code class="command">INSERT</code>、<code class="command">UPDATE</code>、<code class="command">DELETE</code>についてのルール </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> 38.6. ルールおよびコマンドの状態</td></tr></table></div></body></html>

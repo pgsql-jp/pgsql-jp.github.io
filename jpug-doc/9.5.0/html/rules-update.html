@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>38.4. INSERT、UPDATE、DELETEについてのルール</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="PostgreSQL 9.5.0文書" /><link rel="up" href="rules.html" title="第38章 ルールシステム" /><link rel="prev" href="rules-materializedviews.html" title="38.3. マテリアライズドビュー" /><link rel="next" href="rules-privileges.html" title="38.5. ルールと権限" /><link rel="copyright" href="legalnotice.html" title="法的告知" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">38.4. <code class="command">INSERT</code>、<code class="command">UPDATE</code>、<code class="command">DELETE</code>についてのルール</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="rules-materializedviews.html">戻る</a> </td><th width="60%" align="center">第38章 ルールシステム</th><td width="20%" align="right"> <a accesskey="n" href="rules-privileges.html">次へ</a></td></tr></table><hr /></div><div class="sect1" id="rules-update"><div class="titlepage"><div><div><h2 class="title" style="clear: both">38.4. <code class="command">INSERT</code>、<code class="command">UPDATE</code>、<code class="command">DELETE</code>についてのルール</h2></div></div></div><span class="original">
 &lt;title&gt;Rules on &lt;command&gt;INSERT&lt;/&gt;, &lt;command&gt;UPDATE&lt;/&gt;, and &lt;command&gt;DELETE&lt;/&gt;&lt;/title&gt;
-</span><br /><a id="idp90424624" class="indexterm"></a><a id="idp90426608" class="indexterm"></a><a id="idp90428464" class="indexterm"></a><p><span class="original">
+</span><br /><a id="idp90487392" class="indexterm"></a><a id="idp90489376" class="indexterm"></a><a id="idp90491232" class="indexterm"></a><p><span class="original">
     Rules that are defined on &lt;command&gt;INSERT&lt;/&gt;, &lt;command&gt;UPDATE&lt;/&gt;,
     and &lt;command&gt;DELETE&lt;/&gt; are significantly different from the view rules
     described in the previous section. First, their &lt;command&gt;CREATE
@@ -31,20 +31,29 @@
     original one.
 </span><br />
 第二点として、その場で問い合わせツリーを変更しません。
-その代わりに新規の0個以上の問い合わせツリーを生成して、オリジナルを破棄することができます。</p><div class="caution" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">注意</h3><p>  In many cases, tasks that could be performed by rules
-  on <code class="command">INSERT</code>/<code class="command">UPDATE</code>/<code class="command">DELETE</code> are better done
+その代わりに新規の0個以上の問い合わせツリーを生成して、オリジナルを破棄することができます。</p><div class="caution" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">注意</h3><p><span class="original">
+  In many cases, tasks that could be performed by rules
+  on &lt;command&gt;INSERT&lt;/&gt;/&lt;command&gt;UPDATE&lt;/&gt;/&lt;command&gt;DELETE&lt;/&gt; are better done
   with triggers.  Triggers are notationally a bit more complicated, but their
   semantics are much simpler to understand.  Rules tend to have surprising
   results when the original query contains volatile functions: volatile
   functions may get executed more times than expected in the process of
   carrying out the rules.
- </p><p>  Also, there are some cases that are not supported by these types of rules at
-  all, notably including <code class="literal">WITH</code> clauses in the original query and
-  multiple-assignment sub-<code class="literal">SELECT</code>s in the <code class="literal">SET</code> list
-  of <code class="command">UPDATE</code> queries.  This is because copying these constructs
+</span><br />多くの場合、<code class="command">INSERT</code>/<code class="command">UPDATE</code>/<code class="command">DELETE</code>におけるルールによって実行できるタスクは、トリガーで実行した方が良いでしょう。
+トリガーは概念としては少し複雑ですが、意味を理解するにはとても単純です。
+元の問い合わせにvolatile関数を含む場合、ルールは驚かせる結果を返すことがよくあります。（volatile関数はルールを遂行する過程で予期していた回数よりより多く実行されてしまうかもしれません）
+
+ </p><p><span class="original">
+  Also, there are some cases that are not supported by these types of rules at
+  all, notably including &lt;literal&gt;WITH&lt;/&gt; clauses in the original query and
+  multiple-assignment sub-&lt;literal&gt;SELECT&lt;/&gt;s in the &lt;literal&gt;SET&lt;/&gt; list
+  of &lt;command&gt;UPDATE&lt;/&gt; queries.  This is because copying these constructs
   into a rule query would result in multiple evaluations of the sub-query,
   contrary to the express intent of the query's author.
- </p></div><div class="sect2" id="idp90447440"><div class="titlepage"><div><div><h3 class="title">38.4.1. 更新ルールの動作</h3></div></div></div><span class="original">
+</span><br />また、これらのタイプのルールが全くサポートしない場合もあります。
+特に<code class="literal">WITH</code>句を元の問い合わせに含む場合と<code class="command">UPDATE</code>問い合わせの<code class="literal">SET</code>リストの中で複数列に代入するサブ<code class="literal">SELECT</code>の場合です。
+これはルール問い合わせにこれらの構造を複製すると副問い合わせを複数回評価し、問い合わせの作者が表現したかった意図と異なる結果となるためです。
+ </p></div><div class="sect2" id="idp90512000"><div class="titlepage"><div><div><h3 class="title">38.4.1. 更新ルールの動作</h3></div></div></div><span class="original">
 &lt;title&gt;How Update Rules Work&lt;/title&gt;
 </span><br /><p><span class="original">
     Keep the syntax:
@@ -156,7 +165,7 @@
     produced query tree(s).  Views cannot insert new update actions so
     there is no need to apply update rules to the output of view rewriting.
 </span><br />更新ルールの適用が終わると、システムはそこで作られた構文解析ツリーにビュールールを適用します。
-ビューは、新しい更新アクションを挿入できないため、ビュー書き換えの結果に更新ルールを適用する必要はありません。</p><div class="sect3" id="idp90491408"><div class="titlepage"><div><div><h4 class="title">38.4.1.1. 最初のルール、ステップバイステップ</h4></div></div></div><span class="original">
+ビューは、新しい更新アクションを挿入できないため、ビュー書き換えの結果に更新ルールを適用する必要はありません。</p><div class="sect3" id="idp90556032"><div class="titlepage"><div><div><h4 class="title">38.4.1.1. 最初のルール、ステップバイステップ</h4></div></div></div><span class="original">
 &lt;title&gt;A First Rule Step by Step&lt;/title&gt;
 </span><br /><p><span class="original">
     Say we want to trace changes to the &lt;literal&gt;sl_avail&lt;/&gt; column in the
@@ -403,7 +412,7 @@ SELECT shoelace_data.sl_name, 0,
 &lt;title&gt;Cooperation with Views&lt;/title&gt;
 </span><br /><span class="original">
 &lt;indexterm zone="rules-update-views"&gt;&lt;primary&gt;view&lt;/&gt;&lt;secondary&gt;updating&lt;/&gt;&lt;/&gt;
-</span><br /><a id="idp90551008" class="indexterm"></a><p><span class="original">
+</span><br /><a id="idp90615632" class="indexterm"></a><p><span class="original">
     A simple way to protect view relations from the mentioned
     possibility that someone can try to run &lt;command&gt;INSERT&lt;/command&gt;,
     &lt;command&gt;UPDATE&lt;/command&gt;, or &lt;command&gt;DELETE&lt;/command&gt; on them is

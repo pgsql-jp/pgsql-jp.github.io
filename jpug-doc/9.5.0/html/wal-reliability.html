@@ -14,9 +14,9 @@
    fatally damaged, if the disk drives survive they can be moved to
    another computer with similar hardware and all committed
    transactions will remain intact.
-</span><br />信頼性は、すべての深刻なデータベースシステムで重要な特性です。
+</span><br />信頼性は、すべての本格的なデータベースシステムで重要な特性です。
 <span class="productname">PostgreSQL</span>は信頼できる操作を保証するためにできることは何でもします。
-信頼できる操作とは、コミットされたトランザクションにより記録されたデータはすべて不揮発性の領域に格納され、電源断、オペレーティングシステムの障害、ハードウェアの障害（当然ですが、不揮発性の領域自体の障害は除きます。）があっても安全であるという点です。
+信頼できる操作の一面は、コミットされたトランザクションにより記録されたデータはすべて不揮発性の領域に格納され、電源断、オペレーティングシステムの障害、ハードウェアの障害（当然ですが、不揮発性の領域自体の障害は除きます。）があっても安全であるという点です。
 通常、コンピュータの永続的格納領域（ディスク装置など）へのデータ書き込みの成功がこの条件を満たします。
 実際、コンピュータに致命的な障害が発生したとしても、もしディスク装置が無事ならば、類似のハードウェアを持つ別のコンピュータに移すことができ、コミットされたトランザクションを元通りに復元できます。
   </p><p><span class="original">
@@ -52,11 +52,10 @@
    is restored the data will be written to the disk drives.
 </span><br />次に、ディスク装置のコントローラキャッシュが存在する可能性があります。
 特に、<acronym class="acronym">RAID</acronym>コントローラカードでは、これは一般的です。
-これらは<em class="firstterm">write-through</em>キャッシュ、つまり、データが届いた時に即座に書き込みがディスク装置に対して行なわれる、の場合があります。
-また、<em class="firstterm">write-back</em>キャッシュ、つまり、多少遅れて書き込みがディスク装置に対して行なわれる、の場合もあります。
-こうしたキャッシュではディスクコントローラキャッシュが揮発性、つまり、電源障害の際にその内容が失われてしまいますので、信頼性に関する障害が発生する可能性があります。
-より優れたコントローラカードでは<em class="firstterm">バッテリバックアップ付き装置</em>(<acronym class="acronym">BBU</acronym>s) を持ちます。
-つまり、システムの電源が落ちている状態でもキャッシュに電源を供給します。
+これらの中には<em class="firstterm">write-through</em>キャッシュがあり、つまり、データが届いた時に即座に書き込みがディスク装置に対して行なわれます。
+他には<em class="firstterm">write-back</em>キャッシュがあり、多少遅れて書き込みがディスク装置に対して行なわれます。
+こうしたキャッシュでは、ディスクコントローラキャッシュが揮発性で、電源障害の際にその内容が失われてしまい、信頼性に関して致命的な問題になる可能性があります。
+より優れたコントローラカードには<em class="firstterm">バッテリバックアップ付き装置</em>(<acronym class="acronym">BBU</acronym>s)があり、システムの電源が落ちた場合もキャッシュに電源を供給します。
 後で電源が復旧した後に、データがディスク装置に書き出されます。
   </p><p><span class="original">
    And finally, most disk drives have caches. Some are write-through
@@ -67,7 +66,7 @@
    solid-state drives (SSD) also have volatile write-back caches.
 </span><br />最後に、ほとんどのディスク装置がキャッシュを持っています。一部はwrite-throughであり、一部はwrite-backです。
 ディスクコントローラキャッシュの場合と同様にwrite-backのディスク装置キャッシュの場合にはデータが損失する恐れがあります。
-一般消費者向けのIDEおよびSATA装置では特に、よくwrite-backキャッシュを使用しています。これは電源障害時にデータが残りません。
+一般消費者向けのIDEおよびSATA装置では、電源障害時にデータが残らないwrite-backキャッシュを使用している可能性がとりわけ高いです。
 多くのソリッドステートドライブ(SSD)も同様に揮発性のwrite-backキャッシュを持っています。
   </p><p><span class="original">
    These caches can typically be disabled; however, the method for doing
@@ -198,7 +197,7 @@ BBUによる性能上の効果を得ることできるでしょう。もしwrite
    &lt;productname&gt;PostgreSQL&lt;/&gt; also protects against some kinds of data corruption
    on storage devices that may occur because of hardware errors or media failure over time,
    such as reading/writing garbage data.
-</span><br />読み書きによるごみデータのような時間経過に起因するハードウェアエラーやメディア故障で発生するストレージ装置内の何らかのデータ破損に対しても<span class="productname">PostgreSQL</span>は保護します。
+</span><br />さらに<span class="productname">PostgreSQL</span>は、ハードウェアエラーや経時変化によるメディア障害により発生する、ごみデータ読み書きしてしまうようなストレージ装置内のある種のデータ破損を防ぎます。
    </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p><span class="original">
       Each individual record in a WAL file is protected by a CRC-32 (32-bit) check
       that allows us to tell if record contents are correct. The CRC value
@@ -211,7 +210,7 @@ CRCの値はそれぞれのWALレコードを書き込み、クラッシュ回�
       recorded in WAL records will be protected; see &lt;link
       linkend="app-initdb-data-checksums"&gt;&lt;application&gt;initdb&lt;/&gt;&lt;/link&gt;
       for details about enabling data page checksums.
-</span><br />WALレコードに記録されている全ページのイメージは保護されていても、デフォルトではデータページはチェックサム計算はされません。
+</span><br />今のところ、デフォルトではデータページはチェックサム計算はされませんが、WALレコードに記録されているページ全体のイメージは保護されます。
 詳細は<a class="link" href="app-initdb.html#app-initdb-data-checksums"><span class="application">initdb</span></a>を参照してください。
      </p></li><li class="listitem"><p><span class="original">
       Internal data structures such as &lt;filename&gt;pg_clog&lt;/filename&gt;, &lt;filename&gt;pg_subtrans&lt;/filename&gt;, &lt;filename&gt;pg_multixact&lt;/filename&gt;,
