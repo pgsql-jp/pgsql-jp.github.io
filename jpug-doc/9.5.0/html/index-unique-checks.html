@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>58.5. インデックス一意性検査</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="PostgreSQL 9.5.0文書" /><link rel="up" href="indexam.html" title="第58章 インデックスアクセスメソッドのインタフェース定義" /><link rel="prev" href="index-locking.html" title="58.4. インデックスのロック処理に関する検討" /><link rel="next" href="index-cost-estimation.html" title="58.6. インデックスコスト推定関数" /><link rel="copyright" href="legalnotice.html" title="法的告知" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">58.5. インデックス一意性検査</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="index-locking.html">戻る</a> </td><th width="60%" align="center">第58章 インデックスアクセスメソッドのインタフェース定義</th><td width="20%" align="right"> <a accesskey="n" href="index-cost-estimation.html">次へ</a></td></tr></table><hr /></div><div class="sect1" id="index-unique-checks"><div class="titlepage"><div><div><h2 class="title" style="clear: both">58.5. インデックス一意性検査</h2></div></div></div><span class="original">
   &lt;title&gt;Index Uniqueness Checks&lt;/title&gt;
-</span><br /><p><span class="original">
+</span><p><span class="original">
    &lt;productname&gt;PostgreSQL&lt;/productname&gt; enforces SQL uniqueness constraints
    using &lt;firstterm&gt;unique indexes&lt;/&gt;, which are indexes that disallow
    multiple entries with identical keys.  An access method that supports this
    feature sets &lt;structname&gt;pg_am&lt;/&gt;.&lt;structfield&gt;amcanunique&lt;/&gt; true.
    (At present, only b-tree supports it.)
-</span><br /><span class="productname">PostgreSQL</span>は、SQLの一意性制約を<em class="firstterm">一意性インデックス</em>を使用して強制します。
+</span><span class="productname">PostgreSQL</span>は、SQLの一意性制約を<em class="firstterm">一意性インデックス</em>を使用して強制します。
 このインデックスでは、同一キーに対し複数の項目を許しません。
 この機能をサポートするアクセスメソッドは<code class="structname">pg_am</code>.<code class="structfield">amcanunique</code>を真に設定します。
 （現時点ではb-treeのみがこれをサポートします。）
@@ -18,7 +18,7 @@
    enforce is that no MVCC snapshot could include two rows with equal
    index keys.  This breaks down into the following cases that must be
    checked when inserting a new row into a unique index:
-</span><br />MVCCのため、インデックス内に物理的に重複した項目が存在できることが常に必要です。
+</span>MVCCのため、インデックス内に物理的に重複した項目が存在できることが常に必要です。
 これらの項目は１つの論理的な行の連続的なバージョンを示します。
 実際に強制させたい動作は、MVCCスナップショットが同じインデックスキーを持つ行を２つ含めないことです。
 一意性インデックスに新しい行を挿入する時に検査しなければならない状況を以下のように分割することができます。
@@ -28,7 +28,7 @@
        it's okay.  (In particular, since an UPDATE always deletes the old row
        version before inserting the new version, this will allow an UPDATE on
        a row without changing the key.)
-</span><br />競合する有効な行が現在のトランザクションで削除された場合は問題ありません。
+</span>競合する有効な行が現在のトランザクションで削除された場合は問題ありません。
 （具体的には、UPDATEは常に新しいバージョンを挿入する前に古い行バージョンを削除します。
 これによりキーを変更することなく行をUPDATEすることができます。）
       </p></li><li class="listitem"><p><span class="original">
@@ -38,7 +38,7 @@
        without deleting the conflicting row again, there is a uniqueness
        violation.  (In practice we just wait for the other transaction to
        end and then redo the visibility check in toto.)
-</span><br />競合する行が未コミットのトランザクションで挿入された場合、挿入しようとしている方はトランザクションのコミットが分かるまで待機しなければなりません。
+</span>競合する行が未コミットのトランザクションで挿入された場合、挿入しようとしている方はトランザクションのコミットが分かるまで待機しなければなりません。
 ロールバックした場合は競合しません。
 競合する行が削除されずにコミットした場合、一意性違反となります。
 （具体的には、他のトランザクションの終了をただ待機し、終了後に可視性の検査を完全に再実行します。）
@@ -46,7 +46,7 @@
        Similarly, if a conflicting valid row has been deleted by an
        as-yet-uncommitted transaction, the would-be inserter must wait
        for that transaction to commit or abort, and then repeat the test.
-</span><br />同様に、競合する有効な行が未コミットのトランザクションで削除された場合、挿入しようとしている方はトランザクションのコミットまたはアボートを待機しなければならず、その後、試験を繰り返します。
+</span>同様に、競合する有効な行が未コミットのトランザクションで削除された場合、挿入しようとしている方はトランザクションのコミットまたはアボートを待機しなければならず、その後、試験を繰り返します。
       </p></li></ul></div><p>
   </p><p><span class="original">
    Furthermore, immediately before reporting a uniqueness violation
@@ -56,7 +56,7 @@
    ordinary scenario of inserting a row that's just been created by
    the current transaction.  It can happen during
    &lt;command&gt;CREATE UNIQUE INDEX CONCURRENTLY&lt;/&gt;, however.)
-</span><br />さらに、上記規則に従った一意性違反を報告する直前に、アクセスメソッドは挿入される行の有効性を再度検査しなければなりません。
+</span>さらに、上記規則に従った一意性違反を報告する直前に、アクセスメソッドは挿入される行の有効性を再度検査しなければなりません。
 もし、無効なコミットであれば、違反を報告してはいけません。
 （現在のトランザクションによって作成された通常の行の挿入という状況では、これは発生することはありません。
 しかし、これは<code class="command">CREATE UNIQUE INDEX CONCURRENTLY</code>中に発生することがあります。）
@@ -70,7 +70,7 @@
    insert the new row's index entry.  What's more, there is no obvious way
    to avoid race conditions unless the conflict check is an integral part
    of insertion of the new index entry.
-</span><br />インデックスアクセスメソッドにこうした試験を自身で行うことを要求します。
+</span>インデックスアクセスメソッドにこうした試験を自身で行うことを要求します。
 これは、インデックスの内容に対して重複するキーを持つことを示している任意の行のコミット状態を検査するために、ヒープまでアクセスしなければならないことを意味します。
 これが醜くモジュール化されないことには疑う余地はありません。
 しかし、余計な作業を防ぐことができます。
@@ -90,7 +90,7 @@
    means &lt;quote&gt;any tuple in the index entry's HOT chain is live&lt;/&gt;.)
    To implement this, the &lt;function&gt;aminsert&lt;/&gt; function is passed a
    &lt;literal&gt;checkUnique&lt;/&gt; parameter having one of the following values:
-</span><br />一意性制約が遅延可能である場合はさらに複雑になります。
+</span>一意性制約が遅延可能である場合はさらに複雑になります。
 新しい行向けのインデックス項目を挿入可能にする必要があります。
 しかし一意性違反エラーは文の終わりまたはそれ以降まで遅延されます。
 不要なインデックス検索の繰り返しを防ぐために、インデックスアクセスメソッドは初期の挿入の間に前座の一意性検査を行わなければなりません。
@@ -103,12 +103,12 @@
     </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p><span class="original">
        &lt;literal&gt;UNIQUE_CHECK_NO&lt;/&gt; indicates that no uniqueness checking
        should be done (this is not a unique index).
-</span><br /><code class="literal">UNIQUE_CHECK_NO</code>は、一意性検査を行うことはない(これは一意性インデックスではない)ことを示します。
+</span><code class="literal">UNIQUE_CHECK_NO</code>は、一意性検査を行うことはない(これは一意性インデックスではない)ことを示します。
       </p></li><li class="listitem"><p><span class="original">
        &lt;literal&gt;UNIQUE_CHECK_YES&lt;/&gt; indicates that this is a non-deferrable
        unique index, and the uniqueness check must be done immediately, as
        described above.
-</span><br /><code class="literal">UNIQUE_CHECK_YES</code>は、上述の通り遅延がない一意性インデックスであり、一意性検査を即時に行わなければならないことを示します。
+</span><code class="literal">UNIQUE_CHECK_YES</code>は、上述の通り遅延がない一意性インデックスであり、一意性検査を即時に行わなければならないことを示します。
       </p></li><li class="listitem"><p><span class="original">
        &lt;literal&gt;UNIQUE_CHECK_PARTIAL&lt;/&gt; indicates that the unique
        constraint is deferrable. &lt;productname&gt;PostgreSQL&lt;/productname&gt;
@@ -117,7 +117,7 @@
        potential duplicates by returning FALSE from &lt;function&gt;aminsert&lt;/&gt;.
        For each row for which FALSE is returned, a deferred recheck will
        be scheduled.
-</span><br /><code class="literal">UNIQUE_CHECK_PARTIAL</code>は一意性制約が遅延可能であることを示します。
+</span><code class="literal">UNIQUE_CHECK_PARTIAL</code>は一意性制約が遅延可能であることを示します。
 <span class="productname">PostgreSQL</span>はこのモードを使用して、各行のインデックス項目を挿入します。
 このアクセスメソッドはインデックス内の重複する項目を許さなければなりません。
 そして<code class="function">aminsert</code>から偽を返すことで重複の可能性があることを報告しなければなりません。
@@ -129,7 +129,7 @@
        transactions to finish; conflicts reported here are not treated as
        errors and will be rechecked later, by which time they may no longer
        be conflicts.
-</span><br />アクセスメソッドは一意性制約違反となるかもしれない行を識別しなければなりません。
+</span>アクセスメソッドは一意性制約違反となるかもしれない行を識別しなければなりません。
 しかし間違った偽を報告することはエラーではありません。
 これにより他のトランザクションを待つことなく検査を行うことができます。
 ここで報告された重複はエラーとして扱われず、後で再検査されます。
@@ -142,7 +142,7 @@
        case.  The index entry is already present.  Rather, the access method
        must check to see if there is another live index entry.  If so, and
        if the target row is also still live, report error.
-</span><br /><code class="literal">UNIQUE_CHECK_EXISTING</code>は、一意性違反の可能性があると報告された行に対する遅延再検査であることを示します。
+</span><code class="literal">UNIQUE_CHECK_EXISTING</code>は、一意性違反の可能性があると報告された行に対する遅延再検査であることを示します。
 これは<code class="function">aminsert</code>を呼び出すことで実装されますが、アクセスメソッドはこの場合に新しいインデックス項目を挿入しては<span class="emphasis"><em>いけません</em></span>。
 インデックス項目はすでに存在します。
 それよりも、アクセスメソッドは他に存在するインデックス項目があるか検査する必要があります。
@@ -157,7 +157,7 @@
        might be checking the wrong area of the index.  Checking that the
        target row is found in the recheck verifies that we are scanning
        for the same tuple values as were used in the original insertion.
-</span><br /><code class="literal">UNIQUE_CHECK_EXISTING</code>呼び出しでは、アクセスメソッドはさらに対象行が実際にインデックス内に既存の項目を持つか検証し、もしなければエラーを報告することを推奨します。
+</span><code class="literal">UNIQUE_CHECK_EXISTING</code>呼び出しでは、アクセスメソッドはさらに対象行が実際にインデックス内に既存の項目を持つか検証し、もしなければエラーを報告することを推奨します。
 <code class="function">aminsert</code>に渡されるインデックスタプル値が再計算されているため勧めます。
 インデックス定義に実際には不変ではない関数が含まれる場合、インデックスの間違った領域を検査してしまうかもしれません。
 再検査にて対象行の存在を検査することで、元の挿入で使用されたものと同じタプル値をスキャンしていることを検証します。

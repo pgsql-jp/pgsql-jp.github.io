@@ -1,23 +1,23 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>10.4. 値の格納</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="PostgreSQL 9.5.0文書" /><link rel="up" href="typeconv.html" title="第10章 型変換" /><link rel="prev" href="typeconv-func.html" title="10.3. 関数" /><link rel="next" href="typeconv-union-case.html" title="10.5. UNION、CASEおよび関連する構文" /><link rel="copyright" href="legalnotice.html" title="法的告知" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">10.4. 値の格納</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="typeconv-func.html">戻る</a> </td><th width="60%" align="center">第10章 型変換</th><td width="20%" align="right"> <a accesskey="n" href="typeconv-union-case.html">次へ</a></td></tr></table><hr /></div><div class="sect1" id="typeconv-query"><div class="titlepage"><div><div><h2 class="title" style="clear: both">10.4. 値の格納</h2></div></div></div><span class="original">
 &lt;title&gt;Value Storage&lt;/title&gt;
-</span><br /><p><span class="original">
+</span><p><span class="original">
    Values to be inserted into a table are converted to the destination
    column's data type according to the
    following steps.
-</span><br />以下の手順に従って、テーブルに挿入される値は対象とする列のデータ型に変換されます。
-  </p><div class="procedure" id="idp68187824"><p class="title"><strong>値の格納における型変換</strong></p><span class="original">
+</span>以下の手順に従って、テーブルに挿入される値は対象とする列のデータ型に変換されます。
+  </p><div class="procedure" id="idp68732960"><p class="title"><strong>値の格納における型変換</strong></p><span class="original">
 &lt;title&gt;Value Storage Type Conversion&lt;/title&gt;
-</span><br /><ol class="procedure" type="1"><li class="step"><p><span class="original">
+</span><ol class="procedure" type="1"><li class="step"><p><span class="original">
 Check for an exact match with the target.
-</span><br />対象に正確に一致するかどうかを検査します。</p></li><li class="step"><p><span class="original">
+</span>対象に正確に一致するかどうかを検査します。</p></li><li class="step"><p><span class="original">
 Otherwise, try to convert the expression to the target type.  This is possible
 if an &lt;firstterm&gt;assignment cast&lt;/&gt; between the two types is registered in the
 &lt;structname&gt;pg_cast&lt;/&gt; catalog (see &lt;xref linkend="sql-createcast"&gt;).
 Alternatively, if the expression is an unknown-type literal, the contents of
 the literal string will be fed to the input conversion routine for the target
 type.
-</span><br />なければ、式を対象の型に変換してみます。
+</span>なければ、式を対象の型に変換してみます。
 もし2つの型の間の<em class="firstterm">代入キャスト</em>が<code class="structname">pg_cast</code>カタログ(<a class="xref" href="sql-createcast.html" title="CREATE CAST"><span class="refentrytitle">CREATE CAST</span></a>を参照してください)に登録されている場合、これは可能です。
 あるいは、もし式がunknown型リテラルの場合、リテラル文字列の内容は対象の型の入力変換ルーチンに与えられます。</p></li><li class="step"><p><span class="original">
 Check to see if there is a sizing cast for the target type.  A sizing
@@ -32,19 +32,19 @@ parameter that says whether the cast is explicit or implicit.  The cast
 function
 is responsible for applying any length-dependent semantics such as size
 checking or truncation.
-</span><br />対象の型に対してサイズ調整キャストがあるかどうかを検査します。
+</span>対象の型に対してサイズ調整キャストがあるかどうかを検査します。
 サイズ調整キャストは、ある型からその同じ型へのキャストです。
 <code class="structname">pg_cast</code>カタログに1つ見つかった場合は、格納先の列に収納する前に式に適用します。
 こうしたキャストを実装する関数は、常に<code class="type">integer</code>型のパラメータを1つ余計に取ります。
 このパラメータは、格納先の列の<code class="structfield">atttypmod</code>値を受け付けます
 （<code class="structfield">atttypmod</code>の解釈方法はデータ型によって異なりますが、典型的にはそれの宣言された長さです）。
 また、キャストが明示的か暗黙的かを示す、第三の<code class="type">boolean</code>パラメータを取ることもできます。
-サイズ検査や切り詰めなど、長さに依存したセマンティックスの適用について、キャスト関数が責任を持ちます。</p></li></ol></div><div class="example" id="idp68197008"><p class="title"><strong>例10.8 <code class="type">character</code>格納における型変換</strong></p><div class="example-contents"><span class="original">
+サイズ検査や切り詰めなど、長さに依存したセマンティックスの適用について、キャスト関数が責任を持ちます。</p></li></ol></div><div class="example" id="idp68742144"><p class="title"><strong>例10.8 <code class="type">character</code>格納における型変換</strong></p><div class="example-contents"><span class="original">
 &lt;title&gt;&lt;type&gt;character&lt;/type&gt; Storage Type Conversion&lt;/title&gt;
-</span><br /><p><span class="original">
+</span><p><span class="original">
 For a target column declared as &lt;type&gt;character(20)&lt;/type&gt; the following
 statement shows that the stored value is sized correctly:
-</span><br /><code class="type">varchar(20)</code>として宣言された対象の列への以下の文では、対象の大きさが正確に調整されることを示します。
+</span><code class="type">varchar(20)</code>として宣言された対象の列への以下の文では、対象の大きさが正確に調整されることを示します。
 
 </p><pre class="screen">CREATE TABLE vv (v character(20));
 INSERT INTO vv SELECT 'abc' || 'def';
@@ -66,7 +66,7 @@ not insert any real function call.)  Finally, the sizing function
 and applied to the operator's result and the stored column length.  This
 type-specific function performs the required length check and addition of
 padding spaces.
-</span><br />ここで実際に起こったのは、デフォルトで<code class="literal">||</code>演算子が<code class="type">text</code>の連結として解決できるように、2つのunknownリテラルが<code class="type">text</code>に解決されたということです。
+</span>ここで実際に起こったのは、デフォルトで<code class="literal">||</code>演算子が<code class="type">text</code>の連結として解決できるように、2つのunknownリテラルが<code class="type">text</code>に解決されたということです。
 そして演算子の<code class="type">text</code>型の結果は対象の列の型に合うように<code class="type">bpchar</code>(<span class="quote">「<span class="quote">空白が埋められる文字</span>」</span>, <code class="type">character</code>データ型の内部名)に変換されます
 （しかし、<code class="type">text</code>から<code class="type">bpchar</code>へバイナリ変換可能ですので、この型変換のために実際の関数呼び出しは挿入されません）。
 最後に、<code class="literal">bpchar(bpchar, integer, boolean)</code>サイズ調整関数がシステムカタログの中から見つかり、演算子の結果と格納する列の長さを適用します。

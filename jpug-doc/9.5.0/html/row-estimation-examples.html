@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>65.1. 行推定の例</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="PostgreSQL 9.5.0文書" /><link rel="up" href="planner-stats-details.html" title="第65章 プランナが統計情報をどのように使用するか" /><link rel="prev" href="planner-stats-details.html" title="第65章 プランナが統計情報をどのように使用するか" /><link rel="next" href="appendixes.html" title="パート VIII. 付録" /><link rel="copyright" href="legalnotice.html" title="法的告知" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">65.1. 行推定の例</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="planner-stats-details.html">戻る</a> </td><th width="60%" align="center">第65章 プランナが統計情報をどのように使用するか</th><td width="20%" align="right"> <a accesskey="n" href="appendixes.html">次へ</a></td></tr></table><hr /></div><div class="sect1" id="row-estimation-examples"><div class="titlepage"><div><div><h2 class="title" style="clear: both">65.1. 行推定の例</h2></div></div></div><span class="original">
   &lt;title&gt;Row Estimation Examples&lt;/title&gt;
-</span><br /><a id="idp117574832" class="indexterm"></a><p><span class="original">
+</span><a id="idp118107376" class="indexterm"></a><p><span class="original">
    The examples shown below use tables in the &lt;productname&gt;PostgreSQL&lt;/&gt;
    regression test database.
    The outputs shown are taken from version 8.3.
@@ -9,13 +9,13 @@
    Note also that since &lt;command&gt;ANALYZE&lt;/&gt; uses random sampling
    while producing statistics, the results will change slightly after
    any new &lt;command&gt;ANALYZE&lt;/&gt;.
-</span><br />以下の例は<span class="productname">PostgreSQL</span>リグレッション試験データベース内のテーブルを使用します。
+</span>以下の例は<span class="productname">PostgreSQL</span>リグレッション試験データベース内のテーブルを使用します。
 表示される出力はバージョン8.3で取得しました。
 以前の（または以降の）バージョンとは動作が変わっているかもしれません。
 また、<code class="command">ANALYZE</code>は統計情報を生成する時にランダムなサンプリングを行いますので、結果は<code class="command">ANALYZE</code>を新しく行った後に多少変わることに注意してください。
   </p><p><span class="original">
    Let's start with a very simple query:
-</span><br />非常に簡単な問い合わせから始めましょう。
+</span>非常に簡単な問い合わせから始めましょう。
 
 </p><pre class="programlisting">EXPLAIN SELECT * FROM tenk1;
 
@@ -27,7 +27,7 @@
    is covered in &lt;xref linkend="planner-stats"&gt;, but is repeated here for
    completeness. The number of pages and rows is looked up in
    &lt;structname&gt;pg_class&lt;/structname&gt;:
-</span><br />
+</span>
 プランナがどのように<code class="classname">tenk1</code>の濃度を決定するかについては<a class="xref" href="planner-stats.html" title="14.2. プランナで使用される統計情報">「プランナで使用される統計情報」</a>で説明しました。
 しかし、ここで完全になるように繰り返し説明します。
 ページ数および行数は<code class="classname">pg_class</code>から検索されます。
@@ -47,7 +47,7 @@
     arrive at a current number-of-rows estimate.  In this case the value of
     &lt;structfield&gt;relpages&lt;/structfield&gt; is up-to-date so the rows estimate is
     the same as &lt;structfield&gt;reltuples&lt;/structfield&gt;.
-</span><br />
+</span>
 これらの値は最後にそのテーブルを<code class="command">VACUUM</code>または<code class="command">ANALYZE</code>を行った時点のものです。
 プランナはその後、テーブル内の実際のページ数を取り出します（これはテーブルスキャンを行わない安価な操作です）。
 <code class="structfield">relpages</code>と異なる場合、<code class="structfield">reltuples</code>は現在の推定行数に達するまで増大されます。
@@ -55,7 +55,7 @@
   </p><p><span class="original">
    Let's move on to an example with a range condition in its
    &lt;literal&gt;WHERE&lt;/literal&gt; clause:
-</span><br />次に<code class="literal">WHERE</code>句に範囲条件を持つ例に進みましょう。
+</span>次に<code class="literal">WHERE</code>句に範囲条件を持つ例に進みましょう。
 
 </p><pre class="programlisting">EXPLAIN SELECT * FROM tenk1 WHERE unique1 &lt; 1000;
 
@@ -76,7 +76,7 @@
    &lt;structname&gt;pg_statistics&lt;/structname&gt;.  For manual queries it is more
    convenient to look in the simpler &lt;structname&gt;pg_stats&lt;/structname&gt;
    view:
-</span><br />
+</span>
 プランナは<code class="literal">WHERE</code>句の条件を検査し、<code class="structname">pg_operator</code>内の<code class="literal">&lt;</code>演算子用の選択度関数を検索します。
 これは<code class="structfield">oprrest</code>列に保持されます。
 今回の例ではこの項は<code class="function">scalarltsel</code>です。
@@ -97,7 +97,7 @@ WHERE tablename='tenk1' AND attname='unique1';
    &lt;emphasis&gt;all&lt;/emphasis&gt; of the ones before. The value 1000 is clearly in
    the second bucket (993-1997).  Assuming a linear distribution of
    values inside each bucket, we can calculate the selectivity as:
-</span><br />
+</span>
 次に、<span class="quote">「<span class="quote">&lt; 1000</span>」</span>で占められる度数分布率を取り出します。
 これが選択度(selectivity)です。
 この度数分布は、範囲を等頻度のバケット(bucket)に分割します。
@@ -113,19 +113,19 @@ WHERE tablename='tenk1' AND attname='unique1';
    the number of buckets. The estimated number of rows can now be calculated as
    the product of the selectivity and the cardinality of
    &lt;structname&gt;tenk1&lt;/structname&gt;:
-</span><br />
+</span>
 つまり、1つのバケット全体に、2番目のバケットとの線形比率を加えたものを、バケット数で割ったものとなります。
 ここで、行の推定値は、選択度と<code class="structname">tenk1</code>の濃度を掛け合わせたものとして計算されます。
 
 </p><pre class="programlisting">rows = rel_cardinality * selectivity
      = 10000 * 0.100697<span class="original">
      = 1007  (rounding off)
-</span><br />
+</span>
      = 1007  (四捨五入)</pre><p>
   </p><p><span class="original">
    Next let's consider an example with an equality condition in its
    &lt;literal&gt;WHERE&lt;/literal&gt; clause:
-</span><br />次に、<code class="literal">WHERE</code>句に等価条件を持つ例を検討してみましょう。
+</span>次に、<code class="literal">WHERE</code>句に等価条件を持つ例を検討してみましょう。
 
 </p><pre class="programlisting">EXPLAIN SELECT * FROM tenk1 WHERE stringu1 = 'CRAAAA';
 
@@ -141,7 +141,7 @@ WHERE tablename='tenk1' AND attname='unique1';
    common values&lt;/&gt; (&lt;acronym&gt;MCV&lt;/acronym&gt;s) is used to determine the
    selectivity. Let's have a look at the MCVs, with some additional columns
    that will be useful later:
-</span><br />
+</span>
 繰り返しますが、プランナは<code class="literal">WHERE</code>句の条件を検査し、<code class="literal">=</code>用の選択度関数、この場合は<code class="function">eqsel</code>を検索します。
 等価性の推定では、度数分布は役に立ちません。
 代わりに、選択度の決定には<em class="firstterm">最頻値</em>（<acronym class="acronym">MCV</acronym>）のリストが使用されます。
@@ -160,7 +160,7 @@ most_common_freqs | {0.00333333,0.003,0.003,0.003,0.003,0.003,0.003,0.003,0.003,
    Since &lt;literal&gt;CRAAAA&lt;/&gt; appears in the list of MCVs, the selectivity is
    merely the corresponding entry in the list of most common frequencies
    (&lt;acronym&gt;MCF&lt;/acronym&gt;s):
-</span><br />
+</span>
 <code class="literal">CRAAAA</code>がMCVのリスト内にありますので、選択度は単に最頻度（<acronym class="acronym">MCF</acronym>）のリスト内の対応する項目になります。
 
 </p><pre class="programlisting">selectivity = mcf[3]
@@ -168,7 +168,7 @@ most_common_freqs | {0.00333333,0.003,0.003,0.003,0.003,0.003,0.003,0.003,0.003,
 <span class="original">
    As before, the estimated number of rows is just the product of this with the
    cardinality of &lt;structname&gt;tenk1&lt;/structname&gt;:
-</span><br />
+</span>
 前と同様、推定される行数は単に前回同様、この値と<code class="structname">tenk1</code>の濃度との積です。
 
 </p><pre class="programlisting">rows = 10000 * 0.003
@@ -176,7 +176,7 @@ most_common_freqs | {0.00333333,0.003,0.003,0.003,0.003,0.003,0.003,0.003,0.003,
   </p><p><span class="original">
    Now consider the same query, but with a constant that is not in the
    &lt;acronym&gt;MCV&lt;/acronym&gt; list:
-</span><br />ここで、同じ問い合わせを見てみます。
+</span>ここで、同じ問い合わせを見てみます。
 ただし、今回は定数が<acronym class="acronym">MCV</acronym>内にありません。
 
 </p><pre class="programlisting">EXPLAIN SELECT * FROM tenk1 WHERE stringu1 = 'xxx';
@@ -191,7 +191,7 @@ most_common_freqs | {0.00333333,0.003,0.003,0.003,0.003,0.003,0.003,0.003,0.003,
    The approach is to use the fact that the value is not in the list,
    combined with the knowledge of the frequencies for all of the
    &lt;acronym&gt;MCV&lt;/acronym&gt;s:
-</span><br />
+</span>
 値が<acronym class="acronym">MCV</acronym>の一覧に<span class="emphasis"><em>ない</em></span>場合、選択度をどのように推定するかは大きく異なります。
 値が一覧にない場合に使用される方法は、<acronym class="acronym">MCV</acronym>すべての頻度に関する知識を組み合わせたものです。
 
@@ -208,7 +208,7 @@ most_common_freqs | {0.00333333,0.003,0.003,0.003,0.003,0.003,0.003,0.003,0.003,
    Notice that there are no null values so we don't have to worry about those
    (otherwise we'd subtract the null fraction from the numerator as well).
    The estimated number of rows is then calculated as usual:
-</span><br />
+</span>
 つまり、<acronym class="acronym">MCV</acronym>の頻度をすべて足し合わせたものを1から差し引き、そして、<span class="emphasis"><em>この他の</em></span>個別値の数で除算します。
 これは、MCV以外の列の割合は、この他の個別値すべてに渡って一様に分布していることを前提としていることになります。
 NULL値が存在しないため、これを考慮する必要がないことに注意してください。
@@ -217,7 +217,7 @@ NULL値が存在しないため、これを考慮する必要がないことに�
 
 </p><pre class="programlisting">rows = 10000 * 0.0014559<span class="original">
      = 15  (rounding off)
-</span><br />
+</span>
      = 15  (四捨五入)</pre><p>
   </p><p><span class="original">
    The previous example with &lt;literal&gt;unique1 &amp;lt; 1000&lt;/&gt; was an
@@ -238,7 +238,7 @@ NULL値が存在しないため、これを考慮する必要がないことに�
    to estimate the selectivity in the portion of the table that is not
    MCVs, and then the two numbers are combined to estimate the overall
    selectivity.  For example, consider
-</span><br />前述の<code class="literal">unique1 &lt; 1000</code>を使用した例は<code class="function">scalarltsel</code>が本当は何を行うかについて、単純化しすぎたものでした。
+</span>前述の<code class="literal">unique1 &lt; 1000</code>を使用した例は<code class="function">scalarltsel</code>が本当は何を行うかについて、単純化しすぎたものでした。
 ここまでで、MCVを使用した例を見てきましたので、多少詳細に補てんすることができます。
 <code class="structfield">unique1</code>は一意な列であるため、MCVが存在しません（ある値が他の値と同じとなることがないことは明確です）ので、例は計算自体は正確なものでした。
 一意ではない列では、通常度数分布とMCVリストの両方が存在します。
@@ -259,7 +259,7 @@ NULL値が存在しないため、これを考慮する必要がないことに�
 <span class="original">
    We already saw the MCV information for &lt;structfield&gt;stringu1&lt;/&gt;,
    and here is its histogram:
-</span><br />
+</span>
 すでに<code class="structfield">stringu1</code>のMCV情報は確認していますので、ここでは度数分布を見てみます。
 
 </p><pre class="programlisting">SELECT histogram_bounds FROM pg_stats
@@ -272,7 +272,7 @@ WHERE tablename='tenk1' AND attname='stringu1';
    Checking the MCV list, we find that the condition &lt;literal&gt;stringu1 &amp;lt;
    'IAAAAA'&lt;/&gt; is satisfied by the first six entries and not the last four,
    so the selectivity within the MCV part of the population is
-</span><br />
+</span>
 MCVリストを検査すると、<code class="literal">stringu1 &lt; 'IAAAAA'</code>条件は先頭の6項目で満たされ、最後の4項目で満たされないことがわかります。
 ですので、母集団のMCV部分における選択度は以下のようになります。
 
@@ -290,7 +290,7 @@ MCVリストを検査すると、<code class="literal">stringu1 &lt; 'IAAAAA'</c
    at the estimate 0.298387 for the portion of the histogram population
    that is less than &lt;literal&gt;IAAAAA&lt;/&gt;.  We then combine the estimates
    for the MCV and non-MCV populations:
-</span><br />
+</span>
 MCFの総和はまた、MCVで表される母集団の合計割合が0.03033333であり、したがって度数分布で表される割合が0.96966667であることがわかります。
 （繰り返しますが、NULLは存在しません。もし存在する場合はここで除外しなければなりません。）
 <code class="literal">IAAAAA</code>という値は3番目のバケットの終端近辺になることを確認することができます。
@@ -303,7 +303,7 @@ MCFの総和はまた、MCVで表される母集団の合計割合が0.03033333�
 
 rows        = 10000 * 0.307669<span class="original">
             = 3077  (rounding off)
-</span><br />
+</span>
             = 3077  (四捨五入)</pre><p>
 <span class="original">
    In this particular example, the correction from the MCV list is fairly
@@ -313,14 +313,14 @@ rows        = 10000 * 0.307669<span class="original">
    some values are significantly more common than others, this complicated
    process gives a useful improvement in accuracy because the selectivity
    for the most common values is found exactly.
-</span><br />
+</span>
 列の分布がかなり平坦ですので、この特定の例におけるMCVリストによる訂正はかなり小さなものです。
 （これらの特定の値が他より頻出するものと示す統計情報はほとんどサンプリングエラーによります。）
 より一般的な、一部の値が他より非常に多く頻出する場合では、最頻値に対する選択度が正確に検出されますので、この複雑な処理により精度が改良されます。
   </p><p><span class="original">
    Now let's consider a case with more than one
    condition in the &lt;literal&gt;WHERE&lt;/literal&gt; clause:
-</span><br />次に<code class="literal">WHERE</code>句に複数の条件を持つ場合を検討しましょう。
+</span>次に<code class="literal">WHERE</code>句に複数の条件を持つ場合を検討しましょう。
 
 </p><pre class="programlisting">EXPLAIN SELECT * FROM tenk1 WHERE unique1 &lt; 1000 AND stringu1 = 'xxx';
 
@@ -334,7 +334,7 @@ rows        = 10000 * 0.307669<span class="original">
 <span class="original">
    The planner assumes that the two conditions are independent, so that
    the individual selectivities of the clauses can be multiplied together:
-</span><br />
+</span>
 プランナは2つの条件が独立していると仮定します。
 このため、個々の句の選択度が掛け合わされます。
 
@@ -344,19 +344,19 @@ rows        = 10000 * 0.307669<span class="original">
 
 rows        = 10000 * 0.0001466<span class="original">
             = 1  (rounding off)
-</span><br />
+</span>
             = 1  (四捨五入)</pre><p>
 <span class="original">
    Notice that the number of rows estimated to be returned from the bitmap
    index scan reflects only the condition used with the index; this is
    important since it affects the cost estimate for the subsequent heap
    fetches.
-</span><br />
+</span>
 ビットマップインデックススキャンにより返されるものと推定される行数は、インデックスで使用される条件のみを反映することに注意してください。
 後続のヒープ取り出しのコスト推定に影響しますので、これは重要です。
   </p><p><span class="original">
    Finally we will examine a query that involves a join:
-</span><br />最後に、結合を含む問い合わせを見てみましょう。
+</span>最後に、結合を含む問い合わせを見てみましょう。
 
 </p><pre class="programlisting">EXPLAIN SELECT * FROM tenk1 t1, tenk2 t2
 WHERE t1.unique1 &lt; 50 AND t1.unique2 = t2.unique2;
@@ -377,7 +377,7 @@ WHERE t1.unique1 &lt; 50 AND t1.unique2 = t2.unique2;
    This is handled analogously to the previous range example.  This time the
    value 50 falls into the first bucket of the
    &lt;structfield&gt;unique1&lt;/structfield&gt; histogram:
-</span><br />
+</span>
 <code class="structname">tenk1</code> <span class="quote">「<span class="quote">unique1 &lt; 50</span>」</span>に関する制限が、入れ子状ループ結合の前に評価されます。
 これは、前の範囲に関する例と同様に扱われます。
 しかし、今回の値50は<code class="structfield">unique1</code>度数分布の最初のバケットにありますので、以下のようになります。
@@ -388,7 +388,7 @@ WHERE t1.unique1 &lt; 50 AND t1.unique2 = t2.unique2;
 
 rows        = 10000 * 0.005035<span class="original">
             = 50  (rounding off)
-</span><br />
+</span>
             = 50  (四捨五入)</pre><p>
 <span class="original">
    The restriction for the join is &lt;literal&gt;t2.unique2 = t1.unique2&lt;/&gt;.
@@ -398,7 +398,7 @@ rows        = 10000 * 0.005035<span class="original">
    &lt;structname&gt;pg_operator&lt;/structname&gt;, and is &lt;function&gt;eqjoinsel&lt;/function&gt;.
    &lt;function&gt;eqjoinsel&lt;/function&gt; looks up the statistical information for both
    &lt;structname&gt;tenk2&lt;/structname&gt; and &lt;structname&gt;tenk1&lt;/structname&gt;:
-</span><br />
+</span>
 結合の制限は<code class="literal">t2.unique2 = t1.unique2</code>です。
 演算子はよく使用する単なる<code class="literal">=</code>ですが、選択度関数は<code class="structname">pg_operator</code>の<code class="structfield">oprjoin</code>列から入手され、<code class="function">eqjoinsel</code>となります。
 <code class="function">eqjoinsel</code>は<code class="structname">tenk2</code>および<code class="structname">tenk1</code>の両方の統計情報を検索します。
@@ -415,7 +415,7 @@ tablename  | null_frac | n_distinct | most_common_vals
    &lt;structfield&gt;unique2&lt;/structfield&gt; because all the values appear to be
    unique, so we use an algorithm that relies only on the number of
    distinct values for both relations together with their null fractions:
-</span><br />
+</span>
 今回の場合、すべての値が一意であるため、<code class="structfield">unique2</code>に関する<acronym class="acronym">MCV</acronym>情報がありません。
 ですので、両リレーションの個別値数とNULL値の部分のみに依存したアルゴリズムを使用することができます。
 
@@ -429,7 +429,7 @@ tablename  | null_frac | n_distinct | most_common_vals
    that the join is likely to emit is calculated as the cardinality of the
    Cartesian product of the two inputs, multiplied by the
    selectivity:
-</span><br />
+</span>
 これは、各リレーションにおいて、1からNULL部分を差し引き、個別値数の最大値で割った値です。
 この結合が生成するはずの行数は、2つの入力のデカルト積の濃度に、この選択度を掛けたものとして計算されます。
 
@@ -442,7 +442,7 @@ tablename  | null_frac | n_distinct | most_common_vals
    lists to determine the join selectivity within the part of the column
    populations represented by the MCVs.  The estimate for the remainder of the
    populations follows the same approach shown here.
-</span><br />2つの列に対するMCVリストがありますので、<code class="function">eqjoinsel</code>はMCVで表される列母集団部分の結合選択度を決めるために、MCVリストを直接比較します。
+</span>2つの列に対するMCVリストがありますので、<code class="function">eqjoinsel</code>はMCVで表される列母集団部分の結合選択度を決めるために、MCVリストを直接比較します。
 残りの母集団に対する推定はここで示した同じ手法に従います。
   </p><p><span class="original">
    Notice that we showed &lt;literal&gt;inner_cardinality&lt;/&gt; as 10000, that is,
@@ -455,7 +455,7 @@ tablename  | null_frac | n_distinct | most_common_vals
    everything is working well then the two ways of estimating the join
    size will produce about the same answer, but due to round-off error and
    other factors they sometimes diverge significantly.
-</span><br /><code class="literal">inner_cardinality</code>を10000、つまり<code class="structname">tenk2</code>の変更がないサイズと示していることに注意してください。
+</span><code class="literal">inner_cardinality</code>を10000、つまり<code class="structname">tenk2</code>の変更がないサイズと示していることに注意してください。
 <code class="command">EXPLAIN</code>の出力を検査すると、結合行の推定が50 * 1、つまり、外側の行数と<code class="structname">tenk2</code>上の内側のインデックススキャン毎に得られる推定行数を掛けた数から来ていると思うかもしれません。
 しかし、実際はそうではありません。
 結合リレーションサイズは、具体的な結合計画が検討される前に推定されます。
@@ -469,7 +469,7 @@ tablename  | null_frac | n_distinct | most_common_vals
    &lt;filename&gt;src/backend/optimizer/path/clausesel.c&lt;/filename&gt;.  The
    operator-specific selectivity functions are mostly found
    in &lt;filename&gt;src/backend/utils/adt/selfuncs.c&lt;/filename&gt;.
-</span><br />詳細に興味を持った方向けに、テーブル（すべての<code class="literal">WHERE</code>句の前にあるもの）のサイズ推定は<code class="filename">src/backend/optimizer/util/plancat.c</code>で行われます。
+</span>詳細に興味を持った方向けに、テーブル（すべての<code class="literal">WHERE</code>句の前にあるもの）のサイズ推定は<code class="filename">src/backend/optimizer/util/plancat.c</code>で行われます。
 句の選択度に関する一般的なロジックについては<code class="filename">src/backend/optimizer/path/clausesel.c</code>にあります。
 演算子固有の選択度関数についてはたいてい<code class="filename">src/backend/utils/adt/selfuncs.c</code>内にあります。
   </p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="planner-stats-details.html">戻る</a> </td><td width="20%" align="center"><a accesskey="u" href="planner-stats-details.html">上に戻る</a></td><td width="40%" align="right"> <a accesskey="n" href="appendixes.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">第65章 プランナが統計情報をどのように使用するか </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> パート VIII. 付録</td></tr></table></div></body></html>

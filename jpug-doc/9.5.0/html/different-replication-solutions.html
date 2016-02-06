@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>25.1. 様々な解法の比較</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="PostgreSQL 9.5.0文書" /><link rel="up" href="high-availability.html" title="第25章 高可用性、負荷分散およびレプリケーション" /><link rel="prev" href="high-availability.html" title="第25章 高可用性、負荷分散およびレプリケーション" /><link rel="next" href="warm-standby.html" title="25.2. ログシッピングスタンバイサーバ" /><link rel="copyright" href="legalnotice.html" title="法的告知" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">25.1. 様々な解法の比較</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="high-availability.html">戻る</a> </td><th width="60%" align="center">第25章 高可用性、負荷分散およびレプリケーション</th><td width="20%" align="right"> <a accesskey="n" href="warm-standby.html">次へ</a></td></tr></table><hr /></div><div class="sect1" id="different-replication-solutions"><div class="titlepage"><div><div><h2 class="title" style="clear: both">25.1. 様々な解法の比較</h2></div></div></div><span class="original">
  &lt;title&gt;Comparison of Different Solutions&lt;/title&gt;
-</span><br /><div class="variablelist"><dl class="variablelist"><dt><span class="term">共有ディスクを用いたフェールオーバ</span></dt><dd><p><span class="original">
+</span><div class="variablelist"><dl class="variablelist"><dt><span class="term">共有ディスクを用いたフェールオーバ</span></dt><dd><p><span class="original">
      Shared disk failover avoids synchronization overhead by having only one
      copy of the database.  It uses a single disk array that is shared by
      multiple servers.  If the main database server fails, the standby server
      is able to mount and start the database as though it were recovering from
      a database crash.  This allows rapid failover with no data loss.
-</span><br />データベースのコピーを 1つだけ保有すればよいため、共有ディスクを用いたフェールオーバは同期によるオーバーヘッドを回避できます。
+</span>データベースのコピーを 1つだけ保有すればよいため、共有ディスクを用いたフェールオーバは同期によるオーバーヘッドを回避できます。
 本解法では、複数のサーバが単一のディスクアレイを共有します。
 主データベースサーバが故障したとき、まるでデータベースの破損から復旧したように、スタンバイサーバが元のデータベースを実装して稼動できます。
 これはデータの消失がない高速なフェールオーバを行うことができます。
@@ -20,7 +20,7 @@
      primary and standby servers are both nonfunctional.  Another issue is
      that the standby server should never access the shared storage while
      the primary server is running.
-</span><br />ハードウェアを共有するという機能は、ネットワーク上の記憶装置では一般的です。
+</span>ハードウェアを共有するという機能は、ネットワーク上の記憶装置では一般的です。
 ネットワークファイルシステムの利用も可能ですが、そのファイルシステムがPOSIX仕様を満たしているか注意してください。
 （ <a class="xref" href="creating-cluster.html#creating-cluster-nfs" title="17.2.2. ネットワークファイルシステムの使用">「ネットワークファイルシステムの使用」</a>を見てください）。
 本解法には重大な制約があり、共有ディスクアレイが故障または破損したとき、プライマリサーバもスタンバイサーバも機能しなくなります。
@@ -34,7 +34,7 @@
      to the standby must be done in the same order as those on the master.
      &lt;productname&gt;DRBD&lt;/&gt; is a popular file system replication solution
      for Linux.
-</span><br />ハードウェア共有機能の改善の一つとしてファイルシステムのレプリケーションをあげることができます。
+</span>ハードウェア共有機能の改善の一つとしてファイルシステムのレプリケーションをあげることができます。
 それは、あるファイルシステムに対して行われたすべての変更を他のコンピュータに存在するファイルシステムにミラーリングします。
 制約はただ一つであり、スタンバイサーバがファイルシステムの一貫したコピーを自身の領域に持つようにミラーリングしなければなりません。具体的には、スタンバイサーバへの書き込みがマスタサーバへの書き込みと同じ順序でおこなわれなければなりません。
 Linuxにおける<span class="productname">DRBD</span>は、ファイルシステムレプリケーションで広く受けいれられている手法です。
@@ -47,14 +47,14 @@ to other nodes but not actual data. As the disk is shared, data is
 only committed once to disk and there is a distributed locking
 protocol to make nodes agree on a serializable transactional order.
 コメントアウト終了
-</span><br /></dd><dt><span class="term">トランザクションログシッピング</span></dt><dd><p><span class="original">
+</span></dd><dt><span class="term">トランザクションログシッピング</span></dt><dd><p><span class="original">
      Warm and hot standby servers can be kept current by reading a
      stream of write-ahead log (&lt;acronym&gt;WAL&lt;/&gt;)
      records.  If the main server fails, the standby contains
      almost all of the data of the main server, and can be quickly
      made the new master database server.  This can be synchronous or
      asynchronous and can only be done for the entire database server.
-</span><br />ウォームスタンバイおよびホットスタンバイサーバは、ログ先行書き込み（<acronym class="acronym">WAL</acronym>）のレコードを解読して最新の状態を保持できます。
+</span>ウォームスタンバイおよびホットスタンバイサーバは、ログ先行書き込み（<acronym class="acronym">WAL</acronym>）のレコードを解読して最新の状態を保持できます。
 プライマリサーバが故障したとき、スタンバイサーバがプライマリサーバのほぼすべてのデータを保存して、速やかに新しい主データベースを稼動できます。
 本解法は同期、非同期で行うことができ、データベース全体だけを範囲として処理できます。
     </p><p><span class="original">
@@ -62,7 +62,7 @@ protocol to make nodes agree on a serializable transactional order.
      (&lt;xref linkend="warm-standby"&gt;) or streaming replication (see
      &lt;xref linkend="streaming-replication"&gt;), or a combination of both. For
      information on hot standby, see &lt;xref linkend="hot-standby"&gt;.
-</span><br />スタンバイサーバは、ファイル単位のログシッピング（<a class="xref" href="warm-standby.html" title="25.2. ログシッピングスタンバイサーバ">「ログシッピングスタンバイサーバ」</a>参照）またはストリーミングレプリケーション（<a class="xref" href="warm-standby.html#streaming-replication" title="25.2.5. ストリーミングレプリケーション">「ストリーミングレプリケーション」</a>参照）または両者の併用を使用して実装できます。
+</span>スタンバイサーバは、ファイル単位のログシッピング（<a class="xref" href="warm-standby.html" title="25.2. ログシッピングスタンバイサーバ">「ログシッピングスタンバイサーバ」</a>参照）またはストリーミングレプリケーション（<a class="xref" href="warm-standby.html#streaming-replication" title="25.2.5. ストリーミングレプリケーション">「ストリーミングレプリケーション」</a>参照）または両者の併用を使用して実装できます。
 ホットスタンバイの情報は <a class="xref" href="hot-standby.html" title="25.5. ホットスタンバイ">「ホットスタンバイ」</a> を参照してください。
     </p></dd><dt><span class="term">トリガベースのマスタ・スタンバイレプリケーション</span></dt><dd><p><span class="original">
      A master-standby replication setup sends all data modification
@@ -70,7 +70,7 @@ protocol to make nodes agree on a serializable transactional order.
      sends data changes to the standby server.  The standby can answer
      read-only queries while the master server is running.  The
      standby server is ideal for data warehouse queries.
-</span><br />マスタとスタンバイによるレプリケーションでは、データ更新のすべての問い合わせをマスタサーバに送付します。
+</span>マスタとスタンバイによるレプリケーションでは、データ更新のすべての問い合わせをマスタサーバに送付します。
 マスタサーバは更新したデータを非同期でスタンバイサーバに送付します。
 マスタサーバが稼動している間、スタンバイサーバは読み取り問い合わせだけに応答します。
 スタンバイサーバはデータウェアハウスへの問い合わせに理想的です。
@@ -79,7 +79,7 @@ protocol to make nodes agree on a serializable transactional order.
      granularity, and support for multiple standby servers.  Because it
      updates the standby server asynchronously (in batches), there is
      possible data loss during fail over.
-</span><br />この種類のレプリケーションの一例は<span class="productname">Slony-I</span>であり、テーブル単位の粒度を持ち、複数のスタンバイサーバが稼動できます。
+</span>この種類のレプリケーションの一例は<span class="productname">Slony-I</span>であり、テーブル単位の粒度を持ち、複数のスタンバイサーバが稼動できます。
 （バッチ処理によって）スタンバイサーバのデータを非同期で更新するため、フェールオーバにおけるデータ消失の可能性があります。
     </p></dd><dt><span class="term">文に基づいたレプリケーションのミドルウェア</span></dt><dd><p><span class="original">
      With statement-based replication middleware, a program intercepts
@@ -88,7 +88,7 @@ protocol to make nodes agree on a serializable transactional order.
      so that every server receives any changes.  But read-only queries can be
      sent to just one server, allowing the read workload to be distributed
      among them.
-</span><br />文に基づいたレプリケーションのミドルウェアでは、プログラムがすべてのSQL問い合わせを採取して、1つまたはすべてのサーバに送付します。
+</span>文に基づいたレプリケーションのミドルウェアでは、プログラムがすべてのSQL問い合わせを採取して、1つまたはすべてのサーバに送付します。
 なお、各々のサーバは独立して稼動します。
 読み書き問い合わせは、すべてのサーバがすべての変更を受け取るように全サーバに送付されなければなりません。
 しかし、読み取り専用の問い合わせはサーバ全体の読み取り負荷を分散させるために、1つのサーバだけに送付することができます。
@@ -110,7 +110,7 @@ protocol to make nodes agree on a serializable transactional order.
      and &lt;xref linkend="sql-commit-prepared"&gt;.
      &lt;productname&gt;Pgpool-II&lt;/&gt; and &lt;productname&gt;Continuent Tungsten&lt;/&gt;
      are examples of this type of replication.
-</span><br />問い合わせを修正しないで送付した場合、<code class="function">random()</code>関数による乱数値と<code class="function">CURRENT_TIMESTAMP</code>関数による現在時刻およびシーケンス値が、サーバごとに異なることがあります。
+</span>問い合わせを修正しないで送付した場合、<code class="function">random()</code>関数による乱数値と<code class="function">CURRENT_TIMESTAMP</code>関数による現在時刻およびシーケンス値が、サーバごとに異なることがあります。
 その理由は、各サーバが独立して稼動しているため、および、SQL問い合わせの送付では実際に更新した行の識別値を取得できないためです。
 これが許容できない場合は、ミドルウェアかアプリケーションにおいて1つのサーバにこのような問い合わせを送付し、その結果を書き込み問い合わせで使用しなければなりません。
 その他の選択肢は従来のマスタとスタンバイによるレプリケーションのオプションを使用するものです。
@@ -126,7 +126,7 @@ protocol to make nodes agree on a serializable transactional order.
      the other servers to identify conflicting transactions.  The
      conflicts can be resolved by users or conflict resolution rules.
      Bucardo is an example of this type of replication.
-</span><br />ラップトップやリモートマシンのように、通常は接続されていないサーバ間において、データの一貫性を保持することは挑戦的な課題です。
+</span>ラップトップやリモートマシンのように、通常は接続されていないサーバ間において、データの一貫性を保持することは挑戦的な課題です。
 非同期マルチマスタレプリケーションの使用により、全サーバの独立した稼動、およびトランザクションの衝突を識別するための定期的な通信を実現します。
 トランザクションの衝突は、利用者および衝突回避法によって解決できるでしょう。
 Bucardoはこの種のレプリケーションの一例です。
@@ -145,7 +145,7 @@ Bucardoはこの種のレプリケーションの一例です。
      standby servers, and because the data changes are sent from one
      server to another, there is no problem with non-deterministic
      functions like &lt;function&gt;random()&lt;/&gt;.
-</span><br />同期マルチマスタレプリケーションでは全てのサーバが書き込み要求を受理できます。
+</span>同期マルチマスタレプリケーションでは全てのサーバが書き込み要求を受理できます。
 受理したサーバは更新したデータを、トランザクションをコミットする前に、他の全サーバへ配布します。
 書き込み負荷が重いとき、ロックの掛かり過ぎによる作業効率の低下の原因となりえます。
 実際、書き込み効率は単一サーバより悪いことが大半です。
@@ -159,24 +159,24 @@ Bucardoはこの種のレプリケーションの一例です。
      linkend="sql-prepare-transaction"&gt; and &lt;xref
      linkend="sql-commit-prepared"&gt;)
      can be used to implement this in application code or middleware.
-</span><br /><span class="productname">PostgreSQL</span> では、この種類のレプリケーションを提供しません。
+</span><span class="productname">PostgreSQL</span> では、この種類のレプリケーションを提供しません。
 しかし、<span class="productname">PostgreSQL</span> の 2相コミット（<a class="xref" href="sql-prepare-transaction.html" title="PREPARE TRANSACTION"><span class="refentrytitle">PREPARE TRANSACTION</span></a>および<a class="xref" href="sql-commit-prepared.html" title="COMMIT PREPARED"><span class="refentrytitle">COMMIT PREPARED</span></a>）を使用すれば、アプリケーションのコードまたはミドルウェアにおいて本解法を実装できます。
     </p></dd><dt><span class="term">商業的な解法</span></dt><dd><p><span class="original">
      Because &lt;productname&gt;PostgreSQL&lt;/&gt; is open source and easily
      extended, a number of companies have taken &lt;productname&gt;PostgreSQL&lt;/&gt;
      and created commercial closed-source solutions with unique
      failover, replication, and load balancing capabilities.
-</span><br /><span class="productname">PostgreSQL</span> はオープンソースであり、容易に拡張できます。
+</span><span class="productname">PostgreSQL</span> はオープンソースであり、容易に拡張できます。
 そのため多数の企業が、<span class="productname">PostgreSQL</span>を取り入れて商業的な解法を作成し、フェールオーバとレプリケーションと負荷分散の機能を独自に実現していますが、ソースコードは非公開です。
     </p></dd></dl></div><p><span class="original">
   &lt;xref linkend="high-availability-matrix"&gt; summarizes
   the capabilities of the various solutions listed above.
-</span><br /><a class="xref" href="different-replication-solutions.html#high-availability-matrix" title="表25.1 高可用性、負荷分散およびレプリケーションの特徴">表25.1「高可用性、負荷分散およびレプリケーションの特徴」</a>は上述した種々の解法の機能を要約したものです。
+</span><a class="xref" href="different-replication-solutions.html#high-availability-matrix" title="表25.1 高可用性、負荷分散およびレプリケーションの特徴">表25.1「高可用性、負荷分散およびレプリケーションの特徴」</a>は上述した種々の解法の機能を要約したものです。
  </p><div class="table" id="high-availability-matrix"><p class="title"><strong>表25.1 高可用性、負荷分散およびレプリケーションの特徴</strong></p><div class="table-contents"><span class="original">
   &lt;title&gt;High Availability, Load Balancing, and Replication Feature Matrix&lt;/title&gt;
-</span><br /><table summary="高可用性、負荷分散およびレプリケーションの特徴" border="1"><colgroup><col /><col /><col /><col /><col /><col /><col /><col /></colgroup><thead><tr><th>特徴</th><th>共有ディスクを用いたフェールオーバ</th><th>ファイルシステムのレプリケーション</th><th>トランザクションログシッピング</th><th>マスタとスタンバイによるトリガに基づいたレプリケーション</th><th>文に基づいたレプリケーションのミドルウェア</th><th>非同期マルチマスタレプリケーション</th><th>同期マルチマスタレプリケーション</th></tr></thead><tbody><tr><td>最も一般的な実装</td><td align="center">NAS</td><td align="center">DRBD</td><td align="center">ストリーミングレプリケーション</td><td align="center">Slony</td><td align="center">pgpool-II</td><td align="center">Bucardo</td><td align="center"> </td></tr><tr><td>通信方法</td><td align="center">共有ディスク</td><td align="center">ディスクブロック</td><td align="center">WAL</td><td align="center">テーブル行</td><td align="center">SQL</td><td align="center">テーブル行</td><td align="center">テーブル行および行ロック</td></tr><tr><td>特別なハードウェアが不要</td><td align="center"> </td><td align="center">○</td><td align="center">○</td><td align="center">○</td><td align="center">○</td><td align="center">○</td><td align="center">○</td></tr><tr><td>複数のマスタサーバが可能</td><td align="center"> </td><td align="center"> </td><td align="center"> </td><td align="center"> </td><td align="center">○</td><td align="center">○</td><td align="center">○</td></tr><tr><td>マスタサーバにオーバヘッドがない</td><td align="center">○</td><td align="center"> </td><td align="center">○</td><td align="center"> </td><td align="center">○</td><td align="center"> </td><td align="center"> </td></tr><tr><td>複数のスレーブサーバを待たない</td><td align="center">○</td><td align="center"> </td><td align="center">同期が無効の場合</td><td align="center">○</td><td align="center"> </td><td align="center">○</td><td align="center"> </td></tr><tr><td>マスタの故障によるデータ損失がない</td><td align="center">○</td><td align="center">○</td><td align="center">同期が有効の場合</td><td align="center"> </td><td align="center">○</td><td align="center"> </td><td align="center">○</td></tr><tr><td>スタンバイは読み取り問い合わせだけを受理</td><td align="center"> </td><td align="center"> </td><td align="center">ホットスタンバイ使用時</td><td align="center">○</td><td align="center">○</td><td align="center">○</td><td align="center">○</td></tr><tr><td>テーブルごとの粒度となる</td><td align="center"> </td><td align="center"> </td><td align="center"> </td><td align="center">○</td><td align="center"> </td><td align="center">○</td><td align="center">○</td></tr><tr><td>コンフリクトの回避が不要</td><td align="center">○</td><td align="center">○</td><td align="center">○</td><td align="center">○</td><td align="center"> </td><td align="center"> </td><td align="center">○</td></tr></tbody></table></div></div><br class="table-break" /><p><span class="original">
+</span><table summary="高可用性、負荷分散およびレプリケーションの特徴" border="1"><colgroup><col /><col /><col /><col /><col /><col /><col /><col /></colgroup><thead><tr><th>特徴</th><th>共有ディスクを用いたフェールオーバ</th><th>ファイルシステムのレプリケーション</th><th>トランザクションログシッピング</th><th>マスタとスタンバイによるトリガに基づいたレプリケーション</th><th>文に基づいたレプリケーションのミドルウェア</th><th>非同期マルチマスタレプリケーション</th><th>同期マルチマスタレプリケーション</th></tr></thead><tbody><tr><td>最も一般的な実装</td><td align="center">NAS</td><td align="center">DRBD</td><td align="center">ストリーミングレプリケーション</td><td align="center">Slony</td><td align="center">pgpool-II</td><td align="center">Bucardo</td><td align="center"> </td></tr><tr><td>通信方法</td><td align="center">共有ディスク</td><td align="center">ディスクブロック</td><td align="center">WAL</td><td align="center">テーブル行</td><td align="center">SQL</td><td align="center">テーブル行</td><td align="center">テーブル行および行ロック</td></tr><tr><td>特別なハードウェアが不要</td><td align="center"> </td><td align="center">○</td><td align="center">○</td><td align="center">○</td><td align="center">○</td><td align="center">○</td><td align="center">○</td></tr><tr><td>複数のマスタサーバが可能</td><td align="center"> </td><td align="center"> </td><td align="center"> </td><td align="center"> </td><td align="center">○</td><td align="center">○</td><td align="center">○</td></tr><tr><td>マスタサーバにオーバヘッドがない</td><td align="center">○</td><td align="center"> </td><td align="center">○</td><td align="center"> </td><td align="center">○</td><td align="center"> </td><td align="center"> </td></tr><tr><td>複数のスレーブサーバを待たない</td><td align="center">○</td><td align="center"> </td><td align="center">同期が無効の場合</td><td align="center">○</td><td align="center"> </td><td align="center">○</td><td align="center"> </td></tr><tr><td>マスタの故障によるデータ損失がない</td><td align="center">○</td><td align="center">○</td><td align="center">同期が有効の場合</td><td align="center"> </td><td align="center">○</td><td align="center"> </td><td align="center">○</td></tr><tr><td>スタンバイは読み取り問い合わせだけを受理</td><td align="center"> </td><td align="center"> </td><td align="center">ホットスタンバイ使用時</td><td align="center">○</td><td align="center">○</td><td align="center">○</td><td align="center">○</td></tr><tr><td>テーブルごとの粒度となる</td><td align="center"> </td><td align="center"> </td><td align="center"> </td><td align="center">○</td><td align="center"> </td><td align="center">○</td><td align="center">○</td></tr><tr><td>コンフリクトの回避が不要</td><td align="center">○</td><td align="center">○</td><td align="center">○</td><td align="center">○</td><td align="center"> </td><td align="center"> </td><td align="center">○</td></tr></tbody></table></div></div><br class="table-break" /><p><span class="original">
   There are a few solutions that do not fit into the above categories:
-</span><br />上の分類に該当しない解法もあります。
+</span>上の分類に該当しない解法もあります。
  </p><div class="variablelist"><dl class="variablelist"><dt><span class="term">データの分割</span></dt><dd><p><span class="original">
      Data partitioning splits tables into data sets.  Each set can
      be modified by only one server.  For example, data can be
@@ -185,7 +185,7 @@ Bucardoはこの種のレプリケーションの一例です。
      are necessary, an application can query both servers, or
      master/standby replication can be used to keep a read-only copy
      of the other office's data on each server.
-</span><br />データの分割とは、同じテーブルのデータを複数部分に分けることです。
+</span>データの分割とは、同じテーブルのデータを複数部分に分けることです。
 各部分に書き込むことができるのは、1つのサーバだけです。
 例えば、データをロンドンとパリの営業所用に分割でき、サーバをロンドンとパリのどちらにも設置できた状態を考えます。
 問い合わせにロンドンとパリのデータが混在した場合、アプリケーションは両方のサーバに問い合わせることができます。
@@ -200,7 +200,7 @@ Bucardoはこの種のレプリケーションの一例です。
      are combined and returned to the user.  &lt;productname&gt;Pgpool-II&lt;/&gt;
      has this capability.  Also, this can be implemented using the
      &lt;productname&gt;PL/Proxy&lt;/&gt; tool set.
-</span><br />上述した多くの解法は、複数のサーバが複数の問い合わせを処理するものです。
+</span>上述した多くの解法は、複数のサーバが複数の問い合わせを処理するものです。
 処理速度の向上のために、単一の問い合わせに複数のサーバを使用するものはありません。
 本解法は複数のサーバが単一の問い合わせを共同して実行するものです。
 その方法は、データをサーバ間で分割し、各サーバが部分的に問い合わせを実行し、各々の結果をプライマリサーバに送付し、プライマリサーバが合体して利用者に返送するものです。
