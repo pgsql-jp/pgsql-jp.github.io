@@ -7,12 +7,10 @@
    syntax:
 
 </span>PL/Perl言語で関数を作成するには、以下の標準的な<a class="xref" href="sql-createfunction.html" title="CREATE FUNCTION"><span class="refentrytitle">CREATE FUNCTION</span></a>構文を使用してください。
-</p><pre class="programlisting">CREATE FUNCTION <em class="replaceable"><code>funcname</code></em> (<em class="replaceable"><code>argument-types</code></em>) RETURNS <em class="replaceable"><code>return-type</code></em> AS $$<span class="original">
-    # PL/Perl function body
- </span>
+<span class="original">    ★# PL/Perl function body </span>
+</p><pre class="programlisting">CREATE FUNCTION <em class="replaceable"><code>funcname</code></em> (<em class="replaceable"><code>argument-types</code></em>) RETURNS <em class="replaceable"><code>return-type</code></em> AS $$
     # PL/Perl関数本体
-$$ LANGUAGE plperl;</pre><p>
-<span class="original">
+$$ LANGUAGE plperl;</pre><p><span class="original">
    The body of the function is ordinary Perl code. In fact, the PL/Perl
    glue code wraps it inside a Perl subroutine.  A PL/Perl function is
    called in a scalar context, so it can't return a list.  You can return
@@ -65,7 +63,7 @@ PL/Perl関数はサブルーチン内に格納されますので、内部に記�
 </span><code class="command">CREATE FUNCTION</code>コマンドの構文では、関数本体は文字列定数として記述されることを必須としています。
 通常、文字列定数にはドル引用符付け（<a class="xref" href="sql-syntax-lexical.html#sql-syntax-dollar-quoting" title="4.1.2.4. ドル記号で引用符付けされた文字列定数">「ドル記号で引用符付けされた文字列定数」</a>を参照）を使用することが最も便利です。
 エスケープ文字列構文<code class="literal">E''</code>を使用することを選択した場合、関数本体で使用される単一引用符（<code class="literal">'</code>）とバックスラッシュ（<code class="literal">\</code>）をすべて二重にしなければなりません（<a class="xref" href="sql-syntax-lexical.html#sql-syntax-strings" title="4.1.2.1. 文字列定数">「文字列定数」</a>を参照）。
-  </p><p><span class="original">
+   </p><p><span class="original">
    Arguments and results are handled as in any other Perl subroutine:
    arguments are passed in &lt;varname&gt;@_&lt;/varname&gt;, and a result value
    is returned with &lt;literal&gt;return&lt;/&gt; or as the last expression
@@ -101,7 +99,7 @@ $$ LANGUAGE plperl;</pre><p>
    one null and one nonnull argument to return the nonnull argument,
    rather than a null value:
 </span>SQLのNULL値が関数に渡された場合、その引数値はPerlにおける<span class="quote">「<span class="quote">未定義</span>」</span>として現れます。
-<a id="idp91774912" class="indexterm"></a>
+<a id="idp92938032" class="indexterm"></a>
 上の関数定義では、NULL値が入力された場合うまく動作しないでしょう（実際はそれがゼロであるかのように動作するでしょう）。
 <code class="literal">STRICT</code>を関数定義に加えることで、<span class="productname">PostgreSQL</span>の動作をより合理的にすることができます。
 NULL値が渡された場合、関数はまったく呼び出されず、単にNULLという結果が自動的に返されます。
@@ -117,7 +115,8 @@ NULL値が渡された場合、関数はまったく呼び出されず、単にN
     return $x if not defined $y;
     return $x if $x &gt; $y;
     return $y;
-$$ LANGUAGE plperl;</pre><p><span class="original">
+$$ LANGUAGE plperl;</pre><p>
+<span class="original">
    As shown above, to return an SQL null value from a PL/Perl
    function, return an undefined value.  This can be done whether the
    function is strict or not.
@@ -159,11 +158,11 @@ $$ LANGUAGE plperl;
 select returns_array();</pre><p>
   </p><p><span class="original">
    Perl passes &lt;productname&gt;PostgreSQL&lt;/productname&gt; arrays as a blessed
-   &lt;type&gt;PostgreSQL::InServer::ARRAY&lt;/type&gt; object. This object may be treated as an array
+   PostgreSQL::InServer::ARRAY object. This object may be treated as an array
    reference or a string, allowing for backward compatibility with Perl
    code written for &lt;productname&gt;PostgreSQL&lt;/productname&gt; versions below 9.1 to
    run.  For example:
-</span>Perlは<span class="productname">PostgreSQL</span>の配列をblessされた<code class="type">PostgreSQL::InServer::ARRAY</code>オブジェクトとして渡します。
+</span>Perlは<span class="productname">PostgreSQL</span>の配列をblessされたPostgreSQL::InServer::ARRAYオブジェクトとして渡します。
 9.1より過去の<span class="productname">PostgreSQL</span>で作成されたPerlコードを実行させるための後方互換性のため、このオブジェクトは配列への参照または文字列として扱うことができます。
 以下に例を示します。
 
@@ -190,7 +189,7 @@ $$ LANGUAGE plperl;
 SELECT concat_array_elements(ARRAY['PL','/','Perl']);</pre><p>
 
   </p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">注記</h3><p><span class="original">
-    Multidimensional arrays are represented as references to
+    Multi-dimensional arrays are represented as references to
     lower-dimensional arrays of references in a way common to every Perl
     programmer.
 </span>Perlプログラマの常識のように、多次元配列は低次元配列の参照への参照として表現されます。
@@ -221,7 +220,6 @@ SELECT name, empcomp(employee.*) FROM employee;</pre><p>
    For example:
 </span>必要な属性を持つハッシュの参照を返すという同じ方法で、PL/Perl関数は複合型の結果を返すことができます。
 以下に例を示します。
-
 </p><pre class="programlisting">CREATE TYPE testrowperl AS (f1 integer, f2 text, f3 text);
 
 CREATE OR REPLACE FUNCTION perl_row() RETURNS testrowperl AS $$
@@ -237,7 +235,7 @@ SELECT * FROM perl_row();</pre><p>
   </p><p><span class="original">
     PL/Perl functions can also return sets of either scalar or
     composite types.  Usually you'll want to return rows one at a
-    time, both to speed up startup time and to keep from queuing up
+    time, both to speed up startup time and to keep from queueing up
     the entire result set in memory.  You can do this with
     &lt;function&gt;return_next&lt;/function&gt; as illustrated below.  Note that
     after the last &lt;function&gt;return_next&lt;/function&gt;, you must put
@@ -290,6 +288,7 @@ CREATE OR REPLACE FUNCTION perl_set() RETURNS SETOF testrowperl AS $$
 $$ LANGUAGE plperl;
 
 SELECT * FROM perl_set();</pre><p>
+
   </p><p><span class="original">
    If you wish to use the &lt;literal&gt;strict&lt;/&gt; pragma with your code you
    have a few options. For temporary global use you can &lt;command&gt;SET&lt;/&gt;
