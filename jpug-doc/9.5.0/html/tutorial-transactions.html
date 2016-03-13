@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>3.4. トランザクション</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="PostgreSQL 9.5.1文書" /><link rel="up" href="tutorial-advanced.html" title="第3章 高度な諸機能" /><link rel="prev" href="tutorial-fk.html" title="3.3. 外部キー" /><link rel="next" href="tutorial-window.html" title="3.5. ウィンドウ関数" /><link rel="copyright" href="legalnotice.html" title="法的告知" /><meta name="viewport" content="width=device-width,initial-scale=1.0,minimum-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><td width="20%" align="left" colspan="2"></td><th width="60%" align="center"><a accesskey="h" href="index.html">PostgreSQL 9.5.1文書</a></th><td width="20%" align="right"><div class="actions"><a class="issue" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 9.5.1 tutorial-transactions.html">誤訳等の報告</a></div></td></tr><tr><td width="10%" align="left" valign="top"><a accesskey="p" href="tutorial-fk.html">戻る</a> </td><td width="10%" align="left" valign="top"><a accesskey="u" href="tutorial-advanced.html">上に戻る</a></td><td width="60%" align="center">3.4. トランザクション</td><td width="20%" align="right" valign="top"> <a accesskey="n" href="tutorial-window.html">次へ</a></td></tr></table><hr /></div><div class="sect1" id="tutorial-transactions"><div class="titlepage"><div><div><h2 class="title" style="clear: both">3.4. トランザクション</h2></div></div></div><span class="original">
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>3.4. トランザクション</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="PostgreSQL 9.5.0文書" /><link rel="up" href="tutorial-advanced.html" title="第3章 高度な諸機能" /><link rel="prev" href="tutorial-fk.html" title="3.3. 外部キー" /><link rel="next" href="tutorial-window.html" title="3.5. ウィンドウ関数" /><link rel="copyright" href="legalnotice.html" title="法的告知" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">3.4. トランザクション</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="tutorial-fk.html">戻る</a> </td><th width="60%" align="center">第3章 高度な諸機能</th><td width="20%" align="right"> <a accesskey="n" href="tutorial-window.html">次へ</a></td></tr></table><hr /></div><div class="sect1" id="tutorial-transactions"><div class="titlepage"><div><div><h2 class="title" style="clear: both">3.4. トランザクション</h2></div></div></div><span class="original">
    &lt;title&gt;Transactions&lt;/title&gt;
-</span><a id="idp56443952" class="indexterm"></a><p><span class="original">
+</span><a id="idp56827680" class="indexterm"></a><p><span class="original">
     &lt;firstterm&gt;Transactions&lt;/&gt; are a fundamental concept of all database
     systems.  The essential point of a transaction is that it bundles
     multiple steps into a single, all-or-nothing operation.  The intermediate
@@ -10,8 +10,7 @@
     then none of the steps affect the database at all.
 </span><em class="firstterm">トランザクション</em>は全てのデータベースシステムで基礎となる概念です。
 トランザクションの基本的要点は複数の手順を単一の「全てかなしか」の操作にまとめ上げることです。
-手順の進行途中の状態は他の同時実行中のトランザクションからは見えません。
-トランザクションの完結の障害となる何らかのエラーが起こると、それらの手順はどれもデータベースにまったく影響を与えません。
+手順の進行途中の状態は他の動いているトランザクションからは見えません。そして、何らかのエラーが起こるとトランザクションは完結しません。ですからデータベースはエラーの原因となった手順によってまったく影響されることはありません。
    </p><p><span class="original">
     For example, consider a bank database that contains balances for various
     customer accounts, as well as total deposit balances for branches.
@@ -78,9 +77,9 @@ $100.00がアリスの口座から引き落とされずにボブの口座に振�
     so far by an open transaction are invisible to other transactions
     until the transaction completes, whereupon all the updates become
     visible simultaneously.
-</span>トランザクション実装のデータベースの別の重要な特性は、原子的更新という概念に深く関係しています。
-複数のトランザクションが同時に動作している時、それぞれのトランザクションは別のトランザクションが行っている未完了の変更を見ることができてはなりません。
-例えば、あるトランザクションがすべての支店の残高を集計する作業を行なっているとき、アリスの口座がある支店からの引き落としを勘定に入れるけれども、ボブの口座がある支店への振り込みを勘定に入れないというのは受け入れられませんし、その逆も駄目です。
+</span>他にもトランザクション実装のデータベースの重要な特性は、原子的更新という概念に深く関係しています
+。複数のトランザクションが同時に動作している時、それぞれのトランザクションは別のトランザクションが行っている未完了の変更を見ることができてはなりません。
+例えば、あるトランザクションがすべての支店の残高を集計する作業を行なう場合、アリスの口座がある支店からの引き落としを勘定に入れませんし、ボブの口座がある支店への振り込みも勘定に入れません。もしくは両方とも勘定に入れます。
 つまり、データベース上での恒久的効果という意味のみならず、一連の操作の過程で可視性ということにおいてもトランザクションは「すべて」か「なし」かでなければなりません。
 作業中のトランザクションによる更新は、他のトランザクションからはトランザクションが完結するまで不可視です。
 そのトランザクションが完結したその時点で、トランザクションが行った更新の全てが見えるようになります。
@@ -89,8 +88,7 @@ $100.00がアリスの口座から引き落とされずにボブの口座に振�
     the SQL commands of the transaction with
     &lt;command&gt;BEGIN&lt;/&gt; and &lt;command&gt;COMMIT&lt;/&gt; commands.  So our banking
     transaction would actually look like:
-</span><span class="productname">PostgreSQL</span>ではトランザクションを構成するSQLコマンドを<code class="command">BEGIN</code>と<code class="command">COMMIT</code>で囲んで設定します。
-従って、この銀行取り引きのトランザクションの実際は次のようになります。
+</span><span class="productname">PostgreSQL</span>ではトランザクションを構成するSQLコマンドを<code class="command">BEGIN</code>と<code class="command">COMMIT</code>で囲んで設定します。そうすると、この銀行取り引きのトランザクションの実際は次のようになります。
 
 </p><pre class="programlisting">BEGIN;
 UPDATE accounts SET balance = balance - 100.00
@@ -114,14 +112,14 @@ COMMIT;</pre><p>
     statements surrounded by &lt;command&gt;BEGIN&lt;/&gt; and &lt;command&gt;COMMIT&lt;/&gt;
     is sometimes called a &lt;firstterm&gt;transaction block&lt;/&gt;.
 </span><span class="productname">PostgreSQL</span>は実際全てのSQL文をトランザクション内で実行するようになっています。
-<code class="command">BEGIN</code>を発行しない場合、それぞれの文は暗黙的に<code class="command">BEGIN</code>が付いているとみなし、（成功すれば）<code class="command">COMMIT</code>で囲まれているものとします。
+<code class="command">BEGIN</code>を発行しないでも、それぞれの文は暗黙的に<code class="command">BEGIN</code>が付いているとみなし、（成功すれば）<code class="command">COMMIT</code>で囲まれているものとします。
 <code class="command">BEGIN</code>と<code class="command">COMMIT</code>で囲まれた文のグループは<em class="firstterm">トランザクションブロック</em>と呼ばれることもあります。
    </p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">注記</h3><p><span class="original">
      Some client libraries issue &lt;command&gt;BEGIN&lt;/&gt; and &lt;command&gt;COMMIT&lt;/&gt;
      commands automatically, so that you might get the effect of transaction
      blocks without asking.  Check the documentation for the interface
      you are using.
-</span>いくつかのクライアントライブラリは自動的に<code class="command">BEGIN</code>と<code class="command">COMMIT</code>コマンドを発行し、ユーザに尋ねることなくトランザクションブロックが有効になります。
+</span>いくつかのクライアントライブラリは自動的に<code class="command">BEGIN</code>と<code class="command">COMMIT</code>コマンドを発行し、警告なしにトランザクションブロックが有効になります。
 使用しているインタフェースのドキュメントで確認してください。
     </p></div><p><span class="original">
     It's possible to control the statements in a transaction in a more
@@ -182,6 +180,6 @@ COMMIT;</pre><p>
     transaction block that was put in aborted state by the
     system due to an error, short of rolling it back completely and starting
     again.
-</span>この例はもちろん極端に単純化していますが、セーブポイントの使用を通じてトランザクションブロック内で多くの制御を行えることがわかります。
-さらには何らかのエラーでシステムがトランザクションブロックを中断状態にした場合、完全にロールバックして再び開始するのを別とすれば、<code class="command">ROLLBACK TO</code>コマンドがトランザクションブロックの制御を取り戻す唯一の手段です。
+</span>この例はもちろん極端に単純化していますが、セーブポイントの使用を通じてトランザクションブロック内で多くの可能な操作を行えることがわかります。
+さらには何らかのエラーでシステムがトランザクションブロックを中断した場合、完全にロールバックして再び開始するのを除いて、<code class="command">ROLLBACK TO</code>コマンドがトランザクションブロックの制御を取り戻す唯一の手段です。
    </p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="tutorial-fk.html">戻る</a> </td><td width="20%" align="center"><a accesskey="u" href="tutorial-advanced.html">上に戻る</a></td><td width="40%" align="right"> <a accesskey="n" href="tutorial-window.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">3.3. 外部キー </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> 3.5. ウィンドウ関数</td></tr></table></div></body></html>
