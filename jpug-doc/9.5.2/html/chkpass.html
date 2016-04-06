@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>F.6. chkpass</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="PostgreSQL 9.5.2文書" /><link rel="up" href="contrib.html" title="付録F 追加で提供されるモジュール" /><link rel="prev" href="btree-gist.html" title="F.5. btree_gist" /><link rel="next" href="citext.html" title="F.7. citext" /><link rel="copyright" href="legalnotice.html" title="法的告知" /><meta name="viewport" content="width=device-width,initial-scale=1.0,minimum-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><td width="20%" align="left" colspan="2"></td><th width="60%" align="center"><a accesskey="h" href="index.html">PostgreSQL 9.5.2文書</a></th><td width="20%" align="right"><div class="actions"><a class="issue" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 9.5.2 chkpass.html">誤訳等の報告</a></div></td></tr><tr><td width="10%" align="left" valign="top"><a accesskey="p" href="btree-gist.html">前へ</a> </td><td width="10%" align="left" valign="top"><a accesskey="u" href="contrib.html">上へ</a></td><td width="60%" align="center">F.6. chkpass</td><td width="20%" align="right" valign="top"> <a accesskey="n" href="citext.html">次へ</a></td></tr></table><hr /></div><div class="sect1" id="chkpass"><div class="titlepage"><div><div><h2 class="title" style="clear: both">F.6. chkpass</h2></div></div></div><a id="idp142882064" class="indexterm"></a><p><span class="original">
+  This module implements a data type &lt;type&gt;chkpass&lt;/&gt; that is
+  designed for storing encrypted passwords.
+  Each password is automatically converted to encrypted form upon entry,
+  and is always stored encrypted.  To compare, simply compare against a clear
+  text password and the comparison function will encrypt it before comparing.
+</span>本モジュールは暗号化したパスワードを格納するために設計された<code class="type">chkpass</code>データ型を実装します。
+各パスワードは入力時に自動的に暗号化形式に変換され、常に暗号化して格納されます。
+比較する際は単に平文のパスワードと比較してください。
+そうすると、比較関数が比較する前に平文を暗号化してくれます。
+ </p><p><span class="original">
+  There are provisions in the code to report an error if the password is
+  determined to be easily crackable.  However, this is currently just
+  a stub that does nothing.
+</span>パスワードが簡単にクラックできると判断される場合にエラーを報告する対策がコードに含まれています。
+しかし、現在は何も行わない単なるスタブです。
+ </p><p><span class="original">
+  If you precede an input string with a colon, it is assumed to be an
+  already-encrypted password, and is stored without further encryption.
+  This allows entry of previously-encrypted passwords.
+</span>コロン付きの入力文字列を付けると、それはすでに暗号化済みのパスワードとみなされ、それ以上暗号化することなく格納されます。
+これにより事前に暗号化されたパスワードを入力することができます。
+ </p><p><span class="original">
+  On output, a colon is prepended.  This makes it possible to dump and reload
+  passwords without re-encrypting them.  If you want the encrypted password
+  without the colon then use the &lt;function&gt;raw()&lt;/&gt; function.
+  This allows you to use the
+  type with things like Apache's &lt;literal&gt;Auth_PostgreSQL&lt;/&gt; module.
+</span>出力時はコロンが先頭に付けられます。
+これにより、暗号化を再度行うことなくパスワードのダンプと再ロードを行うことができます。
+コロンがない暗号化パスワードが必要ならば、<code class="function">raw()</code>関数を使用してください。
+これにより、Apacheの<code class="literal">Auth_PostgreSQL</code>モジュールのような作業にこの型を使用することができます。
+ </p><p><span class="original">
+  The encryption uses the standard Unix function &lt;function&gt;crypt()&lt;/&gt;,
+  and so it suffers
+  from all the usual limitations of that function; notably that only the
+  first eight characters of a password are considered.
+</span>暗号化は標準Unix関数<code class="function">crypt()</code>を使用します。
+このため、その関数全ての制限の影響を受けます。とりわけ、パスワードの先頭8文字のみが考慮されます。
+ </p><p><span class="original">
+  Note that the &lt;type&gt;chkpass&lt;/type&gt; data type is not indexable.
+</span><code class="type">chkpass</code>データ型のインデックス付けができないことに注意してください。
+  <span class="original"> 原文コメント
+  I haven't worried about making this type indexable.  I doubt that anyone
+  would ever need to sort a file in order of encrypted password.
+  </span>
+ </p><p><span class="original">
+  Sample usage:
+</span>使用例を以下に示します。
+ </p><pre class="programlisting">test=# create table test (p chkpass);
+CREATE TABLE
+test=# insert into test values ('hello');
+INSERT 0 1
+test=# select * from test;
+       p
+----------------
+ :dVGkpXdOrE3ko
+(1 row)
+
+test=# select raw(p) from test;
+      raw
+---------------
+ dVGkpXdOrE3ko
+(1 row)
+
+test=# select p = 'hello' from test;
+ ?column?
+----------
+ t
+(1 row)
+
+test=# select p = 'goodbye' from test;
+ ?column?
+----------
+ f
+(1 row)</pre><div class="sect2" id="idp142893696"><div class="titlepage"><div><div><h3 class="title">F.6.1. 作者</h3></div></div></div><span class="original">
+  &lt;title&gt;Author&lt;/title&gt;
+</span><p>   D'Arcy J.M. Cain (<code class="email">&lt;<a class="email" href="mailto:darcy@druid.net">darcy@druid.net</a>&gt;</code>)
+  </p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="btree-gist.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="contrib.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="citext.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">F.5. btree_gist </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> F.7. citext</td></tr></table></div></body></html>

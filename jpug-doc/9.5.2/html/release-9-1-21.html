@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>E.42. Release 9.1.21</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="PostgreSQL 9.5.2文書" /><link rel="up" href="release.html" title="付録E リリースノート" /><link rel="prev" href="release-9-2.html" title="E.41. リリース9.2" /><link rel="next" href="release-9-1-20.html" title="E.43. リリース 9.1.20" /><link rel="copyright" href="legalnotice.html" title="法的告知" /><meta name="viewport" content="width=device-width,initial-scale=1.0,minimum-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><td width="20%" align="left" colspan="2"></td><th width="60%" align="center"><a accesskey="h" href="index.html">PostgreSQL 9.5.2文書</a></th><td width="20%" align="right"><div class="actions"><a class="issue" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 9.5.2 release-9-1-21.html">誤訳等の報告</a></div></td></tr><tr><td width="10%" align="left" valign="top"><a accesskey="p" href="release-9-2.html">前へ</a> </td><td width="10%" align="left" valign="top"><a accesskey="u" href="release.html">上へ</a></td><td width="60%" align="center">E.42. Release 9.1.21</td><td width="20%" align="right" valign="top"> <a accesskey="n" href="release-9-1-20.html">次へ</a></td></tr></table><hr /></div><div class="sect1" id="release-9-1-21"><div class="titlepage"><div><div><h2 class="title" style="clear: both">E.42. Release 9.1.21</h2></div></div></div><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Release Date</h3><p>2016-03-31</p></div><p>   This release contains a variety of fixes from 9.1.20.
+   For information about new features in the 9.1 major release, see
+   <a class="xref" href="release-9-1.html" title="E.63. リリース9.1">E.63. リリース9.1</a>.
+  </p><div class="sect2" id="idp127032896"><div class="titlepage"><div><div><h3 class="title">E.42.1. Migration to Version 9.1.21</h3></div></div></div><p>    A dump/restore is not required for those running 9.1.X.
+   </p><p>    However, if you are upgrading from a version earlier than 9.1.16,
+    see <a class="xref" href="release-9-1-16.html" title="E.47. リリース 9.1.16">E.47. リリース 9.1.16</a>.
+   </p></div><div class="sect2" id="idp127034720"><div class="titlepage"><div><div><h3 class="title">E.42.2. Changes</h3></div></div></div><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>      Fix incorrect handling of NULL index entries in
+      indexed <code class="literal">ROW()</code> comparisons (Tom Lane)
+     </p><p>      An index search using a row comparison such as <code class="literal">ROW(a, b) &gt;
+      ROW('x', 'y')</code> would stop upon reaching a NULL entry in
+      the <code class="structfield">b</code> column, ignoring the fact that there might be
+      non-NULL <code class="structfield">b</code> values associated with later values
+      of <code class="structfield">a</code>.
+     </p></li><li class="listitem"><p>      Avoid unlikely data-loss scenarios due to renaming files without
+      adequate <code class="function">fsync()</code> calls before and after (Michael Paquier,
+      Tomas Vondra, Andres Freund)
+     </p></li><li class="listitem"><p>      Correctly handle cases where <code class="literal">pg_subtrans</code> is close to XID
+      wraparound during server startup (Jeff Janes)
+     </p></li><li class="listitem"><p>      Fix corner-case crash due to trying to free <code class="function">localeconv()</code>
+      output strings more than once (Tom Lane)
+     </p></li><li class="listitem"><p>      Fix parsing of affix files for <code class="literal">ispell</code> dictionaries
+      (Tom Lane)
+     </p><p>      The code could go wrong if the affix file contained any characters
+      whose byte length changes during case-folding, for
+      example <code class="literal">I</code> in Turkish UTF8 locales.
+     </p></li><li class="listitem"><p>      Avoid use of <code class="function">sscanf()</code> to parse <code class="literal">ispell</code>
+      dictionary files (Artur Zakirov)
+     </p><p>      This dodges a portability problem on FreeBSD-derived platforms
+      (including OS X).
+     </p></li><li class="listitem"><p>      Avoid a crash on old Windows versions (before 7SP1/2008R2SP1) with an
+      AVX2-capable CPU and a Postgres build done with Visual Studio 2013
+      (Christian Ullrich)
+     </p><p>      This is a workaround for a bug in Visual Studio 2013's runtime
+      library, which Microsoft have stated they will not fix in that
+      version.
+     </p></li><li class="listitem"><p>      Fix <span class="application">psql</span>'s tab completion logic to handle multibyte
+      characters properly (Kyotaro Horiguchi, Robert Haas)
+     </p></li><li class="listitem"><p>      Fix <span class="application">psql</span>'s tab completion for
+      <code class="literal">SECURITY LABEL</code> (Tom Lane)
+     </p><p>      Pressing TAB after <code class="literal">SECURITY LABEL</code> might cause a crash
+      or offering of inappropriate keywords.
+     </p></li><li class="listitem"><p>      Make <span class="application">pg_ctl</span> accept a wait timeout from the
+      <code class="envar">PGCTLTIMEOUT</code> environment variable, if none is specified on
+      the command line (Noah Misch)
+     </p><p>      This eases testing of slower buildfarm members by allowing them
+      to globally specify a longer-than-normal timeout for postmaster
+      startup and shutdown.
+     </p></li><li class="listitem"><p>      Fix incorrect test for Windows service status
+      in <span class="application">pg_ctl</span> (Manuel Mathar)
+     </p><p>      The previous set of minor releases attempted to
+      fix <span class="application">pg_ctl</span> to properly determine whether to send log
+      messages to Window's Event Log, but got the test backwards.
+     </p></li><li class="listitem"><p>      Fix <span class="application">pgbench</span> to correctly handle the combination
+      of <code class="literal">-C</code> and <code class="literal">-M prepared</code> options (Tom Lane)
+     </p></li><li class="listitem"><p>      In PL/Perl, properly translate empty Postgres arrays into empty Perl
+      arrays (Alex Hunsaker)
+     </p></li><li class="listitem"><p>      Make PL/Python cope with function names that aren't valid Python
+      identifiers (Jim Nasby)
+     </p></li><li class="listitem"><p>      Fix multiple mistakes in the statistics returned
+      by <code class="filename">contrib/pgstattuple</code>'s <code class="function">pgstatindex()</code>
+      function (Tom Lane)
+     </p></li><li class="listitem"><p>      Remove dependency on <code class="literal">psed</code> in MSVC builds, since it's no
+      longer provided by core Perl (Michael Paquier, Andrew Dunstan)
+     </p></li><li class="listitem"><p>      Update time zone data files to <span class="application">tzdata</span> release 2016c
+      for DST law changes in Azerbaijan, Chile, Haiti, Palestine, and Russia
+      (Altai, Astrakhan, Kirov, Sakhalin, Ulyanovsk regions), plus
+      historical corrections for Lithuania, Moldova, and Russia
+      (Kaliningrad, Samara, Volgograd).
+     </p></li></ul></div></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="release-9-2.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="release.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="release-9-1-20.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">E.41. リリース9.2 </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> E.43. リリース 9.1.20</td></tr></table></div></body></html>
