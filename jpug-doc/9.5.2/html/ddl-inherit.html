@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>5.9. 継承</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="PostgreSQL 9.5.2文書" /><link rel="up" href="ddl.html" title="第5章 データ定義" /><link rel="prev" href="ddl-schemas.html" title="5.8. スキーマ" /><link rel="next" href="ddl-partitioning.html" title="5.10. パーティショニング" /><link rel="copyright" href="legalnotice.html" title="法的告知" /><meta name="viewport" content="width=device-width,initial-scale=1.0,minimum-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><td width="20%" align="left" colspan="2"></td><th width="60%" align="center"><a accesskey="h" href="index.html">PostgreSQL 9.5.2文書</a></th><td width="20%" align="right"><div class="actions"><a class="issue" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 9.5.2 ddl-inherit.html">誤訳等の報告</a></div></td></tr><tr><td width="10%" align="left" valign="top"><a accesskey="p" href="ddl-schemas.html">前へ</a> </td><td width="10%" align="left" valign="top"><a accesskey="u" href="ddl.html">上へ</a></td><td width="60%" align="center">5.9. 継承</td><td width="20%" align="right" valign="top"> <a accesskey="n" href="ddl-partitioning.html">次へ</a></td></tr></table><hr /></div><div class="sect1" id="ddl-inherit"><div class="titlepage"><div><div><h2 class="title" style="clear: both">5.9. 継承</h2></div></div></div><span class="original">
   &lt;title&gt;Inheritance&lt;/title&gt;
-</span><a id="idp58450256" class="indexterm"></a><a id="idp58451120" class="indexterm"></a><p><span class="original">
+</span><a id="idp58635696" class="indexterm"></a><a id="idp58636560" class="indexterm"></a><p><span class="original">
    &lt;productname&gt;PostgreSQL&lt;/productname&gt; implements table inheritance,
    which can be a useful tool for database designers.  (SQL:1999 and
    later define a type inheritance feature, which differs in many
@@ -22,10 +22,10 @@
 </span>まず例から始めましょう。
 市（cities）のデータモデルを作成しようとしていると仮定してください。
 それぞれの州にはたくさんの市がありますが、州都（capitals）は1つのみです。
-特定の州から州都を素早く検索したいとします。
+どの州についても州都を素早く検索したいとします。
 これは、2つのテーブルを作成することにより実現できます。
-1つは州都のテーブルで、もう1つは州都ではないテーブルです。
-しかし、州都であるか否かに関わらない市に対するデータを問い合わせたときには何が起こるでしょうか？
+1つは州都のテーブルで、もう1つは州都ではない市のテーブルです。
+しかし、州都であるか否かに関わらず、市に対するデータを問い合わせたいときには何が起こるでしょうか？
 継承はこの問題を解決できます。
 <code class="structname">cities</code>から継承される<code class="structname">capitals</code>テーブルを定義するのです。
 
@@ -45,7 +45,7 @@ CREATE TABLE capitals (
    their state.
 </span>
 この場合、<code class="structname">capitals</code>テーブルは、その親テーブルである<code class="structname">cities</code>テーブルの列をすべて<em class="firstterm">継承</em>します。
-州都は1つの余分な列<code class="structfield">state</code>を持ち、州を表現します。
+州都は1つの追加の列<code class="structfield">state</code>を持ち、州を表現します。
   </p><p><span class="original">
    In &lt;productname&gt;PostgreSQL&lt;/productname&gt;, a table can inherit from
    zero or more other tables, and a query can reference either all
@@ -57,7 +57,7 @@ CREATE TABLE capitals (
 </span><span class="productname">PostgreSQL</span>では、1つのテーブルは、0以上のテーブルから継承することが可能です。
 また、問い合わせはテーブルのすべての行、またはテーブルのすべての行と継承されたテーブルのすべての行のいずれかを参照できます。
 後者がデフォルトの動作になります。
-例えば次の問い合わせは、500フィートより上に位置している州都を含んだ、すべての市の名前を検索します。
+例えば次の問い合わせは、500フィートより上に位置しているすべての市の名前を、州都を含めて検索します。
 
 </p><pre class="programlisting">SELECT name, altitude
     FROM cities
@@ -111,14 +111,14 @@ CREATE TABLE capitals (
    However writing &lt;literal&gt;*&lt;/&gt; might be useful to emphasize that
    additional tables will be searched.
 </span>
-<code class="literal">*</code>の指定は、その動作がデフォルトである（あなたが<a class="xref" href="runtime-config-compatible.html#guc-sql-inheritance">sql_inheritance</a>構成オプションの設定を変更していない限り）ため必須ではありません。
+<code class="literal">*</code>の指定は、その動作が（<a class="xref" href="runtime-config-compatible.html#guc-sql-inheritance">sql_inheritance</a>構成オプションの設定を変更していない限り）デフォルトであるため、必須ではありません。
 しかしながら、<code class="literal">*</code>を指定することは、追加のテーブルが検索されることを強調するのに有効でしょう。
   </p><p><span class="original">
    In some cases you might wish to know which table a particular row
    originated from. There is a system column called
    &lt;structfield&gt;tableoid&lt;/structfield&gt; in each table which can tell you the
    originating table:
-</span>場合によっては、ある特定の行がどのテーブルからきたものか知りたいということがあるかもしれません。
+</span>ある特定の行がどのテーブルからきたものか知りたいという場合もあるでしょう。
 それぞれのテーブルには<code class="structfield">tableoid</code>という、元になったテーブルを示すシステム列があります。
 
 </p><pre class="programlisting">SELECT c.tableoid, c.name, c.altitude
@@ -168,7 +168,7 @@ WHERE c.altitude &gt; 500;</pre><p>
    &lt;command&gt;INSERT&lt;/command&gt; or &lt;command&gt;COPY&lt;/command&gt; commands to
    other tables in the inheritance hierarchy. In our example, the
    following &lt;command&gt;INSERT&lt;/command&gt; statement will fail:
-</span>継承は<code class="command">INSERT</code>または<code class="command">COPY</code>により、継承の階層にある他のテーブルにデータを自動的に伝播することはありません。
+</span>継承は<code class="command">INSERT</code>または<code class="command">COPY</code>によるデータを、継承の階層にある他のテーブルに自動的に伝播しません。
 この例では、次の<code class="command">INSERT</code>文は失敗します。
 </p><pre class="programlisting">INSERT INTO cities (name, population, altitude, state)
 VALUES ('Albany', NULL, NULL, 'NY');</pre><p><span class="original">
@@ -181,11 +181,11 @@ VALUES ('Albany', NULL, NULL, 'NY');</pre><p><span class="original">
    does not contain the column &lt;structfield&gt;state&lt;/&gt;, and so the
    command will be rejected before the rule can be applied.
 </span>
-データが、どうにかして<code class="structname">capitals</code>テーブルまで到達できればいいのですが、そのようにはなりません。
-<code class="command">INSERT</code>は、いつも指定されたテーブルに対してデータを挿入します。
+データが、どうにかして<code class="structname">capitals</code>テーブルに入ることを期待するかもしれませんが、そのようにはなりません。
+<code class="command">INSERT</code>は、いつも指定されたテーブルそれ自体に対してデータを挿入します。
 ルール（詳細は<a class="xref" href="rules.html" title="第38章 ルールシステム">38章<em>ルールシステム</em></a>を参照してください）を使用して挿入を中継できる場合もあります。
-しかし、ルールを使用しても上記のような場合には適用できません。
-なぜなら、<code class="structname">cities</code>テーブルには<code class="structfield">state</code>列は含まれていませんので、ルールが適用される前にコマンドは拒否されてしまうからです。
+しかし、ルールを使用しても上記のような場合は解決できません。
+なぜなら、<code class="structname">cities</code>テーブルに<code class="structfield">state</code>列が含まれていないため、ルールが適用される前にコマンドが拒否されてしまうからです。
   </p><p><span class="original">
    All check constraints and not-null constraints on a parent table are
    automatically inherited by its children.  Other types of constraints
@@ -265,8 +265,8 @@ VALUES ('Albany', NULL, NULL, 'NY');</pre><p><span class="original">
    TABLE&lt;/command&gt; follows the same rules for duplicate column merging
    and rejection that apply during &lt;command&gt;CREATE TABLE&lt;/command&gt;.
 </span><a class="xref" href="sql-altertable.html" title="ALTER TABLE"><span class="refentrytitle">ALTER TABLE</span></a>は、列データ定義と検査制約の変更を継承の階層にあるテーブルに伝えます。
-繰り返しになりますが、他のテーブルに依存する列の削除は<code class="literal">CASCADE</code>オプションを使用したときのみ可能となります。
-<code class="command">ALTER TABLE</code>は、重複列の統合時に適用される規則と<code class="command">CREATE TABLE</code>時に適用される拒否の規則に従います。
+ここでも、他のテーブルに依存する列の削除は<code class="literal">CASCADE</code>オプションを使用したときのみ可能となります。
+<code class="command">ALTER TABLE</code>は、重複列の統合と拒否について、<code class="command">CREATE TABLE</code>時に適用される規則に従います。
   </p><p><span class="original">
    Note how table access permissions are handled.  Querying a parent
    table can automatically access data in child tables without further
@@ -304,7 +304,7 @@ VALUES ('Albany', NULL, NULL, 'NY');</pre><p><span class="original">
    behavior of each individual command is documented in its reference
    page (&lt;xref linkend="sql-commands"&gt;).
 </span>すべてのSQLコマンドが継承階層に対して動作できるとは限らないことに注意してください。
-データの検索、データの変更、スキーマの変更のために使用されるコマンド（例えば<code class="literal">SELECT</code>、<code class="literal">UPDATE</code>、<code class="literal">DELETE</code>、<code class="literal">ALTER TABLE</code>のほとんどの構文です。しかし<code class="literal">INSERT</code>や<code class="literal">ALTER TABLE ... RENAME</code>は除きます。）は通常、デフォルトで子テーブルを含み、また、それを除外するための<code class="literal">ONLY</code>記法をサポートします。
+データの検索、データの変更、スキーマの変更のために使用されるコマンド（例えば<code class="literal">SELECT</code>、<code class="literal">UPDATE</code>、<code class="literal">DELETE</code>、<code class="literal">ALTER TABLE</code>のほとんどの構文が該当しますが、<code class="literal">INSERT</code>や<code class="literal">ALTER TABLE ... RENAME</code>は含まれません）は通常、デフォルトで子テーブルを含み、また、それを除外するための<code class="literal">ONLY</code>記法をサポートします。
 データベース保守およびチューニング（例えば<code class="literal">REINDEX</code>、<code class="literal">VACUUM</code>）を行うコマンドは通常、個々の物理テーブルに対してのみ動作し、継承階層に対する再帰をサポートしません。
 個々のコマンドのそれぞれの動作はそのマニュアルページ（<a class="xref" href="sql-commands.html" title="SQLコマンド">SQLコマンド</a>）に記載されています。
   </p><p><span class="original">
@@ -313,7 +313,8 @@ VALUES ('Albany', NULL, NULL, 'NY');</pre><p><span class="original">
    tables, not to their inheritance children. This is true on both the
    referencing and referenced sides of a foreign key constraint. Thus,
    in the terms of the above example:
-</span>継承機能の厳しい制限として、（一意性制約を含む）インデックス、および外部キーは、そのテーブルのみに適用され、それを継承した子テーブルには適用されないことがあります。これは外部キーの参照側、被参照側でも同様に適用されません。
+</span>継承機能の重大な制限として、インデックス（一意性制約を含む）、および外部キーは、そのテーブルのみに適用され、それを継承した子テーブルには適用されないことがあります。
+これは外部キーの参照側、被参照側の両方について当てはまります。
 したがって、上の例では
 
    </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p><span class="original">
@@ -337,14 +338,14 @@ VALUES ('Albany', NULL, NULL, 'NY');</pre><p><span class="original">
       &lt;structname&gt;capitals&lt;/&gt;.  In this case you could work around it by
       manually adding the same &lt;literal&gt;REFERENCES&lt;/&gt; constraint to
       &lt;structname&gt;capitals&lt;/&gt;.
-</span>同じように、もし<code class="structname">cities</code>.<code class="structfield">name</code> <code class="literal">REFERENCES</code>他のテーブルとしても、この制約は自動的に<code class="structname">capitals</code>に引き継がれるわけではありません。
-この場合は<code class="structname">capitals</code>テーブルに同一の<code class="literal">REFERENCES</code>制約を手動で追加しなければいけません。
+</span>同じように、<code class="structname">cities</code>.<code class="structfield">name</code> <code class="literal">REFERENCES</code>で他のテーブルを参照するようにしても、この制約は自動的に<code class="structname">capitals</code>に引き継がれるわけではありません。
+この場合は<code class="structname">capitals</code>テーブルに同一の<code class="literal">REFERENCES</code>制約を手動で追加すれば問題を回避できます。
      </p></li><li class="listitem"><p><span class="original">
       Specifying that another table's column &lt;literal&gt;REFERENCES
       cities(name)&lt;/&gt; would allow the other table to contain city names, but
       not capital names.  There is no good workaround for this case.
-</span>他のテーブルの列<code class="literal">REFERENCES cities(name)</code>を指定することは、他のテーブルが市の名前を持つことを許可しますが、州都の名前を持つことを許可しません。
-この場合は次善策はありません。
+</span>他のテーブルの列に<code class="literal">REFERENCES cities(name)</code>を指定すると、他のテーブルが市の名前を持つことはできますが、州都の名前を持つことできません。
+この場合は良い回避策がありません。
      </p></li></ul></div><p>
 <span class="original">
    These deficiencies will probably be fixed in some future release,
