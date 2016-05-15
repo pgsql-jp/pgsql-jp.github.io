@@ -1,0 +1,391 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>58.2. インデックスアクセスメソッド関数</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="PostgreSQL 9.5.3文書" /><link rel="up" href="indexam.html" title="第58章 インデックスアクセスメソッドのインタフェース定義" /><link rel="prev" href="index-catalog.html" title="58.1. インデックス用のカタログ項目" /><link rel="next" href="index-scanning.html" title="58.3. インデックススキャン" /><link rel="copyright" href="legalnotice.html" title="法的告知" /><meta name="viewport" content="width=device-width,initial-scale=1.0,minimum-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><td width="20%" align="left" colspan="2"></td><th width="60%" align="center"><a accesskey="h" href="index.html">PostgreSQL 9.5.3文書</a></th><td width="20%" align="right"><div class="actions"><a class="issue" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 9.5.3 index-functions.html">誤訳等の報告</a></div></td></tr><tr><td width="10%" align="left" valign="top"><a accesskey="p" href="index-catalog.html">前へ</a> </td><td width="10%" align="left" valign="top"><a accesskey="u" href="indexam.html">上へ</a></td><td width="60%" align="center">58.2. インデックスアクセスメソッド関数</td><td width="20%" align="right" valign="top"> <a accesskey="n" href="index-scanning.html">次へ</a></td></tr></table><hr /></div><div class="sect1" id="index-functions"><div class="titlepage"><div><div><h2 class="title" style="clear: both">58.2. インデックスアクセスメソッド関数</h2></div></div></div><span class="original">
+  &lt;title&gt;Index Access Method Functions&lt;/title&gt;
+</span><p><span class="original">
+   The index construction and maintenance functions that an index access
+   method must provide are:
+</span>インデックスアクセスメソッドが提供しなければならない、インデックス構築および保守関数を以下に示します。
+  </p><pre class="programlisting">IndexBuildResult *
+ambuild (Relation heapRelation,
+         Relation indexRelation,
+         IndexInfo *indexInfo);</pre><p><span class="original">
+   Build a new index.  The index relation has been physically created,
+   but is empty.  It must be filled in with whatever fixed data the
+   access method requires, plus entries for all tuples already existing
+   in the table.  Ordinarily the &lt;function&gt;ambuild&lt;/&gt; function will call
+   &lt;function&gt;IndexBuildHeapScan()&lt;/&gt; to scan the table for existing tuples
+   and compute the keys that need to be inserted into the index.
+   The function must return a palloc'd struct containing statistics about
+   the new index.
+</span>
+新しいインデックスを構築します。
+空のインデックスリレーションが物理的に作成されます。
+これは、アクセスメソッドが必要とする何らかの固定データと、テーブル内に既に存在するすべてのタプルに対応する項目が書き込まれなければなりません。
+通常、<code class="function">ambuild</code>関数は<code class="function">IndexBuildHeapScan()</code>を呼び出し、既存のタプルをテーブルからスキャンし、インデックスに挿入しなければならないキーを計算します。
+この関数は、新しいインデックスに関する統計情報を含むpallocされた構造体を返さなければなりません。
+  </p><pre class="programlisting">void
+ambuildempty (Relation indexRelation);</pre><p><span class="original">
+   Build an empty index, and write it to the initialization fork (&lt;symbol&gt;INIT_FORKNUM&lt;/symbol&gt;)
+   of the given relation.  This method is called only for unlogged tables; the
+   empty index written to the initialization fork will be copied over the main
+   relation fork on each server restart.
+</span>
+空のインデックスを構築し、それを指定されたリレーションの初期フォーク(<code class="symbol">INIT_FORKNUM</code>)に書き出します。
+このメソッドはログを取らないテーブルに対してのみ呼び出されます。
+初期フォークに書き出された空のインデックスは、サーバの再起動の度に主リレーションフォークにコピーされます。
+  </p><pre class="programlisting">bool
+aminsert (Relation indexRelation,
+          Datum *values,
+          bool *isnull,
+          ItemPointer heap_tid,
+          Relation heapRelation,
+          IndexUniqueCheck checkUnique);</pre><p><span class="original">
+   Insert a new tuple into an existing index.  The &lt;literal&gt;values&lt;/&gt; and
+   &lt;literal&gt;isnull&lt;/&gt; arrays give the key values to be indexed, and
+   &lt;literal&gt;heap_tid&lt;/&gt; is the TID to be indexed.
+   If the access method supports unique indexes (its
+   &lt;structname&gt;pg_am&lt;/&gt;.&lt;structfield&gt;amcanunique&lt;/&gt; flag is true) then
+   &lt;literal&gt;checkUnique&lt;/&gt; indicates the type of uniqueness check to
+   perform.  This varies depending on whether the unique constraint is
+   deferrable; see &lt;xref linkend="index-unique-checks"&gt; for details.
+   Normally the access method only needs the &lt;literal&gt;heapRelation&lt;/&gt;
+   parameter when performing uniqueness checking (since then it will have to
+   look into the heap to verify tuple liveness).
+</span>
+既存のインデックスに新しいタプルを挿入します。
+<code class="literal">values</code>配列と<code class="literal">isnull</code>配列がインデックスされるキー値を提供するもので、<code class="literal">heap_tid</code>がインデックスされるTIDです。
+アクセスメソッドが一意なインデックスをサポートする場合（その<code class="structname">pg_am</code>.<code class="structfield">amcanunique</code>が真の場合）、<code class="literal">checkUnique</code>は実行する一意性検査の種類を示します。
+これは一意性制約が遅延可能か否かによって変わります。
+<a class="xref" href="index-unique-checks.html" title="58.5. インデックス一意性検査">58.5. インデックス一意性検査</a>を参照してください。
+通常アクセスメソッドは、一意性検査を行う時に<code class="literal">heapRelation</code>パラメータのみを必要とします
+(タプルの有効性を検証するためにヒープ内を検索しなければなりません)。
+  </p><p><span class="original">
+   The function's Boolean result value is significant only when
+   &lt;literal&gt;checkUnique&lt;/&gt; is &lt;literal&gt;UNIQUE_CHECK_PARTIAL&lt;/&gt;.
+   In this case a TRUE result means the new entry is known unique, whereas
+   FALSE means it might be non-unique (and a deferred uniqueness check must
+   be scheduled).  For other cases a constant FALSE result is recommended.
+</span><code class="literal">checkUnique</code>が<code class="literal">UNIQUE_CHECK_PARTIAL</code>の場合、関数の論理型の結果値で十分です。
+この場合、真の結果は新しい項目は一意であることが確認されたことを、一方偽の結果は一意でない可能性があること(遅延一意性検査を予定しなければならないこと)を意味します。
+他の場合では、一定の偽という結果が推奨されます。
+  </p><p><span class="original">
+   Some indexes might not index all tuples.  If the tuple is not to be
+   indexed, &lt;function&gt;aminsert&lt;/&gt; should just return without doing anything.
+</span>一部のインデックスではすべてのタプルをインデックス付けしない可能性があります。
+タプルがインデックス付けされない場合、<code class="function">aminsert</code>は何も行わずに戻らなければなりません。
+  </p><pre class="programlisting">IndexBulkDeleteResult *
+ambulkdelete (IndexVacuumInfo *info,
+              IndexBulkDeleteResult *stats,
+              IndexBulkDeleteCallback callback,
+              void *callback_state);</pre><p><span class="original">
+   Delete tuple(s) from the index.  This is a &lt;quote&gt;bulk delete&lt;/&gt; operation
+   that is intended to be implemented by scanning the whole index and checking
+   each entry to see if it should be deleted.
+   The passed-in &lt;literal&gt;callback&lt;/&gt; function must be called, in the style
+   &lt;literal&gt;callback(&lt;replaceable&gt;TID&lt;/&gt;, callback_state) returns bool&lt;/literal&gt;,
+   to determine whether any particular index entry, as identified by its
+   referenced TID, is to be deleted.  Must return either NULL or a palloc'd
+   struct containing statistics about the effects of the deletion operation.
+   It is OK to return NULL if no information needs to be passed on to
+   &lt;function&gt;amvacuumcleanup&lt;/&gt;.
+</span>
+インデックスからタプル（複数可）を削除します。
+これは<span class="quote">「<span class="quote">一括削除</span>」</span>操作を行いますが、インデックス全体をスキャンし、各項目に対して削除すべきかどうか検査を行うように実装されることが想定されています。
+渡される<code class="literal">callback</code>関数は、<code class="literal">callback(<em class="replaceable"><code>TID</code></em>, callback_state) returns bool</code>という形で、参照用TIDで識別されるインデックス項目を削除すべきかどうか決定するために呼び出さなければなりません。
+NULLまたはpallocした削除操作の影響に関する統計情報を含む構造体を返さなければなりません。
+<code class="function">amvacuumcleanup</code>に渡さなければならない情報がなければ、NULLを返しても問題ありません。
+  </p><p><span class="original">
+   Because of limited &lt;varname&gt;maintenance_work_mem&lt;/&gt;,
+   &lt;function&gt;ambulkdelete&lt;/&gt; might need to be called more than once when many
+   tuples are to be deleted.  The &lt;literal&gt;stats&lt;/&gt; argument is the result
+   of the previous call for this index (it is NULL for the first call within a
+   &lt;command&gt;VACUUM&lt;/&gt; operation).  This allows the AM to accumulate statistics
+   across the whole operation.  Typically, &lt;function&gt;ambulkdelete&lt;/&gt; will
+   modify and return the same struct if the passed &lt;literal&gt;stats&lt;/&gt; is not
+   null.
+</span><code class="varname">maintenance_work_mem</code>の制限により、多くのタプルが削除される時、<code class="function">ambulkdelete</code>を複数回呼び出す必要があるかもしれません。
+<code class="literal">stats</code>引数は、このインデックスに対する前回の呼び出し結果です。
+（<code class="command">VACUUM</code>操作における最初の呼び出しではこれはNULLです。）
+これにより、アクセスメソッドは操作全体に跨った統計情報を計算することができます。
+典型的に、渡された<code class="literal">stats</code>がNULLでない場合、<code class="function">ambulkdelete</code>は同じ構造体を変更し、返します。
+  </p><pre class="programlisting">IndexBulkDeleteResult *
+amvacuumcleanup (IndexVacuumInfo *info,
+                 IndexBulkDeleteResult *stats);</pre><p><span class="original">
+   Clean up after a &lt;command&gt;VACUUM&lt;/command&gt; operation (zero or more
+   &lt;function&gt;ambulkdelete&lt;/&gt; calls).  This does not have to do anything
+   beyond returning index statistics, but it might perform bulk cleanup
+   such as reclaiming empty index pages.  &lt;literal&gt;stats&lt;/&gt; is whatever the
+   last &lt;function&gt;ambulkdelete&lt;/&gt; call returned, or NULL if
+   &lt;function&gt;ambulkdelete&lt;/&gt; was not called because no tuples needed to be
+   deleted.  If the result is not NULL it must be a palloc'd struct.
+   The statistics it contains will be used to update &lt;structname&gt;pg_class&lt;/&gt;,
+   and will be reported by &lt;command&gt;VACUUM&lt;/&gt; if &lt;literal&gt;VERBOSE&lt;/&gt; is given.
+   It is OK to return NULL if the index was not changed at all during the
+   &lt;command&gt;VACUUM&lt;/command&gt; operation, but otherwise correct stats should
+   be returned.
+</span>
+<code class="command">VACUUM</code>操作（0回以上の<code class="function">ambulkdelete</code>呼び出し）後の整理を行います。
+これは、インデックス統計情報を返す以上の処理を行う必要はありません。
+しかし、空のインデックスページの回収などの一括整理を行う可能性があります。
+<code class="literal">stats</code>は最後の<code class="function">ambulkdelete</code>呼び出しが返したものです。
+削除する必要があるタプルが存在しなかったために<code class="function">ambulkdelete</code>が呼び出されなかった場合はNULLとなります。
+結果はNULLでなければ、pallocされた構造体でなければなりません。
+含まれる統計情報は<code class="structname">pg_class</code>を更新するために使用され、また、<code class="literal">VERBOSE</code>が指定された<code class="command">VACUUM</code>によって報告されます。
+<code class="command">VACUUM</code>操作の間にインデックスがまったく変わらなかった場合はNULLを返しても問題ありません。
+しかし、そうでなければ正しい統計情報を返さなければなりません。
+  </p><p><span class="original">
+   As of &lt;productname&gt;PostgreSQL&lt;/productname&gt; 8.4,
+   &lt;function&gt;amvacuumcleanup&lt;/&gt; will also be called at completion of an
+   &lt;command&gt;ANALYZE&lt;/&gt; operation.  In this case &lt;literal&gt;stats&lt;/&gt; is always
+   NULL and any return value will be ignored.  This case can be distinguished
+   by checking &lt;literal&gt;info-&amp;gt;analyze_only&lt;/literal&gt;.  It is recommended
+   that the access method do nothing except post-insert cleanup in such a
+   call, and that only in an autovacuum worker process.
+</span><span class="productname">PostgreSQL</span> 8.4の時点で、<code class="function">amvacuumcleanup</code>も<code class="command">ANALYZE</code>操作の完了時点にも呼び出されます。
+この場合、<code class="literal">stats</code>は常にNULLで、戻り値はまったく無視されます。
+この事象は<code class="literal">info-&gt;analyze_only</code>を検査することで識別されます。
+アクセスメソッドがそのような呼び出しで挿入後の整理以外何もしないように、そしてそれは自動バキュームワーカプロセスのみであるようにすることを推奨します。
+  </p><pre class="programlisting">bool
+amcanreturn (Relation indexRelation, int attno);</pre><p><span class="original">
+   Check whether the index can support &lt;firstterm&gt;index-only scans&lt;/&gt; on the
+   given column, by returning the indexed column values for an index entry in
+   the form of an &lt;structname&gt;IndexTuple&lt;/structname&gt;.  The attribute number
+   is 1-based, i.e. the first columns attno is 1. Returns TRUE if supported,
+   else FALSE.  If the access method does not support index-only scans at all,
+   the &lt;structfield&gt;amcanreturn&lt;/&gt; field in its &lt;structname&gt;pg_am&lt;/&gt; row can
+   be set to zero.
+</span>
+<code class="structname">IndexTuple</code>形式のインデックスエントリをインデックスが設定された列の値として返すことにより、そのインデックスが指定された列で<em class="firstterm">インデックスオンリースキャン</em>をサポートしているかどうかを判断します。
+属性番号は1始まり、すなわち最初の列の属性番号は1です。
+インデックスオンリースキャンがサポートされている場合は真が返され、サポートされていない場合は偽が返ります。
+アクセスメソッドがインデックスオンリースキャンをサポートしていない場合、<code class="structname">pg_am</code>行の<code class="structfield">amcanreturn</code>フィールドにゼロがセットされます。
+  </p><pre class="programlisting">void
+amcostestimate (PlannerInfo *root,
+                IndexPath *path,
+                double loop_count,
+                Cost *indexStartupCost,
+                Cost *indexTotalCost,
+                Selectivity *indexSelectivity,
+                double *indexCorrelation);</pre><p><span class="original">
+   Estimate the costs of an index scan.  This function is described fully
+   in &lt;xref linkend="index-cost-estimation"&gt;, below.
+</span>
+インデックススキャンのコストを推定します。
+この関数については後述の<a class="xref" href="index-cost-estimation.html" title="58.6. インデックスコスト推定関数">58.6. インデックスコスト推定関数</a>で説明します。
+  </p><pre class="programlisting">bytea *
+amoptions (ArrayType *reloptions,
+           bool validate);</pre><p><span class="original">
+   Parse and validate the reloptions array for an index.  This is called only
+   when a non-null reloptions array exists for the index.
+   &lt;parameter&gt;reloptions&lt;/&gt; is a &lt;type&gt;text&lt;/&gt; array containing entries of the
+   form &lt;replaceable&gt;name&lt;/&gt;&lt;literal&gt;=&lt;/&gt;&lt;replaceable&gt;value&lt;/&gt;.
+   The function should construct a &lt;type&gt;bytea&lt;/&gt; value, which will be copied
+   into the &lt;structfield&gt;rd_options&lt;/&gt; field of the index's relcache entry.
+   The data contents of the &lt;type&gt;bytea&lt;/&gt; value are open for the access
+   method to define; most of the standard access methods use struct
+   &lt;structname&gt;StdRdOptions&lt;/&gt;.
+   When &lt;parameter&gt;validate&lt;/&gt; is true, the function should report a suitable
+   error message if any of the options are unrecognized or have invalid
+   values; when &lt;parameter&gt;validate&lt;/&gt; is false, invalid entries should be
+   silently ignored.  (&lt;parameter&gt;validate&lt;/&gt; is false when loading options
+   already stored in &lt;structname&gt;pg_catalog&lt;/&gt;; an invalid entry could only
+   be found if the access method has changed its rules for options, and in
+   that case ignoring obsolete entries is appropriate.)
+   It is OK to return NULL if default behavior is wanted.
+</span>
+インデックス用のreloptionsの解析と検証を行います。
+インデックスに非NULLのreloptions配列が存在する場合にのみ呼び出されます。
+<em class="parameter"><code>reloptions</code></em>は、<em class="replaceable"><code>name</code></em><code class="literal">=</code><em class="replaceable"><code>value</code></em>形式の項目からなる、<code class="type">text</code>型の配列です。
+この関数は<code class="type">bytea</code>型の値を生成しなければならず、この値はインデックスのrelcache項目の<code class="structfield">rd_options</code>フィールドにコピーされます。
+<code class="type">bytea</code>型の値の内容はアクセスメソッドが独自に定義できるように開放されています。
+標準のアクセスメソッドのほとんどはすべて<code class="structname">StdRdOptions</code>構造体を使用します。
+<em class="parameter"><code>validate</code></em>が真の場合、何らかのオプションが認識できなかった場合や無効な値が存在した場合、この関数は適切なエラーメッセージを報告しなければなりません。
+<em class="parameter"><code>validate</code></em>が偽の場合、無効な項目は単に無視されます。
+（読み込みオプションが既に<code class="structname">pg_catalog</code>に格納されている場合<em class="parameter"><code>validate</code></em>は偽です。
+アクセスメソッドがそのオプション用の規則を変更した場合にのみ、無効な項目が検出されます。
+そして、その場合、古い項目を無視することが適切です。）
+デフォルトの動作を行わせたい場合はNULLを返しても問題ありません。
+  </p><p><span class="original">
+   The purpose of an index, of course, is to support scans for tuples matching
+   an indexable &lt;literal&gt;WHERE&lt;/&gt; condition, often called a
+   &lt;firstterm&gt;qualifier&lt;/&gt; or &lt;firstterm&gt;scan key&lt;/&gt;.  The semantics of
+   index scanning are described more fully in &lt;xref linkend="index-scanning"&gt;,
+   below.  An index access method can support &lt;quote&gt;plain&lt;/&gt; index scans,
+   &lt;quote&gt;bitmap&lt;/&gt; index scans, or both.  The scan-related functions that an
+   index access method must or may provide are:
+</span>当然ながらインデックスの目的は、よく<em class="firstterm">修飾子</em>や<em class="firstterm">スキャンキー</em>と呼ばれる、インデックス可能な<code class="literal">WHERE</code>条件を満たすタプルのスキャンをサポートすることです。
+インデックススキャンのセマンティックスは後の<a class="xref" href="index-scanning.html" title="58.3. インデックススキャン">58.3. インデックススキャン</a>でより詳しく説明します。
+インデックスアクセスメソッドは<span class="quote">「<span class="quote">単純</span>」</span>インデックススキャン、<span class="quote">「<span class="quote">ビットマップ</span>」</span>インデックススキャン、またはこれら双方を提供します。
+インデックスアクセスメソッドが提供しなければならない、もしくは提供する可能性のあるスキャン関連の関数を以下に示します。
+  </p><pre class="programlisting">IndexScanDesc
+ambeginscan (Relation indexRelation,
+             int nkeys,
+             int norderbys);</pre><p><span class="original">
+   Prepare for an index scan.  The &lt;literal&gt;nkeys&lt;/&gt; and &lt;literal&gt;norderbys&lt;/&gt;
+   parameters indicate the number of quals and ordering operators that will be
+   used in the scan; these may be useful for space allocation purposes.
+   Note that the actual values of the scan keys aren't provided yet.
+   The result must be a palloc'd struct.
+   For implementation reasons the index access method
+   &lt;emphasis&gt;must&lt;/&gt; create this struct by calling
+   &lt;function&gt;RelationGetIndexScan()&lt;/&gt;.  In most cases
+   &lt;function&gt;ambeginscan&lt;/&gt; does little beyond making that call and perhaps
+   acquiring locks;
+   the interesting parts of index-scan startup are in &lt;function&gt;amrescan&lt;/&gt;.
+</span>
+インデックススキャンを準備します。
+<code class="literal">nkeys</code>および<code class="literal">norderbys</code>パラメータは、スキャンで使用される等価性演算子と順序付け演算子の個数を表します。
+これらは領域を割り当てる目的で便利かもしれません。
+スキャンキーの実値がまだ提供されていないことに注意してください。
+結果はpallocした構造体でなければなりません。
+実装上の理由により、インデックスアクセスメソッドは<code class="function">RelationGetIndexScan()</code>呼び出しによってこの構造体を作成<span class="emphasis"><em>しなければなりません</em></span>。
+ほとんどの場合、<code class="function">ambeginscan</code>はこの呼び出しとおそらくロックの獲得の他にはほとんど何も行いません。
+インデックススキャンを始める際の興味深い部分は、<code class="function">amrescan</code>にあります。
+  </p><pre class="programlisting">void
+amrescan (IndexScanDesc scan,
+          ScanKey keys,
+          int nkeys,
+          ScanKey orderbys,
+          int norderbys);</pre><p><span class="original">
+   Start or restart an index scan, possibly with new scan keys.  (To restart
+   using previously-passed keys, NULL is passed for &lt;literal&gt;keys&lt;/&gt; and/or
+   &lt;literal&gt;orderbys&lt;/&gt;.)  Note that it is not allowed for
+   the number of keys or order-by operators to be larger than
+   what was passed to &lt;function&gt;ambeginscan&lt;/&gt;.  In practice the restart
+   feature is used when a new outer tuple is selected by a nested-loop join
+   and so a new key comparison value is needed, but the scan key structure
+   remains the same.
+</span>
+インデックススキャンを起動または再起動します。
+スキャンキーを新しくすることもできます。
+（過去に渡されたキーを使用して再起動するには、<code class="literal">key</code>、<code class="literal">orderbys</code>、またはその両方にNULLを渡します。)
+<code class="function">ambeginscan</code>に渡したキー演算子、順序付け演算子の個数より多くを使用することはできないことに注意してください。
+実際には、入れ子状ループ結合によって新しい外部タプルが選択され、同じスキャンキー構造体で新しいキー比較値が必要とされた場合に、この再起動機能は使用されます。
+  </p><pre class="programlisting">boolean
+amgettuple (IndexScanDesc scan,
+            ScanDirection direction);</pre><p><span class="original">
+   Fetch the next tuple in the given scan, moving in the given
+   direction (forward or backward in the index).  Returns TRUE if a tuple was
+   obtained, FALSE if no matching tuples remain.  In the TRUE case the tuple
+   TID is stored into the &lt;literal&gt;scan&lt;/&gt; structure.  Note that
+   &lt;quote&gt;success&lt;/&gt; means only that the index contains an entry that matches
+   the scan keys, not that the tuple necessarily still exists in the heap or
+   will pass the caller's snapshot test.  On success, &lt;function&gt;amgettuple&lt;/&gt;
+   must also set &lt;literal&gt;scan-&amp;gt;xs_recheck&lt;/&gt; to TRUE or FALSE.
+   FALSE means it is certain that the index entry matches the scan keys.
+   TRUE means this is not certain, and the conditions represented by the
+   scan keys must be rechecked against the heap tuple after fetching it.
+   This provision supports &lt;quote&gt;lossy&lt;/&gt; index operators.
+   Note that rechecking will extend only to the scan conditions; a partial
+   index predicate (if any) is never rechecked by &lt;function&gt;amgettuple&lt;/&gt;
+   callers.
+</span>
+指定されたスキャン内から指定された方向（インデックス内の前方または後方）で次のタプルを取り出します。
+タプルを取り出した場合は真を返します。
+一致するタプルが残っていない場合は偽を返します。
+真の場合、そのタプルのTIDが<code class="literal">scan</code>に格納されます。
+<span class="quote">「<span class="quote">成功</span>」</span>とは、単にインデックスにスキャンキーに一致する項目があったことを意味しているだけです。
+タプルが必ずヒープ内に存在することや、呼び出し元のスナップショットの試験を通過したことを意味してはいません。
+成功の暁には、<code class="function">amgettuple</code>は<code class="literal">scan-&gt;xs_recheck</code>を真か偽かに設定しなければなりません。
+偽の意味は、インデックス項目が確実にスキャンキーに一致することです。
+真の意味は、これが確かなことではなく、スキャンキーで表示された条件がヒープタプルを取り出された後で再検査されなければならないことです。
+この対策は<span class="quote">「<span class="quote">非可逆</span>」</span>インデックス演算子をサポートします。
+再検査はスキャン条件のみに拡大適用されることに注意してください。
+部分インデックス述語（もしあれば）は<code class="function">amgettuple</code>呼び出し元で決して再検査されません。
+  </p><p><span class="original">
+   If the index supports index-only scans (i.e.,
+   &lt;function&gt;amcanreturn&lt;/function&gt; returns TRUE for it),
+   then on success the AM must also check
+   &lt;literal&gt;scan-&amp;gt;xs_want_itup&lt;/&gt;, and if that is true it must return
+   the original indexed data for the index entry, in the form of an
+   &lt;structname&gt;IndexTuple&lt;/&gt; pointer stored at &lt;literal&gt;scan-&amp;gt;xs_itup&lt;/&gt;,
+   with tuple descriptor &lt;literal&gt;scan-&amp;gt;xs_itupdesc&lt;/&gt;.
+   (Management of the data referenced by the pointer is the access method's
+   responsibility.  The data must remain good at least until the next
+   &lt;function&gt;amgettuple&lt;/&gt;, &lt;function&gt;amrescan&lt;/&gt;, or &lt;function&gt;amendscan&lt;/&gt;
+   call for the scan.)
+</span>そのインデックスがインデックスオンリースキャンをサポートしている場合(その場合は<code class="function">amcanreturn</code>により真が返されます)、そのアクセスメソッドは<code class="literal">scan-&gt;xs_want_itup</code>も確認し、それが真の場合、<code class="literal">scan-&gt;xs_itupdesc</code>タプルディスクリプタとともに<code class="literal">scan-&gt;xs_itup</code>に格納された<code class="structname">IndexTuple</code>ポインタの形式でインデックスエントリに対する元のインデックスされたデータが返されます。
+(ポインタによって参照されているデータはアクセスメソッドのもとで管理されます。データは少なくとも<code class="function">amgettuple</code>、<code class="function">amrescan</code>または<code class="function">amendscan</code>によってスキャンされるまでよい状態を保たなくてはなりません。)
+  </p><p><span class="original">
+   The &lt;function&gt;amgettuple&lt;/&gt; function need only be provided if the access
+   method supports &lt;quote&gt;plain&lt;/&gt; index scans.  If it doesn't, the
+   &lt;structfield&gt;amgettuple&lt;/&gt; field in its &lt;structname&gt;pg_am&lt;/&gt; row must
+   be set to zero.
+</span><code class="function">amgettuple</code>関数は、アクセスメソッドが<span class="quote">「<span class="quote">単純</span>」</span>インデックススキャンをサポートするときのみ提供される必要があります。
+そうでなければ、<code class="structname">pg_am</code>行の<code class="structfield">amgettuple</code>フィールドはゼロに設定されなければなりません。
+  </p><pre class="programlisting">int64
+amgetbitmap (IndexScanDesc scan,
+             TIDBitmap *tbm);</pre><p><span class="original">
+   Fetch all tuples in the given scan and add them to the caller-supplied
+   &lt;type&gt;TIDBitmap&lt;/type&gt; (that is, OR the set of tuple IDs into whatever set is already
+   in the bitmap).  The number of tuples fetched is returned (this might be
+   just an approximate count, for instance some AMs do not detect duplicates).
+   While inserting tuple IDs into the bitmap, &lt;function&gt;amgetbitmap&lt;/&gt; can
+   indicate that rechecking of the scan conditions is required for specific
+   tuple IDs.  This is analogous to the &lt;literal&gt;xs_recheck&lt;/&gt; output parameter
+   of &lt;function&gt;amgettuple&lt;/&gt;.  Note: in the current implementation, support
+   for this feature is conflated with support for lossy storage of the bitmap
+   itself, and therefore callers recheck both the scan conditions and the
+   partial index predicate (if any) for recheckable tuples.  That might not
+   always be true, however.
+   &lt;function&gt;amgetbitmap&lt;/&gt; and
+   &lt;function&gt;amgettuple&lt;/&gt; cannot be used in the same index scan; there
+   are other restrictions too when using &lt;function&gt;amgetbitmap&lt;/&gt;, as explained
+   in &lt;xref linkend="index-scanning"&gt;.
+</span>
+指定されたスキャンから全てのタプルを取り出し、呼び出し側が提供する<code class="type">TIDBitmap</code>にそれらを付加します
+（つまり、既にビットマップ内にある集合とタプルIDの集合とのORを取ります）。
+取り出されたタプル数が返されます（例えばいくつかのAMは重複を検出しませんので、これは単なる概算です）。
+タプルIDをビットマップに挿入する間、<code class="function">amgetbitmap</code>は特定のタプルIDに必要なスキャン条件の再検査を示すことが可能です。
+これは<code class="function">amgettuple</code>の<code class="literal">xs_recheck</code>出力パラメータに類似しています。
+注意：現在の実装においてこの機能の提供はビットマップそのものの非可逆格納を提供するのに結びついていて、したがって呼び出し側はスキャン条件と部分インデックスの述部（存在すれば）を再検査可能なタプルに対して再検査します。
+とは言っても常に正しいとは限りません。
+<code class="function">amgetmulti</code>および<code class="function">amgettuple</code>を同じインデックススキャン内で使用することはできません。
+<a class="xref" href="index-scanning.html" title="58.3. インデックススキャン">58.3. インデックススキャン</a>で説明した通り、<code class="function">amgetbitmap</code>を使用する場合には他にも制限があります。
+  </p><p><span class="original">
+   The &lt;function&gt;amgetbitmap&lt;/&gt; function need only be provided if the access
+   method supports &lt;quote&gt;bitmap&lt;/&gt; index scans.  If it doesn't, the
+   &lt;structfield&gt;amgetbitmap&lt;/&gt; field in its &lt;structname&gt;pg_am&lt;/&gt; row must
+   be set to zero.
+</span><code class="function">amgetbitmap</code>関数はアクセスメソッドが<span class="quote">「<span class="quote">ビットマップ</span>」</span>インデックススキャンをサポートしている場合のみ必要です。
+そうでなければ、<code class="structname">pg_am</code>行の中の<code class="structfield">amgetbitmap</code>フィールドはゼロに設定されなければなりません。
+  </p><pre class="programlisting">void
+amendscan (IndexScanDesc scan);</pre><p><span class="original">
+   End a scan and release resources.  The &lt;literal&gt;scan&lt;/&gt; struct itself
+   should not be freed, but any locks or pins taken internally by the
+   access method must be released.
+</span>
+スキャンを停止し、リソースを解放します。
+<code class="literal">scan</code>構造体自体は解放すべきではありません。
+アクセスメソッドで内部的に取られたロックやピンは解放しなければなりません。
+  </p><pre class="programlisting">void
+ammarkpos (IndexScanDesc scan);</pre><p><span class="original">
+   Mark current scan position.  The access method need only support one
+   remembered scan position per scan.
+</span>
+現在のスキャン位置を記録します。
+アクセスメソッドは1スキャン当たり1つの記録済みスキャンのみをサポートしなければなりません。
+  </p><pre class="programlisting">void
+amrestrpos (IndexScanDesc scan);</pre><p><span class="original">
+   Restore the scan to the most recently marked position.
+</span>
+もっとも最近に記録された位置にスキャンを戻します。
+  </p><p><span class="original">
+   By convention, the &lt;literal&gt;pg_proc&lt;/literal&gt; entry for an index
+   access method function should show the correct number of arguments,
+   but declare them all as type &lt;type&gt;internal&lt;/&gt; (since most of the arguments
+   have types that are not known to SQL, and we don't want users calling
+   the functions directly anyway).  The return type is declared as
+   &lt;type&gt;void&lt;/&gt;, &lt;type&gt;internal&lt;/&gt;, or &lt;type&gt;boolean&lt;/&gt; as appropriate.
+   The only exception is &lt;function&gt;amoptions&lt;/&gt;, which should be correctly
+   declared as taking &lt;type&gt;text[]&lt;/&gt; and &lt;type&gt;bool&lt;/&gt; and returning
+   &lt;type&gt;bytea&lt;/&gt;.  This provision allows client code to execute
+   &lt;function&gt;amoptions&lt;/&gt; to test validity of options settings.
+</span>簡便性のために、インデックスアクセスメソッド関数の<code class="literal">pg_proc</code>項目は、正確な引数の数を示さなければなりません。
+しかし、それらはすべて<code class="type">internal</code>型として宣言します。
+（引数のほとんどがSQLでは未知の型を持つため、ユーザがこうした関数を直接呼び出すことを防ぐことがこの理由です。）
+戻り値の型は、<code class="type">void</code>、<code class="type">internal</code>、<code class="type">boolean</code>のいずれかで適切に宣言されます。
+唯一の例外は<code class="function">amoptions</code>です。
+これは、<code class="type">text[]</code>および<code class="type">bool</code>を取り<code class="type">bytea</code>を返すように正しく宣言しなければなりません。
+この規定により、クライアントコードは<code class="function">amoptions</code>を実行してオプションの設定の有効性を検査することができます。
+  </p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="index-catalog.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="indexam.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="index-scanning.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">58.1. インデックス用のカタログ項目 </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> 58.3. インデックススキャン</td></tr></table></div></body></html>

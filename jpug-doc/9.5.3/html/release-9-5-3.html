@@ -1,0 +1,286 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>E.1. Release 9.5.3</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="PostgreSQL 9.5.3文書" /><link rel="up" href="release.html" title="付録E リリースノート" /><link rel="prev" href="release.html" title="付録E リリースノート" /><link rel="next" href="release-9-5-2.html" title="E.2. リリース9.5.2" /><link rel="copyright" href="legalnotice.html" title="法的告知" /><meta name="viewport" content="width=device-width,initial-scale=1.0,minimum-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><td width="20%" align="left" colspan="2"></td><th width="60%" align="center"><a accesskey="h" href="index.html">PostgreSQL 9.5.3文書</a></th><td width="20%" align="right"><div class="actions"><a class="issue" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 9.5.3 release-9-5-3.html">誤訳等の報告</a></div></td></tr><tr><td width="10%" align="left" valign="top"><a accesskey="p" href="release.html">前へ</a> </td><td width="10%" align="left" valign="top"><a accesskey="u" href="release.html">上へ</a></td><td width="60%" align="center">E.1. Release 9.5.3</td><td width="20%" align="right" valign="top"> <a accesskey="n" href="release-9-5-2.html">次へ</a></td></tr></table><hr /></div><div class="sect1" id="release-9-5-3"><div class="titlepage"><div><div><h2 class="title" style="clear: both">E.1. Release 9.5.3</h2></div></div></div><div class="toc"><dl class="toc"><dt><span class="sect2"><a href="release-9-5-3.html#idp126765136">E.1.1. Migration to Version 9.5.3</a></span></dt><dt><span class="sect2"><a href="release-9-5-3.html#idp126766944">E.1.2. Changes</a></span></dt></dl></div><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Release Date</h3><p>2016-05-12</p></div><p>   This release contains a variety of fixes from 9.5.2.
+   For information about new features in the 9.5 major release, see
+   <a class="xref" href="release-9-5.html" title="E.4. リリース9.5">E.4. リリース9.5</a>.
+  </p><div class="sect2" id="idp126765136"><div class="titlepage"><div><div><h3 class="title">E.1.1. Migration to Version 9.5.3</h3></div></div></div><p>    A dump/restore is not required for those running 9.5.X.
+   </p><p>    However, if you are upgrading from a version earlier than 9.5.2,
+    see <a class="xref" href="release-9-5-2.html" title="E.2. リリース9.5.2">E.2. リリース9.5.2</a>.
+   </p></div><div class="sect2" id="idp126766944"><div class="titlepage"><div><div><h3 class="title">E.1.2. Changes</h3></div></div></div><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><span class="original">
+Author: Peter Eisentraut &lt;peter_e@gmx.net&gt;
+Branch: master [7c7d4fdda] 2016-04-08 14:11:56 -0400
+Branch: REL9_5_STABLE [a3c17b2af] 2016-05-06 23:47:42 -0400
+Branch: REL9_4_STABLE [e3b14de9f] 2016-05-07 00:10:31 -0400
+Branch: REL9_3_STABLE [a9d8644de] 2016-05-07 00:10:17 -0400
+Branch: REL9_2_STABLE [e3a493ac0] 2016-05-07 00:05:39 -0400
+Branch: REL9_1_STABLE [9b676fd49] 2016-05-07 00:09:37 -0400
+</span><p>      Clear the OpenSSL error queue before OpenSSL calls, rather than
+      assuming it's clear already; and make sure we leave it clear
+      afterwards (Peter Geoghegan, Dave Vitek, Peter Eisentraut)
+     </p><p>      This change prevents problems when there are multiple connections
+      using OpenSSL within a single process and not all the code involved
+      follows the same rules for when to clear the error queue.
+      Failures have been reported specifically when a client application
+      uses SSL connections in <span class="application">libpq</span> concurrently with
+      SSL connections using the PHP, Python, or Ruby wrappers for OpenSSL.
+      It's possible for similar problems to arise within the server as well,
+      if an extension module establishes an outgoing SSL connection.
+     </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+Branch: master [80f66a9ad] 2016-04-21 20:05:58 -0400
+Branch: REL9_5_STABLE [94c685a7c] 2016-04-21 20:05:58 -0400
+Branch: REL9_4_STABLE [3232c2427] 2016-04-21 20:05:58 -0400
+Branch: REL9_3_STABLE [d9742ac46] 2016-04-21 20:05:58 -0400
+Branch: REL9_2_STABLE [ad2d32b57] 2016-04-21 20:05:58 -0400
+Branch: REL9_1_STABLE [6882dbd34] 2016-04-21 20:05:58 -0400
+</span><p>      Fix <span class="quote">「<span class="quote">failed to build any <em class="replaceable"><code>N</code></em>-way joins</span>」</span>
+      planner error with a full join enclosed in the right-hand side of a
+      left join (Tom Lane)
+     </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+Branch: master [207d5a656] 2016-04-29 20:19:38 -0400
+Branch: REL9_5_STABLE [f25d0619c] 2016-04-29 20:19:38 -0400
+Branch: REL9_4_STABLE [72edc8ffe] 2016-04-29 20:19:38 -0400
+Branch: REL9_3_STABLE [67349e5a8] 2016-04-29 20:19:38 -0400
+Branch: REL9_2_STABLE [f02cb8c9a] 2016-04-29 20:19:38 -0400
+</span><p>      Fix incorrect handling of equivalence-class tests in multilevel
+      nestloop plans (Tom Lane)
+     </p><p>      Given a three-or-more-way equivalence class of variables, such
+      as <code class="literal">X.X = Y.Y = Z.Z</code>, it was possible for the planner to omit
+      some of the tests needed to enforce that all the variables are actually
+      equal, leading to join rows being output that didn't satisfy
+      the <code class="literal">WHERE</code> clauses.  For various reasons, erroneous plans
+      were seldom selected in practice, so that this bug has gone undetected
+      for a long time.
+     </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+Branch: master [abb164655] 2016-04-21 23:17:36 -0400
+Branch: REL9_5_STABLE [81deadd31] 2016-04-21 23:17:36 -0400
+</span><p>      Fix corner-case parser failures occurring
+      when <a class="xref" href="runtime-config-compatible.html#guc-operator-precedence-warning">operator_precedence_warning</a> is turned on
+      (Tom Lane)
+     </p><p>      An example is that <code class="literal">SELECT (ARRAY[])::text[]</code> gave an error,
+      though it worked without the parentheses.
+     </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+Branch: master [f0e766bd7] 2016-04-15 00:02:26 -0400
+Branch: REL9_5_STABLE [edd57377f] 2016-04-15 00:02:26 -0400
+Branch: REL9_4_STABLE [0479eccdc] 2016-04-15 00:02:26 -0400
+</span><p>      Fix query-lifespan memory leak in GIN index scans (Julien Rouhaud)
+     </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+Branch: master [bde361fef] 2016-04-20 14:25:15 -0400
+Branch: REL9_5_STABLE [be2754456] 2016-04-20 14:25:15 -0400
+Branch: REL9_4_STABLE [ef35afa35] 2016-04-20 14:25:15 -0400
+</span><p>      Fix query-lifespan memory leak and potential index corruption hazard in
+      GIN index insertion (Tom Lane)
+     </p><p>      The memory leak would typically not amount to much in simple queries,
+      but it could be very substantial during a large GIN index build with
+      high <code class="varname">maintenance_work_mem</code>.
+     </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+Branch: master [d136d600f] 2016-05-06 12:09:20 -0400
+Branch: REL9_5_STABLE [504af1fe0] 2016-05-06 12:09:20 -0400
+Branch: REL9_4_STABLE [1180868d1] 2016-05-06 12:09:20 -0400
+Branch: REL9_3_STABLE [462456d8d] 2016-05-06 12:09:20 -0400
+Branch: REL9_2_STABLE [11247dd99] 2016-05-06 12:09:20 -0400
+Branch: REL9_1_STABLE [7bad282c3] 2016-05-06 12:09:20 -0400
+</span><p>      Fix possible misbehavior of <code class="literal">TH</code>, <code class="literal">th</code>,
+      and <code class="literal">Y,YYY</code> format codes in <code class="function">to_timestamp()</code>
+      (Tom Lane)
+     </p><p>      These could advance off the end of the input string, causing subsequent
+      format codes to read garbage.
+     </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+Branch: master [1f7c85b82] 2016-04-21 14:20:30 -0400
+Branch: REL9_5_STABLE [4b52cc289] 2016-04-21 14:20:18 -0400
+Branch: REL9_4_STABLE [679c92238] 2016-04-21 14:20:18 -0400
+Branch: REL9_3_STABLE [e5882f26b] 2016-04-21 14:20:18 -0400
+Branch: REL9_2_STABLE [c7c145e4f] 2016-04-21 14:20:18 -0400
+Branch: REL9_1_STABLE [663624e60] 2016-04-21 14:20:18 -0400
+</span><p>      Fix dumping of rules and views in which the <em class="replaceable"><code>array</code></em>
+      argument of a <code class="literal"><em class="replaceable"><code>value</code></em> <em class="replaceable"><code>operator</code></em>
+      ANY (<em class="replaceable"><code>array</code></em>)</code> construct is a sub-SELECT
+      (Tom Lane)
+     </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+Branch: master [99f3b5613] 2016-04-04 18:05:23 -0400
+Branch: REL9_5_STABLE [f3d17491c] 2016-04-04 18:05:23 -0400
+Branch: REL9_4_STABLE [28148e258] 2016-04-04 18:05:24 -0400
+</span><p>      Disallow newlines in <code class="command">ALTER SYSTEM</code> parameter values
+      (Tom Lane)
+     </p><p>      The configuration-file parser doesn't support embedded newlines in
+      string literals, so we mustn't allow them in values to be inserted
+      by <code class="command">ALTER SYSTEM</code>.
+     </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+Branch: master [8f1911d5e] 2016-04-15 12:11:40 -0400
+Branch: REL9_5_STABLE [8f8e65d34] 2016-04-15 12:11:27 -0400
+Branch: REL9_4_STABLE [8eed31ffb] 2016-04-15 12:11:27 -0400
+</span><p>      Fix <code class="command">ALTER TABLE ... REPLICA IDENTITY USING INDEX</code> to
+      work properly if an index on OID is selected (David Rowley)
+     </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+Branch: master [93c301fc4] 2016-04-08 12:31:53 -0400
+Branch: REL9_5_STABLE [0da7cf6e8] 2016-04-08 12:31:42 -0400
+</span><p>      Avoid possible misbehavior after failing to remove a tablespace symlink
+      (Tom Lane)
+     </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+Branch: master [6a3d3965d] 2016-04-14 19:42:21 -0400
+Branch: REL9_5_STABLE [e7a456174] 2016-04-14 19:42:22 -0400
+Branch: REL9_4_STABLE [00456911f] 2016-04-14 19:42:22 -0400
+</span><p>      Fix crash in logical decoding on alignment-picky platforms (Tom Lane,
+      Andres Freund)
+     </p><p>      The failure occurred only with a transaction large enough to spill to
+      disk and a primary-key change within that transaction.
+     </p></li><li class="listitem"><span class="original">
+Author: Andres Freund &lt;andres@anarazel.de&gt;
+Branch: master [59455018a] 2016-04-28 22:11:18 -0700
+Branch: REL9_5_STABLE [2e1b4adf3] 2016-04-28 22:11:18 -0700
+Branch: REL9_4_STABLE [596f93605] 2016-04-28 22:11:18 -0700
+</span><p>      Avoid repeated requests for feedback from receiver while shutting down
+      walsender (Nick Cleaton)
+     </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+Branch: master [cbabb70f3] 2016-04-20 23:48:13 -0400
+Branch: REL9_5_STABLE [0b8e0bf0a] 2016-04-20 23:48:13 -0400
+Branch: REL9_4_STABLE [f05ac711b] 2016-04-20 23:48:13 -0400
+Branch: REL9_3_STABLE [691073bd8] 2016-04-20 23:48:13 -0400
+Branch: REL9_2_STABLE [1b22368ff] 2016-04-20 23:48:13 -0400
+Branch: REL9_1_STABLE [4c1c9f80b] 2016-04-20 23:48:13 -0400
+</span><p>      Make <span class="application">pg_regress</span> use a startup timeout from the
+      <code class="envar">PGCTLTIMEOUT</code> environment variable, if that's set (Tom Lane)
+     </p><p>      This is for consistency with a behavior recently added
+      to <span class="application">pg_ctl</span>; it eases automated testing on slow machines.
+     </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+Branch: master [6cead413b] 2016-04-13 18:58:14 -0400
+Branch: REL9_5_STABLE [fb0f63933] 2016-04-13 18:57:52 -0400
+Branch: REL9_4_STABLE [5daf1012a] 2016-04-13 18:57:52 -0400
+Branch: REL9_3_STABLE [34bf6bc56] 2016-04-13 18:57:52 -0400
+Branch: REL9_2_STABLE [6bb42d520] 2016-04-13 18:57:52 -0400
+Branch: REL9_1_STABLE [3ef1f3a3e] 2016-04-13 18:57:52 -0400
+</span><p>      Fix <span class="application">pg_upgrade</span> to correctly restore extension
+      membership for operator families containing only one operator class
+      (Tom Lane)
+     </p><p>      In such a case, the operator family was restored into the new database,
+      but it was no longer marked as part of the extension.  This had no
+      immediate ill effects, but would cause later <span class="application">pg_dump</span>
+      runs to emit output that would cause (harmless) errors on restore.
+     </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+Branch: master [1a2c17f8e] 2016-05-06 22:05:56 -0400
+Branch: REL9_5_STABLE [196870f2f] 2016-05-06 22:05:51 -0400
+Branch: REL9_4_STABLE [e1aecebc0] 2016-05-06 22:05:51 -0400
+Branch: REL9_3_STABLE [e1d88f983] 2016-05-06 22:05:51 -0400
+</span><p>      Fix <span class="application">pg_upgrade</span> to not fail when new-cluster TOAST rules
+      differ from old (Tom Lane)
+     </p><p>      <span class="application">pg_upgrade</span> had special-case code to handle the
+      situation where the new <span class="productname">PostgreSQL</span> version thinks that
+      a table should have a TOAST table while the old version did not.  That
+      code was broken, so remove it, and instead do nothing in such cases;
+      there seems no reason to believe that we can't get along fine without
+      a TOAST table if that was okay according to the old version's rules.
+     </p></li><li class="listitem"><span class="original">
+Author: Noah Misch &lt;noah@leadboat.com&gt;
+Branch: master [213c7df03] 2016-04-26 21:53:58 -0400
+Branch: REL9_5_STABLE [f9989482d] 2016-04-26 21:54:07 -0400
+</span><p>      Fix atomic operations for PPC when using IBM's XLC compiler (Noah Misch)
+     </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+Branch: master [75c24d0f7] 2016-04-18 13:33:06 -0400
+Branch: REL9_5_STABLE [c6a5b6677] 2016-04-18 13:33:07 -0400
+Branch: REL9_4_STABLE [21b7f49eb] 2016-04-18 13:33:07 -0400
+Branch: REL9_3_STABLE [6ec1ff852] 2016-04-18 13:33:07 -0400
+Branch: REL9_2_STABLE [b24f7e280] 2016-04-18 13:33:07 -0400
+</span><p>      Reduce the number of SysV semaphores used by a build configured with
+      <code class="option">--disable-spinlocks</code> (Tom Lane)
+     </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+Branch: master [0ab3595e5] 2016-04-23 16:53:15 -0400
+Branch: REL9_5_STABLE [bdf7744f7] 2016-04-23 16:53:15 -0400
+Branch: REL9_4_STABLE [2a715371c] 2016-04-23 16:53:15 -0400
+Branch: REL9_3_STABLE [252c35895] 2016-04-23 16:53:15 -0400
+Branch: REL9_2_STABLE [0f5491283] 2016-04-23 16:53:15 -0400
+Branch: REL9_1_STABLE [cbff4b708] 2016-04-23 16:53:15 -0400
+</span><p>      Rename internal function <code class="function">strtoi()</code>
+      to <code class="function">strtoint()</code> to avoid conflict with a NetBSD library
+      function (Thomas Munro)
+     </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+Branch: REL9_5_STABLE [20d4428f0] 2016-04-21 15:44:18 -0400
+Branch: REL9_4_STABLE [5e2fb8862] 2016-04-21 15:44:18 -0400
+Branch: REL9_3_STABLE [8f9518414] 2016-04-21 15:44:18 -0400
+Branch: REL9_2_STABLE [6848827b4] 2016-04-21 15:44:18 -0400
+Branch: REL9_1_STABLE [b2bb59bd5] 2016-04-21 15:44:18 -0400
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+Branch: master [125ad539a] 2016-04-21 16:58:47 -0400
+Branch: REL9_5_STABLE [d2e59cbc3] 2016-04-21 16:58:59 -0400
+Branch: REL9_4_STABLE [56dee70d9] 2016-04-21 16:59:04 -0400
+Branch: REL9_3_STABLE [82bf369ed] 2016-04-21 16:59:08 -0400
+Branch: REL9_2_STABLE [b5ebc513d] 2016-04-21 16:59:13 -0400
+Branch: REL9_1_STABLE [9028f404e] 2016-04-21 16:59:17 -0400
+</span><p>      Fix reporting of errors from <code class="function">bind()</code>
+      and <code class="function">listen()</code> system calls on Windows (Tom Lane)
+     </p></li><li class="listitem"><span class="original">
+Author: Andrew Dunstan &lt;andrew@dunslane.net&gt;
+Branch: master [01a07e6c1] 2016-04-08 12:37:20 -0400
+Branch: REL9_5_STABLE [849167943] 2016-04-08 12:36:59 -0400
+Branch: REL9_4_STABLE [f79a7fa90] 2016-04-08 12:29:31 -0400
+Branch: REL9_3_STABLE [ca5d6edbf] 2016-04-08 12:29:34 -0400
+Branch: REL9_2_STABLE [9e77d0e3c] 2016-04-08 12:29:36 -0400
+Branch: REL9_1_STABLE [d2189a802] 2016-04-08 12:33:29 -0400
+</span><p>      Reduce verbosity of compiler output when building with Microsoft Visual
+      Studio (Christian Ullrich)
+     </p></li><li class="listitem"><span class="original">
+Author: Andrew Dunstan &lt;andrew@dunslane.net&gt;
+Branch: master [0fb54de9a] 2016-04-29 08:09:07 -0400
+Branch: REL9_5_STABLE [da52474f3] 2016-04-29 08:06:25 -0400
+Branch: master [7dc549238] 2016-04-29 09:49:31 -0400
+Branch: REL9_5_STABLE [b71b4d852] 2016-04-29 09:50:38 -0400
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+Branch: master [23b09e15b] 2016-04-28 11:50:58 -0400
+Branch: REL9_5_STABLE [94a16531b] 2016-04-28 11:51:08 -0400
+Branch: REL9_4_STABLE [65c2eeb00] 2016-04-28 11:51:13 -0400
+Branch: REL9_3_STABLE [707c44fe2] 2016-04-28 11:51:17 -0400
+Branch: REL9_2_STABLE [c563d97c6] 2016-04-28 11:51:22 -0400
+Branch: REL9_1_STABLE [a6c6789c4] 2016-04-28 11:51:26 -0400
+</span><p>      Support building with Visual Studio 2015
+      (Michael Paquier, Petr Jelínek)
+     </p><p>      Note that builds made with VS2015 will not run on Windows versions
+      before Windows Vista.
+     </p></li><li class="listitem"><span class="original">
+Author: Magnus Hagander &lt;magnus@hagander.net&gt;
+Branch: master [9f633b404] 2016-04-22 05:18:59 -0400
+Branch: REL9_5_STABLE [409c49c64] 2016-04-22 05:19:57 -0400
+Branch: REL9_4_STABLE [c238a4101] 2016-04-22 05:20:07 -0400
+Branch: REL9_3_STABLE [ab5c6d01f] 2016-04-22 05:20:18 -0400
+</span><p>      Fix <code class="function">putenv()</code> to work properly with Visual Studio 2013
+      (Michael Paquier)
+     </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+Branch: master [7abc15716] 2016-03-29 11:55:19 -0400
+Branch: REL9_5_STABLE [491e84738] 2016-03-29 11:54:57 -0400
+Branch: REL9_4_STABLE [2fed676c9] 2016-03-29 11:54:57 -0400
+Branch: REL9_3_STABLE [11cc7bb88] 2016-03-29 11:54:57 -0400
+Branch: REL9_2_STABLE [b4b06931e] 2016-03-29 11:54:58 -0400
+Branch: REL9_1_STABLE [6cd30292b] 2016-03-29 11:54:58 -0400
+</span><p>      Avoid possibly-unsafe use of Windows' <code class="function">FormatMessage()</code>
+      function (Christian Ullrich)
+     </p><p>      Use the <code class="literal">FORMAT_MESSAGE_IGNORE_INSERTS</code> flag where
+      appropriate.  No live bug is known to exist here, but it seems like a
+      good idea to be careful.
+     </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+Branch: master [98f158e41] 2016-05-05 20:08:58 -0400
+Branch: REL9_5_STABLE [4edbb265c] 2016-05-05 20:09:10 -0400
+Branch: REL9_4_STABLE [a5148e800] 2016-05-05 20:09:17 -0400
+Branch: REL9_3_STABLE [d30c67af8] 2016-05-05 20:09:22 -0400
+Branch: REL9_2_STABLE [29d154e36] 2016-05-05 20:09:27 -0400
+Branch: REL9_1_STABLE [bfc39da64] 2016-05-05 20:09:32 -0400
+</span><p>      Update time zone data files to <span class="application">tzdata</span> release 2016d
+      for DST law changes in Russia and Venezuela.  There are new zone
+      names <code class="literal">Europe/Kirov</code> and <code class="literal">Asia/Tomsk</code> to reflect
+      the fact that these regions now have different time zone histories from
+      adjacent regions.
+     </p></li></ul></div></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="release.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="release.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="release-9-5-2.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">付録E リリースノート </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> E.2. リリース9.5.2</td></tr></table></div></body></html>

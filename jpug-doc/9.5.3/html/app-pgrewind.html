@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>pg_rewind</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="PostgreSQL 9.5.3文書" /><link rel="up" href="reference-server.html" title="PostgreSQLサーバアプリケーション" /><link rel="prev" href="app-pgresetxlog.html" title="pg_resetxlog" /><link rel="next" href="pgtestfsync.html" title="pg_test_fsync" /><link rel="copyright" href="legalnotice.html" title="法的告知" /><meta name="viewport" content="width=device-width,initial-scale=1.0,minimum-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><td width="20%" align="left" colspan="2"></td><th width="60%" align="center"><a accesskey="h" href="index.html">PostgreSQL 9.5.3文書</a></th><td width="20%" align="right"><div class="actions"><a class="issue" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 9.5.3 app-pgrewind.html">誤訳等の報告</a></div></td></tr><tr><td width="10%" align="left" valign="top"><a accesskey="p" href="app-pgresetxlog.html">前へ</a> </td><td width="10%" align="left" valign="top"><a accesskey="u" href="reference-server.html">上へ</a></td><td width="60%" align="center"><span class="application">pg_rewind</span></td><td width="20%" align="right" valign="top"> <a accesskey="n" href="pgtestfsync.html">次へ</a></td></tr></table><hr /></div><div class="refentry" id="app-pgrewind"><div class="titlepage"></div><a id="idp116326128" class="indexterm"></a><div class="refnamediv"><h2>名前</h2><p>pg_rewind<span class="original">
+  &lt;refpurpose&gt;synchronize a &lt;productname&gt;PostgreSQL&lt;/productname&gt; data directory with another data directory that was forked from the first one&lt;/refpurpose&gt;
+</span> — <span class="productname">PostgreSQL</span>のデータディレクトリを、そこから派生した他のデータディレクトリと同期する</p></div><div class="refsynopsisdiv"><h2>概要</h2><div class="cmdsynopsis"><p id="idp116330560"><code class="command">pg_rewind</code> [<em class="replaceable"><code>option</code></em>...]  { <code class="option">-D </code>  |   <code class="option">--target-pgdata</code> }<em class="replaceable"><code> directory</code></em> { <code class="option">--source-pgdata=<em class="replaceable"><code>directory</code></em></code>  |   <code class="option">--source-server=<em class="replaceable"><code>connstr</code></em></code> } </p></div></div><div class="refsect1" id="idp116339040"><h2>説明</h2><span class="original">
+  &lt;title&gt;Description&lt;/title&gt;
+</span><p><span class="original">
+   &lt;application&gt;pg_rewind&lt;/&gt; is a tool for synchronizing a PostgreSQL cluster
+   with another copy of the same cluster, after the clusters' timelines have
+   diverged. A typical scenario is to bring an old master server back online
+   after failover, as a standby that follows the new master.
+</span><span class="application">pg_rewind</span>は、PostgreSQLのクラスタのタイムラインが分岐した後、クラスタをその複製のクラスタに同期するためのツールです。
+典型的なシナリオとしては、フェイルオーバ後、新しいマスターに追従するスタンバイとして、古いマスターサーバをオンラインに戻す、というのがあります。
+  </p><p><span class="original">
+   The result is equivalent to replacing the target data directory with the
+   source one. All files are copied, including configuration files. The
+   advantage of &lt;application&gt;pg_rewind&lt;/&gt; over taking a new base backup, or
+   tools like &lt;application&gt;rsync&lt;/&gt;, is that &lt;application&gt;pg_rewind&lt;/&gt; does
+   not require reading through all unchanged files in the cluster. That makes
+   it a lot faster when the database is large and only a small portion of it
+   differs between the clusters.
+</span>実行結果は、ターゲットデータディレクトリをソースディレクトリと置き換えたのと等しくなります。
+設定ファイルを含め、すべてのファイルがコピーされます。
+新しいベースバックアップを取ったり、<span class="application">rsync</span>のようなツールを使う場合と比較して、<span class="application">pg_rewind</span>はクラスタ内の変更されていないファイルを読出す必要がないという利点があります。
+データベースが大きく、クラスタ間で変更されている部分がわずかの場合には、極めて高速になります。
+  </p><p><span class="original">
+   &lt;application&gt;pg_rewind&lt;/&gt; examines the timeline histories of the source
+   and target clusters to determine the point where they diverged, and
+   expects to find WAL in the target cluster's &lt;filename&gt;pg_xlog&lt;/&gt; directory
+   reaching all the way back to the point of divergence. In the typical
+   failover scenario where the target cluster was shut down soon after the
+   divergence, that is not a problem, but if the target cluster had run for a
+   long time after the divergence, the old WAL files might not be present
+   anymore. In that case, they can be manually copied from the WAL archive to
+   the &lt;filename&gt;pg_xlog&lt;/&gt; directory. Fetching missing files from a WAL
+   archive automatically is currently not supported.
+</span><span class="application">pg_rewind</span>はソースとターゲットクラスタ内のタイムラインヒストリーを調べ、それらがどの時点で異なるものになったのかを調べます。
+そしてターゲットクラスタ内の<code class="filename">pg_xlog</code>ディレクトリ内の分岐点に到達するWALを見つけようとします。
+分岐点のあと間をおかずシャットダウンされたような典型的なフェイルオーバのシナリオにおいては、これは特に問題になりません。
+しかし、分岐点の後にターゲットクラスタが長時間運用されていた場合には、古いWALファイルはもう存在しないかもしれません。
+この場合は、WALアーカイブから手動で<code class="filename">pg_xlog</code>ディレクトリにコピーすることができます。
+不足しているWALファイルをアーカイブから自動的にコピーする機能は今のところサポートされていません。
+  </p><p><span class="original">
+   When the target server is started up for the first time after running
+   &lt;application&gt;pg_rewind&lt;/&gt;, it will go into recovery mode and replay all
+   WAL generated in the source server after the point of divergence.
+   If some of the WAL was no longer available in the source server when
+   &lt;application&gt;pg_rewind&lt;/&gt; was run, and therefore could not be copied by
+   &lt;application&gt;pg_rewind&lt;/&gt; session, it needs to be made available when the
+   target server is started up. That can be done by creating a
+   &lt;filename&gt;recovery.conf&lt;/&gt; file in the target data directory with a
+   suitable &lt;varname&gt;restore_command&lt;/&gt;.
+</span><span class="application">pg_rewind</span>を実行した後、最初にターゲットサーバを起動すると、そのサーバはリカバリモードに入り、分岐点以降ソースサーバで生成されたWALをすべてリプレイします。
+<span class="application">pg_rewind</span>が実行された時にWALがソースサーバになくて<span class="application">pg_rewind</span>のセッションではコピーできなかった場合は、ターゲットサーバが起動した時にWALを読む込めるようになっていなければなりません。
+適切な<code class="varname">restore_command</code>を設定した<code class="filename">recovery.conf</code>ファイルをターゲットデータディレクトリに置くことで、これを達成できます。
+  </p><p><span class="original">
+   &lt;application&gt;pg_rewind&lt;/&gt; requires that the target server either has
+   the &lt;xref linkend="guc-wal-log-hints"&gt; option is enabled
+   in &lt;filename&gt;postgresql.conf&lt;/&gt; or that data checksums were enabled when
+   the cluster was initialized with &lt;application&gt;initdb&lt;/&gt;.  Neither of these
+   are currently on by default.
+   &lt;xref linkend="guc-full-page-writes"&gt; must also be enabled.  That is the
+   default.
+</span><span class="application">pg_rewind</span>を使用するには、ターゲットサーバ上で<code class="filename">postgresql.conf</code>の<a class="xref" href="runtime-config-wal.html#guc-wal-log-hints">wal_log_hints</a>オプションが有効になっているか、<span class="application">initdb</span>でクラスタを初期化した時にデータチェックサムが有効になっていなければなりません。
+どちらもデフォルトでは無効です。
+<a class="xref" href="runtime-config-wal.html#guc-full-page-writes">full_page_writes</a>も有効でなければなりませんが、これはデフォルトで有効です。
+  </p></div><div class="refsect1" id="idp116358336"><h2>オプション</h2><span class="original">
+  &lt;title&gt;Options&lt;/title&gt;
+</span><p><span class="original">
+    &lt;application&gt;pg_rewind&lt;/application&gt; accepts the following command-line
+    arguments:
+</span>    <span class="application">pg_rewind</span>は以下のコマンドラインオプションを受け付けます。
+
+    </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="option">-D <em class="replaceable"><code>directory</code></em></code><br /></span><span class="term"><code class="option">--target-pgdata=<em class="replaceable"><code>directory</code></em></code></span></dt><dd><p><span class="original">
+        This option specifies the target data directory that is synchronized
+        with the source. The target server must shut down cleanly before
+        running &lt;application&gt;pg_rewind&lt;/application&gt;
+</span>このオプションは、同期するターゲットデータディレクトリを指定します。
+ターゲットサーバは、<span class="application">pg_rewind</span>を実行する前に、正常にシャットダウンされていなければなりません。
+       </p></dd><dt><span class="term"><code class="option">--source-pgdata=<em class="replaceable"><code>directory</code></em></code></span></dt><dd><p><span class="original">
+        Specifies path to the data directory of the source server, to
+        synchronize the target with. When &lt;option&gt;#045;&amp;#045;source-pgdata&lt;/&gt; is
+        used, the source server must be cleanly shut down.
+</span>同期するソースサーバのデータディレクトリへのパスを指定します。
+<code class="option">--source-pgdata</code>を使用する場合は、ソースサーバは正常にシャットダウンされていなければなりません。
+       </p></dd><dt><span class="term"><code class="option">--source-server=<em class="replaceable"><code>connstr</code></em></code></span></dt><dd><p><span class="original">
+        Specifies a libpq connection string to connect to the source
+        &lt;productname&gt;PostgreSQL&lt;/&gt; server to synchronize the target with.
+        The connection must be a normal (non-replication) connection 
+        with superuser access. The server must be up and running, 
+        and must not be in recovery mode.
+</span>同期するソース<span class="productname">PostgreSQL</span>サーバへ接続するためのlibpq接続文字列を指定します。
+接続は、スーパユーザアクセスである通常の接続(レプリケーション接続でない)でなければなりません。
+サーバは稼働中でなければならず、またリカバリモードであってはいけません。
+       </p></dd><dt><span class="term"><code class="option">-n</code><br /></span><span class="term"><code class="option">--dry-run</code></span></dt><dd><p><span class="original">
+        Do everything except actually modifying the target directory.
+</span>ターゲットディレクトリを実際に更新する以外はすべてのことを行います。
+       </p></dd><dt><span class="term"><code class="option">-P</code><br /></span><span class="term"><code class="option">--progress</code></span></dt><dd><p><span class="original">
+        Enables progress reporting. Turning this on will deliver an approximate
+        progress report while copying data over from the source cluster.
+</span>進行状況のレポートを有効にします。このオプションを有効にすると、データをソースクラスタからコピーする際のおおよその進行状況をレポートします。
+       </p></dd><dt><span class="term"><code class="option">--debug</code></span></dt><dd><p><span class="original">
+        Print verbose debugging output that is mostly useful for developers
+        debugging &lt;application&gt;pg_rewind&lt;/&gt;.
+</span>主に開発者が<span class="application">pg_rewind</span>をデバッグするのに役立つ冗長なデバッグ出力を印字します。
+       </p></dd><dt><span class="term"><code class="option">-V</code><br /></span><span class="term"><code class="option">--version</code></span></dt><dd><p>バージョン情報を表示して終了します。</p></dd><dt><span class="term"><code class="option">-?</code><br /></span><span class="term"><code class="option">--help</code></span></dt><dd><p>ヘルプを表示して終了します。</p></dd></dl></div><p>
+   </p></div><div class="refsect1" id="idp116379008"><h2>環境</h2><span class="original">
+  &lt;title&gt;Environment&lt;/title&gt;
+</span><p><span class="original">
+   When &lt;option&gt;#045;&amp;#045;source-server&lt;/&gt; option is used,
+   &lt;application&gt;pg_rewind&lt;/application&gt; also uses the environment variables
+   supported by &lt;application&gt;libpq&lt;/&gt; (see &lt;xref linkend="libpq-envars"&gt;).
+</span><code class="option">--source-server</code>オプションを使用する場合、<span class="application">pg_rewind</span>は
+<span class="application">libpq</span>で利用できる環境変数を使用します(<a class="xref" href="libpq-envars.html" title="31.14. 環境変数">31.14. 環境変数</a>を参照)。
+  </p></div><div class="refsect1" id="idp116382688"><h2>注釈</h2><span class="original">
+  &lt;title&gt;Notes&lt;/title&gt;
+</span><div class="refsect2" id="idp116383328"><h3>どうやって動くのか</h3><span class="original">
+   &lt;title&gt;How it works&lt;/title&gt;
+</span><p><span class="original">
+    The basic idea is to copy everything from the new cluster to the old
+    cluster, except for the blocks that we know to be the same.
+</span>基本的なアイデアは、同じであることがわかっているブロックを除き、すべてを新しいクラスタから古いクラスタにコピーする、というものです。
+   </p><div class="procedure"><ol class="procedure" type="1"><li class="step"><p><span class="original">
+      Scan the WAL log of the old cluster, starting from the last checkpoint
+      before the point where the new cluster's timeline history forked off
+      from the old cluster. For each WAL record, make a note of the data
+      blocks that were touched. This yields a list of all the data blocks
+      that were changed in the old cluster, after the new cluster forked off.
+</span>古いクラスタからタイムラインが新しいクラスタで分岐した時点より前の最後のチェックポイントから始めて、古いクラスタのWALログをスキャンしします。
+各々のWALレコードについて、変更されたデータブロックを記録します。
+これにより、新しいクラスタで分岐した以降に、古いクラスタで変更されたすべてのデータブロックのリストが作成できます。
+     </p></li><li class="step"><p><span class="original">
+      Copy all those changed blocks from the new cluster to the old cluster.
+</span>変更されたすべてのブロックを新しいクラスタから古いクラスタにコピーします。
+     </p></li><li class="step"><p><span class="original">
+      Copy all other files such as &lt;filename&gt;clog&lt;/filename&gt; and configuration files from the new cluster
+      to the old cluster, everything except the relation files.
+</span><code class="filename">clog</code>や設定ファイルなど、リレーションファイル以外のすべてのファイルを新しいクラスタから古いクラスタにコピーします。
+     </p></li><li class="step"><p><span class="original">
+      Apply the WAL from the new cluster, starting from the checkpoint
+      created at failover. (Strictly speaking, &lt;application&gt;pg_rewind&lt;/&gt;
+      doesn't apply the WAL, it just creates a backup label file indicating
+      that when &lt;productname&gt;PostgreSQL&lt;/&gt; is started, it will start replay
+      from that checkpoint and apply all the required WAL.)
+</span>フェイルオーバの際に作られたチェックポイントから始めて、新しいクラスタのWALを適用します。(厳密に言うと、<span class="application">pg_rewind</span>はWALの適用はせず、単にバックアップラベルファイルを作るだけです。
+それにより、<span class="productname">PostgreSQL</span>が起動する時、チェックポイントから始めてすべての必要なWALが適用されます)
+     </p></li></ol></div></div></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="app-pgresetxlog.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="reference-server.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="pgtestfsync.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top"><span class="application">pg_resetxlog</span> </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> <span class="application">pg_test_fsync</span></td></tr></table></div></body></html>

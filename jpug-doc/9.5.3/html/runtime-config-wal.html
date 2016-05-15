@@ -1,0 +1,644 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>18.5. ログ先行書き込み（WAL）</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="PostgreSQL 9.5.3文書" /><link rel="up" href="runtime-config.html" title="第18章 サーバの設定" /><link rel="prev" href="runtime-config-resource.html" title="18.4. 資源の消費" /><link rel="next" href="runtime-config-replication.html" title="18.6. レプリケーション" /><link rel="copyright" href="legalnotice.html" title="法的告知" /><meta name="viewport" content="width=device-width,initial-scale=1.0,minimum-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><td width="20%" align="left" colspan="2"></td><th width="60%" align="center"><a accesskey="h" href="index.html">PostgreSQL 9.5.3文書</a></th><td width="20%" align="right"><div class="actions"><a class="issue" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 9.5.3 runtime-config-wal.html">誤訳等の報告</a></div></td></tr><tr><td width="10%" align="left" valign="top"><a accesskey="p" href="runtime-config-resource.html">前へ</a> </td><td width="10%" align="left" valign="top"><a accesskey="u" href="runtime-config.html">上へ</a></td><td width="60%" align="center">18.5. ログ先行書き込み（WAL）</td><td width="20%" align="right" valign="top"> <a accesskey="n" href="runtime-config-replication.html">次へ</a></td></tr></table><hr /></div><div class="sect1" id="runtime-config-wal"><div class="titlepage"><div><div><h2 class="title" style="clear: both">18.5. ログ先行書き込み（WAL）</h2></div></div></div><div class="toc"><dl class="toc"><dt><span class="sect2"><a href="runtime-config-wal.html#runtime-config-wal-settings">18.5.1. 諸設定</a></span></dt><dt><span class="sect2"><a href="runtime-config-wal.html#runtime-config-wal-checkpoints">18.5.2. チェックポイント</a></span></dt><dt><span class="sect2"><a href="runtime-config-wal.html#runtime-config-wal-archiving">18.5.3. アーカイビング</a></span></dt></dl></div><span class="original">
+    &lt;title&gt;Write Ahead Log&lt;/title&gt;
+    </span><p>   <span class="original">
+    For additional information on tuning these settings,
+    see &lt;xref linkend="wal-configuration"&gt;.
+    </span>
+    これらの設定をチューニングする追加情報は<a class="xref" href="wal-configuration.html" title="29.4. WALの設定">29.4. <acronym class="acronym">WAL</acronym>の設定</a>を参照してください。
+   </p><div class="sect2" id="runtime-config-wal-settings"><div class="titlepage"><div><div><h3 class="title">18.5.1. 諸設定</h3></div></div></div><span class="original">
+     &lt;title&gt;Settings&lt;/title&gt;
+     </span><div class="variablelist"><dl class="variablelist"><dt id="guc-wal-level"><span class="term"><code class="varname">wal_level</code> (<code class="type">enum</code>)
+      <a id="idp79812800" class="indexterm"></a>
+      </span></dt><dd><p>       <span class="original">
+        &lt;varname&gt;wal_level&lt;/&gt; determines how much information is written
+        to the WAL. The default value is &lt;literal&gt;minimal&lt;/&gt;, which writes
+        only the information needed to recover from a crash or immediate
+        shutdown. &lt;literal&gt;archive&lt;/&gt; adds logging required for WAL archiving;
+        &lt;literal&gt;hot_standby&lt;/&gt; further adds information required to run
+        read-only queries on a standby server; and, finally
+        &lt;literal&gt;logical&lt;/&gt; adds information necessary to support logical
+        decoding.  Each level includes the information logged at all lower
+        levels.  This parameter can only be set at server start.
+       </span>
+       <code class="varname">wal_level</code>はどれだけの情報がWALに書かれるかを決定します。
+       デフォルト値は<code class="literal">minimal</code>で、クラッシュまたは即時停止から回復するのに必要な情報のみ書き出します。
+       <code class="literal">archive</code>はWALアーカイビングに必要なロギングを追加します。<code class="literal">hot_standby</code>は更にスタンバイサーバ上の読み取り専用問い合わせの情報を追加します。
+<code class="literal">logical</code>は、更にロジカルデコーディングをサポートするのに必要な情報を追加します。
+それぞれのレベルは、下位のレベルのログ出力を含んでいます。
+       このパラメータはサーバ起動時のみ設定可能です。
+       </p><p>       <span class="original">
+        In &lt;literal&gt;minimal&lt;/&gt; level, WAL-logging of some bulk
+        operations can be safely skipped, which can make those
+        operations much faster (see &lt;xref linkend="populate-pitr"&gt;).
+        Operations in which this optimization can be applied include:
+        &lt;simplelist&gt;
+         &lt;member&gt;&lt;command&gt;CREATE TABLE AS&lt;/&gt;&lt;/member&gt;
+         &lt;member&gt;&lt;command&gt;CREATE INDEX&lt;/&gt;&lt;/member&gt;
+         &lt;member&gt;&lt;command&gt;CLUSTER&lt;/&gt;&lt;/member&gt;
+         &lt;member&gt;&lt;command&gt;COPY&lt;/&gt; into tables that were created or truncated in the same
+         transaction&lt;/member&gt;
+        &lt;/simplelist&gt;
+        But minimal WAL does not contain enough information to reconstruct the
+        data from a base backup and the WAL logs, so &lt;literal&gt;archive&lt;/&gt; or
+        higher must be used to enable WAL archiving
+        (&lt;xref linkend="guc-archive-mode"&gt;) and streaming replication.
+       </span>
+       <code class="literal">minimal</code>水準では、何らかの巨大な操作でのWALロギングは安全を期して省略されます。そうすることで、一連の操作をより高速にさせます（<a class="xref" href="populate.html#populate-pitr" title="14.4.7. WALアーカイブ処理とストリーミングレプリケーションの無効化">14.4.7. WALアーカイブ処理とストリーミングレプリケーションの無効化</a>を参照してください）。
+       この最適化が適用される操作には以下のものがあげられます。
+        </p><table border="0" summary="Simple list" class="simplelist"><tr><td><code class="command">CREATE TABLE AS</code></td></tr><tr><td><code class="command">CREATE INDEX</code></td></tr><tr><td><code class="command">CLUSTER</code></td></tr><tr><td>同一トランザクション内で作成されたか、もしくは切り詰められたテーブルに対する<code class="command">COPY</code></td></tr></table><p>
+       しかしminimal WALはベースバックアップとWALログからデータを再構築するための充分な情報を持ち合わせていません。したがって、WALアーカイビング（<a class="xref" href="runtime-config-wal.html#guc-archive-mode">archive_mode</a>）あるいはストリーミングレプリケーションを有効にするには<code class="literal">archive</code>以上を使用しなければなりません。
+       </p><p>       <span class="original">
+        In &lt;literal&gt;hot_standby&lt;/&gt; level, the same information is logged as
+        with &lt;literal&gt;archive&lt;/&gt;, plus information needed to reconstruct
+        the status of running transactions from the WAL. To enable read-only
+        queries on a standby server, &lt;varname&gt;wal_level&lt;/&gt; must be set to
+        &lt;literal&gt;hot_standby&lt;/&gt; or higher on the primary, and
+        &lt;xref linkend="guc-hot-standby"&gt; must be enabled in the standby. It is
+        thought that there is little measurable difference in performance
+        between using &lt;literal&gt;hot_standby&lt;/&gt; and &lt;literal&gt;archive&lt;/&gt; levels,
+        so feedback is welcome if any production impacts are noticeable.
+       &lt;/para&gt;
+       </span>
+       <code class="literal">hot_standby</code>水準においては、<code class="literal">archive</code>と同じ情報がログ取得されるのに加え、WALから実行中のトランザクション状態を再構築するのに必要な情報が得られます。
+       スタンバイサーバ上で読み取り専用問い合わせを有効にするには、<code class="literal">hot_standby</code>かそれ以上がプライマリサーバで設定され、<a class="xref" href="runtime-config-replication.html#guc-hot-standby">hot_standby</a>がスタンバイサーバで有効になっていなければなりません。
+       <code class="literal">hot_standby</code>水準と<code class="literal">archive</code>水準を使用した場合にちょっとした計測可能な性能上の差異がありますので、実際に運用して問題が見つかった場合はご意見を聞かせてください。
+       </p><p><span class="original">
+        In &lt;literal&gt;logical&lt;/&gt; level, the same information is logged as
+        with &lt;literal&gt;hot_standby&lt;/&gt;, plus information needed to allow
+        extracting logical change sets from the WAL. Using a level of
+        &lt;literal&gt;logical&lt;/&gt; will increase the WAL volume, particularly if many
+        tables are configured for &lt;literal&gt;REPLICA IDENTITY FULL&lt;/literal&gt; and
+        many &lt;command&gt;UPDATE&lt;/&gt; and &lt;command&gt;DELETE&lt;/&gt; statements are
+        executed.
+</span>       <code class="literal">logical</code>レベルでは、<code class="literal">hot_standby</code>と同じ情報がログされるのに加え、ロジカルチェンジセットをWALから取り出すのに必要な情報が追加されます。
+<code class="literal">logical</code>を使うとWALの量が増えます。とりわけ、多数のテーブルが<code class="literal">REPLICA IDENTITY FULL</code>と設定されていて(訳注: ALTER TABLE参照)、多くの<code class="command">UPDATE</code>と<code class="command">DELETE</code>文が実行される場合はこのことが言えます。
+       </p></dd><dt id="guc-fsync"><span class="term"><code class="varname">fsync</code> (<code class="type">boolean</code>)
+      <a id="idp79841488" class="indexterm"></a>
+      </span></dt><dd><p><span class="original">
+        If this parameter is on, the &lt;productname&gt;PostgreSQL&lt;/&gt; server
+        will try to make sure that updates are physically written to
+        disk, by issuing &lt;function&gt;fsync()&lt;/&gt; system calls or various
+        equivalent methods (see &lt;xref linkend="guc-wal-sync-method"&gt;).
+        This ensures that the database cluster can recover to a
+        consistent state after an operating system or hardware crash.
+</span>このパラメータがオンの場合、<span class="productname">PostgreSQL</span>サーバは<code class="function">fsync()</code>システムコールを発行したり、もしくはこれに相当する方法（<a class="xref" href="runtime-config-wal.html#guc-wal-sync-method">wal_sync_method</a>を参照）で、更新が物理的にディスクに書き込まれたかの確証を得ようと試みます。
+これは、オペレーティングシステムもしくはハードウェアがクラッシュした後、確実にデータベースクラスタを一貫した状態に復旧させることを保証します。
+       </p><p>       <span class="original">
+        While turning off &lt;varname&gt;fsync&lt;/varname&gt; is often a performance
+        benefit, this can result in unrecoverable data corruption in
+        the event of a power failure or system crash.  Thus it
+        is only advisable to turn off &lt;varname&gt;fsync&lt;/varname&gt; if
+        you can easily recreate your entire database from external
+        data.
+       </span>
+       <code class="varname">fsync</code>を停止することはしばしば性能上の利益になるとは言っても、停電やクラッシュの際に回復不可能なデータ破壊になることがあります。
+       従って外部データから全てのデータベースを簡単に再構築できる場合のみ<code class="varname">fsync</code>を停止してください。
+       </p><p>       <span class="original">
+        Examples of safe circumstances for turning off
+        &lt;varname&gt;fsync&lt;/varname&gt; include the initial loading of a new
+        database cluster from a backup file, using a database cluster
+        for processing a batch of data after which the database
+        will be thrown away and recreated,
+        or for a read-only database clone which
+        gets recreated frequently and is not used for failover.  High
+        quality hardware alone is not a sufficient justification for
+        turning off &lt;varname&gt;fsync&lt;/varname&gt;.
+       </span>
+        <code class="varname">fsync</code>を停止しても安全な状況の例としては、以下があげられます。
+        データベースが削除され、そして再構築されたデータの一群の処理のため、または頻繁に再構築され、かつフェイルオーバには使用されない読み取り専用のデータベースクローンに対し、バックアップファイルから新規データベースクラスタの初回読みを行う場合です。
+       高性能なハードウェアであるからと言って、<code class="varname">fsync</code>を停止することは正当性を主張する十分な理由とはなりません。
+       </p><p>       <span class="original">
+        For reliable recovery when changing &lt;varname&gt;fsync&lt;/varname&gt;
+        off to on, it is necessary to force all modified buffers in the
+        kernel to durable storage.  This can be done while the cluster
+        is shutdown or while fsync is on by running &lt;command&gt;initdb
+        &amp;#045;sync-only&lt;/command&gt;, running &lt;command&gt;sync&lt;/&gt;, unmounting the
+        file system, or rebooting the server.
+       </span>
+       <code class="varname">fsync</code>を無効(off)から有効(on）に変更したときの確実なリカバリに対しては、カーネル内の全ての変更されたバッファを恒久的ストレージに強制移動させることが必要です。
+       クラスタがシャットダウンしている間、または fsyncが<code class="command">initdb--sync-only</code>の稼働しているか、<code class="command">sync</code>が稼働しているか、ファイルシステムをにアンマウントしているか、またはサーバを再起動しているかにより成し得られます。
+       </p><p>       <span class="original">
+        In many situations, turning off &lt;xref linkend="guc-synchronous-commit"&gt;
+        for noncritical transactions can provide much of the potential
+        performance benefit of turning off &lt;varname&gt;fsync&lt;/varname&gt;, without
+        the attendant risks of data corruption.
+       </span>
+       多くの場合、致命的ではないトランザクションにおいて<a class="xref" href="runtime-config-wal.html#guc-synchronous-commit">synchronous_commit</a>を無効にすることにより、データ破壊の付随的危険性を伴うことなく、<code class="varname">fsync</code>を無効にした場合に潜在する性能上のメリットの多くを得ることができます。
+       </p><p>       <span class="original">
+        &lt;varname&gt;fsync&lt;/varname&gt; can only be set in the &lt;filename&gt;postgresql.conf&lt;/&gt;
+        file or on the server command line.
+        If you turn this parameter off, also consider turning off
+        &lt;xref linkend="guc-full-page-writes"&gt;.
+       </span>
+       <code class="varname">fsync</code> は<code class="filename">postgresql.conf</code>ファイル、または、サーバのコマンドラインでのみ設定可能です。
+このパラメータを無効にする場合、<a class="xref" href="runtime-config-wal.html#guc-full-page-writes">full_page_writes</a>も同時に無効にすることを検討してください。
+       </p></dd><dt id="guc-synchronous-commit"><span class="term"><code class="varname">synchronous_commit</code> (<code class="type">enum</code>)
+      <a id="idp79862752" class="indexterm"></a>
+      </span></dt><dd><p>       <span class="original">
+        Specifies whether transaction commit will wait for WAL records
+        to be written to disk before the command returns a &lt;quote&gt;success&lt;/&gt;
+        indication to the client.  Valid values are &lt;literal&gt;on&lt;/&gt;,
+        &lt;literal&gt;remote_write&lt;/&gt;, &lt;literal&gt;local&lt;/&gt;, and &lt;literal&gt;off&lt;/&gt;.
+        The default, and safe, setting
+        is &lt;literal&gt;on&lt;/&gt;.  When &lt;literal&gt;off&lt;/&gt;, there can be a delay between
+        when success is reported to the client and when the transaction is
+        really guaranteed to be safe against a server crash.  (The maximum
+        delay is three times &lt;xref linkend="guc-wal-writer-delay"&gt;.)  Unlike
+        &lt;xref linkend="guc-fsync"&gt;, setting this parameter to &lt;literal&gt;off&lt;/&gt;
+        does not create any risk of database inconsistency: an operating
+        system or database crash might
+        result in some recent allegedly-committed transactions being lost, but
+        the database state will be just the same as if those transactions had
+        been aborted cleanly.  So, turning &lt;varname&gt;synchronous_commit&lt;/&gt; off
+        can be a useful alternative when performance is more important than
+        exact certainty about the durability of a transaction.  For more
+        discussion see &lt;xref linkend="wal-async-commit"&gt;.
+       </span>
+トランザクションのコミットがクライアントに<span class="quote">「<span class="quote">成功</span>」</span>の報告を返す前に、WALレコードがディスク上に書き込まれるまで待つかどうかの指定をします。
+有効な値は<code class="literal">on</code>、<code class="literal">remote_write</code>、<code class="literal">local</code>、および<code class="literal">off</code>です。
+デフォルトかつ安全な設定は<code class="literal">on</code>です。
+<code class="literal">off</code>の場合、クライアントに成功を報告する時点とトランザクションが本当にサーバクラッシュに対して安全になるまでの間に遅延が発生する場合があります。
+（遅延は最大で、<a class="xref" href="runtime-config-wal.html#guc-wal-writer-delay">wal_writer_delay</a>の3倍です。）
+<a class="xref" href="runtime-config-wal.html#guc-fsync">fsync</a>と異なり、このパラメータを<code class="literal">off</code>に設定することによって、データベースの一貫性が損なわれる可能性はありません。
+オペレーティングシステムやデータベースのクラッシュにより最近コミットされたということになっているトランザクションの一部が失われる可能性がありますが、これらのトランザクションが正常にアボートされた時とデータベースの状態は変わりません。
+ですので、<code class="varname">synchronous_commit</code>を無効にすることは、トランザクションの信頼性が確実であることよりも性能が重要である場合に有効な方法です。
+詳細は<a class="xref" href="wal-async-commit.html" title="29.3. 非同期コミット">29.3. 非同期コミット</a>を参照してください。
+       </p><p>       <span class="original">
+        If &lt;xref linkend="guc-synchronous-standby-names"&gt; is set, this
+        parameter also controls whether or not transaction commits will wait
+        for the transaction's WAL records to be replicated to the standby
+        server.
+        When set to &lt;literal&gt;on&lt;/&gt;, commits will wait until a reply
+        from the current synchronous standby indicates it has received
+        the commit record of the transaction and flushed it to disk.  This
+        ensures the transaction will not be lost unless both primary and
+        standby suffer corruption of their database storage.
+        When set to &lt;literal&gt;remote_write&lt;/&gt;, commits will wait
+        until a reply from the current synchronous standby indicates it has
+        received the commit record of the transaction and written it out to
+        the standby's operating system, but the data has not necessarily
+        reached stable storage on the standby. This setting is sufficient to
+        ensure data preservation even if the standby instance of
+        &lt;productname&gt;PostgreSQL&lt;/&gt; were to crash, but not if the standby
+        suffers an operating-system-level crash.
+        </span>
+<a class="xref" href="runtime-config-replication.html#guc-synchronous-standby-names">synchronous_standby_names</a>が設定されていると、このパラメータは、トランザクションのWALレコードが、スタンバイサーバに複製されるまでトランザクションコミットを待機するか否かも制御します。
+<code class="literal">on</code>に設定すると、現在の同期スタンバイがトランザクションのコミットレコードを受け取り、記憶装置に吐き出したことを報告するまでコミットは待機します。
+このモードでは、プライマリおよびスタンバイの両方がデータベース記憶装置の故障を被った場合を除いて、トランザクションが失われないことが保証されます。
+<code class="literal">remote_write</code>に設定すると、現在の同期スタンバイがトランザクションのコミットレコードを受け取り、スタンバイのオペレーティングシステムに書き出したことを報告するまでコミットは待機します。
+しかし、データが必ずしもスタンバイの永続的な記憶装置に到達したとは言えません。
+この設定は仮に<span class="productname">PostgreSQL</span>のスタンバイインスタンスがクラッシュしたとしても、データ保護を保証するのに充分です。
+しかし、スタンバイがオペレーティングシステムのレベルでクラッシュした場合はこの限りではありません。
+       </p><p>       <span class="original">
+        When synchronous
+        replication is in use, it will normally be sensible either to wait
+        for both local flush to disk and replication of WAL records, or
+        to allow the transaction to commit asynchronously.  However, the
+        setting &lt;literal&gt;local&lt;/&gt; is available for transactions that
+        wish to wait for local flush to disk, but not synchronous replication.
+        If &lt;varname&gt;synchronous_standby_names&lt;/&gt; is not set, the settings
+        &lt;literal&gt;on&lt;/&gt;, &lt;literal&gt;remote_write&lt;/&gt; and &lt;literal&gt;local&lt;/&gt; all
+        provide the same synchronization level: transaction commits only wait
+        for local flush to disk.
+        </span>
+       同期レプリケーションが使用されている場合、通常、ディスクに対してのローカルな書き込みとWALレコードのレプリケーションのいずれかを待つか、トランザクションに非同期でコミットさせるかどちらかの選択を行うよう実用的になっています。しかし、トランザクションに対し特別の値である<code class="literal">local</code>が使用でき、同期レプリケーションではなく、ディスクへのローカルフラッシュの待機を要請することが可能です。
+       もし <code class="varname">synchronous_standby_names</code> が設定されていなければ、<code class="literal">on</code>、<code class="literal">remote_write</code> および <code class="literal">local</code> の設定は全て同一の同期レベルを提供します。トランザクションのコミットはローカルディスクへの書き込みのみ待機します。
+       </p><p>       <span class="original">
+        This parameter can be changed at any time; the behavior for any
+        one transaction is determined by the setting in effect when it
+        commits.  It is therefore possible, and useful, to have some
+        transactions commit synchronously and others asynchronously.
+        For example, to make a single multistatement transaction commit
+        asynchronously when the default is the opposite, issue &lt;command&gt;SET
+        LOCAL synchronous_commit TO OFF&lt;/&gt; within the transaction.
+       </span>
+       このパラメータはいつでも変更可能です。
+この設定により任意の1つのトランザクションのコミット時の動作が決まります。
+したがって、一部のトランザクションのコミットを同期的に、その他を非同期的にすることが可能で、かつ、有用です。
+例えば、デフォルトが同期コミットの場合に単一の複数文トランザクションを非同期にコミットさせるためには、トランザクション内で<code class="command">SET LOCAL synchronous_commit TO OFF</code>を発行します。
+       </p></dd><dt id="guc-wal-sync-method"><span class="term"><code class="varname">wal_sync_method</code> (<code class="type">enum</code>)
+      <a id="idp79892720" class="indexterm"></a>
+      </span></dt><dd><p>       <span class="original">
+        Method used for forcing WAL updates out to disk.
+        If &lt;varname&gt;fsync&lt;/varname&gt; is off then this setting is irrelevant,
+        since WAL file updates will not be forced out at all.
+        Possible values are:
+       </span>
+       WALの更新をディスクへ強制するのに使用される方法です。<code class="varname">fsync</code>がオフの場合この設定は役に立ちません。と言うのはWALファイルの更新が全く強制されないからです。取り得る値は以下のものです。
+       </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>       <span class="original">
+         &lt;literal&gt;open_datasync&lt;/&gt; (write WAL files with &lt;function&gt;open()&lt;/&gt; option &lt;symbol&gt;O_DSYNC&lt;/&gt;)
+        </span>
+        <code class="literal">open_datasync</code>（<code class="function">open()</code>オプション<code class="symbol">O_DSYNC</code>でWALファイルの書き込み）
+        </p></li><li class="listitem"><p>       <span class="original">
+         &lt;literal&gt;fdatasync&lt;/&gt; (call &lt;function&gt;fdatasync()&lt;/&gt; at each commit)
+        </span>
+        <code class="literal">fdatasync</code>（コミット毎に<code class="function">fdatasync()</code>を呼び出し）
+        </p></li><li class="listitem"><p>        <span class="original">
+         &lt;literal&gt;fsync&lt;/&gt; (call &lt;function&gt;fsync()&lt;/&gt; at each commit)
+        </span>
+        <code class="literal">fsync</code>（コミット毎に<code class="function">fsync()</code>を呼び出し）
+        </p></li><li class="listitem"><p>       <span class="original">
+         &lt;literal&gt;fsync_writethrough&lt;/&gt; (call &lt;function&gt;fsync()&lt;/&gt; at each commit, forcing write-through of any disk write cache)
+        </span>
+        <code class="literal">fsync_writethrough</code>（いかなるディスク書き込みキャッシュもライトスルーさせるため、コミット毎に<code class="function">fsync()</code>を呼び出し）
+        </p></li><li class="listitem"><p>       <span class="original">
+         &lt;literal&gt;open_sync&lt;/&gt; (write WAL files with &lt;function&gt;open()&lt;/&gt; option &lt;symbol&gt;O_SYNC&lt;/&gt;)
+        </span>
+        <code class="literal">open_sync</code>（<code class="function">open()</code>オプション<code class="symbol">O_SYNC</code>でWALファイルの書き込み）
+        </p></li></ul></div><p>       <span class="original">
+        The &lt;literal&gt;open_&lt;/&gt;* options also use &lt;literal&gt;O_DIRECT&lt;/&gt; if available.
+        Not all of these choices are available on all platforms.
+        The default is the first method in the above list that is supported
+        by the platform, except that &lt;literal&gt;fdatasync&lt;/&gt; is the default on
+        Linux.  The default is not necessarily ideal; it might be
+        necessary to change this setting or other aspects of your system
+        configuration in order to create a crash-safe configuration or
+        achieve optimal performance.
+        These aspects are discussed in &lt;xref linkend="wal-reliability"&gt;.
+        This parameter can only be set in the &lt;filename&gt;postgresql.conf&lt;/&gt;
+        file or on the server command line.
+       </span>
+       もし可能なら<code class="literal">open_</code>*オプションも<code class="literal">O_DIRECT</code>を使用します。
+       全てのプラットホームでこれら全ての選択肢が使えるわけではありません。
+デフォルトは、上のリストのプラットフォームでサポートされるものの最初に列挙されているものです。ただしLinuxでは<code class="literal">fdatasync</code>
+がデフォルトです。
+デフォルトは必ずしも理想的なものではありません。
+この設定、あるいはクラッシュに適応した構成か、アーカイブの最適性能を導くために使用しているシステム構成の形態を変更することが必要かもしれません。これらの側面は
+<a class="xref" href="wal-reliability.html" title="29.1. 信頼性">29.1. 信頼性</a>で解説されます。
+このパラメータは<code class="filename">postgresql.conf</code>ファイル、または、サーバのコマンドラインでのみ設定可能です。
+       </p></dd><dt id="guc-full-page-writes"><span class="term"><code class="varname">full_page_writes</code> (<code class="type">boolean</code>)
+      <a id="idp79916176" class="indexterm"></a>
+      </span></dt><dd><p>       <span class="original">
+        When this parameter is on, the &lt;productname&gt;PostgreSQL&lt;/&gt; server
+        writes the entire content of each disk page to WAL during the
+        first modification of that page after a checkpoint.
+        This is needed because
+        a page write that is in process during an operating system crash might
+        be only partially completed, leading to an on-disk page
+        that contains a mix of old and new data.  The row-level change data
+        normally stored in WAL will not be enough to completely restore
+        such a page during post-crash recovery.  Storing the full page image
+        guarantees that the page can be correctly restored, but at the price
+        of increasing the amount of data that must be written to WAL.
+        (Because WAL replay always starts from a checkpoint, it is sufficient
+        to do this during the first change of each page after a checkpoint.
+        Therefore, one way to reduce the cost of full-page writes is to
+        increase the checkpoint interval parameters.)
+       </span>
+       このパラメータが有効の場合、<span class="productname">PostgreSQL</span>サーバは、チェックポイントの後にそのページが最初に変更された過程で、ディスクページの全ての内容をWALに書き込みます。
+オペレーティングシステムがクラッシュした時に進行中のページ書き込みは途中までしか終わっていない可能性があるため、これが必要です。
+この場合、ディスク上のページは古いデータと新しいデータが混在する状態になります。
+通常WAL内に保存される行レベルの変更データは、クラッシュ後のリカバリ時にこうしたページを完全に復旧させるには不十分です。
+完全なページイメージが、ページを正確に復旧できることを保証します。
+しかし、WALに書き込まなければならないデータ量が増加する代償と引きかえになります。
+（WAL再生は常にチェックポイントから始まるため、チェックポイント後のそれぞれのページの最初の変更時にこれを行うことで差し支えありません。
+従って、完全ページ書き出しのコストを低減する方法の1つは、チェックポイント間隔パラメータを増やすことです。）
+       </p><p>       <span class="original">
+        Turning this parameter off speeds normal operation, but
+        might lead to either unrecoverable data corruption, or silent
+        data corruption, after a system failure. The risks are similar to turning off
+        &lt;varname&gt;fsync&lt;/varname&gt;, though smaller, and it should be turned off
+        only based on the same circumstances recommended for that parameter.
+       </span>
+       このパラメータを無効にすると、通常の操作速度が上がりますが、システム障害後に、回復不能なデータ破損、あるいは警告なしのデータ損壊をもたらすかもしれません。
+このリスクは小さいながら<code class="varname">fsync</code>を無効にした場合と似ています。そしてその<code class="varname">fsync</code>に対して推奨されている同一の状況に基づく限りにおいて停止されなければなりません。
+       </p><p>       <span class="original">
+        Turning off this parameter does not affect use of
+        WAL archiving for point-in-time recovery (PITR)
+        (see &lt;xref linkend="continuous-archiving"&gt;).
+       </span>
+       このパラメータを無効にしてもポイントインタイムリカバリ（PITR）用のWALアーカイブの使用に影響ありません（ <a class="xref" href="continuous-archiving.html" title="24.3. 継続的アーカイブとポイントインタイムリカバリ（PITR）">24.3. 継続的アーカイブとポイントインタイムリカバリ（PITR）</a>を参照してください）。
+       </p><p>       <span class="original">
+        This parameter can only be set in the &lt;filename&gt;postgresql.conf&lt;/&gt;
+        file or on the server command line.
+        The default is &lt;literal&gt;on&lt;/&gt;.
+       </span>
+       このパラメータは<code class="filename">postgresql.conf</code>ファイル内、または、サーバのコマンドラインでのみ設定可能です。
+デフォルトは<code class="literal">on</code>です。
+       </p></dd><dt id="guc-wal-log-hints"><span class="term"><code class="varname">wal_log_hints</code> (<code class="type">boolean</code>)
+      <a id="idp79931072" class="indexterm"></a>
+      </span></dt><dd><p><span class="original">
+        When this parameter is &lt;literal&gt;on&lt;/&gt;, the &lt;productname&gt;PostgreSQL&lt;/&gt;
+        server writes the entire content of each disk page to WAL during the
+        first modification of that page after a checkpoint, even for
+        non-critical modifications of so-called hint bits.
+</span>        このパラメータが<code class="literal">on</code>の場合、<span class="productname">PostgreSQL</span>サーバはチェックポイント後にはじめてページを変更する際に、ディスクページの全内容をWALに書き出します。
+これは、あまり重要でない、ヒントビットと呼ばれるものに対する変更にさえ当てはまります。
+       </p><p><span class="original">
+        If data checksums are enabled, hint bit updates are always WAL-logged
+        and this setting is ignored. You can use this setting to test how much
+        extra WAL-logging would occur if your database had data checksums
+        enabled.
+</span>        データチェックサムが有効であると、ヒントビットの更新は常にWALにログされ、この設定パラメータは無視されます。この設定パラメータを使って、データチェックサムが有効なときにどれだけのWALログは余計に書きだされるかをテストすることができます。
+       </p><p><span class="original">
+        This parameter can only be set at server start. The default value is &lt;literal&gt;off&lt;/&gt;.
+</span>       このパラメータはサーバ起動時のみ設定可能です。
+デフォルト値は<code class="literal">off</code>です。
+       </p></dd><dt id="guc-wal-compression"><span class="term"><code class="varname">wal_compression</code> (<code class="type">boolean</code>)
+      <a id="idp79939600" class="indexterm"></a>
+      </span></dt><dd><p><span class="original">
+        When this parameter is &lt;literal&gt;on&lt;/&gt;, the &lt;productname&gt;PostgreSQL&lt;/&gt;
+        server compresses a full page image written to WAL when
+        &lt;xref linkend="guc-full-page-writes"&gt; is on or during a base backup.
+        A compressed page image will be decompressed during WAL replay.
+        The default value is &lt;literal&gt;off&lt;/&gt;.
+        Only superusers can change this setting.
+</span>このパラメータが<code class="literal">on</code>なら、<a class="xref" href="runtime-config-wal.html#guc-full-page-writes">full_page_writes</a>がonあるいはベースバックアップの際、<span class="productname">PostgreSQL</span>サーバはWALに書き出すフルページイメージを圧縮します。
+デフォルト値は<code class="literal">off</code>です。
+スーパユーザだけがこの設定を変更できます。
+       </p><p><span class="original">
+        Turning this parameter on can reduce the WAL volume without
+        increasing the risk of unrecoverable data corruption,
+        but at the cost of some extra CPU spent on the compression during
+        WAL logging and on the decompression during WAL replay.
+</span>このパラメータを有効にすると、回復不可能なデータ破壊のリスクを増やすこと無しにWALの量を減らすことができます。
+しかし、WALロギングの際の圧縮のため、またWALリプレイの際には伸張のために余分なCPUを使用するというコストが発生します。
+       </p></dd><dt id="guc-wal-buffers"><span class="term"><code class="varname">wal_buffers</code> (<code class="type">integer</code>)
+      <a id="idp79947936" class="indexterm"></a>
+      </span></dt><dd><p>       <span class="original">
+        The amount of shared memory used for WAL data that has not yet been
+        written to disk.  The default setting of -1 selects a size equal to
+        1/32nd (about 3%) of &lt;xref linkend="guc-shared-buffers"&gt;, but not less
+        than &lt;literal&gt;64kB&lt;/literal&gt; nor more than the size of one WAL
+        segment, typically &lt;literal&gt;16MB&lt;/literal&gt;.  This value can be set
+        manually if the automatic choice is too large or too small,
+        but any positive value less than &lt;literal&gt;32kB&lt;/literal&gt; will be
+        treated as &lt;literal&gt;32kB&lt;/literal&gt;.
+        This parameter can only be set at server start.
+       </span>
+       未だディスクに書き込まれていないWALデータに対して使用される共有メモリ容量です。
+       デフォルトの設定である-1は、<a class="xref" href="runtime-config-resource.html#guc-shared-buffers">shared_buffers</a>の1/32（約3%）の容量に等しい大きさを選択します。
+       しかし、<code class="literal">64kB</code>未満ではなく、かつ典型的に<code class="literal">16MB</code>であるWALセグメントの大きさを越えることはありません。
+       もし、自動設定による選択が大きすぎたり、小さすぎる場合この値は手作業で設定可能です。
+       しかし、<code class="literal">32kB</code>未満のどんな正の値であっても、<code class="literal">32kB</code>
+として取り扱われます。
+このパラメータはサーバ起動時のみ設定可能です。
+       </p><p>       <span class="original">
+        The contents of the WAL buffers are written out to disk at every
+        transaction commit, so extremely large values are unlikely to
+        provide a significant benefit.  However, setting this value to at
+        least a few megabytes can improve write performance on a busy
+        server where many clients are committing at once.  The auto-tuning
+        selected by the default setting of -1 should give reasonable
+        results in most cases.
+       </span>
+       WALバッファの内容はトランザクションのコミット毎にディスクに書き込まれます。
+       したがって、極端に大きな値は有意な効果を期待できません。
+       しかし、この値を数メガバイトに設定することにより、多くのクライアントが同時にコミットするトラフィック量の多いサーバでは書き込み性能が向上します。
+       デフォルト設定の-1で選択される自動チューニングによると、ほとんどの場合妥当な結果が得られます。
+       </p></dd><dt id="guc-wal-writer-delay"><span class="term"><code class="varname">wal_writer_delay</code> (<code class="type">integer</code>)
+      <a id="idp79958656" class="indexterm"></a>
+      </span></dt><dd><p>       <span class="original">
+        Specifies the delay between activity rounds for the WAL writer.
+        In each round the writer will flush WAL to disk. It then sleeps for
+        &lt;varname&gt;wal_writer_delay&lt;/&gt; milliseconds, and repeats.  The default
+        value is 200 milliseconds (&lt;literal&gt;200ms&lt;/&gt;).  Note that on many
+        systems, the effective resolution of sleep delays is 10 milliseconds;
+        setting &lt;varname&gt;wal_writer_delay&lt;/&gt; to a value that is not a multiple
+        of 10 might have the same results as setting it to the next higher
+        multiple of 10. This parameter can only be set in the
+        &lt;filename&gt;postgresql.conf&lt;/&gt; file or on the server command line.
+       </span>
+       WALライタの活動周期の間隔を指定します。
+ライタのこの各周期でWALをディスクに吐き出します。
+そして<code class="varname">wal_writer_delay</code>ミリ秒待機し、それを繰り返します。
+デフォルト値は200ミリ秒（<code class="literal">200ms</code>）です。
+多くのシステムでは、待機間隔の実質的な分解能は10ミリ秒です。
+10の倍数以外の値を<code class="varname">wal_writer_delay</code>に設定しても、その次に大きい10の倍数を設定した場合と同じ結果となります。
+このパラメータは<code class="filename">postgresql.conf</code>ファイル内またはサーバのコマンドラインでのみ設定可能です。
+       </p></dd><dt id="guc-commit-delay"><span class="term"><code class="varname">commit_delay</code> (<code class="type">integer</code>)
+      <a id="idp79966272" class="indexterm"></a>
+      </span></dt><dd><p><span class="original">
+        &lt;varname&gt;commit_delay&lt;/varname&gt; adds a time delay, measured in
+        microseconds, before a WAL flush is initiated.  This can improve
+        group commit throughput by allowing a larger number of transactions
+        to commit via a single WAL flush, if system load is high enough
+        that additional transactions become ready to commit within the
+        given interval.  However, it also increases latency by up to
+        &lt;varname&gt;commit_delay&lt;/varname&gt; microseconds for each WAL
+        flush.  Because the delay is just wasted if no other transactions
+        become ready to commit, a delay is only performed if at least
+        &lt;varname&gt;commit_siblings&lt;/varname&gt; other transactions are active
+        when a flush is about to be initiated.  Also, no delays are
+        performed if &lt;varname&gt;fsync&lt;/varname&gt; is disabled.
+        The default &lt;varname&gt;commit_delay&lt;/&gt; is zero (no delay).
+        Only superusers can change this setting.
+</span><code class="varname">commit_delay</code>は、WALフラッシュを開始する前の時間遅延を追加します。単位はマイクロ秒です。
+このことにより、もし追加のトランザクションが与えられた時間間隔内でコミットが可能になるほどシステム負荷が充分に高い場合、一回のWALフラッシュでより多くの数のトランザクションをコミットできるようになり、コミット群のスループットを改善できます。
+とは言っても、それぞれのWALフラッシュに対して最大<code class="varname">commit_delay</code>マイクロ秒の待ち時間の増加をきたします。
+コミットの準備が完了したトランザクションが他に存在しない場合、遅延は無駄になるため、遅延はフラッシュが開始されようとしている時点で少なくとも<code class="varname">commit_siblings</code>だけのトランザクションが活動している場合にだけ機能します。
+同様に、<code class="varname">fsync</code>が無効の場合も遅延は機能しません。
+デフォルトの<code class="varname">commit_delay</code>はゼロ（遅延無し）です。
+この設定はスーパユーザのみ変更可能です。
+       </p><p>       <span class="original">
+        In &lt;productname&gt;PostgreSQL&lt;/&gt; releases prior to 9.3,
+        &lt;varname&gt;commit_delay&lt;/varname&gt; behaved differently and was much
+        less effective: it affected only commits, rather than all WAL flushes,
+        and waited for the entire configured delay even if the WAL flush
+        was completed sooner.  Beginning in &lt;productname&gt;PostgreSQL&lt;/&gt; 9.3,
+        the first process that becomes ready to flush waits for the configured
+        interval, while subsequent processes wait only until the leader
+        completes the flush operation.
+       </span>
+        9.3より前の<span class="productname">PostgreSQL</span>では、<code class="varname">commit_delay</code>の振る舞いは異なっており、あまり効果がありませんでした。
+       全てのWALフラッシュではなく、コミットだけに影響していました。また、そしてWALフラッシュが早めに完了しても設定された遅延分待機していました。
+       <span class="productname">PostgreSQL</span> 9.3以降では、フラッシュの準備が整った最初のプロセスが設定値分待機し、後続のプロセスは最初のプロセスがフラッシュ操作を完了するまでの間だけ待機をします。
+       </p></dd><dt id="guc-commit-siblings"><span class="term"><code class="varname">commit_siblings</code> (<code class="type">integer</code>)
+      <a id="idp79978656" class="indexterm"></a>
+      </span></dt><dd><p>       <span class="original">
+        Minimum number of concurrent open transactions to require
+        before performing the &lt;varname&gt;commit_delay&lt;/&gt; delay. A larger
+        value makes it more probable that at least one other
+        transaction will become ready to commit during the delay
+        interval. The default is five transactions.
+       </span>
+       <code class="varname">commit_delay</code>遅延を実行する前に必要とされる同時に開いているトランザクションの最小数です。
+より大きい値は、遅延周期の間に、少なくとも1つの他のトランザクションがコミットの準備を整わせることを確実にします。
+デフォルトは5トランザクションです。
+       </p></dd></dl></div></div><div class="sect2" id="runtime-config-wal-checkpoints"><div class="titlepage"><div><div><h3 class="title">18.5.2. チェックポイント</h3></div></div></div><span class="original">
+     &lt;title&gt;Checkpoints&lt;/title&gt;
+     </span><div class="variablelist"><dl class="variablelist"><dt id="guc-checkpoint-timeout"><span class="term"><code class="varname">checkpoint_timeout</code> (<code class="type">integer</code>)
+      <a id="idp79985280" class="indexterm"></a>
+      </span></dt><dd><p>       <span class="original">
+        Maximum time between automatic WAL checkpoints, in seconds.
+        The valid range is between 30 seconds and one hour.
+        The default is five minutes (&lt;literal&gt;5min&lt;/&gt;).
+        Increasing this parameter can increase the amount of time needed
+        for crash recovery.
+        This parameter can only be set in the &lt;filename&gt;postgresql.conf&lt;/&gt;
+        file or on the server command line.
+       </span>
+自動的WALチェックポイント間の最大間隔を秒単位で指定します。
+有効な範囲は、30秒から1時間の間です。
+デフォルトは5分（<code class="literal">5min</code>）です。
+このパラメータを増やすと、クラッシュリカバリで必要となる時間が増加します。
+このパラメータは<code class="filename">postgresql.conf</code>ファイル、または、サーバのコマンドラインでのみ設定可能です。
+       </p></dd><dt id="guc-checkpoint-completion-target"><span class="term"><code class="varname">checkpoint_completion_target</code> (<code class="type">floating point</code>)
+      <a id="idp79991680" class="indexterm"></a>
+      </span></dt><dd><p>       <span class="original">
+        Specifies the target of checkpoint completion, as a fraction of
+        total time between checkpoints. The default is 0.5.
+        This parameter can only be set in the &lt;filename&gt;postgresql.conf&lt;/&gt;
+        file or on the server command line.
+       </span>
+       チェックポイントの完了目標をチェックポイント間の総時間の割合として指定します。
+デフォルトは0.5です。
+このパラメータは<code class="filename">postgresql.conf</code>ファイル、または、サーバのコマンドラインでのみ設定可能です。
+       </p></dd><dt id="guc-checkpoint-warning"><span class="term"><code class="varname">checkpoint_warning</code> (<code class="type">integer</code>)
+      <a id="idp79997088" class="indexterm"></a>
+      </span></dt><dd><p>       <span class="original">
+        Write a message to the server log if checkpoints caused by
+        the filling of checkpoint segment files happen closer together
+        than this many seconds (which suggests that
+        &lt;varname&gt;max_wal_size&lt;/&gt; ought to be raised).  The default is
+        30 seconds (&lt;literal&gt;30s&lt;/&gt;).  Zero disables the warning.
+        No warnings will be generated if &lt;varname&gt;checkpoint_timeout&lt;/varname&gt;
+        is less than &lt;varname&gt;checkpoint_warning&lt;/varname&gt;.
+        This parameter can only be set in the &lt;filename&gt;postgresql.conf&lt;/&gt;
+        file or on the server command line.
+       </span>
+       チェックポイントセグメントファイルが溢れることが原因で起きるチェックポイントが、ここで指定した秒数よりも頻繁に発生する場合、サーバログにメッセージを書き出します
+（これは、<code class="varname">max_wal_size</code>を増やす必要があることを示唆しています）。
+デフォルトは30秒（<code class="literal">30s</code>）です。
+零の場合は警告を出しません。
+        <code class="varname">checkpoint_timeout</code>が<code class="varname">checkpoint_warning</code>より小さい場合警告を出しません。
+このパラメータは<code class="filename">postgresql.conf</code>ファイル、または、サーバのコマンドラインでのみ設定可能です。
+       </p></dd><dt id="guc-max-wal-size"><span class="term"><code class="varname">max_wal_size</code> (<code class="type">integer</code>)
+      <a id="idp80005008" class="indexterm"></a>
+      </span></dt><dd><p><span class="original">
+        Maximum size to let the WAL grow to between automatic WAL
+        checkpoints. This is a soft limit; WAL size can exceed
+        &lt;varname&gt;max_wal_size&lt;/&gt; under special circumstances, like
+        under heavy load, a failing &lt;varname&gt;archive_command&lt;/&gt;, or a high
+        &lt;varname&gt;wal_keep_segments&lt;/&gt; setting. The default is 1 GB.
+        Increasing this parameter can increase the amount of time needed for
+        crash recovery.
+        This parameter can only be set in the &lt;filename&gt;postgresql.conf&lt;/&gt;
+        file or on the server command line.
+</span>自動WALチェックポイントの間にWALが増加する最大サイズです。
+これはソフトリミットです。特別な状況下、たとえば高負荷、<code class="varname">archive_command</code>の失敗、<code class="varname">wal_keep_segments</code>が大きな値に設定されている、などの時には、WALサイズは<code class="varname">max_wal_size</code>を超えることがあります。
+デフォルトは1GBです。
+このパラメータを大きくすると、クラッシュリカバリに必要な時間が長くなります。
+このパラメータは、<code class="filename">postgresql.conf</code>で設定するか、サーバのコマンドラインでのみ指定できます。
+       </p></dd><dt id="guc-min-wal-size"><span class="term"><code class="varname">min_wal_size</code> (<code class="type">integer</code>)
+      <a id="idp80011856" class="indexterm"></a>
+      </span></dt><dd><p><span class="original">
+        As long as WAL disk usage stays below this setting, old WAL files are
+        always recycled for future use at a checkpoint, rather than removed.
+        This can be used to ensure that enough WAL space is reserved to
+        handle spikes in WAL usage, for example when running large batch
+        jobs. The default is 80 MB.
+        This parameter can only be set in the &lt;filename&gt;postgresql.conf&lt;/&gt;
+        file or on the server command line.
+</span>この設定以下にWALのディスク使用量が保たれる限り、古いWALファイルは、消去されることなく今後のチェックポイントで使用するために常にリサイクルされます。
+この設定は、たとえば大きなバッチジョブを走らせる際のWALの利用スパイクを取り扱うために、十分なWALのスペースが予約されていることを保証するために使用できます。
+このパラメータは、<code class="filename">postgresql.conf</code>で設定するか、サーバのコマンドラインでのみ指定できます。
+       </p></dd></dl></div></div><div class="sect2" id="runtime-config-wal-archiving"><div class="titlepage"><div><div><h3 class="title">18.5.3. アーカイビング</h3></div></div></div><span class="original">
+     &lt;title&gt;Archiving&lt;/title&gt;
+     </span><div class="variablelist"><dl class="variablelist"><dt id="guc-archive-mode"><span class="term"><code class="varname">archive_mode</code> (<code class="type">enum</code>)
+      <a id="idp80019152" class="indexterm"></a>
+      </span></dt><dd><p>       <span class="original">
+        When &lt;varname&gt;archive_mode&lt;/&gt; is enabled, completed WAL segments
+        are sent to archive storage by setting
+        &lt;xref linkend="guc-archive-command"&gt;. In addition to &lt;literal&gt;off&lt;/&gt;,
+        to disable, there are two modes: &lt;literal&gt;on&lt;/&gt;, and
+        &lt;literal&gt;always&lt;/&gt;. During normal operation, there is no
+        difference between the two modes, but when set to &lt;literal&gt;always&lt;/&gt;
+        the WAL archiver is enabled also during archive recovery or standby
+        mode. In &lt;literal&gt;always&lt;/&gt; mode, all files restored from the archive
+        or streamed with streaming replication will be archived (again). See
+        &lt;xref linkend="continuous-archiving-in-standby"&gt; for details.
+       &lt;/para&gt;
+       &lt;para&gt;
+        &lt;varname&gt;archive_mode&lt;/&gt; and &lt;varname&gt;archive_command&lt;/&gt; are
+        separate variables so that &lt;varname&gt;archive_command&lt;/&gt; can be
+        changed without leaving archiving mode.
+        This parameter can only be set at server start.
+        &lt;varname&gt;archive_mode&lt;/&gt; cannot be enabled when
+        &lt;varname&gt;wal_level&lt;/&gt; is set to &lt;literal&gt;minimal&lt;/&gt;.
+       </span>
+       <code class="varname">archive_mode</code>が有効な場合、<a class="xref" href="runtime-config-wal.html#guc-archive-command">archive_command</a>を設定することにより、完了したWALセグメントはアーカイブ格納領域に送信されます。
+無効にするための<code class="literal">off</code>に加え、2つのモードがあります。<code class="literal">on</code>と<code class="literal">always</code>です。
+通常の運用ではこの2つのモードには違いはありませんが、<code class="literal">always</code>に設定すると、アーカイブリカバリおよびスタンバイモードでWALアーカイバが有効になります。
+<code class="literal">always</code>モードでは、アーカイブからリストアされたファイルや、ストリーミングレプリケーションでストリームされたファイルもすべて(再び)アーカイブされます。
+詳細は<a class="xref" href="warm-standby.html#continuous-archiving-in-standby" title="25.2.9. スタンバイにおける継続的アーカイビング">25.2.9. スタンバイにおける継続的アーカイビング</a>を参照してください。
+       </p><p>アーカイブモードを抜けることなく<code class="varname">archive_command</code>を変更できるように、<code class="varname">archive_mode</code>と<code class="varname">archive_command</code>は分離されました。
+このパラメータはサーバ起動時のみ設定可能です。
+<code class="varname">wal_level</code> が
+<code class="literal">minimal</code>に設定されている場合、<code class="varname">archive_mode</code>は有効になりません。
+       </p></dd><dt id="guc-archive-command"><span class="term"><code class="varname">archive_command</code> (<code class="type">string</code>)
+      <a id="idp80033616" class="indexterm"></a>
+      </span></dt><dd><p>       <span class="original">
+        The local shell command to execute to archive a completed WAL file
+        segment.  Any &lt;literal&gt;%p&lt;/&gt; in the string is
+        replaced by the path name of the file to archive, and any
+        &lt;literal&gt;%f&lt;/&gt; is replaced by only the file name.
+        (The path name is relative to the working directory of the server,
+        i.e., the cluster's data directory.)
+        Use &lt;literal&gt;%%&lt;/&gt; to embed an actual &lt;literal&gt;%&lt;/&gt; character in the
+        command.  It is important for the command to return a zero
+        exit status only if it succeeds. For more information see
+        &lt;xref linkend="backup-archiving-wal"&gt;.
+       </span>
+       完了したWALファイルセグメントのアーカイブを実行するローカルのシェルコマンドです。
+文字列内のいかなる<code class="literal">%p</code>は、格納されるファイルの絶対パスで置き換えられ、そして、<code class="literal">%f</code>はファイル名のみ置換します。
+（このパス名はサーバの作業用ディレクトリ、つまり、クラスタのデータディレクトリからの相対パスです。）
+コマンド内で実際の<code class="literal">%</code>文字を埋め込むには<code class="literal">%%</code>を使用します。
+コマンドが成功した場合に限って終了ステータスゼロを返すことが重要です。
+より詳しくは<a class="xref" href="continuous-archiving.html#backup-archiving-wal" title="24.3.1. WALアーカイブの設定">24.3.1. WALアーカイブの設定</a>を参照ください。
+       </p><p>       <span class="original">
+        This parameter can only be set in the &lt;filename&gt;postgresql.conf&lt;/&gt;
+        file or on the server command line.  It is ignored unless
+        &lt;varname&gt;archive_mode&lt;/&gt; was enabled at server start.
+        If &lt;varname&gt;archive_command&lt;/&gt; is an empty string (the default) while
+        &lt;varname&gt;archive_mode&lt;/&gt; is enabled, WAL archiving is temporarily
+        disabled, but the server continues to accumulate WAL segment files in
+        the expectation that a command will soon be provided.  Setting
+        &lt;varname&gt;archive_command&lt;/&gt; to a command that does nothing but
+        return true, e.g. &lt;literal&gt;/bin/true&lt;/&gt; (&lt;literal&gt;REM&lt;/&gt; on
+        Windows), effectively disables
+        archiving, but also breaks the chain of WAL files needed for
+        archive recovery, so it should only be used in unusual circumstances.
+       </span>
+       このパラメータは<code class="filename">postgresql.conf</code>ファイル、または、サーバのコマンドラインでのみ設定可能です。
+サーバ起動時に<code class="varname">archive_mode</code>が有効でなければ、これは無視されます。
+<code class="varname">archive_command</code>が空文字列（デフォルト）、かつ、<code class="varname">archive_mode</code>が有効な場合、WALアーカイブ処理は一時的に無効になりますが、コマンドが後で提供されることを見越して、サーバはWALセグメントの蓄積を続けます。
+例えば、<code class="literal">/bin/true</code>（Windowsでは<code class="literal">REM</code>）のように、コマンドに対し<code class="varname">archive_command</code>を真を返すだけで何もしないように設定すると効果的にアーカイブ処理を無効にしますが、アーカイブからの復帰に必要なWALファイルの連鎖を同時に断ち切ります。従って、特別な場合のみ使用するようにしなければなりません。
+       </p></dd><dt id="guc-archive-timeout"><span class="term"><code class="varname">archive_timeout</code> (<code class="type">integer</code>)
+      <a id="idp80048976" class="indexterm"></a>
+      </span></dt><dd><p>       <span class="original">
+        The &lt;xref linkend="guc-archive-command"&gt; is only invoked for
+        completed WAL segments. Hence, if your server generates little WAL
+        traffic (or has slack periods where it does so), there could be a
+        long delay between the completion of a transaction and its safe
+        recording in archive storage.  To limit how old unarchived
+        data can be, you can set &lt;varname&gt;archive_timeout&lt;/&gt; to force the
+        server to switch to a new WAL segment file periodically.  When this
+        parameter is greater than zero, the server will switch to a new
+        segment file whenever this many seconds have elapsed since the last
+        segment file switch, and there has been any database activity,
+        including a single checkpoint.  (Increasing
+        &lt;varname&gt;checkpoint_timeout&lt;/&gt; will reduce unnecessary
+        checkpoints on an idle system.)
+        Note that archived files that are closed early
+        due to a forced switch are still the same length as completely full
+        files.  Therefore, it is unwise to use a very short
+        &lt;varname&gt;archive_timeout&lt;/&gt; &amp;mdash; it will bloat your archive
+        storage.  &lt;varname&gt;archive_timeout&lt;/&gt; settings of a minute or so are
+        usually reasonable.  You should consider using streaming replication,
+        instead of archiving, if you want data to be copied off the master
+        server more quickly than that.
+        This parameter can only be set in the
+        &lt;filename&gt;postgresql.conf&lt;/&gt; file or on the server command line.
+       </span>
+       <a class="xref" href="runtime-config-wal.html#guc-archive-command">archive_command</a>は完了したWALセグメントに対してのみ呼び出されます。従って、サーバのWAL転送量が少ししかない（処理を行わないなぎの期間がある）場合、トランザクションの完了とアーカイブ格納領域への安全な記録との間に長期にわたる遅延があることになります。
+古い未アーカイブのデータをどうするかについて制限を付けるために、<code class="varname">archive_timeout</code>を設定して、強制的にサーバを新しいWALセグメントに定期的に切り替えるようにすることができます。
+このパラメータが0より大きければ、サーバは前回のセグメントファイル切り替えから指定秒数経過した場合、および単一のチェックポイントを含む何らかのデータベース操作が行われた場合、新しいセグメントファイルに切り替えます。（<code class="varname">checkpoint_timeout</code>を大きくすると待機状態のシステム上のなくてもいいチェックポイントを削減します。）
+強制切り替えにより早期に閉ざされたアーカイブ済みファイルは完全に完了したファイルと同じ大きさを持つことに注意してください。
+そのため、非常に小さな<code class="varname">archive_timeout</code>を使用することは思慮を欠いています。
+格納領域を膨張させてしまいます。
+通常１分程度の<code class="varname">archive_timeout</code>設定が妥当です。
+もしそれより高速にデータをマスターサーバにコピーをしてしまいたいのであれば、アーカイブするよりストリーミングレプリケーションの選択を検討すべきです。
+このパラメータは <code class="filename">postgresql.conf</code>ファイル、または、サーバのコマンドラインでのみで設定可能です。
+       </p></dd></dl></div></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="runtime-config-resource.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="runtime-config.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="runtime-config-replication.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">18.4. 資源の消費 </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> 18.6. レプリケーション</td></tr></table></div></body></html>
