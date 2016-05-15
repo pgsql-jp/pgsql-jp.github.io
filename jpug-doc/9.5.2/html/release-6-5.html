@@ -112,7 +112,7 @@ MVCCは<span class="productname">PostgreSQL</span>固有の多版性を使用し
        &lt;productname&gt;CVSup&lt;/productname&gt;.
 </span>文書全体に対して、新規のもの、更新されたものがあります。<span class="systemitem">SGI</span> と<span class="systemitem">AIX</span> プラットフォーム用の<acronym class="acronym">FAQ</acronym> が新しく配布されました。<em class="citetitle">Tutorial</em> は Stefan Simkovics による<acronym class="acronym">SQL</acronym> の入門情報です。<em class="citetitle">ユーザガイド</em> には、postmaster からより多くのユーティリティプログラムまでを範囲とするリファレンスページがあります。 またその付録には日付/時刻の動作の詳細があります。<em class="citetitle">管理者用ガイド</em> には、Tom Lane によるトラブル対応に関する新しい章が追加されました。<em class="citetitle">プログラマガイド</em> には、これもまた Stefan による、問い合わせ処理の説明があります。 また、匿名<span class="productname">CVS</span> と<span class="productname">CVSup</span> 経由の<span class="productname">PostgreSQL</span> ソースツリーの入手についても説明があります。
       </p></dd></dl></div><p>
-  </p><div class="sect2" id="idp142453248"><div class="titlepage"><div><div><h3 class="title">E.283.1. バージョン 6.5 への移行</h3></div></div></div><span class="original">
+  </p><div class="sect2" id="idp142434816"><div class="titlepage"><div><div><h3 class="title">E.283.1. バージョン6.5への移行</h3></div></div></div><span class="original">
    &lt;title&gt;Migration to Version 6.5&lt;/title&gt;
 </span><p><span class="original">
     A dump/restore using &lt;application&gt;pg_dump&lt;/application&gt;
@@ -121,7 +121,8 @@ MVCCは<span class="productname">PostgreSQL</span>固有の多版性を使用し
     &lt;application&gt;pg_upgrade&lt;/application&gt; can &lt;emphasis&gt;not&lt;/emphasis&gt;
     be used to upgrade to this release because the on-disk structure
     of the tables has changed compared to previous releases.
-</span>以前のリリースの<span class="productname">PostgreSQL</span> からデータを移行する場合、<span class="application">pg_dump</span> によるダンプ/リストアが必要です。<span class="application"> pg_upgrade</span> を使用してこのリリースにアップグレードすることは<span class="emphasis"><em>できません</em></span>。
+</span>以前のリリースの<span class="productname">PostgreSQL</span>からデータを移行する場合、<span class="application">pg_dump</span>によるダンプ/リストアが必要です。
+<span class="application">pg_upgrade</span>を使用してこのリリースにアップグレードすることは<span class="emphasis"><em>できません</em></span>。
    </p><p><span class="original">
     The new Multiversion Concurrency Control (MVCC) features can
     give somewhat different behaviors in multiuser
@@ -129,7 +130,7 @@ MVCCは<span class="productname">PostgreSQL</span>固有の多版性を使用し
      to ensure that your existing applications will give you the
      behavior you need.&lt;/emphasis&gt;
 </span>テーブルのディスク上の構造がこれまでのリリースから変更されたからです。 多版型同時実行制御(MVCC)機能は、マルチユーザ環境下においてどこか異なる動作をもたらします。<span class="emphasis"><em>以下の節を熟読して、既存のアプリケーションが必要な動作を行うことを確認して下さい。</em></span>
-   </p><div class="sect3" id="idp142459104"><div class="titlepage"><div><div><h4 class="title">E.283.1.1. 多版型同時実行制御</h4></div></div></div><span class="original">
+   </p><div class="sect3" id="idp142440448"><div class="titlepage"><div><div><h4 class="title">E.283.1.1. 多版型同時実行制御</h4></div></div></div><span class="original">
     &lt;title&gt;Multiversion Concurrency Control&lt;/title&gt;
 </span><p><span class="original">
      Because readers in 6.5 don't lock data, regardless of transaction
@@ -140,14 +141,16 @@ MVCCは<span class="productname">PostgreSQL</span>固有の多版性を使用し
      transaction began) nor that the row is protected from being deleted or
      updated by concurrent transactions before the current transaction does
      a commit or rollback.
-</span>6.5 における読み込み操作はデータをロックしませんので、トランザクション隔離レベルに関係なく、あるトランザクションで読み込まれたデータは、他の操作によって変更されることがあります。言い替えると、<code class="command">SELECT</code> で読み込まれた行は、返された(つまり、文またはトランザクションの始まりから少し後の)時点に存在した行を意味し、現在のトランザクションがコミット、またはロールバックするまでの間、同時に実行されるトランザクションによる更新や削除から保護される行であることは意味しません。
+</span>6.5における読み込み操作はデータをロックしませんので、トランザクション隔離レベルに関係なく、あるトランザクションで読み込まれたデータは、他の操作によって変更されることがあります。
+言い替えると、<code class="command">SELECT</code> で読み込まれた行は、返された(つまり、文またはトランザクションの始まりから少し後の)時点に存在した行を意味し、現在のトランザクションがコミット、またはロールバックするまでの間、同時に実行されるトランザクションによる更新や削除から保護される行であることは意味しません。
     </p><p><span class="original">
      To ensure the actual existence of a row and protect it against
      concurrent updates one must use &lt;command&gt;SELECT FOR UPDATE&lt;/command&gt; or
      an appropriate &lt;command&gt;LOCK TABLE&lt;/command&gt; statement. This should be
      taken into account when porting applications from previous releases of
      &lt;productname&gt;PostgreSQL&lt;/productname&gt; and other environments.
-</span>行が実際に存在することを確実にする、または、同時に行われる更新から保護するためには、<code class="command">SELECT FOR UPDATE</code> または、適切な<code class="command">LOCK TABLE</code> 文を使用しなければなりません。これは、<span class="productname">PostgreSQL</span> の以前のリリース、もしくは、他の環境からアプリケーションを移植する場合には考慮しなければなりません。
+</span>行が実際に存在することを確実にする、または、同時に行われる更新から保護するためには、<code class="command">SELECT FOR UPDATE</code>または、適切な<code class="command">LOCK TABLE</code>文を使用しなければなりません。
+これは、<span class="productname">PostgreSQL</span>の以前のリリース、もしくは、他の環境からアプリケーションを移植する場合には考慮しなければなりません。
     </p><p><span class="original">
      Keep the above in mind if you are using
      &lt;filename&gt;contrib/refint.*&lt;/filename&gt; triggers for
@@ -156,7 +159,9 @@ MVCCは<span class="productname">PostgreSQL</span>固有の多版性を使用し
      command if a transaction is going to update/delete a primary key and
      use &lt;command&gt;LOCK parent_table IN SHARE MODE&lt;/command&gt; command if a
      transaction is going to update/insert a foreign key.
-</span><code class="filename">contrib/refint.*</code> トリガを参照整合性のために使用している場合は、上のことに注意して下さい。今のところ更に技術を追加しなければなりません。1 つの方法は、トランザクションが主キーを更新、削除する時に<code class="command">LOCK parent_table IN SHARE ROW EXCLUSIVE MODE</code> コマンドを使用し、トランザクションが外部キーを更新、挿入する時に、<code class="command">LOCK parent_table IN SHARE MODE</code> コマンドを使用することです。
+</span><code class="filename">contrib/refint.*</code> トリガを参照整合性のために使用している場合は、上のことに注意して下さい。
+今のところ更に技術を追加しなければなりません。
+1つの方法は、トランザクションが主キーを更新、削除する時に<code class="command">LOCK parent_table IN SHARE ROW EXCLUSIVE MODE</code>コマンドを使用し、トランザクションが外部キーを更新、挿入する時に、<code class="command">LOCK parent_table IN SHARE MODE</code>コマンドを使用することです。
 
      </p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">注記</h3><p><span class="original">
        Note that if you run a transaction in SERIALIZABLE mode then you must
@@ -172,7 +177,7 @@ MVCCは<span class="productname">PostgreSQL</span>固有の多版性を使用し
      (uncommitted) data (regardless of isolation level) and true referential
      integrity will be implemented.
 </span>これらの不便な点は、ダーティー(コミットされていない)データを(隔離レベルに関係なく)読み込む機能と本当の参照整合性が実装された時になくなります。
-    </p></div></div><div class="sect2" id="idp142473968"><div class="titlepage"><div><div><h3 class="title">E.283.2. 変更点</h3></div></div></div><span class="original">
+    </p></div></div><div class="sect2" id="idp142454976"><div class="titlepage"><div><div><h3 class="title">E.283.2. 変更点</h3></div></div></div><span class="original">
    &lt;title&gt;Changes&lt;/title&gt;
 </span><pre class="programlisting">Bug Fixes
 ---------
