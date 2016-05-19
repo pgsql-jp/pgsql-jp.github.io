@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>9.16. シーケンス操作関数</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="PostgreSQL 9.5.3文書" /><link rel="up" href="functions.html" title="第9章 関数と演算子" /><link rel="prev" href="functions-json.html" title="9.15. JSON関数と演算子" /><link rel="next" href="functions-conditional.html" title="9.17. 条件式" /><link rel="copyright" href="legalnotice.html" title="法的告知" /><meta name="viewport" content="width=device-width,initial-scale=1.0,minimum-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><td width="20%" align="left" colspan="2"></td><th width="60%" align="center"><a accesskey="h" href="index.html">PostgreSQL 9.5.3文書</a></th><td width="20%" align="right"><div class="actions"><a class="issue" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 9.5.3 functions-sequence.html">誤訳等の報告</a></div></td></tr><tr><td width="10%" align="left" valign="top"><a accesskey="p" href="functions-json.html">前へ</a> </td><td width="10%" align="left" valign="top"><a accesskey="u" href="functions.html">上へ</a></td><td width="60%" align="center">9.16. シーケンス操作関数</td><td width="20%" align="right" valign="top"> <a accesskey="n" href="functions-conditional.html">次へ</a></td></tr></table><hr /></div><div class="sect1" id="functions-sequence"><div class="titlepage"><div><div><h2 class="title" style="clear: both">9.16. シーケンス操作関数</h2></div></div></div><span class="original">
   &lt;title&gt;Sequence Manipulation Functions&lt;/title&gt;
-</span><a id="idp65830832" class="indexterm"></a><a id="idp65831488" class="indexterm"></a><a id="idp65832176" class="indexterm"></a><a id="idp65832864" class="indexterm"></a><a id="idp65833552" class="indexterm"></a><p><span class="original">
+</span><a id="idp71555232" class="indexterm"></a><a id="idp71555888" class="indexterm"></a><a id="idp71556576" class="indexterm"></a><a id="idp71557264" class="indexterm"></a><a id="idp71557952" class="indexterm"></a><p><span class="original">
    This section describes functions for operating on &lt;firstterm&gt;sequence
    objects&lt;/firstterm&gt;, also called sequence generators or just sequences.
    Sequence objects are special single-row tables created with &lt;xref
@@ -126,11 +126,12 @@ nextval('foo'::text)      &lt;lineannotation&gt;&lt;literal&gt;foo&lt;/literal&g
          unused &lt;quote&gt;holes&lt;/quote&gt; in the sequence of assigned values.
          Thus, &lt;productname&gt;PostgreSQL&lt;/&gt; sequence objects &lt;emphasis&gt;cannot
          be used to obtain &lt;quote&gt;gapless&lt;/&gt; sequences&lt;/emphasis&gt;.
-</span>★翻訳が必要、以下修正前の翻訳文
-
-同一のシーケンスから数値を取得する同時実行トランザクション同士のブロックを防止するため、<code class="function">nextval</code>演算は決してロールバックされません。
-と言うことは、たとえ<code class="function">nextval</code>を実行したトランザクションが後にアボートしたとしても、値が一度取り出されたらそれは使用されたものと考えます。
-つまり、中止されたトランザクションは、割り当てられた値のシーケンス内に未使用の<span class="quote">「<span class="quote">欠損</span>」</span>を残す可能性があります。
+</span>同一のシーケンスから数値を取得する同時実行トランザクション同士のブロックを防止するため、<code class="function">nextval</code>演算は決してロールバックされません。
+つまり、値が一度取り出されたら、それは使用されたものと見なされ、同じ値が再び返されることはありません。
+これは、それを取り囲むトランザクションが後にアボートした場合でも、あるいは呼び出し側の問い合わせがその値を使用せずに終わった場合でも当てはまります。
+例えば<code class="literal">ON CONFLICT</code>句のある<code class="command">INSERT</code>では、挿入される予定のタプルについて、必要となるすべての<code class="function">nextval</code>の呼び出しも含めて計算し、その後で<code class="literal">ON CONFLICT</code>のルールを代わりに使用することになる競合について検知します。
+このような場合には、割り当てられた値のシーケンス内に未使用の<span class="quote">「<span class="quote">欠損</span>」</span>を残すことになります。
+従って、<span class="productname">PostgreSQL</span>のシーケンスオブジェクトは<span class="emphasis"><em><span class="quote">「<span class="quote">欠番のない</span>」</span>シーケンスを得るために使うことはできません</em></span>。
         </p></div></dd><dt><span class="term"><code class="function">currval</code></span></dt><dd><p><span class="original">
         Return the value most recently obtained by &lt;function&gt;nextval&lt;/function&gt;
         for this sequence in the current session.  (An error is
@@ -152,7 +153,7 @@ nextval('foo'::text)      &lt;lineannotation&gt;&lt;literal&gt;foo&lt;/literal&g
         &lt;function&gt;lastval&lt;/function&gt; if &lt;function&gt;nextval&lt;/function&gt;
         has not yet been called in the current session.
 </span>現在のセッションの<code class="function">nextval</code>で直近に戻された値を返します。
-この関数は<code class="function">currval</code>と同等ですが、引数としてシーケンス名をとる代わりに、現在のセッションで最後に<code class="function">nextval</code>で使用されたシーケンスの値を取得するところが異なります。
+この関数は<code class="function">currval</code>と同等ですが、引数としてシーケンス名をとる代わりに、現在のセッションで最後に<code class="function">nextval</code>で使用されたシーケンスを参照するところが異なります。
 現在のセッションで<code class="function">nextval</code>が未だ呼ばれていなければエラーになります。
        </p></dd><dt><span class="term"><code class="function">setval</code></span></dt><dd><p><span class="original">
         Reset the sequence object's counter value.  The two-parameter
