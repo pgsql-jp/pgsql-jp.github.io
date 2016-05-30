@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>65.1. 行数推定の例</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="PostgreSQL 9.5.3文書" /><link rel="up" href="planner-stats-details.html" title="第65章 プランナは統計情報をどのように使用するか" /><link rel="prev" href="planner-stats-details.html" title="第65章 プランナは統計情報をどのように使用するか" /><link rel="next" href="appendixes.html" title="パート VIII. 付録" /><link rel="copyright" href="legalnotice.html" title="法的告知" /><meta name="viewport" content="width=device-width,initial-scale=1.0,minimum-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><td width="20%" align="left" colspan="2"></td><th width="60%" align="center"><a accesskey="h" href="index.html">PostgreSQL 9.5.3文書</a></th><td width="20%" align="right"><div class="actions"><a class="issue" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 9.5.3 row-estimation-examples.html">誤訳等の報告</a></div></td></tr><tr><td width="10%" align="left" valign="top"><a accesskey="p" href="planner-stats-details.html">前へ</a> </td><td width="10%" align="left" valign="top"><a accesskey="u" href="planner-stats-details.html">上へ</a></td><td width="60%" align="center">65.1. 行数推定の例</td><td width="20%" align="right" valign="top"> <a accesskey="n" href="appendixes.html">次へ</a></td></tr></table><hr /></div><div class="sect1" id="row-estimation-examples"><div class="titlepage"><div><div><h2 class="title" style="clear: both">65.1. 行数推定の例</h2></div></div></div><span class="original">
   &lt;title&gt;Row Estimation Examples&lt;/title&gt;
-</span><a id="idp120309376" class="indexterm"></a><p><span class="original">
+</span><a id="idp117989360" class="indexterm"></a><p><span class="original">
    The examples shown below use tables in the &lt;productname&gt;PostgreSQL&lt;/&gt;
    regression test database.
    The outputs shown are taken from version 8.3.
@@ -9,7 +9,7 @@
    Note also that since &lt;command&gt;ANALYZE&lt;/&gt; uses random sampling
    while producing statistics, the results will change slightly after
    any new &lt;command&gt;ANALYZE&lt;/&gt;.
-</span>以下の例は<span class="productname">PostgreSQL</span>リグレッション試験データベース内のテーブルを使用します。
+</span>以下の例は<span class="productname">PostgreSQL</span>リグレッションテストデータベース内のテーブルを使用します。
 表示される出力はバージョン8.3で取得しました。
 以前の（または以降の）バージョンとは動作が変わっているかもしれません。
 また、<code class="command">ANALYZE</code>は統計情報を生成する時にランダムなサンプリングを行いますので、結果は<code class="command">ANALYZE</code>を新しく行った後に多少変わることに注意してください。
@@ -142,9 +142,9 @@ WHERE tablename='tenk1' AND attname='unique1';
    selectivity. Let's have a look at the MCVs, with some additional columns
    that will be useful later:
 </span>
-繰り返しますが、プランナは<code class="literal">WHERE</code>句の条件を検査し、<code class="literal">=</code>用の選択度関数、この場合は<code class="function">eqsel</code>を検索します。
+ここでも、プランナは<code class="literal">WHERE</code>句の条件を検査し、<code class="literal">=</code>用の選択度関数、この場合は<code class="function">eqsel</code>を検索します。
 等価性の推定では、度数分布は役に立ちません。
-代わりに、選択度の決定には<em class="firstterm">最頻値</em>（<acronym class="acronym">MCV</acronym>）のリストが使用されます。
+代わりに、選択度の決定には<em class="firstterm">頻出値</em>（<acronym class="acronym">MCV</acronym>）のリストが使用されます。
 MCVを見てみましょう。
 後で有用になる列がいくつかあります。
 
@@ -161,7 +161,7 @@ most_common_freqs | {0.00333333,0.003,0.003,0.003,0.003,0.003,0.003,0.003,0.003,
    merely the corresponding entry in the list of most common frequencies
    (&lt;acronym&gt;MCF&lt;/acronym&gt;s):
 </span>
-<code class="literal">CRAAAA</code>がMCVのリスト内にありますので、選択度は単に最頻度（<acronym class="acronym">MCF</acronym>）のリスト内の対応する項目になります。
+<code class="literal">CRAAAA</code>がMCVのリスト内にありますので、選択度は単に頻出値の頻度（<acronym class="acronym">MCF</acronym>）のリスト内の対応する項目になります。
 
 </p><pre class="programlisting">selectivity = mcf[3]
             = 0.003</pre><p>
@@ -292,7 +292,7 @@ MCVリストを検査すると、<code class="literal">stringu1 &lt; 'IAAAAA'</c
    for the MCV and non-MCV populations:
 </span>
 MCFの総和はまた、MCVで表される母集団の合計割合が0.03033333であり、したがって度数分布で表される割合が0.96966667であることがわかります。
-（繰り返しますが、NULLは存在しません。もし存在する場合はここで除外しなければなりません。）
+（この場合もNULLは存在しません。もし存在する場合はここで除外しなければなりません。）
 <code class="literal">IAAAAA</code>という値は3番目のバケットの終端近辺になることを確認することができます。
 異なる文字の頻度について多少安っぽい仮定を使用すると、プランナは<code class="literal">IAAAAA</code>より小さい母集団の度数分布の部分の推定値は0.298387になります。
 そしてMCVと非MCV母集団についての推定値を組み合わせます。
@@ -316,7 +316,7 @@ rows        = 10000 * 0.307669<span class="original">
 </span>
 列の分布がかなり平坦ですので、この特定の例におけるMCVリストによる訂正はかなり小さなものです。
 （これらの特定の値が他より頻出するものと示す統計情報はほとんどサンプリングエラーによります。）
-より一般的な、一部の値が他より非常に多く頻出する場合では、最頻値に対する選択度が正確に検出されますので、この複雑な処理により精度が改良されます。
+より一般的な、一部の値が他より非常に多く頻出する場合では、頻出値に対する選択度が正確に検出されますので、この複雑な処理により精度が改良されます。
   </p><p><span class="original">
    Now let's consider a case with more than one
    condition in the &lt;literal&gt;WHERE&lt;/literal&gt; clause:
