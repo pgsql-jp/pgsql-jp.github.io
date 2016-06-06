@@ -1,0 +1,263 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<HTML
+><HEAD
+><TITLE
+>リレーショナルデータモデル</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"><LINK
+REV="MADE"
+HREF="mailto:pgsql-docs@postgresql.org"><LINK
+REL="HOME"
+TITLE="PostgreSQL 9.5.3文書"
+HREF="index.html"><LINK
+REL="UP"
+TITLE="SQL"
+HREF="sql-intro.html"><LINK
+REL="PREVIOUS"
+TITLE="SQL"
+HREF="sql-intro.html"><LINK
+REL="NEXT"
+TITLE="リレーショナルデータモデルの形式"
+HREF="relmodel-formal.html"><LINK
+REL="STYLESHEET"
+TYPE="text/css"
+HREF="stylesheet.css"><META
+HTTP-EQUIV="Content-Type"
+CONTENT="text/html; charset=utf-8"><META
+NAME="creation"
+CONTENT="2016-06-04T07:24:15"></HEAD
+><BODY
+CLASS="SECT1"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+SUMMARY="Header navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="4"
+ALIGN="center"
+VALIGN="bottom"
+><A
+HREF="index.html"
+>PostgreSQL 9.5.3文書</A
+></TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="top"
+><A
+TITLE="SQL"
+HREF="sql-intro.html"
+ACCESSKEY="P"
+>前のページ</A
+></TD
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="sql-intro.html"
+ACCESSKEY="U"
+>上に戻る</A
+></TD
+><TD
+WIDTH="60%"
+ALIGN="center"
+VALIGN="bottom"
+>第 4章SQL</TD
+><TD
+WIDTH="20%"
+ALIGN="right"
+VALIGN="top"
+><A
+TITLE="リレーショナルデータモデルの形式"
+HREF="relmodel-formal.html"
+ACCESSKEY="N"
+>次のページ</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="SECT1"
+><H1
+CLASS="SECT1"
+><A
+NAME="REL-MODEL"
+>4.1. リレーショナルデータモデル</A
+></H1
+><P
+>先に述べたように、<ACRONYM
+CLASS="ACRONYM"
+>SQL</ACRONYM
+>はリレーショナル言語です。
+これは1970年にE.F. Coddが初めて出版した<I
+CLASS="FIRSTTERM"
+>リレーショナルデータモデル</I
+>に基づくことを意味しています。
+リレーショナルモデルの形式定義については後述しますが（<A
+HREF="relmodel-formal.html#RELMODEL-FORMAL"
+><I
+>リレーショナルデータモデルの形式</I
+></A
+>を参照）、ここではまず、より直感的にリレーショナルモデルを見てみましょう。
+  </P
+><P
+><I
+CLASS="FIRSTTERM"
+>リレーショナルデータベース</I
+>はユーザからは、<I
+CLASS="FIRSTTERM"
+>テーブルの（そしてテーブルだけからなる）集合</I
+>に見えるようなデータベースです。
+テーブルは行と列から構成されており、各行はレコードを、各列はテーブルに格納されているレコードの属性を表しています。
+<A
+HREF="rel-model.html#AEN1199"
+><I
+>納入業者と部品のデータベース</I
+></A
+>は3つのテーブルからなるデータベースの例を示しています。
+
+    <P
+></P
+></P><UL
+><LI
+><P
+>SUPPLIER（納入業者）は、納入業者の番号（SNO）、名前（SNAME）、市（CITY）を格納するテーブルです。
+      </P
+></LI
+><LI
+><P
+>PART（部品）は、部品の番号（PNO）、名前（PNAME）、値段（PRICE）を格納するテーブルです。
+      </P
+></LI
+><LI
+><P
+>SELLS（販売）は、どの部品(PNO)がどの納入業者（SNO）によって売られるかに関する情報を格納しています。
+他の2つのテーブルを繋ぐ役目を果たしています。
+      </P
+></LI
+></UL
+><P>
+
+    <DIV
+CLASS="EXAMPLE"
+><A
+NAME="AEN1199"
+></A
+><P
+><B
+>例 4-1. 納入業者と部品のデータベース</B
+></P
+><PRE
+CLASS="SCREEN"
+>SUPPLIER:                   SELLS:
+ SNO |  SNAME  |  CITY       SNO | PNO
+----+---------+--------     -----+-----
+ 1  |  Smith  | London        1  |  1
+ 2  |  Jones  | Paris         1  |  2
+ 3  |  Adams  | Vienna        2  |  4
+ 4  |  Blake  | Rome          3  |  1
+                              3  |  3
+                              4  |  2
+PART:                         4  |  3
+ PNO |  PNAME  |  PRICE       4  |  4
+----+---------+---------
+ 1  |  Screw  |   10
+ 2  |  Nut    |    8
+ 3  |  Bolt   |   15
+ 4  |  Cam    |   25</PRE
+></DIV
+>
+   </P
+><P
+>PARTテーブルやSUPPLIERテーブルは<I
+CLASS="FIRSTTERM"
+>実体</I
+>として考えられ、SELLSテーブルは特定のPART（部品）と特定のSUPPLIER（納入業者）間の<I
+CLASS="FIRSTTERM"
+>関連</I
+>（リレーション）を表すと考えられるでしょう。
+   </P
+><P
+>後に示す通り、<ACRONYM
+CLASS="ACRONYM"
+>SQL</ACRONYM
+>はテーブルに対して定義された通りの操作を行います。
+ただその前に、リレーショナルモデルの理論について学んでみたいと思います。
+   </P
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+SUMMARY="Footer navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="sql-intro.html"
+ACCESSKEY="P"
+>前のページ</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="index.html"
+ACCESSKEY="H"
+>ホーム</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="relmodel-formal.html"
+ACCESSKEY="N"
+>次のページ</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>SQL</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="sql-intro.html"
+ACCESSKEY="U"
+>上に戻る</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>リレーショナルデータモデルの形式</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>
