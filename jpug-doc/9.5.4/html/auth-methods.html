@@ -1,0 +1,704 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>19.3. 認証方式</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="PostgreSQL 9.5.4文書" /><link rel="up" href="client-authentication.html" title="第19章 クライアント認証" /><link rel="prev" href="auth-username-maps.html" title="19.2. ユーザ名マップ" /><link rel="next" href="client-authentication-problems.html" title="19.4. 認証における問題点" /><link rel="copyright" href="legalnotice.html" title="法的告知" /><meta name="viewport" content="width=device-width,initial-scale=1.0,minimum-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><td width="20%" align="left" colspan="2"></td><th width="60%" align="center"><a accesskey="h" href="index.html">PostgreSQL 9.5.4文書</a></th><td width="20%" align="right"><div class="actions"><a class="issue" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 9.5.4 auth-methods.html">誤訳等の報告</a></div></td></tr><tr><td width="10%" align="left" valign="top"><a accesskey="p" href="auth-username-maps.html">前へ</a> </td><td width="10%" align="left" valign="top"><a accesskey="u" href="client-authentication.html">上へ</a></td><td width="60%" align="center">19.3. 認証方式</td><td width="20%" align="right" valign="top"> <a accesskey="n" href="client-authentication-problems.html">次へ</a></td></tr></table><hr /></div><div class="sect1" id="auth-methods"><div class="titlepage"><div><div><h2 class="title" style="clear: both">19.3. 認証方式</h2></div></div></div><span class="original">
+  &lt;title&gt;Authentication Methods&lt;/title&gt;
+</span><p><span class="original">
+   The following subsections describe the authentication methods in more detail.
+</span>   以下の小節では、認証方式について詳細に説明します。
+  </p><div class="sect2" id="auth-trust"><div class="titlepage"><div><div><h3 class="title">19.3.1. trust認証</h3></div></div></div><span class="original">
+   &lt;title&gt;Trust Authentication&lt;/title&gt;
+</span><p><span class="original">
+    When &lt;literal&gt;trust&lt;/&gt; authentication is specified,
+    &lt;productname&gt;PostgreSQL&lt;/productname&gt; assumes that anyone who can
+    connect to the server is authorized to access the database with
+    whatever database user name they specify (even superuser names).
+    Of course, restrictions made in the &lt;literal&gt;database&lt;/&gt; and
+    &lt;literal&gt;user&lt;/&gt; columns still apply.
+    This method should only be used when there is adequate
+    operating-system-level protection on connections to the server.
+</span><code class="literal">trust</code>認証が指定されると<span class="productname">PostgreSQL</span>は、サーバに接続できる全ての人に対して
+（データベーススーパーユーザさえも）その人が指定する任意のデータベースユーザ名としてのアクセス権限が付与されていると想定します。
+当然ながら<code class="literal">database</code>と<code class="literal">user</code>列にある制限は適用されます。
+この方式はサーバに接続する際に適切なオペレーティングシステムレベルの保護が掛けられている場合にのみ使用すべきです。
+   </p><p><span class="original">
+    &lt;literal&gt;trust&lt;/&gt; authentication is appropriate and very
+    convenient for local connections on a single-user workstation.  It
+    is usually &lt;emphasis&gt;not&lt;/&gt; appropriate by itself on a multiuser
+    machine.  However, you might be able to use &lt;literal&gt;trust&lt;/&gt; even
+    on a multiuser machine, if you restrict access to the server's
+    Unix-domain socket file using file-system permissions.  To do this, set the
+    &lt;varname&gt;unix_socket_permissions&lt;/varname&gt; (and possibly
+    &lt;varname&gt;unix_socket_group&lt;/varname&gt;) configuration parameters as
+    described in &lt;xref linkend="runtime-config-connection"&gt;.  Or you
+    could set the &lt;varname&gt;unix_socket_directories&lt;/varname&gt;
+    configuration parameter to place the socket file in a suitably
+    restricted directory.
+</span><code class="literal">trust</code>認証はユーザが1人のみのワークステーション上でローカル接続を行う場合は適切であると同時に非常に便利です。
+複数ユーザが存在するマシン上では一般的に適切では<span class="emphasis"><em>ありません</em></span>。
+とは言っても、ファイルシステムの許可属性を使ってサーバのUnixドメインソケットファイルへのアクセスを制限すれば<code class="literal">trust</code>認証を複数ユーザのマシン上で使用することも可能です。
+その方法は、<a class="xref" href="runtime-config-connection.html" title="18.3. 接続と認証">18.3. 接続と認証</a>に記載されているように<code class="varname">unix_socket_permissions</code>（および<code class="varname">unix_socket_group</code>パラメータの可能性もあります）パラメータを設定します。
+もしくは、<code class="varname">unix_socket_directories</code>設定パラメータでソケットファイルをそれに相応しく制限されているディレクトリにします。
+   </p><p><span class="original">
+    Setting file-system permissions only helps for Unix-socket connections.
+    Local TCP/IP connections are not restricted by file-system permissions.
+    Therefore, if you want to use file-system permissions for local security,
+    remove the &lt;literal&gt;host ... 127.0.0.1 ...&lt;/&gt; line from
+    &lt;filename&gt;pg_hba.conf&lt;/&gt;, or change it to a
+    non-&lt;literal&gt;trust&lt;/&gt; authentication method.
+</span>Unixソケット接続を行うただ1つの方法は、ファイルシステムの許可を設定することです。
+ローカルのTCP/IP接続は、ファイルシステムにより制限はされていません。
+よってローカルでファイルシステムの許可を使用したい場合は<code class="filename">pg_hba.conf</code>から
+<code class="literal">host ... 127.0.0.1 ...</code>の行を削除するか、<code class="literal">trust</code>認証とは異なる方法に変更する必要があります。
+   </p><p><span class="original">
+    &lt;literal&gt;trust&lt;/&gt; authentication is only suitable for TCP/IP connections
+    if you trust every user on every machine that is allowed to connect
+    to the server by the &lt;filename&gt;pg_hba.conf&lt;/&gt; lines that specify
+    &lt;literal&gt;trust&lt;/&gt;.  It is seldom reasonable to use &lt;literal&gt;trust&lt;/&gt;
+    for any TCP/IP connections other than those from &lt;systemitem&gt;localhost&lt;/&gt; (127.0.0.1).
+</span>TCP/IP接続における<code class="literal">trust</code>認証は、<code class="literal">trust</code>を指定する<code class="filename">pg_hba.conf</code>の行によってサーバに接続を許可される全てのマシン上の全てのユーザを信用（trust）できる場合にのみ相応しいものです。
+<span class="systemitem">ローカルホスト</span>（127.0.0.1）以外からのTCP/IP接続に<code class="literal">trust</code>認証を用いる理由はほとんど見当たりません。
+   </p></div><div class="sect2" id="auth-password"><div class="titlepage"><div><div><h3 class="title">19.3.2. パスワード認証</h3></div></div></div><span class="original">
+   &lt;title&gt;Password Authentication&lt;/title&gt;
+</span><a id="idp75637488" class="indexterm"></a><a id="idp75638144" class="indexterm"></a><p><span class="original">
+    The password-based authentication methods are &lt;literal&gt;md5&lt;/&gt;
+    and &lt;literal&gt;password&lt;/&gt;. These methods operate
+    similarly except for the way that the password is sent across the
+    connection, namely MD5-hashed and clear-text respectively.
+</span>パスワードをベースにした認証方式には <code class="literal">md5</code>および<code class="literal">password</code>があります。
+これらの方式はパスワードが接続間でどのように送信されるか（すなわち、それぞれMD5-hashed、平文）を別にすれば似たような動作をします。
+   </p><p><span class="original">
+    If you are at all concerned about password
+    &lt;quote&gt;sniffing&lt;/&gt; attacks then &lt;literal&gt;md5&lt;/&gt; is preferred.
+    Plain &lt;literal&gt;password&lt;/&gt; should always be avoided if possible.
+    However, &lt;literal&gt;md5&lt;/&gt; cannot be used with the &lt;xref
+    linkend="guc-db-user-namespace"&gt; feature.  If the connection is
+    protected by SSL encryption then &lt;literal&gt;password&lt;/&gt; can be used
+    safely (though SSL certificate authentication might be a better
+    choice if one is depending on using SSL).
+</span>もしパスワード<span class="quote">「<span class="quote">盗聴</span>」</span>攻撃に最大の関心があれば<code class="literal">md5</code>を使うのがよいでしょう。
+可能ならば、平文の<code class="literal">password</code>の使用は常に避けなければなりません。
+しかし<code class="literal">md5</code>は<a class="xref" href="runtime-config-connection.html#guc-db-user-namespace">db_user_namespace</a>機能といっしょに使用することはできません。
+接続がSSL暗号化により保護されているのであれば、<code class="literal">password</code>を安全に使用することができます。
+（ただしSSLの使用に依存するという点では、SSL証明書認証を使用した方が良いかもしれません。）
+   </p><p><span class="original">
+    &lt;productname&gt;PostgreSQL&lt;/productname&gt; database passwords are
+    separate from operating system user passwords. The password for
+    each database user is stored in the &lt;literal&gt;pg_authid&lt;/&gt; system
+    catalog. Passwords can be managed with the SQL commands
+    &lt;xref linkend="sql-createuser"&gt; and
+    &lt;xref linkend="sql-alterrole"&gt;,
+    e.g., &lt;userinput&gt;CREATE USER foo WITH PASSWORD 'secret'&lt;/userinput&gt;.
+    If no password has been set up for a user, the stored password
+    is null and password authentication will always fail for that user.
+</span><span class="productname">PostgreSQL</span>データベースパスワードはオペレーティングシステムのユーザパスワードとも別のものです。
+各データベースユーザのパスワードは<code class="literal">pg_authid</code>システムカタログテーブルの中に格納されます。
+<strong class="userinput"><code>CREATE USER foo WITH PASSWORD 'secret';</code></strong>のように、パスワードはSQLコマンド<a class="xref" href="sql-createuser.html" title="CREATE USER"><span class="refentrytitle">CREATE USER</span></a>と<a class="xref" href="sql-alterrole.html" title="ALTER ROLE"><span class="refentrytitle">ALTER ROLE</span></a>を使って管理できます。
+もしユーザに対してパスワードが設定されない場合、格納されるパスワードはNULLとなり、そのユーザのパスワード認証は常に失敗します。
+   </p></div><div class="sect2" id="gssapi-auth"><div class="titlepage"><div><div><h3 class="title">19.3.3. GSSAPI認証</h3></div></div></div><span class="original">
+   &lt;title&gt;GSSAPI Authentication&lt;/title&gt;
+</span><a id="idp75652864" class="indexterm"></a><p><span class="original">
+    &lt;productname&gt;GSSAPI&lt;/productname&gt; is an industry-standard protocol
+    for secure authentication defined in RFC 2743.
+    &lt;productname&gt;PostgreSQL&lt;/productname&gt; supports
+    &lt;productname&gt;GSSAPI&lt;/productname&gt; with &lt;productname&gt;Kerberos&lt;/productname&gt;
+    authentication according to RFC 1964. &lt;productname&gt;GSSAPI&lt;/productname&gt;
+    provides automatic authentication (single sign-on) for systems
+    that support it. The authentication itself is secure, but the
+    data sent over the database connection will be sent unencrypted unless
+    &lt;acronym&gt;SSL&lt;/acronym&gt; is used.
+</span><span class="productname">GSSAPI</span>は、RFC 2743で定義されている安全な認証のための業界標準のプロトコルです。
+<span class="productname">PostgreSQL</span>は、RFC 1964により<span class="productname">Kerberos</span>認証での<span class="productname">GSSAPI</span>をサポートします。
+<span class="productname">GSSAPI</span>は、<span class="productname">GSSAPI</span>をサポートしているシステムに対して自動認証（シングルサインオン）を提供します。
+認証自体は安全ですが、データベース接続を通じて送信されるデータは、<acronym class="acronym">SSL</acronym>が使用されていない場合は平文となります。
+   </p><p><span class="original">
+    GSSAPI support has to be enabled when &lt;productname&gt;PostgreSQL&lt;/&gt; is built;
+    see &lt;xref linkend="installation"&gt; for more information.
+</span>GSSAPIサポートは、<span class="productname">PostgreSQL</span>を構築する時に有効にしなければなりません。詳細は、<a class="xref" href="installation.html" title="第15章 ソースコードからインストール">15章<em>  ソースコードからインストール</em></a>を参照してください。
+   </p><p><span class="original">
+    When &lt;productname&gt;GSSAPI&lt;/productname&gt; uses
+    &lt;productname&gt;Kerberos&lt;/productname&gt;, it uses a standard principal
+    in the format
+    &lt;literal&gt;&lt;replaceable&gt;servicename&lt;/&gt;/&lt;replaceable&gt;hostname&lt;/&gt;@&lt;replaceable&gt;realm&lt;/&gt;&lt;/literal&gt;.
+    The PostgreSQL server will accept any principal that is included in the keytab used by
+    the server, but care needs to be taken to specify the correct principal details when
+    making the connection from the client using the &lt;literal&gt;krbsrvname&lt;/&gt; connection parameter. (See
+    also &lt;xref linkend="libpq-paramkeywords"&gt;.) The installation default can be
+    changed from the default &lt;literal&gt;postgres&lt;/literal&gt; at build time using
+    &lt;literal&gt;./configure &amp;#045;-with-krb-srvnam=&lt;/&gt;&lt;replaceable&gt;whatever&lt;/&gt;.
+    In most environments,
+    this parameter never needs to be changed.
+    Some Kerberos implementations might require a different service name,
+    such as Microsoft Active Directory which requires the service name
+    to be in upper case (&lt;literal&gt;POSTGRES&lt;/literal&gt;).
+</span><span class="productname">GSSAPI</span>が<span class="productname">Kerberos</span>を使用しているとき、<span class="productname">GSSAPI</span>は、<code class="literal"><em class="replaceable"><code>servicename</code></em>/<em class="replaceable"><code>hostname</code></em>@<em class="replaceable"><code>realm</code></em></code>という書式の標準のプリンシパルを使用します。
+[訳注：プリンシパルとは大雑把に2つのものを指します。1つはサービスを受けるクライアントで、もう1つはサービスを提供するサーバアプリケーションです。どちらも、認証に関してはKerberosのKDCから見るとクライアントになります]
+PostgreSQLサーバはサーバにより使われるkeytabに含まれるいかなるプリンシパルも受け付けますが、<code class="literal">krbsrvname</code>接続パラメータを使ってクライアントから接続する場合には、プリンシパルの詳細を正確に指定することに注意を払う必要があります。
+(<a class="xref" href="libpq-connect.html#libpq-paramkeywords" title="31.1.2. パラメータキーワード">31.1.2. パラメータキーワード</a>も参照してください。)
+ビルド時に<code class="literal">./configure --with-krb-srvnam=whatever</code>を使用することで、インストール時のデフォルトはデフォルトの<code class="literal">postgres</code>から変更が可能です。
+多くの環境では、このパラメータは変更する必要はないでしょう。
+いくつかのKerberosの実装では、異なるサービス名が必要になります。Microsoftアクティブディレクトリではサービス名は（<code class="literal">POSTGRES</code>）のように大文字にする必要があります。
+   </p><p><span class="original">
+    &lt;replaceable&gt;hostname&lt;/&gt; is the fully qualified host name of the
+    server machine. The service principal's realm is the preferred realm
+    of the server machine.
+</span><em class="replaceable"><code>hostname</code></em>はサーバマシンの完全修飾されたホスト名です。
+サービスプリンシパルのrealmはサーバマシンが提起したrealmです。
+   </p><p><span class="original">
+    Client principals can be mapped to different &lt;productname&gt;PostgreSQL&lt;/&gt;
+    database user names with &lt;filename&gt;pg_ident.conf&lt;/&gt;.  For example,
+    &lt;literal&gt;pgusername@realm&lt;/&gt; could be mapped to just &lt;literal&gt;pgusername&lt;/&gt;.
+    Alternatively, you can use the full &lt;literal&gt;username@realm&lt;/&gt; principal as
+    the role name in &lt;productname&gt;PostgreSQL&lt;/&gt; without any mapping.
+</span>クライアントのプリンシパルは<code class="filename">pg_ident.conf</code>で異なる<span class="productname">PostgreSQL</span>のデータベースユーザ名にマップできます。
+例えば、<code class="literal">pgusername@realm</code>を単なる<code class="literal">pgusername</code>にマップできます。
+もう1つの方法として、プリンシパル名全体<code class="literal">username@realm</code>を<span class="productname">PostgreSQL</span>のロール名としてマッピングなしに使うこともできます。
+   </p><p><span class="original">
+    &lt;productname&gt;PostgreSQL&lt;/&gt; also supports a parameter to strip the realm from
+    the principal.  This method is supported for backwards compatibility and is
+    strongly discouraged as it is then impossible to distinguish different users
+    with the same user name but coming from different realms.  To enable this,
+    set &lt;literal&gt;include_realm&lt;/&gt; to 0.  For simple single-realm
+    installations, &lt;literal&gt;include_realm&lt;/&gt; combined with the
+    &lt;literal&gt;krb_realm&lt;/&gt; parameter (which checks that the realm provided
+    matches exactly what is in the &lt;literal&gt;krb_realm&lt;/literal&gt; parameter) would be a secure but
+    less capable option compared to specifying an explicit mapping in
+    &lt;filename&gt;pg_ident.conf&lt;/&gt;.
+</span><span class="productname">PostgreSQL</span>はプリンシパルからrealmを外すパラメータもサポートしています。
+この方法は後方互換のためにサポートされているものであり、異なるrealmから来た同じユーザ名の異なるユーザを区別することができませんので、使用しないことを強く薦めます。
+この方法を有効にするには<code class="literal">include_realm</code>を0に設定してください。
+単純な単一realmの設定では、(指定されたrealmが<code class="literal">krb_realm</code>パラメータ内のものと正確に一致するか確認する)<code class="literal">krb_realm</code>パラメータと組み合わされた<code class="literal">include_realm</code>で安全でしょうが、<code class="filename">pg_ident.conf</code>で明示的なマッピングを指定するのに比べてあまり適切でない選択でしょう。
+   </p><p><span class="original">
+    Make sure that your server keytab file is readable (and preferably
+    only readable) by the &lt;productname&gt;PostgreSQL&lt;/productname&gt; server
+    account.  (See also &lt;xref linkend="postgres-user"&gt;.) The location
+    of the key file is specified by the &lt;xref
+    linkend="guc-krb-server-keyfile"&gt; configuration
+    parameter. The default is
+    &lt;filename&gt;/usr/local/pgsql/etc/krb5.keytab&lt;/&gt; (or whatever
+    directory was specified as &lt;varname&gt;sysconfdir&lt;/&gt; at build time).
+    For security reasons, it is recommended to use a separate keytab
+    just for the &lt;productname&gt;PostgreSQL&lt;/productname&gt; server rather
+    than opening up permissions on the system keytab file.
+</span>サーバ鍵ファイルが<span class="productname">PostgreSQL</span>サーバアカウントによって読み込み可能（そしてできれば読み込み専用）であることを確認してください。
+（<a class="xref" href="postgres-user.html" title="17.1. PostgreSQLユーザアカウント">17.1. <span class="productname">PostgreSQL</span>ユーザアカウント</a>を参照してください。）
+鍵ファイルの保存場所は<a class="xref" href="runtime-config-connection.html#guc-krb-server-keyfile">krb_server_keyfile</a>設定パラメータで指定されます
+デフォルトは、<code class="filename">/usr/local/pgsql/etc/krb5.keytab</code>（もしくはビルド時に<code class="varname">sysconfdir</code>で指定されたディレクトリ）です。
+セキュリティ上の理由から、システムkeytabファイルで許可するよりも、<span class="productname">PostgreSQL</span>サーバ用に別のkeytabファイルを使うことをお薦めします。
+   </p><p><span class="original">
+    The keytab file is generated by the Kerberos software; see the
+    Kerberos documentation for details. The following example is
+   for MIT-compatible Kerberos 5 implementations:
+</span>keytabファイルはKerberosのソフトウェアによって作成されます。詳細はKerberosのドキュメントを参照してください。
+MIT互換のKerberos5実装の例を以下に示します。
+</p><pre class="screen"><code class="prompt">kadmin% </code><strong class="userinput"><code>ank -randkey postgres/server.my.domain.org</code></strong>
+<code class="prompt">kadmin% </code><strong class="userinput"><code>ktadd -k krb5.keytab postgres/server.my.domain.org</code></strong></pre><p>
+   </p><p><span class="original">
+    When connecting to the database make sure you have a ticket for a
+    principal matching the requested database user name. For example, for
+    database user name &lt;literal&gt;fred&lt;/&gt;, principal
+    &lt;literal&gt;fred@EXAMPLE.COM&lt;/&gt; would be able to connect. To also allow
+    principal &lt;literal&gt;fred/users.example.com@EXAMPLE.COM&lt;/&gt;, use a user name
+    map, as described in &lt;xref linkend="auth-username-maps"&gt;.
+</span>データベースに接続しようとしている時要求されるデータベースユーザ名に一致するプリンシパルのチケットを所有しているか確認してください。
+例えば、データベースユーザ名<code class="literal">fred</code>に対し、<code class="literal">fred@EXAMPLE.COM</code>のプリンシパルは接続できるでしょう。
+<code class="literal">fred/users.example.com@EXAMPLE.COM</code>のプリンシパルも許可するためには<a class="xref" href="auth-username-maps.html" title="19.2. ユーザ名マップ">19.2. ユーザ名マップ</a>内に記述されているユーザ名マップを使用して下さい。
+   </p><p><span class="original">
+    The following configuration options are supported for &lt;productname&gt;GSSAPI&lt;/productname&gt;:
+</span>次の設定オプションは<span class="productname">GSSAPI</span>のためにサポートされています。
+    </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="literal">include_realm</code></span></dt><dd><p><span class="original">
+        If set to 0, the realm name from the authenticated user principal is
+        stripped off before being passed through the user name mapping
+        (&lt;xref linkend="auth-username-maps"&gt;). This is discouraged and is
+        primarily available for backwards compatibility as it is not secure
+        in multi-realm environments unless &lt;literal&gt;krb_realm&lt;/literal&gt; is also used.  Users
+        are recommended to leave include_realm set to the default (1) and to
+        provide an explicit mapping in &lt;filename&gt;pg_ident.conf&lt;/&gt;.
+</span>0に設定されている場合は、認証されたユーザプリンシパルからのrealm名が、ユーザ名マッピング（<a class="xref" href="auth-username-maps.html" title="19.2. ユーザ名マップ">19.2. ユーザ名マップ</a>）で渡されるシステムユーザ名から外されています。
+<code class="literal">krb_realm</code>も一緒に使われていない限り、これは複数realm環境で安全ではありませんので、非推奨であり、主に後方互換性のために利用できます。
+include_realmをデフォルト(1)にしたまま、<code class="filename">pg_ident.conf</code>で明示的なマッピングを指定することをお薦めします。
+       </p></dd><dt><span class="term"><code class="literal">map</code></span></dt><dd><p><span class="original">
+        Allows for mapping between system and database user names. See
+        &lt;xref linkend="auth-username-maps"&gt; for details.  For a GSSAPI/Kerberos
+        principal, such as &lt;literal&gt;username@EXAMPLE.COM&lt;/literal&gt; (or, less
+        commonly, &lt;literal&gt;username/hostbased@EXAMPLE.COM&lt;/literal&gt;), the
+        user name used for mapping is
+        &lt;literal&gt;username@EXAMPLE.COM&lt;/literal&gt; (or
+        &lt;literal&gt;username/hostbased@EXAMPLE.COM&lt;/literal&gt;, respectively),
+        unless &lt;literal&gt;include_realm&lt;/literal&gt; has been set to 0, in which case
+        &lt;literal&gt;username&lt;/literal&gt; (or &lt;literal&gt;username/hostbased&lt;/literal&gt;)
+        is what is seen as the system user name when mapping.
+</span>システムとデータベースの間のマッピングを許可します。詳細は<a class="xref" href="auth-username-maps.html" title="19.2. ユーザ名マップ">19.2. ユーザ名マップ</a>を参照してください。
+GSSAPI/Kerberosプリンシパル<code class="literal">username@EXAMPLE.COM</code>(もしくは、あまり一般的ではありませんが<code class="literal">username/hostbased@EXAMPLE.COM</code>)に対しては、もし<code class="literal">include_realm</code>が0に設定されていない限り、マッピングに使われるユーザ名は<code class="literal">username@EXAMPLE.COM</code>(もしくは<code class="literal">username/hostbased@EXAMPLE.COM</code>)です。
+0に設定されている場合には、<code class="literal">username</code>(もしくは<code class="literal">username/hostbased</code>)がマッピング時のシステムユーザ名です。
+       </p></dd><dt><span class="term"><code class="literal">krb_realm</code></span></dt><dd><p><span class="original">
+        Sets the realm to match user principal names against. If this parameter
+        is set, only users of that realm will be accepted.  If it is not set,
+        users of any realm can connect, subject to whatever user name mapping
+        is done.
+</span>realmをユーザプリンシパル名に一致するように設定します。
+もしこのパラメータが設定されている場合はそのrealmのユーザのみが受け付けられます。
+もしこれが設定されていない場合は、どのようなrealmのユーザも接続可能で、ユーザ名マッピングが設定されていれば、どれでも影響を受けます。
+       </p></dd></dl></div><p>
+   </p></div><div class="sect2" id="sspi-auth"><div class="titlepage"><div><div><h3 class="title">19.3.4. SSPI認証</h3></div></div></div><span class="original">
+   &lt;title&gt;SSPI Authentication&lt;/title&gt;
+</span><a id="idp75716624" class="indexterm"></a><p><span class="original">
+    &lt;productname&gt;SSPI&lt;/productname&gt; is a &lt;productname&gt;Windows&lt;/productname&gt;
+    technology for secure authentication with single sign-on.
+    &lt;productname&gt;PostgreSQL&lt;/productname&gt; will use SSPI in
+    &lt;literal&gt;negotiate&lt;/literal&gt; mode, which will use
+    &lt;productname&gt;Kerberos&lt;/productname&gt; when possible and automatically
+    fall back to &lt;productname&gt;NTLM&lt;/productname&gt; in other cases.
+    &lt;productname&gt;SSPI&lt;/productname&gt; authentication only works when both
+    server and client are running &lt;productname&gt;Windows&lt;/productname&gt;,
+    or, on non-Windows platforms, when &lt;productname&gt;GSSAPI&lt;/productname&gt;
+    is available.
+</span><span class="productname">SSPI</span>は、シングルサインオンで安全な認証を行うための<span class="productname">Windows</span>の技術です。
+<span class="productname">PostgreSQL</span>は、<code class="literal">negotiate</code>モードにおいてSSPIを使用します。
+これは、可能な場合は<span class="productname">Kerberos</span>を使用し、他の場合については自動的に<span class="productname">NTLM</span>を使用することを意味しています。
+<span class="productname">SSPI</span>認証は、サーバ、クライアントが共に<span class="productname">Windows</span>上もしくは<span class="productname">GSSAPI</span>が利用可能な場合はWindowsではないプラットフォームで稼動しているときにのみ動作します。
+   </p><p><span class="original">
+    When using &lt;productname&gt;Kerberos&lt;/productname&gt; authentication,
+    &lt;productname&gt;SSPI&lt;/productname&gt; works the same way
+    &lt;productname&gt;GSSAPI&lt;/productname&gt; does; see &lt;xref linkend="gssapi-auth"&gt;
+    for details.
+</span><span class="productname">Kerberos</span>認証を使用しているとき、
+<span class="productname">SSPI</span>は、<span class="productname">GSSAPI</span>と同じように動作します。
+詳細は<a class="xref" href="auth-methods.html#gssapi-auth" title="19.3.3. GSSAPI認証">19.3.3. GSSAPI認証</a>を参照してください。
+   </p><p><span class="original">
+    The following configuration options are supported for &lt;productname&gt;SSPI&lt;/productname&gt;:
+</span>次の設定オプションは<span class="productname">SSPI</span>のためにサポートされています。
+    </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="literal">include_realm</code></span></dt><dd><p><span class="original">
+        If set to 0, the realm name from the authenticated user principal is
+        stripped off before being passed through the user name mapping
+        (&lt;xref linkend="auth-username-maps"&gt;). This is discouraged and is
+        primarily available for backwards compatibility as it is not secure
+        in multi-realm environments unless &lt;literal&gt;krb_realm&lt;/literal&gt; is also used.  Users
+        are recommended to leave include_realm set to the default (1) and to
+        provide an explicit mapping in &lt;filename&gt;pg_ident.conf&lt;/&gt;.
+</span>0に設定されている場合は、認証されたユーザプリンシパルからのrealm名が、ユーザ名マッピング（<a class="xref" href="auth-username-maps.html" title="19.2. ユーザ名マップ">19.2. ユーザ名マップ</a>）で渡されるシステムユーザ名から外されています。
+<code class="literal">krb_realm</code>も一緒に使われていない限り、これは複数realm環境で安全ではありませんので、非推奨であり、主に後方互換性のために利用できます。
+include_realmをデフォルト(1)にしたまま、<code class="filename">pg_ident.conf</code>で明示的なマッピングを指定することをお薦めします。
+       </p></dd><dt><span class="term"><code class="literal">map</code></span></dt><dd><p><span class="original">
+        Allows for mapping between system and database user names. See
+        &lt;xref linkend="auth-username-maps"&gt; for details.  For a SSPI/Kerberos
+        principal, such as &lt;literal&gt;username@EXAMPLE.COM&lt;/literal&gt; (or, less
+        commonly, &lt;literal&gt;username/hostbased@EXAMPLE.COM&lt;/literal&gt;), the
+        user name used for mapping is
+        &lt;literal&gt;username@EXAMPLE.COM&lt;/literal&gt; (or
+        &lt;literal&gt;username/hostbased@EXAMPLE.COM&lt;/literal&gt;, respectively),
+        unless &lt;literal&gt;include_realm&lt;/literal&gt; has been set to 0, in which case
+        &lt;literal&gt;username&lt;/literal&gt; (or &lt;literal&gt;username/hostbased&lt;/literal&gt;)
+        is what is seen as the system user name when mapping.
+</span>システムとデータベースユーザ名の間のマッピングを許可します。
+詳細は<a class="xref" href="auth-username-maps.html" title="19.2. ユーザ名マップ">19.2. ユーザ名マップ</a>を参照してください。
+GSSAPI/Kerberosプリンシパル<code class="literal">username@EXAMPLE.COM</code>(もしくは、あまり一般的ではありませんが<code class="literal">username/hostbased@EXAMPLE.COM</code>)に対しては、もし<code class="literal">include_realm</code>が0に設定されていない限り、マッピングに使われるユーザ名は<code class="literal">username@EXAMPLE.COM</code>(もしくは<code class="literal">username/hostbased@EXAMPLE.COM</code>)です。
+0に設定されている場合には、<code class="literal">username</code>(もしくは<code class="literal">username/hostbased</code>)がマッピング時のシステムユーザ名です。
+       </p></dd><dt><span class="term"><code class="literal">krb_realm</code></span></dt><dd><p><span class="original">
+        Sets the realm to match user principal names against. If this parameter
+        is set, only users of that realm will be accepted.  If it is not set,
+        users of any realm can connect, subject to whatever user name mapping
+        is done.
+</span>realmをユーザプリンシパル名に一致するように設定します。もしこのパラメータが設定されている場合は
+realmのユーザのみが受け付けられます。もしこれが設定されていない場合は、
+どのようなrealmのユーザも接続可能で、ユーザ名マッピングが設定されていれば、どれでも影響を受けます。
+       </p></dd></dl></div><p>
+   </p></div><div class="sect2" id="auth-ident"><div class="titlepage"><div><div><h3 class="title">19.3.5. Ident認証</h3></div></div></div><span class="original">
+   &lt;title&gt;Ident Authentication&lt;/title&gt;
+</span><a id="idp75746608" class="indexterm"></a><p><span class="original">
+    The ident authentication method works by obtaining the client's
+    operating system user name from an ident server and using it as
+    the allowed database user name (with an optional user name mapping).
+    This is only supported on TCP/IP connections.
+</span>ident認証方式は、クライアントのオペレーティングシステムのユーザ名をidentサーバから入手し、それを（オプションのユーザ名マップとともに）許可されているデータベースのユーザ名として使用します。
+これはTCP/IP接続のみサポートされます。
+   </p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">注記</h3><p><span class="original">
+     When ident is specified for a local (non-TCP/IP) connection,
+     peer authentication (see &lt;xref linkend="auth-peer"&gt;) will be
+     used instead.
+</span>identが（TCP/IPではない）ローカル接続で指定されている場合、
+ピア認証（<a class="xref" href="auth-methods.html#auth-peer" title="19.3.6. Peer認証">19.3.6. Peer認証</a>を参照してください）が代わりに使用されます。
+    </p></div><p><span class="original">
+    The following configuration options are supported for &lt;productname&gt;ident&lt;/productname&gt;:
+</span>次の設定オプションは<span class="productname">ident</span>のためにサポートされています。
+    </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="literal">map</code></span></dt><dd><p><span class="original">
+        Allows for mapping between system and database user names. See
+        &lt;xref linkend="auth-username-maps"&gt; for details.
+</span>システムとデータベースユーザ名の間のマッピングを許可します。
+詳細は<a class="xref" href="auth-username-maps.html" title="19.2. ユーザ名マップ">19.2. ユーザ名マップ</a>を参照してください。
+       </p></dd></dl></div><p>
+   </p><p><span class="original">
+    The &lt;quote&gt;Identification Protocol&lt;/quote&gt; is described in
+    RFC 1413. Virtually every Unix-like
+    operating system ships with an ident server that listens on TCP
+    port 113 by default. The basic functionality of an ident server
+    is to answer questions like &lt;quote&gt;What user initiated the
+    connection that goes out of your port &lt;replaceable&gt;X&lt;/replaceable&gt;
+    and connects to my port &lt;replaceable&gt;Y&lt;/replaceable&gt;?&lt;/quote&gt;.
+    Since &lt;productname&gt;PostgreSQL&lt;/&gt; knows both &lt;replaceable&gt;X&lt;/&gt; and
+    &lt;replaceable&gt;Y&lt;/&gt; when a physical connection is established, it
+    can interrogate the ident server on the host of the connecting
+    client and can theoretically determine the operating system user
+    for any given connection.
+</span><span class="quote">「<span class="quote">身元特定（Identification）プロトコル</span>」</span>についてはRFC 1413で説明されています。
+事実上全てのUnix系のオペレーティングシステムの配布には、デフォルトでTCPポート113を監視するidentサーバが付属しています。
+identサーバの基本的な機能は<span class="quote">「<span class="quote">どのユーザがポート<em class="replaceable"><code>X</code></em>からの接続を開始し、自分のポート<em class="replaceable"><code>Y</code></em>への接続を初期化したのか？</span>」</span>というような質問に答えることです。
+<span class="productname">PostgreSQL</span>は物理的な接続が確立された時に<em class="replaceable"><code>X</code></em>と<em class="replaceable"><code>Y</code></em>の両方を認識するので、接続するクライアントのホスト上のidentサーバに応答指令信号を送ることができ、理論的には与えられたどの接続にもオペレーティングシステムユーザを決定できます。
+   </p><p><span class="original">
+    The drawback of this procedure is that it depends on the integrity
+    of the client: if the client machine is untrusted or compromised,
+    an attacker could run just about any program on port 113 and
+    return any user name he chooses. This authentication method is
+    therefore only appropriate for closed networks where each client
+    machine is under tight control and where the database and system
+    administrators operate in close contact. In other words, you must
+    trust the machine running the ident server.
+    Heed the warning:
+</span>この手続きの欠点は、クライアントの正直さに頼るところが大きいということです。
+もしクライアントマシンが信用されない、もしくは危険に晒されている場合、攻撃者はポート113上でほぼどんなプログラムでも実行することができ、どのユーザ名でも好きに選んで返すことができます。
+したがってこの認証方式は、各々のクライアントマシンが厳格な管理下にあり、データベースとシステム管理者が密接に連絡を取り合って動作している、外界から閉ざされたネットワークにのみ適していると言えます。
+言い換えると、identサーバが稼働しているマシンを信用しなければなりません。
+次の警告に注意してください。
+    </p><div class="blockquote"><table border="0" class="blockquote" style="width: 100%; cellspacing: 0; cellpadding: 0;" summary="Block quote"><tr><td width="10%" valign="top"> </td><td width="80%" valign="top"><p><span class="original">
+      The Identification Protocol is not intended as an authorization
+      or access control protocol.
+</span>      身元特定プロトコルは、認証、あるいはアクセス管理プロトコルには意図されていません。
+     </p></td><td width="10%" valign="top"> </td></tr><tr><td width="10%" valign="top"> </td><td colspan="2" align="right" valign="top">--<span class="attribution">RFC 1413</span></td></tr></table></div><p>
+   </p><p><span class="original">
+    Some ident servers have a nonstandard option that causes the returned
+    user name to be encrypted, using a key that only the originating
+    machine's administrator knows.  This option &lt;emphasis&gt;must not&lt;/&gt; be
+    used when using the ident server with &lt;productname&gt;PostgreSQL&lt;/&gt;,
+    since &lt;productname&gt;PostgreSQL&lt;/&gt; does not have any way to decrypt the
+    returned string to determine the actual user name.
+</span>いくつかの身元特定サーバは、ユーザ名を（マシンの管理者のみが知っているキーで）暗号化して返すような非標準のオプションを持っています。
+このオプションは、身元特定サーバと<span class="productname">PostgreSQL</span>とを一緒に使用する場合には、使用しては<span class="emphasis"><em>いけません</em></span>。
+理由は<span class="productname">PostgreSQL</span>は、返された文字列を復号化して本当のユーザを決定するための手段を持っていないためです。
+   </p></div><div class="sect2" id="auth-peer"><div class="titlepage"><div><div><h3 class="title">19.3.6. Peer認証</h3></div></div></div><span class="original">
+   &lt;title&gt;Peer Authentication&lt;/title&gt;
+</span><a id="idp75766640" class="indexterm"></a><p><span class="original">
+    The peer authentication method works by obtaining the client's
+    operating system user name from the kernel and using it as the
+    allowed database user name (with optional user name mapping). This
+    method is only supported on local connections.
+</span>peer認証方式はカーネルからクライアント上のオペレーティングシステムのユーザ名を取得し、
+それをデータベースユーザ名（オプションのユーザ名マップとともに）として使用することにより動作します。この方法はローカル接続でのみ使用可能です。
+   </p><p><span class="original">
+    The following configuration options are supported for &lt;productname&gt;peer&lt;/productname&gt;:
+</span>次の設定オプションは<span class="productname">peer</span>のためにサポートされています。
+    </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="literal">map</code></span></dt><dd><p><span class="original">
+        Allows for mapping between system and database user names. See
+        &lt;xref linkend="auth-username-maps"&gt; for details.
+</span>システムとデータベースのユーザ名のマッピングを許可します。詳細は<a class="xref" href="auth-username-maps.html" title="19.2. ユーザ名マップ">19.2. ユーザ名マップ</a>を参照してください。
+       </p></dd></dl></div><p>
+   </p><p><span class="original">
+    Peer authentication is only available on operating systems providing
+    the &lt;function&gt;getpeereid()&lt;/&gt; function, the &lt;symbol&gt;SO_PEERCRED&lt;/symbol&gt;
+    socket parameter, or similar mechanisms.  Currently that includes
+    &lt;systemitem class="osname"&gt;Linux&lt;/&gt;,
+    most flavors of &lt;systemitem class="osname"&gt;BSD&lt;/&gt; including
+    &lt;systemitem class="osname"&gt;OS X&lt;/&gt;,
+    and &lt;systemitem class="osname"&gt;Solaris&lt;/systemitem&gt;.
+</span>Peer認証はオペレーティングシステムが、<code class="function">getpeereid()</code>関数、<code class="symbol">SO_PEERCRED</code>のソケットパラメータ、もしくは同じような仕組みを提供しているときにのみ使用可能です。現状では、<span class="systemitem">Linux</span>、<span class="systemitem">OS X</span>を含む<span class="systemitem">BSD</span>系、そして<span class="systemitem">Solaris</span>に含まれています。
+   </p></div><div class="sect2" id="auth-ldap"><div class="titlepage"><div><div><h3 class="title">19.3.7. LDAP認証</h3></div></div></div><span class="original">
+   &lt;title&gt;LDAP Authentication&lt;/title&gt;
+</span><a id="idp75779632" class="indexterm"></a><p><span class="original">
+    This authentication method operates similarly to
+    &lt;literal&gt;password&lt;/literal&gt; except that it uses LDAP
+    as the password verification method. LDAP is used only to validate
+    the user name/password pairs. Therefore the user must already
+    exist in the database before LDAP can be used for
+    authentication.
+</span>この認証方式は<code class="literal">password</code>と似ていますが、パスワード確認にLDAPを使用する点が異なります。
+LDAPはユーザの名前とパスワードの組み合わせの検証のみに使用されます。
+そのため、LDAPを使用して認証を行うようにする前に、ユーザはデータベースに存在しなければなりません。
+   </p><p><span class="original">
+    LDAP authentication can operate in two modes. In the first mode,
+    which we will call the simple bind mode,
+    the server will bind to the distinguished name constructed as
+    &lt;replaceable&gt;prefix&lt;/&gt; &lt;replaceable&gt;username&lt;/&gt; &lt;replaceable&gt;suffix&lt;/&gt;.
+    Typically, the &lt;replaceable&gt;prefix&lt;/&gt; parameter is used to specify
+    &lt;literal&gt;cn=&lt;/&gt;, or &lt;replaceable&gt;DOMAIN&lt;/&gt;&lt;literal&gt;\&lt;/&gt; in an Active
+    Directory environment.  &lt;replaceable&gt;suffix&lt;/&gt; is used to specify the
+    remaining part of the DN in a non-Active Directory environment.
+</span>LDAP認証は2つのモードで動作します。1つ目のモードでは、それは単なるバインド・モードを呼び出すものですが、
+サーバは<em class="replaceable"><code>prefix</code></em> <em class="replaceable"><code>username</code></em> <em class="replaceable"><code>suffix</code></em>として区別された名前にバインドします。
+一般的に、<em class="replaceable"><code>prefix</code></em>パラメータはActive Directory環境での<code class="literal">cn=</code>や<em class="replaceable"><code>DOMAIN</code></em><code class="literal">\</code>を特定するために使用されます。
+<em class="replaceable"><code>suffix</code></em>は、Active Directory環境ではない場合でのDNの残りの部分を特定するために使用されます。
+   </p><p><span class="original">
+    In the second mode, which we will call the search+bind mode,
+    the server first binds to the LDAP directory with
+    a fixed user name and password, specified with &lt;replaceable&gt;ldapbinddn&lt;/&gt;
+    and &lt;replaceable&gt;ldapbindpasswd&lt;/&gt;, and performs a search for the user trying
+    to log in to the database. If no user and password is configured, an
+    anonymous bind will be attempted to the directory. The search will be
+    performed over the subtree at &lt;replaceable&gt;ldapbasedn&lt;/&gt;, and will try to
+    do an exact match of the attribute specified in
+    &lt;replaceable&gt;ldapsearchattribute&lt;/&gt;.
+    Once the user has been found in
+    this search, the server disconnects and re-binds to the directory as
+    this user, using the password specified by the client, to verify that the
+    login is correct. This mode is the same as that used by LDAP authentication
+    schemes in other software, such as Apache &lt;literal&gt;mod_authnz_ldap&lt;/literal&gt; and &lt;literal&gt;pam_ldap&lt;/literal&gt;.
+    This method allows for significantly more flexibility
+    in where the user objects are located in the directory, but will cause
+    two separate connections to the LDAP server to be made.
+</span>2つ目のモードでは、それはsearch/bindモードを呼び出すもので、サーバは最初に<em class="replaceable"><code>ldapbinddn</code></em>と<em class="replaceable"><code>ldapbindpasswd</code></em>で指定された、
+固定されたユーザ名とパスワードを使用してLDAPディレクトリにバインドします。
+それからデータベースにログインしようとしているユーザを検索します。
+もしユーザとパスワードが指定されていなかった場合は、ディレクトリに対して匿名でバインドします。
+検索は<em class="replaceable"><code>ldapbasedn</code></em>のサブツリーまで行われ、<em class="replaceable"><code>ldapsearchattribute</code></em>で指定された属性に正確に一致するかどうかまで行われます。
+この検索において、一度ユーザが見つかるとサーバは切断して、クライアントで指定されたパスワードを使用してこのユーザとして再度ディレクトリにバインドします。これはそのログインが正しいかどうかを検証するためです。
+このモードはApache <code class="literal">mod_authnz_ldap</code>および<code class="literal">pam_ldap</code>のように他のソフトウェアと同じように、LDAP認証の仕組みで使用されるものと同じです。
+この方法は、ユーザオブジェクトがディレクトリに配置されている場合に、かなりの柔軟性があります。
+しかし、LDAPサーバへの2つの分離した接続が作成されます。
+   </p><p><span class="original">
+    The following configuration options are used in both modes:
+</span>次の設定オプションは両方のモードで使用されます。
+    </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="literal">ldapserver</code></span></dt><dd><p><span class="original">
+        Names or IP addresses of LDAP servers to connect to. Multiple
+        servers may be specified, separated by spaces.
+</span>接続するLDAPサーバの名称もしくはIPアドレスの名称。空白で区切ることで複数のサーバを指定できます。
+       </p></dd><dt><span class="term"><code class="literal">ldapport</code></span></dt><dd><p><span class="original">
+        Port number on LDAP server to connect to. If no port is specified,
+        the LDAP library's default port setting will be used.
+</span>LDAPサーバに接続するためのポート番号。もしポートが指定されていない場合は
+LDAPライブラリ内のデフォルトポート設定が使用されます。
+       </p></dd><dt><span class="term"><code class="literal">ldaptls</code></span></dt><dd><p><span class="original">
+        Set to 1 to make the connection between PostgreSQL and the
+        LDAP server use TLS encryption. Note that this only encrypts
+        the traffic to the LDAP server &amp;mdash; the connection to the client
+        will still be unencrypted unless SSL is used.
+</span>1に設定すると、PostgreSQLとLDAPサーバ間の接続にTLSによる暗号化を使用します。
+これはLDAPサーバへのトラフィックのみを暗号化することに注意してください。—
+クライアントへの接続はSSLを使用しない限り暗号化されません。
+       </p></dd></dl></div><p>
+<span class="original">
+    The following options are used in simple bind mode only:
+</span>
+以下のオプションは単純バインド・モードのみで使用されます。
+    </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="literal">ldapprefix</code></span></dt><dd><p><span class="original">
+        String to prepend to the user name when forming the DN to bind as,
+        when doing simple bind authentication.
+</span>単純なバインド認証を行う場合のDNを生成する際にユーザ名の前に追加する文字列
+       </p></dd><dt><span class="term"><code class="literal">ldapsuffix</code></span></dt><dd><p><span class="original">
+        String to append to the user name when forming the DN to bind as,
+        when doing simple bind authentication.
+</span>単純なバインド認証を行う場合のDNを生成する際にユーザ名の後に追加する文字列
+       </p></dd></dl></div><p>
+<span class="original">
+    The following options are used in search+bind mode only:
+</span>
+以下のオプションはsearch/bindモードのみで使用されます。
+    </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="literal">ldapbasedn</code></span></dt><dd><p><span class="original">
+        Root DN to begin the search for the user in, when doing search+bind
+        authentication.
+</span>検索とバインドの認証を行う場合のユーザ名がログインするための検索を始めるためのルートDN
+       </p></dd><dt><span class="term"><code class="literal">ldapbinddn</code></span></dt><dd><p><span class="original">
+        DN of user to bind to the directory with to perform the search when
+        doing search+bind authentication.
+</span>検索とバインドの認証を行う場合のディレクトリと検索をバインドするためのユーザのDN
+       </p></dd><dt><span class="term"><code class="literal">ldapbindpasswd</code></span></dt><dd><p><span class="original">
+        Password for user to bind to the directory with to perform the search
+        when doing search+bind authentication.
+</span>検索とバインドの認証を行う場合のディレクトリと検索をバインドするためのユーザのパスワード
+       </p></dd><dt><span class="term"><code class="literal">ldapsearchattribute</code></span></dt><dd><p><span class="original">
+         Attribute to match against the user name in the search when doing
+         search+bind authentication.  If no attribute is specified, the
+         &lt;literal&gt;uid&lt;/&gt; attribute will be used.
+</span>検索とバインドの認証を行う場合の検索時のユーザ名に対して一致させる属性。
+属性が指定されない場合、属性<code class="literal">uid</code>が使用されます。
+        </p></dd><dt><span class="term"><code class="literal">ldapurl</code></span></dt><dd><p><span class="original">
+         An RFC 4516 LDAP URL.  This is an alternative way to write some of the
+         other LDAP options in a more compact and standard form.  The format is
+</span>RFC 4516 LDAP URL。これはその他いくつかのLDAPオプションをより簡潔、かつ一般的な形式で記述する別の方法です。
+フォーマットは以下のようになっています。
+</p><pre class="synopsis">ldap://<em class="replaceable"><code>host</code></em>[:<em class="replaceable"><code>port</code></em>]/<em class="replaceable"><code>basedn</code></em>[?[<em class="replaceable"><code>attribute</code></em>][?[<em class="replaceable"><code>scope</code></em>]]]</pre><p><span class="original">
+         &lt;replaceable&gt;scope&lt;/replaceable&gt; must be one
+         of &lt;literal&gt;base&lt;/literal&gt;, &lt;literal&gt;one&lt;/literal&gt;, &lt;literal&gt;sub&lt;/literal&gt;,
+         typically the latter.  Only one attribute is used, and some other
+         components of standard LDAP URLs such as filters and extensions are
+         not supported.
+</span>
+<em class="replaceable"><code>scope</code></em>は<code class="literal">base</code>、<code class="literal">one</code>,、<code class="literal">sub</code>のいずれかでなくてはならず、一般的には最後のものです。
+        </p><p><span class="original">
+         For non-anonymous binds, &lt;literal&gt;ldapbinddn&lt;/literal&gt;
+         and &lt;literal&gt;ldapbindpasswd&lt;/literal&gt; must be specified as separate
+         options.
+</span>非匿名バインド（non-anonymous bind）に対し、<code class="literal">ldapbinddn</code>および<code class="literal">ldapbindpasswd</code>は個別のオプションとして指定されなければなりません。
+        </p><p><span class="original">
+         To use encrypted LDAP connections, the &lt;literal&gt;ldaptls&lt;/literal&gt;
+         option has to be used in addition to &lt;literal&gt;ldapurl&lt;/literal&gt;.
+         The &lt;literal&gt;ldaps&lt;/literal&gt; URL scheme (direct SSL connection) is not
+         supported.
+</span>暗号化されたLDAP接続を使用するには、<code class="literal">ldapurl</code>に加え<code class="literal">ldaptls</code>オプションを使用しなければなりません。<code class="literal">ldaps</code> URLの仕組み（直接SSL接続）はサポートされていません。
+        </p><p><span class="original">
+         LDAP URLs are currently only supported with OpenLDAP, not on Windows.
+</span>現在の所、LDAP URLはWindows上ではなく、OpenLDAPのみでサポートされています。
+        </p></dd></dl></div><p>
+   </p><p><span class="original">
+    It is an error to mix configuration options for simple bind with options
+    for search+bind.
+</span>seartch/bindオプションと単純バインドに対するオプションの設定を混在させるのはエラーです。
+   </p><p><span class="original">
+    Here is an example for a simple-bind LDAP configuration:
+</span>以下に単純バインドLDAP設定の例を示します。
+</p><pre class="programlisting">host ... ldap ldapserver=ldap.example.net ldapprefix="cn=" ldapsuffix=", dc=example, dc=net"</pre><p><span class="original">
+    When a connection to the database server as database
+    user &lt;literal&gt;someuser&lt;/literal&gt; is requested, PostgreSQL will attempt to
+    bind to the LDAP server using the DN &lt;literal&gt;cn=someuser, dc=example,
+    dc=net&lt;/literal&gt; and the password provided by the client.  If that connection
+    succeeds, the database access is granted.
+</span>
+データベースのユーザ、<code class="literal">someuser</code>からデータベースサーバに接続を要求された場合、PostgreSQLはDN <code class="literal">cn=someuser, dc=example, dc=net</code>およびクライアントから提供されたパスワードを用いてLDAPサーバにバインドを試みます。
+その接続が成功すればデータベースへのアクセスが認められます。
+   </p><p><span class="original">
+    Here is an example for a search+bind configuration:
+</span>以下はsearch/bind設定の例です。
+</p><pre class="programlisting">host ... ldap ldapserver=ldap.example.net ldapbasedn="dc=example, dc=net" ldapsearchattribute=uid</pre><p><span class="original">
+    When a connection to the database server as database
+    user &lt;literal&gt;someuser&lt;/literal&gt; is requested, PostgreSQL will attempt to
+    bind anonymously (since &lt;literal&gt;ldapbinddn&lt;/literal&gt; was not specified) to
+    the LDAP server, perform a search for &lt;literal&gt;(uid=someuser)&lt;/literal&gt;
+    under the specified base DN.  If an entry is found, it will then attempt to
+    bind using that found information and the password supplied by the client.
+    If that second connection succeeds, the database access is granted.
+</span>
+データベースユーザ<code class="literal">someuser</code>としてデータベースに接続するとき、PostgreSQLは（<code class="literal">ldapbinddn</code>が指定されていないので）匿名的にバインドを試み、指定されたベースDNの基で<code class="literal">(uid=someuser)</code>の検索を行います。あるエントリが見つかると、見つかった情報とクライアントから与えられたパスワードを用いて、その結果バインドを試みます。その二番目の接続が成功するとデータベースアクセスが認められます。
+   </p><p><span class="original">
+    Here is the same search+bind configuration written as a URL:
+</span>URLとして記述した同じsearch/bind設定の例です。
+</p><pre class="programlisting">host ... ldap ldapurl="ldap://ldap.example.net/dc=example,dc=net?uid?sub"</pre><p><span class="original">
+    Some other software that supports authentication against LDAP uses the
+    same URL format, so it will be easier to share the configuration.
+</span>
+LDAPに対し認証をサポートする幾つかの他のソフトウェアは同じURLフォーマットを使用します。
+従って、設定をより簡易に共有することができます。
+   </p><div class="tip" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">ヒント</h3><p><span class="original">
+     Since LDAP often uses commas and spaces to separate the different
+     parts of a DN, it is often necessary to use double-quoted parameter
+     values when configuring LDAP options, as shown in the examples.
+</span>LDAPはDNの異なる構成要素を区別するため往々にしてコンマとスペースを使用します。
+例で示されたように、LDAPオプションを設定する場合、二重引用符で括られたパラメータ値を使用することが必須となることがしばしば必須となります。
+    </p></div></div><div class="sect2" id="auth-radius"><div class="titlepage"><div><div><h3 class="title">19.3.8. RADIUS認証</h3></div></div></div><span class="original">
+   &lt;title&gt;RADIUS Authentication&lt;/title&gt;
+</span><a id="idp75842208" class="indexterm"></a><p><span class="original">
+    This authentication method operates similarly to
+    &lt;literal&gt;password&lt;/literal&gt; except that it uses RADIUS
+    as the password verification method. RADIUS is used only to validate
+    the user name/password pairs. Therefore the user must already
+    exist in the database before RADIUS can be used for
+    authentication.
+</span>この認証方法は、RADIUSをパスワード検証として使用するという点を除いて<code class="literal">password</code>と似た動作をします。
+RADIUSはユーザ名/パスワードの組のみを検証するために使用されます。
+よってユーザはRADIUSが認証に使用される以前にデータベースにすでに存在していなければいけません。
+   </p><p><span class="original">
+    When using RADIUS authentication, an Access Request message will be sent
+    to the configured RADIUS server. This request will be of type
+    &lt;literal&gt;Authenticate Only&lt;/literal&gt;, and include parameters for
+    &lt;literal&gt;user name&lt;/&gt;, &lt;literal&gt;password&lt;/&gt; (encrypted) and
+    &lt;literal&gt;NAS Identifier&lt;/&gt;. The request will be encrypted using
+    a secret shared with the server. The RADIUS server will respond to
+    this server with either &lt;literal&gt;Access Accept&lt;/&gt; or
+    &lt;literal&gt;Access Reject&lt;/&gt;. There is no support for RADIUS accounting.
+</span>RADIUS認証を使用する場合に、設定されたRADIUSサーバにアクセスリクエストメッセージが送信されます。
+このリクエストは<code class="literal">Authenticate Only</code>の形式になり、<code class="literal">ユーザ名</code>, （暗号化された）<code class="literal">パスワード</code>、<code class="literal">NAS識別子</code>を含んでいます。
+リクエストはサーバと共有している秘密を用いて暗号化されます。
+RADIUSサーバは、このサーバに対して<code class="literal">Access Accept</code>もしくは<code class="literal">Access Reject</code>を返します。
+RADIUSアカウントのサポートはありません。
+   </p><p><span class="original">
+    The following configuration options are supported for RADIUS:
+</span>RADIUSのために次の設定オプションがサポートされています。
+     </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="literal">radiusserver</code></span></dt><dd><p><span class="original">
+         The name or IP address of the RADIUS server to connect to.
+         This parameter is required.
+</span>接続するRADIUSサーバの名称もしくはIPアドレス。このパラメータは必要です。
+        </p></dd><dt><span class="term"><code class="literal">radiussecret</code></span></dt><dd><p><span class="original">
+         The shared secret used when talking securely to the RADIUS
+         server. This must have exactly the same value on the PostgreSQL
+         and RADIUS servers. It is recommended that this be a string of
+         at least 16 characters. This parameter is required.
+</span>RADIUSサーバとのやり取りに使用される共有の秘密。これはPostgreSQLとRADIUSサーバにおいて
+厳密に同じ値にする必要があります。少なくとも16文字以上の文字列が推奨されます。このパラメータは必要です。
+         </p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">注記</h3><p><span class="original">
+          The encryption vector used will only be cryptographically
+          strong if &lt;productname&gt;PostgreSQL&lt;/&gt; is built with support for
+          &lt;productname&gt;OpenSSL&lt;/&gt;. In other cases, the transmission to the
+          RADIUS server should only be considered obfuscated, not secured, and
+          external security measures should be applied if necessary.
+</span>使用されている暗号化ベクターは<span class="productname">PostgreSQL</span>が<span class="productname">OpenSSL</span>をサポートするよう構築している場合にのみ暗号論的に強力です。
+他の場合にはRADIUSサーバへの伝送は難読化されているだけで、安全ではなく必要な場合は外部のセキュリティ方法を適用すべきです。
+         </p></div><p>
+        </p></dd><dt><span class="term"><code class="literal">radiusport</code></span></dt><dd><p><span class="original">
+         The port number on the RADIUS server to connect to. If no port
+         is specified, the default port &lt;literal&gt;1812&lt;/&gt; will be used.
+</span>接続するRADIUSサーバのポート番号。もしポート番号が指定されていない場合は、デフォルトポートである<code class="literal">1812</code>が使用されます。
+        </p></dd><dt><span class="term"><code class="literal">radiusidentifier</code></span></dt><dd><p><span class="original">
+         The string used as &lt;literal&gt;NAS Identifier&lt;/&gt; in the RADIUS
+         requests. This parameter can be used as a second parameter
+         identifying for example which database user the user is attempting
+         to authenticate as, which can be used for policy matching on
+         the RADIUS server. If no identifier is specified, the default
+         &lt;literal&gt;postgresql&lt;/&gt; will be used.
+</span>RADIUSリクエスト内で<code class="literal">NAS Identifier</code>として使用されている文字列。
+ユーザがどのデータベースユーザに対して認証しようとしているか、RADIUSサーバにおいてポリシーを一致させるために何が使用されるか、
+を識別するために、このパラメータは2番目のパラメータとして使用されます。
+もし識別子が指定されていない場合は、デフォルトの<code class="literal">postgresql</code>が使用されます。
+        </p></dd></dl></div><p>
+   </p></div><div class="sect2" id="auth-cert"><div class="titlepage"><div><div><h3 class="title">19.3.9. 証明書認証</h3></div></div></div><span class="original">
+   &lt;title&gt;Certificate Authentication&lt;/title&gt;
+</span><a id="idp75865936" class="indexterm"></a><p><span class="original">
+    This authentication method uses SSL client certificates to perform
+    authentication. It is therefore only available for SSL connections.
+    When using this authentication method, the server will require that
+    the client provide a valid certificate. No password prompt will be sent
+    to the client. The &lt;literal&gt;cn&lt;/literal&gt; (Common Name) attribute of the
+    certificate
+    will be compared to the requested database user name, and if they match
+    the login will be allowed.  User name mapping can be used to allow
+    &lt;literal&gt;cn&lt;/literal&gt; to be different from the database user name.
+</span>この認証方法は、認証のためにSSLクライアント証明書を使用します。
+よってこの方法は、SSL接続を使用します。
+この認証方法を使用する際は、サーバはクライアントが有効な証明書を提供することを要求します。
+パスワードのプロンプトはクライアントに送信されません。
+証明書の<code class="literal">cn</code>（Common Name）属性は、要求されたデータベースユーザ名と比較されます。
+もしそれらが一致した場合はログインが許可されます。ユーザ名マッピングは、<code class="literal">cn</code>がデータベースユーザ名と異なるものであることを許可するために使用されます。
+   </p><p><span class="original">
+    The following configuration options are supported for SSL certificate
+    authentication:
+</span>次の設定オプションはSSL証明書認証のためにサポートされています。
+    </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="literal">map</code></span></dt><dd><p><span class="original">
+        Allows for mapping between system and database user names. See
+        &lt;xref linkend="auth-username-maps"&gt; for details.
+</span>システムとデータベースユーザ名の間のマッピングを許可します。
+詳細は<a class="xref" href="auth-username-maps.html" title="19.2. ユーザ名マップ">19.2. ユーザ名マップ</a>を参照してください。
+       </p></dd></dl></div><p>
+   </p></div><div class="sect2" id="auth-pam"><div class="titlepage"><div><div><h3 class="title">19.3.10. PAM認証</h3></div></div></div><span class="original">
+   &lt;title&gt;PAM Authentication&lt;/title&gt;
+</span><a id="idp75874800" class="indexterm"></a><p><span class="original">
+    This authentication method operates similarly to
+    &lt;literal&gt;password&lt;/literal&gt; except that it uses PAM (Pluggable
+    Authentication Modules) as the authentication mechanism. The
+    default PAM service name is &lt;literal&gt;postgresql&lt;/literal&gt;.
+    PAM is used only to validate user name/password pairs.
+    Therefore the user must already exist in the database before PAM
+    can be used for authentication.  For more information about
+    PAM, please read the &lt;ulink url="http://www.kernel.org/pub/linux/libs/pam/"&gt;
+    &lt;productname&gt;Linux-PAM&lt;/&gt; Page&lt;/ulink&gt;.
+</span>この認証方式は認証機構としてPAM（Pluggable Authentication Modules）を使用することを除いて<em class="firstterm">password</em>のように動作します。
+デフォルトのPAMサービス名は<code class="literal">postgresql</code>です。
+PAMはユーザ名/パスワードの組を承認するためだけに使用されます。
+PAMについての詳細は<a class="ulink" href="http://www.kernel.org/pub/linux/libs/pam/" target="_top"><span class="productname">Linux-PAM</span>ページ</a>を読んでください。
+   </p><p><span class="original">
+    The following configuration options are supported for PAM:
+</span>次の設定オプションはPAMのためにサポートされています。
+    </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="literal">pamservice</code></span></dt><dd><p><span class="original">
+        PAM service name.
+</span>PAMサービス名。
+       </p></dd></dl></div><p>
+   </p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">注記</h3><p><span class="original">
+     If PAM is set up to read &lt;filename&gt;/etc/shadow&lt;/&gt;, authentication
+     will fail because the PostgreSQL server is started by a non-root
+     user.  However, this is not an issue when PAM is configured to use
+     LDAP or other authentication methods.
+</span>PAMが<code class="filename">/etc/shadow</code>を読み取るように設定されている場合は、PostgreSQLがルートユーザで起動されていないため、認証は失敗するでしょう。
+しかしPAMがLDAPや他の認証方法を使用するように設定されている場合は、これは問題ではありません。
+    </p></div></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="auth-username-maps.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="client-authentication.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="client-authentication-problems.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">19.2. ユーザ名マップ </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> 19.4. 認証における問題点</td></tr></table></div></body></html>
