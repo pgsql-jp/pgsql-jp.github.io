@@ -1,7 +1,7 @@
 ---
 layout: default
 ---
-## 日本語マニュアル
+## PostgreSQL日本語マニュアル
 
 [正式版](http://www.postgresql.jp/document/)
 
