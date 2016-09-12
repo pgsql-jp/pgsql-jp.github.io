@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>31.10. 制御関数</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="PostgreSQL 9.6rc1文書" /><link rel="up" href="libpq.html" title="第31章 libpq - C ライブラリ" /><link rel="prev" href="libpq-copy.html" title="31.9. COPYコマンド関連関数" /><link rel="next" href="libpq-misc.html" title="31.11. 雑多な関数" /><link rel="copyright" href="legalnotice.html" title="法的告知" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><td width="20%" align="left" colspan="2"></td><th width="60%" align="center"><a accesskey="h" href="index.html">PostgreSQL 9.6rc1文書</a></th><td width="20%" align="right"><div class="actions"><a class="issue" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 9.6rc1 libpq-control.html">誤訳等の報告</a></div></td></tr><tr><td width="10%" align="left" valign="top"><a accesskey="p" href="libpq-copy.html">前へ</a> </td><td width="10%" align="left" valign="top"><a accesskey="u" href="libpq.html">上へ</a></td><td width="60%" align="center">31.10. 制御関数</td><td width="20%" align="right" valign="top"> <a accesskey="n" href="libpq-misc.html">次へ</a></td></tr></table><hr /></div><div class="sect1" id="libpq-control"><div class="titlepage"><div><div><h2 class="title" style="clear: both">31.10. 制御関数</h2></div></div></div><span class="original">
+  &lt;title&gt;Control Functions&lt;/title&gt;
+</span><p><span class="original">
+   These functions control miscellaneous details of &lt;application&gt;libpq&lt;/&gt;'s
+   behavior.
+</span>これらの関数は<span class="application">libpq</span>の動作の各種詳細を制御します。
+  </p><div class="variablelist"><dl class="variablelist"><dt id="libpq-pqclientencoding"><span class="term">     <code class="function">PQclientEncoding</code>
+     <a id="idp83215856" class="indexterm"></a>
+    </span></dt><dd><p><span class="original">
+      Returns the client encoding.
+</span>クライアント符号化方式を返します。
+</p><pre class="synopsis">int PQclientEncoding(const PGconn *<em class="replaceable"><code>conn</code></em>);</pre><p>
+<span class="original">
+      Note that it returns the encoding ID, not a symbolic string
+      such as &lt;literal&gt;EUC_JP&lt;/literal&gt;. If unsuccessful, it returns -1.
+      To convert an encoding ID to an encoding name, you
+      can use:
+</span>
+これが<code class="literal">EUC_JP</code>などのシンボル文字列ではなく符号化方式IDを返すことに注意してください。
+成功しなかった場合には、-1が返ります。
+符号化方式IDを符号化方式名に変換するためには以下を使用してください。
+
+</p><pre class="synopsis">char *pg_encoding_to_char(int <em class="replaceable"><code>encoding_id</code></em>);</pre><p>
+     </p></dd><dt id="libpq-pqsetclientencoding"><span class="term">     <code class="function">PQsetClientEncoding</code>
+     <a id="idp83221904" class="indexterm"></a>
+    </span></dt><dd><p><span class="original">
+      Sets the client encoding.
+</span>クライアント符号化方式を設定します。
+</p><pre class="synopsis">int PQsetClientEncoding(PGconn *<em class="replaceable"><code>conn</code></em>, const char *<em class="replaceable"><code>encoding</code></em>);</pre><p>
+<span class="original">
+      &lt;replaceable&gt;conn&lt;/replaceable&gt; is a connection to the server,
+      and &lt;replaceable&gt;encoding&lt;/replaceable&gt; is the encoding you want to
+      use. If the function successfully sets the encoding, it returns 0,
+      otherwise -1. The current encoding for this connection can be
+      determined by using &lt;function&gt;PQclientEncoding&lt;/&gt;.
+</span>
+<em class="replaceable"><code>conn</code></em>はサーバへの接続、<em class="replaceable"><code>encoding</code></em>は使用したい符号化方式です。
+この関数は符号化方式の設定に成功すると、ゼロを返します。
+さもなくば-1を返します。
+この接続における現在の符号化方式は<code class="function">PQclientEncoding</code>を使用して決定することができます。
+     </p></dd><dt id="libpq-pqseterrorverbosity"><span class="term">     <code class="function">PQsetErrorVerbosity</code>
+     <a id="idp83228176" class="indexterm"></a>
+    </span></dt><dd><p><span class="original">
+      Determines the verbosity of messages returned by
+      &lt;function&gt;PQerrorMessage&lt;/&gt; and &lt;function&gt;PQresultErrorMessage&lt;/&gt;.
+</span><code class="function">PQerrorMessage</code>と<code class="function">PQresultErrorMessage</code>で返されるメッセージの冗長度を決定します。
+</p><pre class="synopsis">typedef enum
+{
+    PQERRORS_TERSE,
+    PQERRORS_DEFAULT,
+    PQERRORS_VERBOSE
+} PGVerbosity;
+
+PGVerbosity PQsetErrorVerbosity(PGconn *conn, PGVerbosity verbosity);</pre><p>
+<span class="original">
+      &lt;function&gt;PQsetErrorVerbosity&lt;/&gt; sets the verbosity mode, returning
+      the connection's previous setting.  In &lt;firstterm&gt;TERSE&lt;/&gt; mode,
+      returned messages include severity, primary text, and position only;
+      this will normally fit on a single line.  The default mode produces
+      messages that include the above plus any detail, hint, or context
+      fields (these might span multiple lines).  The &lt;firstterm&gt;VERBOSE&lt;/&gt;
+      mode includes all available fields.  Changing the verbosity does not
+      affect the messages available from already-existing
+      &lt;structname&gt;PGresult&lt;/&gt; objects, only subsequently-created ones.
+      (But see &lt;function&gt;PQresultVerboseErrorMessage&lt;/function&gt; if you
+      want to print a previous error with a different verbosity.)
+</span>
+<code class="function">PQsetErrorVerbosity</code>は冗長度モードを設定し、接続における以前の状態を返します。
+<em class="firstterm">TERSE</em>モードでは、返されるメッセージには深刻度、主テキスト、位置のみが含まれます。
+これは通常単一行に収まります。
+デフォルトモードでは、上に加え、詳細、ヒント、文脈フィールドが含まれるメッセージが生成されます。
+（これは複数行に跨るかもしれません。）
+<em class="firstterm">VERBOSE</em>モードでは、すべての利用可能なフィールドが含まれます。
+冗長度の変更は、既に存在する<code class="structname">PGresult</code>オブジェクト内から取り出せるメッセージには影響を与えません。
+その後に作成されたオブジェクトにのみ影響を与えます。 ★変更あり
+     </p></dd><dt id="libpq-pqseterrorcontextvisibility"><span class="term">     <code class="function">PQsetErrorContextVisibility</code>
+     <a id="idp83237008" class="indexterm"></a>
+    </span></dt><dd><p>      Determines the handling of <code class="literal">CONTEXT</code> fields in messages
+      returned by <code class="function">PQerrorMessage</code>
+      and <code class="function">PQresultErrorMessage</code>.
+</p><pre class="synopsis">typedef enum
+{
+    PQSHOW_CONTEXT_NEVER,
+    PQSHOW_CONTEXT_ERRORS,
+    PQSHOW_CONTEXT_ALWAYS
+} PGContextVisibility;
+
+PGContextVisibility PQsetErrorContextVisibility(PGconn *conn, PGContextVisibility show_context);</pre><p>
+
+      <code class="function">PQsetErrorContextVisibility</code> sets the context display mode,
+      returning the connection's previous setting.  This mode controls
+      whether the <code class="literal">CONTEXT</code> field is included in messages
+      (unless the verbosity setting is <em class="firstterm">TERSE</em>, in which
+      case <code class="literal">CONTEXT</code> is never shown).  The <em class="firstterm">NEVER</em> mode
+      never includes <code class="literal">CONTEXT</code>, while <em class="firstterm">ALWAYS</em> always
+      includes it if available.  In <em class="firstterm">ERRORS</em> mode (the
+      default), <code class="literal">CONTEXT</code> fields are included only for error
+      messages, not for notices and warnings.  Changing this mode does not
+      affect the messages available from
+      already-existing <code class="structname">PGresult</code> objects, only
+      subsequently-created ones.
+      (But see <code class="function">PQresultVerboseErrorMessage</code> if you
+      want to print a previous error with a different display mode.)
+     </p></dd><dt id="libpq-pqtrace"><span class="term">     <code class="function">PQtrace</code>
+     <a id="idp83248288" class="indexterm"></a>
+    </span></dt><dd><p><span class="original">
+      Enables  tracing of the client/server communication to a debugging file stream.
+</span>クライアント／サーバ間の通信トレースを有効にし、デバッグ用のファイルストリームに書き出します。
+</p><pre class="synopsis">void PQtrace(PGconn *conn, FILE *stream);</pre><p>
+     </p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">注記</h3><p><span class="original">
+       On Windows, if the &lt;application&gt;libpq&lt;/&gt; library and an application are
+       compiled with different flags, this function call will crash the
+       application because the internal representation of the &lt;literal&gt;FILE&lt;/&gt;
+       pointers differ.  Specifically, multithreaded/single-threaded,
+       release/debug, and static/dynamic flags should be the same for the
+       library and all applications using that library.
+</span>Windowsにおいて、<span class="application">libpq</span>ライブラリとアプリケーションを異なるフラグでコンパイルすると、この関数呼び出しで<code class="literal">FILE</code>ポインタの内部表現の違いによりアプリケーションはクラッシュするでしょう。
+特に、このライブラリを使用するアプリケーションでは、マルチスレッド/シングルスレッド、リリース/デバッグ、静的リンク/動的リンクに関して、ライブラリと同じフラグを使わなければなりません。
+      </p></div></dd><dt id="libpq-pquntrace"><span class="term">     <code class="function">PQuntrace</code>
+     <a id="idp83254976" class="indexterm"></a>
+    </span></dt><dd><p><span class="original">
+      Disables tracing started by &lt;function&gt;PQtrace&lt;/function&gt;.
+</span><code class="function">PQtrace</code>によって起動されたトレース処理を無効にします。
+</p><pre class="synopsis">void PQuntrace(PGconn *conn);</pre><p>
+     </p></dd></dl></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="libpq-copy.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="libpq.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="libpq-misc.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">31.9. <code class="command">COPY</code>コマンド関連関数 </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> 31.11. 雑多な関数</td></tr></table></div></body></html>

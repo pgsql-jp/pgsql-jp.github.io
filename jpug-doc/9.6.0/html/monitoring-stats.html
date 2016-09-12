@@ -1,0 +1,695 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>27.2. 統計情報コレクタ</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="PostgreSQL 9.6rc1文書" /><link rel="up" href="monitoring.html" title="第27章 データベース活動状況の監視" /><link rel="prev" href="monitoring-ps.html" title="27.1. 標準的なUnixツール" /><link rel="next" href="monitoring-locks.html" title="27.3. ロックの表示" /><link rel="copyright" href="legalnotice.html" title="法的告知" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><td width="20%" align="left" colspan="2"></td><th width="60%" align="center"><a accesskey="h" href="index.html">PostgreSQL 9.6rc1文書</a></th><td width="20%" align="right"><div class="actions"><a class="issue" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 9.6rc1 monitoring-stats.html">誤訳等の報告</a></div></td></tr><tr><td width="10%" align="left" valign="top"><a accesskey="p" href="monitoring-ps.html">前へ</a> </td><td width="10%" align="left" valign="top"><a accesskey="u" href="monitoring.html">上へ</a></td><td width="60%" align="center">27.2. 統計情報コレクタ</td><td width="20%" align="right" valign="top"> <a accesskey="n" href="monitoring-locks.html">次へ</a></td></tr></table><hr /></div><div class="sect1" id="monitoring-stats"><div class="titlepage"><div><div><h2 class="title" style="clear: both">27.2. 統計情報コレクタ</h2></div></div></div><span class="original">
+  &lt;title&gt;The Statistics Collector&lt;/title&gt;
+</span><a id="idp79780448" class="indexterm"></a><p><span class="original">
+   &lt;productname&gt;PostgreSQL&lt;/productname&gt;'s &lt;firstterm&gt;statistics collector&lt;/&gt;
+   is a subsystem that supports collection and reporting of information about
+   server activity.  Presently, the collector can count accesses to tables
+   and indexes in both disk-block and individual-row terms.  It also tracks
+   the total number of rows in each table, and information about vacuum and
+   analyze actions for each table.  It can also count calls to user-defined
+   functions and the total time spent in each one.
+</span><span class="productname">PostgreSQL</span>の<em class="firstterm">統計情報コレクタ</em>はサーバの活動状況に関する情報を収集し、報告するサブシステムです。
+現在、コレクタはテーブルとインデックスへのアクセスをディスクブロックおよび個々の行単位で数えることができます。
+またこれは、各テーブル内の総行数、および、各テーブルでのVACUUMやANALYZEの実施情報を追跡します。
+また、ユーザ定義関数の呼ばれた回数、それぞれの消費した総時間をカウントします。
+  </p><p><span class="original">
+   &lt;productname&gt;PostgreSQL&lt;/productname&gt; also supports reporting dynamic
+   information about exactly what is going on in the system right now, such as
+   the exact command currently being executed by other server processes, and
+   which other connections exist in the system.  This facility is independent
+   of the collector process.
+</span>また、<span class="productname">PostgreSQL</span>は他のサーバプロセスによって現在実行されている正確なコマンドなど現在システム内で起きていること、またシステム内にどんな他の接続が存在するかということについての動的情報を正確に報告する機能を持ちます。
+これはコレクタプロセスから独立している機能です。
+  </p><div class="sect2" id="monitoring-stats-setup"><div class="titlepage"><div><div><h3 class="title">27.2.1. 統計情報収集のための設定</h3></div></div></div><span class="original">
+  &lt;title&gt;Statistics Collection Configuration&lt;/title&gt;
+</span><p><span class="original">
+   Since collection of statistics adds some overhead to query execution,
+   the system can be configured to collect or not collect information.
+   This is controlled by configuration parameters that are normally set in
+   &lt;filename&gt;postgresql.conf&lt;/&gt;.  (See &lt;xref linkend="runtime-config"&gt; for
+   details about setting configuration parameters.)
+</span>統計情報の収集によって問い合わせの実行に少しオーバーヘッドが加わりますので、システムは情報を収集するようにもしないようにも設定することができます。
+これは通常は<code class="filename">postgresql.conf</code>内で設定される、設定パラメータによって制御されます
+（設定パラメータの設定についての詳細は<a class="xref" href="runtime-config.html" title="第18章 サーバの設定">18章<em>サーバの設定</em></a>を参照してください）。
+  </p><p><span class="original">
+   The parameter &lt;xref linkend="guc-track-activities"&gt; enables monitoring
+   of the current command being executed by any server process.
+</span><a class="xref" href="runtime-config-statistics.html#guc-track-activities">track_activities</a>パラメータにより、すべてのサーバプロセスで現在実行されているコマンドを監視することができます。
+  </p><p><span class="original">
+   The parameter &lt;xref linkend="guc-track-counts"&gt; controls whether
+   statistics are collected about table and index accesses.
+</span><a class="xref" href="runtime-config-statistics.html#guc-track-counts">track_counts</a>パラメータは、テーブルおよびインデックスアクセスに関する統計情報を収集するかどうか制御します。
+  </p><p><span class="original">
+   The parameter &lt;xref linkend="guc-track-functions"&gt; enables tracking of
+   usage of user-defined functions.
+</span><a class="xref" href="runtime-config-statistics.html#guc-track-functions">track_functions</a>パラメータは、ユーザ定義関数の使用状況を追跡するかどうかを指定できます。
+  </p><p><span class="original">
+   The parameter &lt;xref linkend="guc-track-io-timing"&gt; enables monitoring
+   of block read and write times.
+</span><a class="xref" href="runtime-config-statistics.html#guc-track-io-timing">track_io_timing</a>パラメータは、ブロック読み取りおよび書き込み回数の監視するかどうかを指定できます。
+  </p><p><span class="original">
+   Normally these parameters are set in &lt;filename&gt;postgresql.conf&lt;/&gt; so
+   that they apply to all server processes, but it is possible to turn
+   them on or off in individual sessions using the &lt;xref
+   linkend="sql-set"&gt; command. (To prevent
+   ordinary users from hiding their activity from the administrator,
+   only superusers are allowed to change these parameters with
+   &lt;command&gt;SET&lt;/&gt;.)
+</span>通常、これらの変数は全てのサーバプロセスに適用できるように<code class="filename">postgresql.conf</code>内で設定されます。
+しかし、<a class="xref" href="sql-set.html" title="SET"><span class="refentrytitle">SET</span></a>コマンドを使用して、個別のセッションで有効または無効にできます。
+（一般ユーザがその活動を管理者に隠すことを防止するために、スーパーユーザのみが<code class="command">SET</code>を使用してこれらのパラメータを変更できます。）
+  </p><p><span class="original">
+   The statistics collector transmits the collected information to other
+   &lt;productname&gt;PostgreSQL&lt;/productname&gt; processes through temporary files.
+   These files are stored in the directory named by the
+   &lt;xref linkend="guc-stats-temp-directory"&gt; parameter,
+   &lt;filename&gt;pg_stat_tmp&lt;/filename&gt; by default.
+   For better performance, &lt;varname&gt;stats_temp_directory&lt;/&gt; can be
+   pointed at a RAM-based file system, decreasing physical I/O requirements.
+   When the server shuts down cleanly, a permanent copy of the statistics
+   data is stored in the &lt;filename&gt;pg_stat&lt;/filename&gt; subdirectory, so that
+   statistics can be retained across server restarts.  When recovery is
+   performed at server start (e.g. after immediate shutdown, server crash,
+   and point-in-time recovery), all statistics counters are reset.
+</span>統計情報コレクタは収集した情報を他の<span class="productname">PostgreSQL</span>プロセスに一時ファイルを介して送信します。
+これらのファイルは<a class="xref" href="runtime-config-statistics.html#guc-stats-temp-directory">stats_temp_directory</a>で指名されたディレクトリ、デフォルトは<code class="filename">pg_stat_tmp</code>内に格納されます。
+性能を向上させるために、<code class="varname">stats_temp_directory</code>をRAMベースのファイルシステムを指し示すようにして、物理的なI/O要求を減らすことができます。
+サーバが正しくシャットダウンした際は、統計情報がサーバの再起動を跨がって保持されるように、統計情報データの永続的なコピーが<code class="filename">pg_stat</code>サブディレクトリに格納されます。
+サーバ起動時にリカバリが実施される場合(例えば、即時シャットダウンやサーバクラッシュ、ポイントインタイムリカバリ)、統計カウンタをすべてリセットします。
+  </p></div><div class="sect2" id="monitoring-stats-views"><div class="titlepage"><div><div><h3 class="title">27.2.2. 統計情報の表示</h3></div></div></div><span class="original">
+  &lt;title&gt;Viewing Statistics&lt;/title&gt;
+</span><p><span class="original">
+   Several predefined views, listed in &lt;xref
+   linkend="monitoring-stats-dynamic-views-table"&gt;, are available to show
+   the current state of the system. There are also several other
+   views, listed in &lt;xref
+   linkend="monitoring-stats-views-table"&gt;, available to show the results
+   of statistics collection.  Alternatively, one can
+   build custom views using the underlying statistics functions, as discussed
+   in &lt;xref linkend="monitoring-stats-functions"&gt;.
+</span>システムの現在の状態を表示するために、いくつかの定義済みのビューがあり、<a class="xref" href="monitoring-stats.html#monitoring-stats-dynamic-views-table" title="表27.1 動的統計情報ビュー">表27.1「動的統計情報ビュー」</a>に一覧されています。
+また、統計情報の収集結果を表示するために、他にもいくつかのビューがあり、<a class="xref" href="monitoring-stats.html#monitoring-stats-views-table" title="表27.2 収集済み統計情報ビュー">表27.2「収集済み統計情報ビュー」</a>に一覧されています。
+他にも、<a class="xref" href="monitoring-stats.html#monitoring-stats-functions" title="27.2.3. 統計情報関数">27.2.3. 統計情報関数</a>で説明する、基礎的な統計情報関数を使用した独自のビューを構築することもできます。
+  </p><p><span class="original">
+   When using the statistics to monitor collected data, it is important
+   to realize that the information does not update instantaneously.
+   Each individual server process transmits new statistical counts to
+   the collector just before going idle; so a query or transaction still in
+   progress does not affect the displayed totals.  Also, the collector itself
+   emits a new report at most once per &lt;varname&gt;PGSTAT_STAT_INTERVAL&lt;/varname&gt;
+   milliseconds (500 ms unless altered while building the server).  So the
+   displayed information lags behind actual activity.  However, current-query
+   information collected by &lt;varname&gt;track_activities&lt;/varname&gt; is
+   always up-to-date.
+</span>この統計情報を使用して、収集されるデータを監視する場合、この情報は即座に更新されないことを認識することが重要です。
+個別のサーバプロセスは、待機状態になる直前に、新しい統計情報に関する数をコレクタに送信します。
+ですので、実行中の問い合わせやトランザクションは表示上の総和には影響を与えません。
+また、コレクタ自体もおよそ<code class="varname">PGSTAT_STAT_INTERVAL</code>（サーバ構築時に変更しない限り500 ms）ミリ秒に一度新しい報告を出力します。
+ですので、表示上の情報は実際の活動から遅れて表示されます。
+しかし、<code class="varname">track_activities</code>で収集される現在の問い合わせの情報は常に最新です。
+  </p><p><span class="original">
+   Another important point is that when a server process is asked to display
+   any of these statistics, it first fetches the most recent report emitted by
+   the collector process and then continues to use this snapshot for all
+   statistical views and functions until the end of its current transaction.
+   So the statistics will show static information as long as you continue the
+   current transaction.  Similarly, information about the current queries of
+   all sessions is collected when any such information is first requested
+   within a transaction, and the same information will be displayed throughout
+   the transaction.
+   This is a feature, not a bug, because it allows you to perform several
+   queries on the statistics and correlate the results without worrying that
+   the numbers are changing underneath you.  But if you want to see new
+   results with each query, be sure to do the queries outside any transaction
+   block.  Alternatively, you can invoke
+   &lt;function&gt;pg_stat_clear_snapshot&lt;/function&gt;(), which will discard the
+   current transaction's statistics snapshot (if any).  The next use of
+   statistical information will cause a new snapshot to be fetched.
+</span>この他の重要なポイントは、いつサーバプロセスが統計情報を表示するように尋ねられるかです。
+サーバプロセスは、まずコレクタによって発行された最も最近の報告を取り出します。
+そして、現在のトランザクションが終わるまで、全ての統計情報ビューと関数においてこのスナップショットを使用し続けます。
+ですから、現在のトランザクションを続けている間、統計情報は一定の情報を示します。
+同様に、全セッションの現在の問い合わせに関する情報も、そうした情報がトランザクションで最初に要求された時に収集され、そのトランザクションの間同じ情報が表示されます。
+これはバグではなく、特徴です。
+なぜなら、これにより、知らない間に値が変更することを考慮することなく、統計情報に対して複数の問い合わせを実行し、その結果を相関することができるからです。
+しかし、各問い合わせで新しい結果を取り出したい場合は、確実にトランザクションブロックの外側でその問い合わせを行ってください。
+他にも<code class="function">pg_stat_clear_snapshot</code>()を呼び出すこともできます。
+これは現在のトランザクションの統計情報スナップショットを（もしあれば）破棄します。
+次に統計情報を使用する場合に新しいスナップショットを取り出すことになります。
+  </p><p><span class="original">
+   A transaction can also see its own statistics (as yet untransmitted to the
+   collector) in the views &lt;structname&gt;pg_stat_xact_all_tables&lt;/&gt;,
+   &lt;structname&gt;pg_stat_xact_sys_tables&lt;/&gt;,
+   &lt;structname&gt;pg_stat_xact_user_tables&lt;/&gt;, and
+   &lt;structname&gt;pg_stat_xact_user_functions&lt;/&gt;.  These numbers do not act as
+   stated above; instead they update continuously throughout the transaction.
+</span>トランザクションからは、<code class="structname">pg_stat_xact_all_tables</code>、<code class="structname">pg_stat_xact_sys_tables</code>、<code class="structname">pg_stat_xact_user_tables</code>、<code class="structname">pg_stat_xact_user_functions</code>、およびこれらのビューの元となっている関数を通じて、自身の統計情報(まだコレクタに送られていない)も参照することができます。
+   これらの数値はトランザクション中に継続的に更新されていくため上記の様な(静的な情報を示す)振る舞いとはなりません。
+  </p><div class="table" id="monitoring-stats-dynamic-views-table"><p class="title"><strong>表27.1 動的統計情報ビュー</strong></p><div class="table-contents"><span class="original">
+   &lt;title&gt;Dynamic Statistics Views&lt;/title&gt;
+</span><table summary="動的統計情報ビュー" border="1"><colgroup><col /><col /></colgroup><thead><tr><th>ビュー名</th><th>説明</th></tr></thead><tbody><tr><td>       <code class="structname">pg_stat_activity</code>
+       <a id="idp79824928" class="indexterm"></a>
+      </td><td><span class="original">
+       One row per server process, showing information related to
+       the current activity of that process, such as state and current query.
+       See &lt;xref linkend="pg-stat-activity-view"&gt; for details.
+</span>サーバ当たり１行の形式で、状態や現在の問い合わせ等のプロセスの現在の活動状況に関連した情報を表示します。
+詳細については<a class="xref" href="monitoring-stats.html#pg-stat-activity-view" title="表27.3 pg_stat_activityビュー">pg_stat_activity</a>を参照してください。
+      </td></tr><tr><td><code class="structname">pg_stat_replication</code><a id="idp79827840" class="indexterm"></a></td><td>WAL送信プロセス毎に１行の形式で、送信サーバが接続したスタンバイサーバへのレプリケーションに関する統計情報を表示します。
+詳細については<a class="xref" href="monitoring-stats.html#pg-stat-replication-view" title="表27.5 pg_stat_replicationビュー">pg_stat_replication</a>を参照して下さい。
+      </td></tr><tr><td><code class="structname">pg_stat_wal_receiver</code><a id="idp79830944" class="indexterm"></a></td><td>Only one row, showing statistics about the WAL receiver from
+       that receiver's connected server.
+       See <a class="xref" href="monitoring-stats.html#pg-stat-wal-receiver-view" title="表27.6 pg_stat_wal_receiver View">pg_stat_wal_receiver</a> for details.
+      </td></tr><tr><td><code class="structname">pg_stat_ssl</code><a id="idp79833488" class="indexterm"></a></td><td>接続（通常およびレプリケーション）あたり1行の形式で、接続に使われるSSLの情報を表示します。
+詳しくは<a class="xref" href="monitoring-stats.html#pg-stat-ssl-view" title="表27.7 pg_stat_sslビュー">pg_stat_ssl</a>を参照して下さい。
+      </td></tr></tbody></table></div></div><br class="table-break" /><div class="table" id="monitoring-stats-views-table"><p class="title"><strong>表27.2 収集済み統計情報ビュー</strong></p><div class="table-contents"><span class="original">
+   &lt;title&gt;Collected Statistics Views&lt;/title&gt;
+</span><table summary="収集済み統計情報ビュー" border="1"><colgroup><col /><col /></colgroup><thead><tr><th>ビュー名</th><th>説明</th></tr></thead><tbody><tr><td><code class="structname">pg_stat_archiver</code><a id="idp79838944" class="indexterm"></a></td><td>WALアーカイバプロセスの活動状況に関する統計情報を１行のみで表示します
+詳細については<a class="xref" href="monitoring-stats.html#pg-stat-archiver-view" title="表27.8 pg_stat_archiverビュー">pg_stat_archiver</a>を参照してください。
+      </td></tr><tr><td><code class="structname">pg_stat_bgwriter</code><a id="idp79841808" class="indexterm"></a></td><td>バックグラウンドライタプロセスの活動状況に関する統計情報を１行のみで表示します。
+詳細については<a class="xref" href="monitoring-stats.html#pg-stat-bgwriter-view" title="表27.9 pg_stat_bgwriterビュー">pg_stat_bgwriter</a>を参照してください。
+     </td></tr><tr><td><code class="structname">pg_stat_database</code><a id="idp79844576" class="indexterm"></a></td><td>データベース当たり１行の形で、データベース全体の情報を表示します。
+詳細については<a class="xref" href="monitoring-stats.html#pg-stat-database-view" title="表27.10 pg_stat_databaseビュー">pg_stat_database</a>を参照してください。
+      </td></tr><tr><td><code class="structname">pg_stat_database_conflicts</code><a id="idp79847392" class="indexterm"></a></td><td><span class="original">
+       One row per database, showing database-wide statistics about
+       query cancels due to conflict with recovery on standby servers.
+       See &lt;xref linkend="pg-stat-database-conflicts-view"&gt; for details.
+</span>データベース毎に１行の形式で、スタンバイサーバにおける復旧との競合のためにキャンセルされた問い合わせについてのデータベース全体の統計情報を表示します。
+詳細については<a class="xref" href="monitoring-stats.html#pg-stat-database-conflicts-view" title="表27.11 pg_stat_database_conflictsビュー">pg_stat_database_conflicts</a>を参照して下さい。
+      </td></tr><tr><td><code class="structname">pg_stat_all_tables</code><a id="idp79850368" class="indexterm"></a></td><td><span class="original">
+       One row for each table in the current database, showing statistics
+       about accesses to that specific table.
+       See &lt;xref linkend="pg-stat-all-tables-view"&gt; for details.
+</span>現在のデータベースの各テーブルごとに１行の形で、特定のテーブルへのアクセスに関する統計情報を示します。
+詳細については<a class="xref" href="monitoring-stats.html#pg-stat-all-tables-view" title="表27.12 pg_stat_all_tablesビュー">pg_stat_all_tables</a>を参照してください。
+      </td></tr><tr><td><code class="structname">pg_stat_sys_tables</code><a id="idp79853264" class="indexterm"></a></td><td>システムテーブルのみが表示される点を除き、<code class="structname">pg_stat_all_tables</code>と同じです。</td></tr><tr><td><code class="structname">pg_stat_user_tables</code><a id="idp79855456" class="indexterm"></a></td><td>ユーザテーブルのみが表示される点を除き、<code class="structname">pg_stat_all_tables</code>と同じです。</td></tr><tr><td><code class="structname">pg_stat_xact_all_tables</code><a id="idp79857728" class="indexterm"></a></td><td><code class="structname">pg_stat_all_tables</code>と似ていますが、現在のトランザクションにて実施された処理結果をカウントします。(数値が見える時点では、これらの数値は<code class="structname">pg_stat_all_tables</code>と関連するビューに含まれて<span class="emphasis"><em>いません</em></span>。)
+このビューでは、有効行数、無効行数、およびバキュームやアナライズの活動は表示しません。
+     </td></tr><tr><td><code class="structname">pg_stat_xact_sys_tables</code><a id="idp79861248" class="indexterm"></a></td><td>      システムテーブルのみが表示される点を除き、<code class="structname">pg_stat_xact_all_tables</code>と同じです。
+      </td></tr><tr><td><code class="structname">pg_stat_xact_user_tables</code><a id="idp79863664" class="indexterm"></a></td><td>      ユーザテーブルのみが表示される点を除き、<code class="structname">pg_stat_xact_all_tables</code>と同じです。
+      </td></tr><tr><td><code class="structname">pg_stat_all_indexes</code><a id="idp79866064" class="indexterm"></a></td><td><span class="original">
+       One row for each index in the current database, showing statistics
+       about accesses to that specific index.
+       See &lt;xref linkend="pg-stat-all-indexes-view"&gt; for details.
+</span>現在のデータベースのインデックスごとに１行の形で、特定のインデックスへのアクセスに関する統計情報を示します。
+詳細については<a class="xref" href="monitoring-stats.html#pg-stat-all-indexes-view" title="表27.13 pg_stat_all_indexesビュー">pg_stat_all_indexes</a>を参照してください。
+      </td></tr><tr><td><code class="structname">pg_stat_sys_indexes</code><a id="idp79869008" class="indexterm"></a></td><td>システムテーブルのインデックスのみが表示される点を除き、<code class="structname">pg_stat_all_indexes</code>と同じです。</td></tr><tr><td><code class="structname">pg_stat_user_indexes</code><a id="idp79871328" class="indexterm"></a></td><td>ユーザテーブルのインデックスのみが表示される点を除き、<code class="structname">pg_stat_all_indexes</code>と同じです。</td></tr><tr><td><code class="structname">pg_statio_all_tables</code><a id="idp79873648" class="indexterm"></a></td><td><span class="original">
+       One row for each table in the current database, showing statistics
+       about I/O on that specific table.
+       See &lt;xref linkend="pg-statio-all-tables-view"&gt; for details.
+</span>現在のデータベース内のテーブルごとに１行の形で、特定のテーブルに対するI/Oに関する統計情報を示します。
+詳細については<a class="xref" href="monitoring-stats.html#pg-statio-all-tables-view" title="表27.14 pg_statio_all_tablesビュー">pg_statio_all_tables</a>を参照してください。
+      </td></tr><tr><td><code class="structname">pg_statio_sys_tables</code><a id="idp79876496" class="indexterm"></a></td><td>システムテーブルのみが表示される点を除き、<code class="structname">pg_statio_all_tables</code>と同じです。</td></tr><tr><td><code class="structname">pg_statio_user_tables</code><a id="idp79878768" class="indexterm"></a></td><td>ユーザテーブルのみが表示される点を除き、<code class="structname">pg_statio_all_tables</code>と同じです。</td></tr><tr><td><code class="structname">pg_statio_all_indexes</code><a id="idp79881040" class="indexterm"></a></td><td><span class="original">
+       One row for each index in the current database,
+       showing statistics about I/O on that specific index.
+       See &lt;xref linkend="pg-statio-all-indexes-view"&gt; for details.
+</span>現在のデータベース内のインデックスごとに１行の形で、特定のインデックスに対するI/Oに関する統計情報を示します。
+詳細については<a class="xref" href="monitoring-stats.html#pg-statio-all-indexes-view" title="表27.15 pg_statio_all_indexesビュー">pg_statio_all_indexes</a>を示します。
+      </td></tr><tr><td><code class="structname">pg_statio_sys_indexes</code><a id="idp79883920" class="indexterm"></a></td><td>システムテーブルのインデックスのみが表示される点を除き、<code class="structname">pg_statio_all_indexes</code> と同じです。</td></tr><tr><td><code class="structname">pg_statio_user_indexes</code><a id="idp79886256" class="indexterm"></a></td><td>ユーザテーブルのインデックスのみが表示される点を除き、<code class="structname">pg_statio_all_indexes</code>と同じです。</td></tr><tr><td><code class="structname">pg_statio_all_sequences</code><a id="idp79888576" class="indexterm"></a></td><td><span class="original">
+       One row for each sequence in the current database,
+       showing statistics about I/O on that specific sequence.
+       See &lt;xref linkend="pg-statio-all-sequences-view"&gt; for details.
+</span>現在のデータベース内のシーケンスごとに１行の形で、特定のシーケンスに対するI/Oに関する統計情報を示します。
+詳細については<a class="xref" href="monitoring-stats.html#pg-statio-all-sequences-view" title="表27.16 pg_statio_all_sequencesビュー">pg_statio_all_sequences</a>を参照してください。
+     </td></tr><tr><td><code class="structname">pg_statio_sys_sequences</code><a id="idp79891504" class="indexterm"></a></td><td>システムシーケンスのみが表示される点を除き、<code class="structname">pg_statio_all_sequences</code>と同じです
+（現時点では、システムシーケンスは定義されていませんので、このビューは常に空です）。</td></tr><tr><td><code class="structname">pg_statio_user_sequences</code><a id="idp79894032" class="indexterm"></a></td><td>ユーザシーケンスのみが表示される点を除き、<code class="structname">pg_statio_all_sequences</code>と同じです。</td></tr><tr><td><code class="structname">pg_stat_user_functions</code><a id="idp79896320" class="indexterm"></a></td><td><span class="original">
+       One row for each tracked function, showing statistics
+       about executions of that function. See
+       &lt;xref linkend="pg-stat-user-functions-view"&gt; for details.
+</span>追跡された関数ごとに１行の形で、関数の実行に関する統計情報を示します。
+詳細については<a class="xref" href="monitoring-stats.html#pg-stat-user-functions-view" title="表27.17 pg_stat_user_functionsビュー">pg_stat_user_functions</a>を参照してください。
+      </td></tr><tr><td><code class="structname">pg_stat_xact_user_functions</code><a id="idp79899136" class="indexterm"></a></td><td>      <code class="structname">pg_stat_user_functions</code>と似ていますが、現在のトランザクション中に呼び出されたものだけをカウントします。
+      (数値が見える時点では、これらの数値は<code class="structname">pg_stat_user_functions</code>に含まれて<span class="emphasis"><em>いません</em></span>。)
+      </td></tr><tr><td><code class="structname">pg_stat_progress_vacuum</code><a id="idp79902528" class="indexterm"></a></td><td>One row for each backend (including autovacuum worker processes) running
+      <code class="command">VACUUM</code>, showing current progress.
+      See <a class="xref" href="progress-reporting.html#vacuum-progress-reporting" title="27.4.1. VACUUM Progress Reporting">27.4.1. VACUUM Progress Reporting</a>.</td></tr></tbody></table></div></div><br class="table-break" /><p><span class="original">
+   The per-index statistics are particularly useful to determine which
+   indexes are being used and how effective they are.
+</span>インデックス単位の統計情報は、どのインデックスが使用され、どの程度効果があるのかを評価する際に、特に有用です。
+  </p><p><span class="original">
+   The &lt;structname&gt;pg_statio_&lt;/&gt; views are primarily useful to
+   determine the effectiveness of the buffer cache.  When the number
+   of actual disk reads is much smaller than the number of buffer
+   hits, then the cache is satisfying most read requests without
+   invoking a kernel call. However, these statistics do not give the
+   entire story: due to the way in which &lt;productname&gt;PostgreSQL&lt;/&gt;
+   handles disk I/O, data that is not in the
+   &lt;productname&gt;PostgreSQL&lt;/&gt; buffer cache might still reside in the
+   kernel's I/O cache, and might therefore still be fetched without
+   requiring a physical read. Users interested in obtaining more
+   detailed information on &lt;productname&gt;PostgreSQL&lt;/&gt; I/O behavior are
+   advised to use the &lt;productname&gt;PostgreSQL&lt;/&gt; statistics collector
+   in combination with operating system utilities that allow insight
+   into the kernel's handling of I/O.
+</span><code class="structname">pg_statio_</code>ビューは主に、バッファキャッシュの効率を評価する際に有用です。
+実ディスク読み取りの数がバッファヒットの数よりもかなり少ないのであれば、そのキャッシュはカーネル呼び出しを行うことなく、ほとんどの読み取り要求を満足させています。
+しかし、<span class="productname">PostgreSQL</span>バッファキャッシュに存在しないデータはカーネルのI/Oキャッシュにある可能性があり、そのため、物理的な読み取りを行うことなく取り出される可能性があるという<span class="productname">PostgreSQL</span>のディスクI/Oの取り扱いのため、これらの統計情報は、完全な論拠を提供しません。
+<span class="productname">PostgreSQL</span>のI/O動作に関するより詳細な情報を入手したいのであれば、<span class="productname">PostgreSQL</span>統計情報コレクタとカーネルのI/Oの取り扱いの監視を行うオペレーティングシステムユーティリティを組み合わせることを勧めます。
+  </p><div class="table" id="pg-stat-activity-view"><p class="title"><strong>表27.3 <code class="structname">pg_stat_activity</code>ビュー</strong></p><div class="table-contents"><span class="original">
+   &lt;title&gt;&lt;structname&gt;pg_stat_activity&lt;/structname&gt; View&lt;/title&gt;
+</span><table summary="pg_stat_activityビュー" border="1"><colgroup><col /><col /><col /></colgroup><thead><tr><th>列</th><th>型</th><th>説明</th></tr></thead><tbody><tr><td><code class="structfield">datid</code></td><td><code class="type">oid</code></td><td>バックエンドが接続するデータベースのOIDです。
+     </td></tr><tr><td><code class="structfield">datname</code></td><td><code class="type">name</code></td><td>バックエンドが接続するデータベースの名前です。
+     </td></tr><tr><td><code class="structfield">pid</code></td><td><code class="type">integer</code></td><td>バックエンドのプロセスIDです。
+     </td></tr><tr><td><code class="structfield">usesysid</code></td><td><code class="type">oid</code></td><td>バックエンドにログインしたユーザの識別子です。
+     </td></tr><tr><td><code class="structfield">usename</code></td><td><code class="type">name</code></td><td>バックエンドに接続したユーザの名前です。</td></tr><tr><td><code class="structfield">application_name</code></td><td><code class="type">text</code></td><td>バックエンドに接続したアプリケーションの名前です。
+     </td></tr><tr><td><code class="structfield">client_addr</code></td><td><code class="type">inet</code></td><td>バックエンドに接続したクライアントのIPアドレスです。
+このフィールドがNULLである場合、これはクライアントがサーバマシン上のUnixソケット経由で接続されたか、自動バキュームなど内部処理であることを示します。
+     </td></tr><tr><td><code class="structfield">client_hostname</code></td><td><code class="type">text</code></td><td><span class="original">
+     &lt;entry&gt;Host name of the connected client, as reported by a
+      reverse DNS lookup of &lt;structfield&gt;client_addr&lt;/&gt;. This field will
+      only be non-null for IP connections, and only when &lt;xref
+      linkend="guc-log-hostname"&gt; is enabled.
+</span><code class="structfield">client_addr</code>の逆引き検索により報告された、接続クライアントのホスト名です。
+IP接続、かつ<a class="xref" href="runtime-config-logging.html#guc-log-hostname">log_hostname</a>が有効である場合にのみこのフィールドは非NULLになります。
+     </td></tr><tr><td><code class="structfield">client_port</code></td><td><code class="type">integer</code></td><td>クライアントがバックエンドとの通信に使用するTCPポート、もしUnixソケットを使用する場合は<code class="literal">-1</code>です。
+     </td></tr><tr><td><code class="structfield">backend_start</code></td><td><code class="type">timestamp with time zone</code></td><td>プロセスが開始、つまりクライアントがサーバに接続した時刻です。
+     </td></tr><tr><td><code class="structfield">xact_start</code></td><td><code class="type">timestamp with time zone</code></td><td>プロセスの現在のトランザクションが開始した時刻です。
+活動中のトランザクションがない場合はNULLです。
+現在の問い合わせがトランザクションの先頭である場合、この列は<code class="structfield">query_start</code>列と同じです。
+     </td></tr><tr><td><code class="structfield">query_start</code></td><td><code class="type">timestamp with time zone</code></td><td>現在有効な問い合わせが開始した時刻です。
+もし<code class="structfield">state</code>が<code class="literal">active</code>でない場合は直前の問い合わせが開始した時刻です。
+     </td></tr><tr><td><code class="structfield">state_change</code></td><td><code class="type">timestamp with time zone</code></td><td><code class="structfield">state</code>の最終変更時刻です。</td></tr><tr><td><code class="structfield">wait_event_type</code></td><td><code class="type">text</code></td><td>The type of event for which the backend is waiting, if any;
+       otherwise NULL. Possible values are:
+       <div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>          <code class="literal">LWLockNamed</code>: The backend is waiting for a specific named
+          lightweight lock.  Each such lock protects a particular data
+          structure in shared memory.  <code class="literal">wait_event</code> will contain
+          the name of the lightweight lock.
+         </p></li><li class="listitem"><p>          <code class="literal">LWLockTranche</code>: The backend is waiting for one of a
+          group of related lightweight locks.  All locks in the group perform
+          a similar function; <code class="literal">wait_event</code> will identify the general
+          purpose of locks in that group.
+         </p></li><li class="listitem"><p>          <code class="literal">Lock</code>: The backend is waiting for a heavyweight lock.
+          Heavyweight locks, also known as lock manager locks or simply locks,
+          primarily protect SQL-visible objects such as tables.  However,
+          they are also used to ensure mutual exclusion for certain internal
+          operations such as relation extension.  <code class="literal">wait_event</code> will
+          identify the type of lock awaited.
+         </p></li><li class="listitem"><p>          <code class="literal">BufferPin</code>: The server process is waiting to access to
+          a data buffer during a period when no other process can be
+          examining that buffer.  Buffer pin waits can be protracted if
+          another process holds an open cursor which last read data from the
+          buffer in question.
+         </p></li></ul></div>
+      </td></tr><tr><td><code class="structfield">wait_event</code></td><td><code class="type">text</code></td><td>Wait event name if backend is currently waiting, otherwise NULL.
+     See <a class="xref" href="monitoring-stats.html#wait-event-table" title="表27.4 wait_event Description">表27.4「<code class="structname">wait_event</code> Description」</a> for details.
+     </td></tr><tr><td><code class="structfield">state</code></td><td><code class="type">text</code></td><td>現在のバックエンドの総体的な状態です。
+以下のいずれかの値を取ることができます。
+       <div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p><span class="original">
+           &lt;literal&gt;active&lt;/&gt;: The backend is executing a query.
+</span>           <code class="literal">active</code>: バックエンドは問い合わせを実行中です。
+          </p></li><li class="listitem"><p><span class="original">
+           &lt;literal&gt;idle&lt;/&gt;: The backend is waiting for a new client command.
+</span>           <code class="literal">idle</code>: バックエンドは新しいクライアントからのコマンドを待機しています。
+          </p></li><li class="listitem"><p><span class="original">
+           &lt;literal&gt;idle in transaction&lt;/&gt;: The backend is in a transaction,
+           but is not currently executing a query.
+</span>           <code class="literal">idle in transaction</code>: バックエンドはトランザクションの内部にいますが、現在実行中の問い合わせがありません。
+          </p></li><li class="listitem"><p><span class="original">
+           &lt;literal&gt;idle in transaction (aborted)&lt;/&gt;: This state is similar to
+           &lt;literal&gt;idle in transaction&lt;/&gt;, except one of the statements in
+           the transaction caused an error.
+</span>           <code class="literal">idle in transaction (aborted)</code>: この状態は<code class="literal">idle in transaction</code>と似ていますが、トランザクション内のある文がエラーになっている点が異なります。
+          </p></li><li class="listitem"><p><span class="original">
+           &lt;literal&gt;fastpath function call&lt;/&gt;: The backend is executing a
+           fast-path function.
+</span>           <code class="literal">fastpath function call</code>: バックエンドは近道関数を実行中です。
+          </p></li><li class="listitem"><p><span class="original">
+           &lt;literal&gt;disabled&lt;/&gt;: This state is reported if &lt;xref
+           linkend="guc-track-activities"&gt; is disabled in this backend.
+</span>           <code class="literal">disabled</code>: この状態は、このバックエンドで<a class="xref" href="runtime-config-statistics.html#guc-track-activities">track_activities</a>が無効である場合に報告されます。
+          </p></li></ul></div>
+     </td></tr><tr><td><code class="structfield">backend_xid</code></td><td><code class="type">xid</code></td><td>もしあれば、このバックエンドの最上位のトランザクション識別子。
+     </td></tr><tr><td><code class="structfield">backend_xmin</code></td><td><code class="type">xid</code></td><td>現在のバックエンドの<code class="literal">xmin</code>。
+     </td></tr><tr><td><code class="structfield">query</code></td><td><code class="type">text</code></td><td>バックエンドの最も最近の問い合わせテキストです。
+<code class="structfield">state</code>が<code class="literal">active</code>の場合、現在実行中の問い合わせを意味します。
+その他のすべての状態では、実行済みの最後の問い合わせを示します。
+     </td></tr></tbody></table></div></div><br class="table-break" /><p><span class="original">
+   The &lt;structname&gt;pg_stat_activity&lt;/structname&gt; view will have one row
+   per server process, showing information related to
+   the current activity of that process.
+</span><code class="structname">pg_stat_activity</code>はサーバプロセス毎に、そのプロセスの現在の活動に関連する情報を表示する１行を持ちます。
+  </p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">注記</h3><p><span class="original">
+    The &lt;structfield&gt;wait_event&lt;/&gt; and &lt;structfield&gt;state&lt;/&gt; columns are
+    independent.  If a backend is in the &lt;literal&gt;active&lt;/&gt; state,
+    it may or may not be &lt;literal&gt;waiting&lt;/&gt; on some event.  If the state
+    is &lt;literal&gt;active&lt;/&gt; and &lt;structfield&gt;wait_event&lt;/&gt; is non-null, it
+    means that a query is being executed, but is being blocked somewhere
+    in the system.
+</span><code class="structfield">waiting</code>と<code class="structfield">state</code>列は独立しています。
+バックエンドが<code class="literal">active</code>状態である場合、<code class="literal">waiting</code>かもしれませんし、そうでないかもしれません。
+状態が<code class="literal">active</code>であり、<code class="structfield">waiting</code>が真である場合、問い合わせは実行中ですが、システム内の何らかのロックによりブロックされていることを意味します。 ★変更あり？
+   </p></div><div class="table" id="wait-event-table"><p class="title"><strong>表27.4 <code class="structname">wait_event</code> Description</strong></p><div class="table-contents"><table summary="wait_event Description" border="1"><colgroup><col /><col /><col /></colgroup><thead><tr><th>Wait Event Type</th><th>Wait Event Name</th><th>Description</th></tr></thead><tbody><tr><td rowspan="42"><code class="literal">LWLockNamed</code></td><td><code class="literal">ShmemIndexLock</code></td><td>Waiting to find or allocate space in shared memory.</td></tr><tr><td><code class="literal">OidGenLock</code></td><td>Waiting to allocate or assign an OID.</td></tr><tr><td><code class="literal">XidGenLock</code></td><td>Waiting to allocate or assign a transaction id.</td></tr><tr><td><code class="literal">ProcArrayLock</code></td><td>Waiting to get a snapshot or clearing a transaction id at
+         transaction end.</td></tr><tr><td><code class="literal">SInvalReadLock</code></td><td>Waiting to retrieve or remove messages from shared invalidation
+         queue.</td></tr><tr><td><code class="literal">SInvalWriteLock</code></td><td>Waiting to add a message in shared invalidation queue.</td></tr><tr><td><code class="literal">WALBufMappingLock</code></td><td>Waiting to replace a page in WAL buffers.</td></tr><tr><td><code class="literal">WALWriteLock</code></td><td>Waiting for WAL buffers to be written to disk.</td></tr><tr><td><code class="literal">ControlFileLock</code></td><td>Waiting to read or update the control file or creation of a
+         new WAL file.</td></tr><tr><td><code class="literal">CheckpointLock</code></td><td>Waiting to perform checkpoint.</td></tr><tr><td><code class="literal">CLogControlLock</code></td><td>Waiting to read or update transaction status.</td></tr><tr><td><code class="literal">SubtransControlLock</code></td><td>Waiting to read or update sub-transaction information.</td></tr><tr><td><code class="literal">MultiXactGenLock</code></td><td>Waiting to read or update shared multixact state.</td></tr><tr><td><code class="literal">MultiXactOffsetControlLock</code></td><td>Waiting to read or update multixact offset mappings.</td></tr><tr><td><code class="literal">MultiXactMemberControlLock</code></td><td>Waiting to read or update multixact member mappings.</td></tr><tr><td><code class="literal">RelCacheInitLock</code></td><td>Waiting to read or write relation cache initialization
+         file.</td></tr><tr><td><code class="literal">CheckpointerCommLock</code></td><td>Waiting to manage fsync requests.</td></tr><tr><td><code class="literal">TwoPhaseStateLock</code></td><td>Waiting to read or update the state of prepared transactions.</td></tr><tr><td><code class="literal">TablespaceCreateLock</code></td><td>Waiting to create or drop the tablespace.</td></tr><tr><td><code class="literal">BtreeVacuumLock</code></td><td>Waiting to read or update vacuum-related information for a
+          B-tree index.</td></tr><tr><td><code class="literal">AddinShmemInitLock</code></td><td>Waiting to manage space allocation in shared memory.</td></tr><tr><td><code class="literal">AutovacuumLock</code></td><td>Autovacuum worker or launcher waiting to update or
+         read the current state of autovacuum workers.</td></tr><tr><td><code class="literal">AutovacuumScheduleLock</code></td><td>Waiting to ensure that the table it has selected for a vacuum
+         still needs vacuuming.
+         </td></tr><tr><td><code class="literal">SyncScanLock</code></td><td>Waiting to get the start location of a scan on a table for
+         synchronized scans.</td></tr><tr><td><code class="literal">RelationMappingLock</code></td><td>Waiting to update the relation map file used to store catalog
+         to filenode mapping.
+         </td></tr><tr><td><code class="literal">AsyncCtlLock</code></td><td>Waiting to read or update shared notification state.</td></tr><tr><td><code class="literal">AsyncQueueLock</code></td><td>Waiting to read or update notification messages.</td></tr><tr><td><code class="literal">SerializableXactHashLock</code></td><td>Waiting to retrieve or store information about serializable
+         transactions.</td></tr><tr><td><code class="literal">SerializableFinishedListLock</code></td><td>Waiting to access the list of finished serializable
+         transactions.</td></tr><tr><td><code class="literal">SerializablePredicateLockListLock</code></td><td>Waiting to perform an operation on a list of locks held by
+         serializable transactions.</td></tr><tr><td><code class="literal">OldSerXidLock</code></td><td>Waiting to read or record conflicting serializable
+         transactions.</td></tr><tr><td><code class="literal">SyncRepLock</code></td><td>Waiting to read or update information about synchronous
+         replicas.</td></tr><tr><td><code class="literal">BackgroundWorkerLock</code></td><td>Waiting to read or update background worker state.</td></tr><tr><td><code class="literal">DynamicSharedMemoryControlLock</code></td><td>Waiting to read or update dynamic shared memory state.</td></tr><tr><td><code class="literal">AutoFileLock</code></td><td>Waiting to update the <code class="filename">postgresql.auto.conf</code> file.</td></tr><tr><td><code class="literal">ReplicationSlotAllocationLock</code></td><td>Waiting to allocate or free a replication slot.</td></tr><tr><td><code class="literal">ReplicationSlotControlLock</code></td><td>Waiting to read or update replication slot state.</td></tr><tr><td><code class="literal">CommitTsControlLock</code></td><td>Waiting to read or update transaction commit timestamps.</td></tr><tr><td><code class="literal">CommitTsLock</code></td><td>Waiting to read or update the last value set for the
+         transaction timestamp.</td></tr><tr><td><code class="literal">ReplicationOriginLock</code></td><td>Waiting to setup, drop or use replication origin.</td></tr><tr><td><code class="literal">MultiXactTruncationLock</code></td><td>Waiting to read or truncate multixact information.</td></tr><tr><td><code class="literal">OldSnapshotTimeMapLock</code></td><td>Waiting to read or update old snapshot control information.</td></tr><tr><td rowspan="16"><code class="literal">LWLockTranche</code></td><td><code class="literal">clog</code></td><td>Waiting for I/O on a clog (transaction status) buffer.</td></tr><tr><td><code class="literal">commit_timestamp</code></td><td>Waiting for I/O on commit timestamp buffer.</td></tr><tr><td><code class="literal">subtrans</code></td><td>Waiting for I/O a subtransaction buffer.</td></tr><tr><td><code class="literal">multixact_offset</code></td><td>Waiting for I/O on a multixact offset buffer.</td></tr><tr><td><code class="literal">multixact_member</code></td><td>Waiting for I/O on a multixact_member buffer.</td></tr><tr><td><code class="literal">async</code></td><td>Waiting for I/O on an async (notify) buffer.</td></tr><tr><td><code class="literal">oldserxid</code></td><td>Waiting to I/O on an oldserxid buffer.</td></tr><tr><td><code class="literal">wal_insert</code></td><td>Waiting to insert WAL into a memory buffer.</td></tr><tr><td><code class="literal">buffer_content</code></td><td>Waiting to read or write a data page in memory.</td></tr><tr><td><code class="literal">buffer_io</code></td><td>Waiting for I/O on a data page.</td></tr><tr><td><code class="literal">replication_origin</code></td><td>Waiting to read or update the replication progress.</td></tr><tr><td><code class="literal">replication_slot_io</code></td><td>Waiting for I/O on a replication slot.</td></tr><tr><td><code class="literal">proc</code></td><td>Waiting to read or update the fast-path lock information.</td></tr><tr><td><code class="literal">buffer_mapping</code></td><td>Waiting to associate a data block with a buffer in the buffer
+         pool.</td></tr><tr><td><code class="literal">lock_manager</code></td><td>Waiting to add or examine locks for backends, or waiting to
+         join or exit a locking group (used by parallel query).</td></tr><tr><td><code class="literal">predicate_lock_manager</code></td><td>Waiting to add or examine predicate lock information.</td></tr><tr><td rowspan="10"><code class="literal">Lock</code></td><td><code class="literal">relation</code></td><td>Waiting to acquire a lock on a relation.</td></tr><tr><td><code class="literal">extend</code></td><td>Waiting to extend a relation.</td></tr><tr><td><code class="literal">page</code></td><td>Waiting to acquire a lock on page of a relation.</td></tr><tr><td><code class="literal">tuple</code></td><td>Waiting to acquire a lock on a tuple.</td></tr><tr><td><code class="literal">transactionid</code></td><td>Waiting for a transaction to finish.</td></tr><tr><td><code class="literal">virtualxid</code></td><td>Waiting to acquire a virtual xid lock.</td></tr><tr><td><code class="literal">speculative token</code></td><td>Waiting to acquire a speculative insertion lock.</td></tr><tr><td><code class="literal">object</code></td><td>Waiting to acquire a lock on a non-relation database object.</td></tr><tr><td><code class="literal">userlock</code></td><td>Waiting to acquire a userlock.</td></tr><tr><td><code class="literal">advisory</code></td><td>Waiting to acquire an advisory user lock.</td></tr><tr><td><code class="literal">BufferPin</code></td><td><code class="literal">BufferPin</code></td><td>Waiting to acquire a pin on a buffer.</td></tr></tbody></table></div></div><br class="table-break" /><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">注記</h3><p>     For tranches registered by extensions, the name is specified by extension
+     and this will be displayed as <code class="structfield">wait_event</code>.  It is quite
+     possible that user has registered the tranche in one of the backends (by
+     having allocation in dynamic shared memory) in which case other backends
+     won't have that information, so we display <code class="literal">extension</code> for such
+     cases.
+    </p></div><p>     Here is an example of how wait events can be viewed
+
+</p><pre class="programlisting">SELECT pid, wait_event_type, wait_event FROM pg_stat_activity WHERE wait_event is NOT NULL;
+ pid  | wait_event_type |  wait_event
+------+-----------------+---------------
+ 2540 | Lock            | relation
+ 6644 | LWLockNamed     | ProcArrayLock
+(2 rows)</pre><p>
+   </p><div class="table" id="pg-stat-replication-view"><p class="title"><strong>表27.5 <code class="structname">pg_stat_replication</code>ビュー</strong></p><div class="table-contents"><span class="original">
+   &lt;title&gt;&lt;structname&gt;pg_stat_replication&lt;/structname&gt; View&lt;/title&gt;
+</span><table summary="pg_stat_replicationビュー" border="1"><colgroup><col /><col /><col /></colgroup><thead><tr><th>列</th><th>型</th><th>説明</th></tr></thead><tbody><tr><td><code class="structfield">pid</code></td><td><code class="type">integer</code></td><td>WAL送信プロセスのプロセスIDです。</td></tr><tr><td><code class="structfield">usesysid</code></td><td><code class="type">oid</code></td><td>WAL送信プロセスにログインしたユーザのOIDです。</td></tr><tr><td><code class="structfield">usename</code></td><td><code class="type">name</code></td><td>WAL送信プロセスにログインしたユーザの名前です。</td></tr><tr><td><code class="structfield">application_name</code></td><td><code class="type">text</code></td><td>WAL送信処理に接続したアプリケーションの名前です。</td></tr><tr><td><code class="structfield">client_addr</code></td><td><code class="type">inet</code></td><td>WAL送信処理に接続したクライアントのIPアドレスです。
+このフィールドがNULLの場合、クライアントがサーバマシン上のUnixソケット経由で接続したことを示します。
+     </td></tr><tr><td><code class="structfield">client_hostname</code></td><td><code class="type">text</code></td><td><code class="structfield">client_addr</code>のDNS逆引き検索により報告された、接続クライアントのホスト名です。
+IP接続、かつ<a class="xref" href="runtime-config-logging.html#guc-log-hostname">log_hostname</a>が有効である場合にのみこのフィールドは非NULLになります。
+     </td></tr><tr><td><code class="structfield">client_port</code></td><td><code class="type">integer</code></td><td>クライアントがWAL送信処理との通信に使用するTCPポート番号、もしUnixソケットを使用する場合は<code class="literal">-1</code>です。
+     </td></tr><tr><td><code class="structfield">backend_start</code></td><td><code class="type">timestamp with time zone</code></td><td>プロセスが開始、つまりクライアントがWAL送信処理に接続した時刻です。
+     </td></tr><tr><td><code class="structfield">backend_xmin</code></td><td><code class="type">xid</code></td><td><a class="xref" href="runtime-config-replication.html#guc-hot-standby-feedback">hot_standby_feedback</a>により報告されたこのスタンバイの<code class="literal">xmin</code>です。</td></tr><tr><td><code class="structfield">state</code></td><td><code class="type">text</code></td><td>現在のWAL送信処理の状態です。</td></tr><tr><td><code class="structfield">sent_location</code></td><td><code class="type">pg_lsn</code></td><td>現在のWAL送信処理の状態です。</td></tr><tr><td><code class="structfield">write_location</code></td><td><code class="type">pg_lsn</code></td><td>スタンバイサーバによってディスクに書き出された最後のトランザクションログ位置です。</td></tr><tr><td><code class="structfield">flush_location</code></td><td><code class="type">pg_lsn</code></td><td>スタンバイサーバによってディスクに吐き出された最後のトランザクションログ位置です。</td></tr><tr><td><code class="structfield">replay_location</code></td><td><code class="type">pg_lsn</code></td><td>スタンバイサーバ上のデータベースに再生された最後のトランザクションログ位置です。</td></tr><tr><td><code class="structfield">sync_priority</code></td><td><code class="type">integer</code></td><td>このスタンバイサーバが同期スタンバイとして選択される優先度です。</td></tr><tr><td><code class="structfield">sync_state</code></td><td><code class="type">text</code></td><td>スタンバイサーバの同期状態です。</td></tr></tbody></table></div></div><br class="table-break" /><p><span class="original">
+   The &lt;structname&gt;pg_stat_replication&lt;/structname&gt; view will contain one row
+   per WAL sender process, showing statistics about replication to that
+   sender's connected standby server.  Only directly connected standbys are
+   listed; no information is available about downstream standby servers.
+</span><code class="structname">pg_stat_replication</code>ビューには、WAL送信プロセス毎に、送信処理に接続したスタンバイサーバへのレプリケーションに関する統計情報を示す１行を保持します。
+直接接続されたサーバのみが一覧表示されます。
+下流のスタンバイサーバに関する情報はありません。
+  </p><div class="table" id="pg-stat-wal-receiver-view"><p class="title"><strong>表27.6 <code class="structname">pg_stat_wal_receiver</code> View</strong></p><div class="table-contents"><table summary="pg_stat_wal_receiver View" border="1"><colgroup><col /><col /><col /></colgroup><thead><tr><th>Column</th><th>Type</th><th>Description</th></tr></thead><tbody><tr><td><code class="structfield">pid</code></td><td><code class="type">integer</code></td><td>Process ID of the WAL receiver process</td></tr><tr><td><code class="structfield">status</code></td><td><code class="type">text</code></td><td>Activity status of the WAL receiver process</td></tr><tr><td><code class="structfield">receive_start_lsn</code></td><td><code class="type">pg_lsn</code></td><td>First transaction log position used when WAL receiver is
+      started</td></tr><tr><td><code class="structfield">receive_start_tli</code></td><td><code class="type">integer</code></td><td>First timeline number used when WAL receiver is started</td></tr><tr><td><code class="structfield">received_lsn</code></td><td><code class="type">pg_lsn</code></td><td>Last transaction log position already received and flushed to
+      disk, the initial value of this field being the first log position used
+      when WAL receiver is started</td></tr><tr><td><code class="structfield">received_tli</code></td><td><code class="type">integer</code></td><td>Timeline number of last transaction log position received and
+      flushed to disk, the initial value of this field being the timeline
+      number of the first log position used when WAL receiver is started
+     </td></tr><tr><td><code class="structfield">last_msg_send_time</code></td><td><code class="type">timestamp with time zone</code></td><td>Send time of last message received from origin WAL sender</td></tr><tr><td><code class="structfield">last_msg_receipt_time</code></td><td><code class="type">timestamp with time zone</code></td><td>Receipt time of last message received from origin WAL sender</td></tr><tr><td><code class="structfield">latest_end_lsn</code></td><td><code class="type">pg_lsn</code></td><td>Last transaction log position reported to origin WAL sender</td></tr><tr><td><code class="structfield">latest_end_time</code></td><td><code class="type">timestamp with time zone</code></td><td>Time of last transaction log position reported to origin WAL sender</td></tr><tr><td><code class="structfield">slot_name</code></td><td><code class="type">text</code></td><td>Replication slot name used by this WAL receiver</td></tr><tr><td><code class="structfield">conninfo</code></td><td><code class="type">text</code></td><td>      Connection string used by this WAL receiver,
+      with security-sensitive fields obfuscated.
+     </td></tr></tbody></table></div></div><br class="table-break" /><p>   The <code class="structname">pg_stat_wal_receiver</code> view will contain only
+   one row, showing statistics about the WAL receiver from that receiver's
+   connected server.
+  </p><div class="table" id="pg-stat-ssl-view"><p class="title"><strong>表27.7 <code class="structname">pg_stat_ssl</code>ビュー</strong></p><div class="table-contents"><span class="original">
+   &lt;title&gt;&lt;structname&gt;pg_stat_ssl&lt;/structname&gt; View&lt;/title&gt;
+</span><table summary="pg_stat_sslビュー" border="1"><colgroup><col /><col /><col /></colgroup><thead><tr><th>列</th><th>型</th><th>説明</th></tr></thead><tbody><tr><td><code class="structfield">pid</code></td><td><code class="type">integer</code></td><td>バックエンドプロセスまたはWAL送信プロセスのプロセスIDです。</td></tr><tr><td><code class="structfield">ssl</code></td><td><code class="type">boolean</code></td><td>この接続でSSLが使用されていれば真になります。</td></tr><tr><td><code class="structfield">version</code></td><td><code class="type">text</code></td><td>使用されているSSLのバージョン、この接続でSSLが使用されていなければNULLになります。</td></tr><tr><td><code class="structfield">cipher</code></td><td><code class="type">text</code></td><td>使用されているSSL暗号の名前、この接続でSSLが使用されていなければNULLになります。</td></tr><tr><td><code class="structfield">bits</code></td><td><code class="type">integer</code></td><td>使用されている暗号アルゴリズムのビット数、この接続でSSLが使用されていなければNULLになります。</td></tr><tr><td><code class="structfield">compression</code></td><td><code class="type">boolean</code></td><td>SSL圧縮が使用されていれば真、使用されていなければ偽、この接続でSSLが使用されていなければNULLになります。</td></tr><tr><td><code class="structfield">clientdn</code></td><td><code class="type">text</code></td><td>使用されているクライアント証明書の識別名(DN)フィールド、クライアント証明書が提供されなかった場合、およびこの接続でSSLが使用されていない場合はNULLになります。
+このフィールドは、DNフィールドが<code class="symbol">NAMEDATALEN</code>（標準ビルドでは64文字）より長いと切り詰められます。
+     </td></tr></tbody></table></div></div><br class="table-break" /><p><span class="original">
+   The &lt;structname&gt;pg_stat_ssl&lt;/structname&gt; view will contain one row per
+   backend or WAL sender process, showing statistics about SSL usage on
+   this connection. It can be joined to &lt;structname&gt;pg_stat_activity&lt;/structname&gt;
+   or &lt;structname&gt;pg_stat_replication&lt;/structname&gt; on the
+   &lt;structfield&gt;pid&lt;/structfield&gt; column to get more details about the
+   connection.
+</span><code class="structname">pg_stat_ssl</code>ビューは、バックエンドプロセスおよびWAL送信プロセスごとに1行を保持し、接続上でのSSLの使用に関する統計情報を示します。
+<code class="structname">pg_stat_activity</code>または<code class="structname">pg_stat_replication</code>と<code class="structfield">pid</code>列で結合することで、接続に関するより詳細な情報を取得することができます。
+  </p><div class="table" id="pg-stat-archiver-view"><p class="title"><strong>表27.8 <code class="structname">pg_stat_archiver</code>ビュー</strong></p><div class="table-contents"><span class="original">
+   &lt;title&gt;&lt;structname&gt;pg_stat_archiver&lt;/structname&gt; View&lt;/title&gt;
+</span><table summary="pg_stat_archiverビュー" border="1"><colgroup><col /><col /><col /></colgroup><thead><tr><th>列</th><th>型</th><th>説明</th></tr></thead><tbody><tr><td><code class="structfield">archived_count</code></td><td><code class="type">bigint</code></td><td>アーカイブに成功したWALファイルの数</td></tr><tr><td><code class="structfield">last_archived_wal</code></td><td><code class="type">text</code></td><td>アーカイブに成功した最後のWALファイルの名前</td></tr><tr><td><code class="structfield">last_archived_time</code></td><td><code class="type">timestamp with time zone</code></td><td>最後に成功したアーカイブ操作の時刻</td></tr><tr><td><code class="structfield">failed_count</code></td><td><code class="type">bigint</code></td><td>WALファイルのアーカイブに失敗した回数</td></tr><tr><td><code class="structfield">last_failed_wal</code></td><td><code class="type">text</code></td><td>最後にアーカイブ操作に失敗したWALファイルの名前</td></tr><tr><td><code class="structfield">last_failed_time</code></td><td><code class="type">timestamp with time zone</code></td><td>最後にアーカイブ操作に失敗した時刻</td></tr><tr><td><code class="structfield">stats_reset</code></td><td><code class="type">timestamp with time zone</code></td><td>この統計が最後にリセットされた時刻</td></tr></tbody></table></div></div><br class="table-break" /><p><span class="original">
+   The &lt;structname&gt;pg_stat_archiver&lt;/structname&gt; view will always have a
+   single row, containing data about the archiver process of the cluster.
+</span><code class="structname">pg_stat_archiver</code>は常に、クラスタのアーカイバプロセスに関するデータを含む１つの行を持ちます。
+  </p><div class="table" id="pg-stat-bgwriter-view"><p class="title"><strong>表27.9 <code class="structname">pg_stat_bgwriter</code>ビュー</strong></p><div class="table-contents"><span class="original">
+   &lt;title&gt;&lt;structname&gt;pg_stat_bgwriter&lt;/structname&gt; View&lt;/title&gt;
+</span><table summary="pg_stat_bgwriterビュー" border="1"><colgroup><col /><col /><col /></colgroup><thead><tr><th>列</th><th>型</th><th>説明</th></tr></thead><tbody><tr><td><code class="structfield">checkpoints_timed</code></td><td><code class="type">bigint</code></td><td>これまでに実行された、スケジュールされたチェックポイントの個数です。
+      </td></tr><tr><td><code class="structfield">checkpoints_req</code></td><td><code class="type">bigint</code></td><td>これまでに実行された、要求されたチェックポイントの個数です。
+      </td></tr><tr><td><code class="structfield">checkpoint_write_time</code></td><td><code class="type">double precision</code></td><td><span class="original">
+        Total amount of time that has been spent in the portion of
+        checkpoint processing where files are written to disk, in milliseconds
+</span>チェックポイント処理におけるディスクにファイルを書き出す部分に費やされた、ミリ秒単位の総時間です。
+      </td></tr><tr><td><code class="structfield">checkpoint_sync_time</code></td><td><code class="type">double precision</code></td><td><span class="original">
+        Total amount of time that has been spent in the portion of
+        checkpoint processing where files are synchronized to disk, in
+        milliseconds
+</span>チェックポイント処理におけるディスクにファイルを同期する部分に費やされた、ミリ秒単位の総時間です。
+      </td></tr><tr><td><code class="structfield">buffers_checkpoint</code></td><td><code class="type">bigint</code></td><td>チェックポイント期間に書き出されたバッファ数です。
+      </td></tr><tr><td><code class="structfield">buffers_clean</code></td><td><code class="type">bigint</code></td><td>バックグラウンドライタにより書き出されたバッファ数です。
+      </td></tr><tr><td><code class="structfield">maxwritten_clean</code></td><td><code class="type">bigint</code></td><td>バックグラウンドライタが書き出したバッファ数が多過ぎたために、整理用スキャンを停止した回数です。
+      </td></tr><tr><td><code class="structfield">buffers_backend</code></td><td><code class="type">bigint</code></td><td>バックエンドにより直接書き出されたバッファ数です。
+      </td></tr><tr><td><code class="structfield">buffers_backend_fsync</code></td><td><code class="type">bigint</code></td><td>バックエンドが独自に<code class="function">fsync</code>呼び出しを実行しなければならなかった回数です。
+（通常は、バックエンドが独自に書き込んだ場合であっても、バックグラウンドライタがこれらを扱います。）
+      </td></tr><tr><td><code class="structfield">buffers_alloc</code></td><td><code class="type">bigint</code></td><td>割当られたバッファ数です。
+      </td></tr><tr><td><code class="structfield">stats_reset</code></td><td><code class="type">timestamp with time zone</code></td><td>これらの統計情報がリセットされた最終時刻です。
+      </td></tr></tbody></table></div></div><br class="table-break" /><p><span class="original">
+   The &lt;structname&gt;pg_stat_bgwriter&lt;/structname&gt; view will always have a
+   single row, containing global data for the cluster.
+</span><code class="structname">pg_stat_bgwriter</code>ビューは常に、クラスタのグローバルデータに関する１つの行を持ちます。
+  </p><div class="table" id="pg-stat-database-view"><p class="title"><strong>表27.10 <code class="structname">pg_stat_database</code>ビュー</strong></p><div class="table-contents"><span class="original">
+   &lt;title&gt;&lt;structname&gt;pg_stat_database&lt;/structname&gt; View&lt;/title&gt;
+</span><table summary="pg_stat_databaseビュー" border="1"><colgroup><col /><col /><col /></colgroup><thead><tr><th>列</th><th>型</th><th>説明</th></tr></thead><tbody><tr><td><code class="structfield">datid</code></td><td><code class="type">oid</code></td><td>データベースのOIDです。</td></tr><tr><td><code class="structfield">datname</code></td><td><code class="type">name</code></td><td>データベースの名前です。</td></tr><tr><td><code class="structfield">numbackends</code></td><td><code class="type">integer</code></td><td>現在データベースに接続しているバックエンドの個数です。
+これは、このビューの中で、現在の状態を反映した値を返す唯一の列です。
+他の列はすべて、最後にリセットされてから累積された値を返します。
+     </td></tr><tr><td><code class="structfield">xact_commit</code></td><td><code class="type">bigint</code></td><td>このデータベースの中でコミットされたトランザクション数です。
+     </td></tr><tr><td><code class="structfield">xact_rollback</code></td><td><code class="type">bigint</code></td><td>このデータベースの中でロールバックされたトランザクション数です。
+     </td></tr><tr><td><code class="structfield">blks_read</code></td><td><code class="type">bigint</code></td><td>データベース内で読み取られたディスクブロック数です。
+     </td></tr><tr><td><code class="structfield">blks_hit</code></td><td><code class="type">bigint</code></td><td>バッファキャッシュに既にあることが分かっているために読み取りが不要だったディスクブロック数です（これにはPostgreSQLのバッファキャッシュにおけるヒットのみが含まれ、オペレーティングシステムのファイルシステムキャッシュは含まれません）。
+     </td></tr><tr><td><code class="structfield">tup_returned</code></td><td><code class="type">bigint</code></td><td>データベース内の問い合わせで返された行数です。
+     </td></tr><tr><td><code class="structfield">tup_fetched</code></td><td><code class="type">bigint</code></td><td>データベース内の問い合わせで取り出された行数です。
+     </td></tr><tr><td><code class="structfield">tup_inserted</code></td><td><code class="type">bigint</code></td><td>データベース内の問い合わせで挿入された行数です。
+     </td></tr><tr><td><code class="structfield">tup_updated</code></td><td><code class="type">bigint</code></td><td>データベース内の問い合わせで更新された行数です。
+     </td></tr><tr><td><code class="structfield">tup_deleted</code></td><td><code class="type">bigint</code></td><td>データベース内の問い合わせで削除された行数です。
+     </td></tr><tr><td><code class="structfield">conflicts</code></td><td><code class="type">bigint</code></td><td><span class="original">
+     &lt;entry&gt;Number of queries canceled due to conflicts with recovery
+      in this database. (Conflicts occur only on standby servers; see
+      &lt;xref linkend="pg-stat-database-conflicts-view"&gt; for details.)
+</span>データベース内のリカバリで競合したためキャンセルされた問い合わせ数です。
+（競合はスタンバイサーバ上でのみ起こります。詳細については<a class="xref" href="monitoring-stats.html#pg-stat-database-conflicts-view" title="表27.11 pg_stat_database_conflictsビュー">pg_stat_database_conflicts</a>を参照してください。）
+     </td></tr><tr><td><code class="structfield">temp_files</code></td><td><code class="type">bigint</code></td><td>データベース内の問い合わせによって書き出された一時ファイルの個数です。
+一時ファイルが作成された理由（ソート処理やハッシュ処理）や<a class="xref" href="runtime-config-logging.html#guc-log-temp-files">log_temp_files</a>の設定に関わらず、すべての一時ファイルが計上されます。
+     </td></tr><tr><td><code class="structfield">temp_bytes</code></td><td><code class="type">bigint</code></td><td><span class="original">
+     &lt;entry&gt;Total amount of data written to temporary files by queries in
+      this database. All temporary files are counted, regardless of why
+      the temporary file was created, and
+      regardless of the &lt;xref linkend="guc-log-temp-files"&gt; setting.
+</span>データベース内の問い合わせによって一時ファイルに書き出されたデータ量です。
+一時ファイルが作成された理由や<a class="xref" href="runtime-config-logging.html#guc-log-temp-files">log_temp_files</a>の設定に関わらず、すべての一時ファイルが計上されます。
+     </td></tr><tr><td><code class="structfield">deadlocks</code></td><td><code class="type">bigint</code></td><td>データベース内で検知されたデッドロック数です。
+     </td></tr><tr><td><code class="structfield">blk_read_time</code></td><td><code class="type">double precision</code></td><td>データベース内でバックエンドによりデータファイルブロックの読み取りに費やされた、ミリ秒単位の時間です。
+     </td></tr><tr><td><code class="structfield">blk_write_time</code></td><td><code class="type">double precision</code></td><td>データベース内でバックエンドによりデータファイルブロックの書き出しに費やされた、ミリ秒単位の時間です。
+     </td></tr><tr><td><code class="structfield">stats_reset</code></td><td><code class="type">timestamp with time zone</code></td><td>統計情報がリセットされた最終時刻です。
+     </td></tr></tbody></table></div></div><br class="table-break" /><p><span class="original">
+   The &lt;structname&gt;pg_stat_database&lt;/structname&gt; view will contain one row
+   for each database in the cluster, showing database-wide statistics.
+</span><code class="structname">pg_stat_database</code>には、クラスタ内のデータベース毎にデータベース全体の統計情報を示す１行が含まれます。
+  </p><div class="table" id="pg-stat-database-conflicts-view"><p class="title"><strong>表27.11 <code class="structname">pg_stat_database_conflicts</code>ビュー</strong></p><div class="table-contents"><span class="original">
+   &lt;title&gt;&lt;structname&gt;pg_stat_database_conflicts&lt;/structname&gt; View&lt;/title&gt;
+</span><table summary="pg_stat_database_conflictsビュー" border="1"><colgroup><col /><col /><col /></colgroup><thead><tr><th>列</th><th>型</th><th>説明</th></tr></thead><tbody><tr><td><code class="structfield">datid</code></td><td><code class="type">oid</code></td><td>データベースのOIDです。</td></tr><tr><td><code class="structfield">datname</code></td><td><code class="type">name</code></td><td>データベースの名前です。</td></tr><tr><td><code class="structfield">confl_tablespace</code></td><td><code class="type">bigint</code></td><td>データベースにおいて、削除されたテーブル空間のためにキャンセルされた問い合わせの個数です。</td></tr><tr><td><code class="structfield">confl_lock</code></td><td><code class="type">bigint</code></td><td>データベースにおいて、ロック時間切れのためにキャンセルされた問い合わせの個数です。</td></tr><tr><td><code class="structfield">confl_snapshot</code></td><td><code class="type">bigint</code></td><td>データベースにおいて、古いスナップショットのためにキャンセルされた問い合わせの個数です。</td></tr><tr><td><code class="structfield">confl_bufferpin</code></td><td><code class="type">bigint</code></td><td>データベースにおいて、ピンが付いたバッファのためにキャンセルされた問い合わせの個数です。</td></tr><tr><td><code class="structfield">confl_deadlock</code></td><td><code class="type">bigint</code></td><td>データベースにおいて、デッドロックのためにキャンセルされた問い合わせの個数です。</td></tr></tbody></table></div></div><br class="table-break" /><p><span class="original">
+   The &lt;structname&gt;pg_stat_database_conflicts&lt;/structname&gt; view will contain
+   one row per database, showing database-wide statistics about
+   query cancels occurring due to conflicts with recovery on standby servers.
+   This view will only contain information on standby servers, since
+   conflicts do not occur on master servers.
+</span><code class="structname">pg_stat_database_conflicts</code>ビューは、データベース毎に１行を保持し、スタンバイサーバでのリカバリと競合するためにキャンセルされた問い合わせに関するデータベース全体の統計情報を示します。
+マスタサーバでは競合は発生しませんので、スタンバイサーバ上の情報のみが保持されます。
+  </p><div class="table" id="pg-stat-all-tables-view"><p class="title"><strong>表27.12 <code class="structname">pg_stat_all_tables</code>ビュー</strong></p><div class="table-contents"><span class="original">
+   &lt;title&gt;&lt;structname&gt;pg_stat_all_tables&lt;/structname&gt; View&lt;/title&gt;
+</span><table summary="pg_stat_all_tablesビュー" border="1"><colgroup><col /><col /><col /></colgroup><thead><tr><th>列</th><th>型</th><th>説明</th></tr></thead><tbody><tr><td><code class="structfield">relid</code></td><td><code class="type">oid</code></td><td>テーブルのOIDです。</td></tr><tr><td><code class="structfield">schemaname</code></td><td><code class="type">name</code></td><td>テーブルが存在するスキーマの名前です。</td></tr><tr><td><code class="structfield">relname</code></td><td><code class="type">name</code></td><td>テーブルの名前です。</td></tr><tr><td><code class="structfield">seq_scan</code></td><td><code class="type">bigint</code></td><td>テーブル上で初期化されたシーケンシャルスキャンの個数です。
+     </td></tr><tr><td><code class="structfield">seq_tup_read</code></td><td><code class="type">bigint</code></td><td>シーケンシャルスキャンによって取り出された有効行の個数です。
+     </td></tr><tr><td><code class="structfield">idx_scan</code></td><td><code class="type">bigint</code></td><td>テーブル上で初期化されたインデックススキャンの個数です。
+     </td></tr><tr><td><code class="structfield">idx_tup_fetch</code></td><td><code class="type">bigint</code></td><td>インデックススキャンによって取り出された有効行の個数です。</td></tr><tr><td><code class="structfield">n_tup_ins</code></td><td><code class="type">bigint</code></td><td>挿入された行数です。</td></tr><tr><td><code class="structfield">n_tup_upd</code></td><td><code class="type">bigint</code></td><td>更新された行数です。（HOT更新された行数を含みます）</td></tr><tr><td><code class="structfield">n_tup_del</code></td><td><code class="type">bigint</code></td><td>削除された行数です。</td></tr><tr><td><code class="structfield">n_tup_hot_upd</code></td><td><code class="type">bigint</code></td><td>HOT更新（つまりインデックスの更新を別途必要としない）された行数です。</td></tr><tr><td><code class="structfield">n_live_tup</code></td><td><code class="type">bigint</code></td><td>有効行の推定値です。</td></tr><tr><td><code class="structfield">n_dead_tup</code></td><td><code class="type">bigint</code></td><td>不要行の推定値です。</td></tr><tr><td><code class="structfield">n_mod_since_analyze</code></td><td><code class="type">bigint</code></td><td>このテーブルが最後に解析されてから変更された行の推定値</td></tr><tr><td><code class="structfield">last_vacuum</code></td><td><code class="type">timestamp with time zone</code></td><td>テーブルが手作業でバキュームされた最終時刻です（<code class="command">VACUUM FULL</code>は含まれません）。
+     </td></tr><tr><td><code class="structfield">last_autovacuum</code></td><td><code class="type">timestamp with time zone</code></td><td>自動バキュームデーモンによりテーブルがバキュームされた最終時刻です。
+     </td></tr><tr><td><code class="structfield">last_analyze</code></td><td><code class="type">timestamp with time zone</code></td><td>テーブルが手作業で解析された最終時刻です。
+     </td></tr><tr><td><code class="structfield">last_autoanalyze</code></td><td><code class="type">timestamp with time zone</code></td><td>自動バキュームデーモンによりテーブルが解析された最終時刻です。
+     </td></tr><tr><td><code class="structfield">vacuum_count</code></td><td><code class="type">bigint</code></td><td>テーブルが手作業でバキュームされた回数です。（<code class="command">VACUUM FULL</code>は含まれません）。</td></tr><tr><td><code class="structfield">autovacuum_count</code></td><td><code class="type">bigint</code></td><td>テーブルが自動バキュームデーモンによりバキュームされた回数です。</td></tr><tr><td><code class="structfield">analyze_count</code></td><td><code class="type">bigint</code></td><td>テーブルが手作業で解析された回数です。</td></tr><tr><td><code class="structfield">autoanalyze_count</code></td><td><code class="type">bigint</code></td><td>テーブルが自動バキュームデーモンによって解析された回数です。</td></tr></tbody></table></div></div><br class="table-break" /><p><span class="original">
+   The &lt;structname&gt;pg_stat_all_tables&lt;/structname&gt; view will contain
+   one row for each table in the current database (including TOAST
+   tables), showing statistics about accesses to that specific table. The
+   &lt;structname&gt;pg_stat_user_tables&lt;/structname&gt; and
+   &lt;structname&gt;pg_stat_sys_tables&lt;/structname&gt; views
+   contain the same information,
+   but filtered to only show user and system tables respectively.
+</span><code class="structname">pg_stat_all_tables</code>ビューは現在のデータベース内のテーブル（TOASTテーブルを含む）毎に１行の形式で、特定のテーブルへのアクセスに関する統計情報を表示します。
+<code class="structname">pg_stat_user_tables</code>および<code class="structname">pg_stat_sys_tables</code>ビューにも同じ情報が含まれますが、それぞれユーザテーブルとシステムテーブルのみにフィルタされています。
+  </p><div class="table" id="pg-stat-all-indexes-view"><p class="title"><strong>表27.13 <code class="structname">pg_stat_all_indexes</code>ビュー</strong></p><div class="table-contents"><span class="original">
+   &lt;title&gt;&lt;structname&gt;pg_stat_all_indexes&lt;/structname&gt; View&lt;/title&gt;
+</span><table summary="pg_stat_all_indexesビュー" border="1"><colgroup><col /><col /><col /></colgroup><thead><tr><th>列</th><th>型</th><th>説明</th></tr></thead><tbody><tr><td><code class="structfield">relid</code></td><td><code class="type">oid</code></td><td>インデックス対象のテーブルのOIDです。</td></tr><tr><td><code class="structfield">indexrelid</code></td><td><code class="type">oid</code></td><td>インデックスのOIDです。</td></tr><tr><td><code class="structfield">schemaname</code></td><td><code class="type">name</code></td><td>インデックスが存在するスキーマの名前です。</td></tr><tr><td><code class="structfield">relname</code></td><td><code class="type">name</code></td><td>インデックス対象のテーブルの名前です。</td></tr><tr><td><code class="structfield">indexrelname</code></td><td><code class="type">name</code></td><td>インデックスの名前です。</td></tr><tr><td><code class="structfield">idx_scan</code></td><td><code class="type">bigint</code></td><td>インデックスに対して初期化されたインデックススキャンの個数です。
+     </td></tr><tr><td><code class="structfield">idx_tup_read</code></td><td><code class="type">bigint</code></td><td>インデックスに対するスキャンにより返されたインデックス項目の個数です。
+     </td></tr><tr><td><code class="structfield">idx_tup_fetch</code></td><td><code class="type">bigint</code></td><td>インデックスを使用する単純なインデックススキャンによって取り出された有効テーブル行数です。
+     </td></tr></tbody></table></div></div><br class="table-break" /><p><span class="original">
+   The &lt;structname&gt;pg_stat_all_indexes&lt;/structname&gt; view will contain
+   one row for each index in the current database,
+   showing statistics about accesses to that specific index. The
+   &lt;structname&gt;pg_stat_user_indexes&lt;/structname&gt; and
+   &lt;structname&gt;pg_stat_sys_indexes&lt;/structname&gt; views
+   contain the same information,
+   but filtered to only show user and system indexes respectively.
+</span><code class="structname">pg_stat_all_indexes</code>ビューは、現在のデータベース内のインデックス毎に、特定のインデックスへのアクセスに関する統計情報を示す１行を保持します。
+<code class="structname">pg_stat_user_indexes</code>と<code class="structname">pg_stat_sys_indexes</code>も同じ情報を保持しますが、ユーザ向けのインデックスとシステム向けのインデックスに対する行のみを保持するようにフィルタ処理されています。
+  </p><p><span class="original">
+   Indexes can be used by simple index scans, &lt;quote&gt;bitmap&lt;/&gt; index scans,
+   and the optimizer.  In a bitmap scan
+   the output of several indexes can be combined via AND or OR rules,
+   so it is difficult to associate individual heap row fetches
+   with specific indexes when a bitmap scan is used.  Therefore, a bitmap
+   scan increments the
+   &lt;structname&gt;pg_stat_all_indexes&lt;/&gt;.&lt;structfield&gt;idx_tup_read&lt;/&gt;
+   count(s) for the index(es) it uses, and it increments the
+   &lt;structname&gt;pg_stat_all_tables&lt;/&gt;.&lt;structfield&gt;idx_tup_fetch&lt;/&gt;
+   count for the table, but it does not affect
+   &lt;structname&gt;pg_stat_all_indexes&lt;/&gt;.&lt;structfield&gt;idx_tup_fetch&lt;/&gt;.
+   The optimizer also accesses indexes to check for supplied constants
+   whose values are outside the recorded range of the optimizer statistics
+   because the optimizer statistics might be stale.
+</span>単純なインデックススキャン、<span class="quote">「<span class="quote">ビットマップ</span>」</span>インデックススキャン、あるいはオプティマイザによりインデックスが使用されることがあります。
+ビットマップスキャンでは、複数のインデックスの出力をANDやOR規則で組み合わせることができます。
+このため、ビットマップスキャンが使用される場合、特定インデックスと個々のヒープ行の取り出しとを関連づけることが困難です。
+したがってビットマップスキャンでは、使用したインデックスの<code class="structname">pg_stat_all_indexes</code>.<code class="structfield">idx_tup_read</code>個数を増やし、そのテーブルの<code class="structname">pg_stat_all_tables</code>.<code class="structfield">idx_tup_fetch</code>個数を増やしますが、<code class="structname">pg_stat_all_indexes</code>.<code class="structfield">idx_tup_fetch</code>を変更しません。
+オプティマイザもインデックスにアクセスし、提供された定数値がオプティマイザの統計情報に記録された範囲の外側にあるときに、それを検査します。
+これはオプティマイザの統計情報が古いかもしれないからです。
+  </p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">注記</h3><p><span class="original">
+    The &lt;structfield&gt;idx_tup_read&lt;/&gt; and &lt;structfield&gt;idx_tup_fetch&lt;/&gt; counts
+    can be different even without any use of bitmap scans,
+    because &lt;structfield&gt;idx_tup_read&lt;/&gt; counts
+    index entries retrieved from the index while &lt;structfield&gt;idx_tup_fetch&lt;/&gt;
+    counts live rows fetched from the table.  The latter will be less if any
+    dead or not-yet-committed rows are fetched using the index, or if any
+    heap fetches are avoided by means of an index-only scan.
+</span><code class="structfield">idx_tup_read</code>と<code class="structfield">idx_tup_fetch</code>個数は、ビットマップスキャンがまったく使用されていない場合でも異なります。
+<code class="structfield">idx_tup_read</code>はインデックスから取り出したインデックス項目を計上し、<code class="structfield">idx_tup_fetch</code>はテーブルから取り出した有効行を計上するからです。
+インデックスを用いて不要行やまだコミットされていない行が取り出された場合やインデックスオンリースキャン法によりヒープの取り出しが回避された場合に、後者は減少します。
+   </p></div><div class="table" id="pg-statio-all-tables-view"><p class="title"><strong>表27.14 <code class="structname">pg_statio_all_tables</code>ビュー</strong></p><div class="table-contents"><span class="original">
+   &lt;title&gt;&lt;structname&gt;pg_statio_all_tables&lt;/structname&gt; View&lt;/title&gt;
+</span><table summary="pg_statio_all_tablesビュー" border="1"><colgroup><col /><col /><col /></colgroup><thead><tr><th>列</th><th>型</th><th>説明</th></tr></thead><tbody><tr><td><code class="structfield">relid</code></td><td><code class="type">oid</code></td><td>テーブルのOIDです。</td></tr><tr><td><code class="structfield">schemaname</code></td><td><code class="type">name</code></td><td>テーブルが存在するスキーマの名前です。</td></tr><tr><td><code class="structfield">relname</code></td><td><code class="type">name</code></td><td>テーブルの名前です。</td></tr><tr><td><code class="structfield">heap_blks_read</code></td><td><code class="type">bigint</code></td><td>テーブルから読み取られたディスクブロック数です。</td></tr><tr><td><code class="structfield">heap_blks_hit</code></td><td><code class="type">bigint</code></td><td>テーブル内のバッファヒット数です。</td></tr><tr><td><code class="structfield">idx_blks_read</code></td><td><code class="type">bigint</code></td><td>テーブル上のすべてのインデックスから読み取られたディスクブロック数です。</td></tr><tr><td><code class="structfield">idx_blks_hit</code></td><td><code class="type">bigint</code></td><td>テーブル上のすべてのインデックス内のバッファヒット数です。</td></tr><tr><td><code class="structfield">toast_blks_read</code></td><td><code class="type">bigint</code></td><td>テーブルのTOASTテーブル（もしあれば）から読み取られたディスクブロック数です。</td></tr><tr><td><code class="structfield">toast_blks_hit</code></td><td><code class="type">bigint</code></td><td>テーブルのTOASTテーブル（もしあれば）におけるバッファヒット数です。</td></tr><tr><td><code class="structfield">tidx_blks_read</code></td><td><code class="type">bigint</code></td><td>テーブルのTOASTテーブルのインデックス（もしあれば）から読み取られたディスクブロック数です。</td></tr><tr><td><code class="structfield">tidx_blks_hit</code></td><td><code class="type">bigint</code></td><td>テーブルのTOASTテーブルのインデックス（もしあれば）におけるバッファヒット数です。</td></tr></tbody></table></div></div><br class="table-break" /><p><span class="original">
+   The &lt;structname&gt;pg_statio_all_tables&lt;/structname&gt; view will contain
+   one row for each table in the current database (including TOAST
+   tables), showing statistics about I/O on that specific table. The
+   &lt;structname&gt;pg_statio_user_tables&lt;/structname&gt; and
+   &lt;structname&gt;pg_statio_sys_tables&lt;/structname&gt; views
+   contain the same information,
+   but filtered to only show user and system tables respectively.
+</span><code class="structname">pg_statio_all_tables</code>ビューは現在のデータベース内のテーブル（TOASTテーブルを含む）ごとに、特定のテーブルのI/Oに関する統計情報を示す１行を保持します。
+<code class="structname">pg_statio_user_tables</code>と<code class="structname">pg_statio_sys_tables</code>には同じ情報が保持されますが、ユーザテーブルとシステムテーブルに関する行のみを持つようにフィルタ処理がなされています。
+  </p><div class="table" id="pg-statio-all-indexes-view"><p class="title"><strong>表27.15 <code class="structname">pg_statio_all_indexes</code>ビュー</strong></p><div class="table-contents"><span class="original">
+   &lt;title&gt;&lt;structname&gt;pg_statio_all_indexes&lt;/structname&gt; View&lt;/title&gt;
+</span><table summary="pg_statio_all_indexesビュー" border="1"><colgroup><col /><col /><col /></colgroup><thead><tr><th>列</th><th>型</th><th>説明</th></tr></thead><tbody><tr><td><code class="structfield">relid</code></td><td><code class="type">oid</code></td><td>このインデックスに対応するテーブルのOIDです。</td></tr><tr><td><code class="structfield">indexrelid</code></td><td><code class="type">oid</code></td><td>インデックスのOIDです。</td></tr><tr><td><code class="structfield">schemaname</code></td><td><code class="type">name</code></td><td>インデックスが存在するスキーマの名前です。</td></tr><tr><td><code class="structfield">relname</code></td><td><code class="type">name</code></td><td>このインデックスに対応するテーブルの名前です。</td></tr><tr><td><code class="structfield">indexrelname</code></td><td><code class="type">name</code></td><td>インデックスの名前です。</td></tr><tr><td><code class="structfield">idx_blks_read</code></td><td><code class="type">bigint</code></td><td>インデックスから読み取られたディスクブロック数です。</td></tr><tr><td><code class="structfield">idx_blks_hit</code></td><td><code class="type">bigint</code></td><td>インデックスにおけるバッファヒット数です。</td></tr></tbody></table></div></div><br class="table-break" /><p><span class="original">
+   The &lt;structname&gt;pg_statio_all_indexes&lt;/structname&gt; view will contain
+   one row for each index in the current database,
+   showing statistics about I/O on that specific index. The
+   &lt;structname&gt;pg_statio_user_indexes&lt;/structname&gt; and
+   &lt;structname&gt;pg_statio_sys_indexes&lt;/structname&gt; views
+   contain the same information,
+   but filtered to only show user and system indexes respectively.
+</span><code class="structname">pg_statio_all_indexes</code>ビューは、現在のデータベース内のインデックス毎に、特定のインデックスへのI/Oに関する統計情報を持つ１行を保持します。
+<code class="structname">pg_statio_user_indexes</code>と<code class="structname">pg_statio_sys_indexes</code>も同じ情報を保持しますが、それぞれユーザ向けのインデックスとシステム向けのインデックスに対する行のみを保持するようにフィルタ処理されています。
+  </p><div class="table" id="pg-statio-all-sequences-view"><p class="title"><strong>表27.16 <code class="structname">pg_statio_all_sequences</code>ビュー</strong></p><div class="table-contents"><span class="original">
+   &lt;title&gt;&lt;structname&gt;pg_statio_all_sequences&lt;/structname&gt; View&lt;/title&gt;
+</span><table summary="pg_statio_all_sequencesビュー" border="1"><colgroup><col /><col /><col /></colgroup><thead><tr><th>列</th><th>型</th><th>説明</th></tr></thead><tbody><tr><td><code class="structfield">relid</code></td><td><code class="type">oid</code></td><td>シーケンスのOIDです。</td></tr><tr><td><code class="structfield">schemaname</code></td><td><code class="type">name</code></td><td>シーケンスが存在するスキーマの名前です。</td></tr><tr><td><code class="structfield">relname</code></td><td><code class="type">name</code></td><td>シーケンスの名前です。</td></tr><tr><td><code class="structfield">blks_read</code></td><td><code class="type">bigint</code></td><td>シーケンスから読み取られたディスクブロック数です。</td></tr><tr><td><code class="structfield">blks_hit</code></td><td><code class="type">bigint</code></td><td>シーケンスにおけるバッファヒット数です。</td></tr></tbody></table></div></div><br class="table-break" /><p><span class="original">
+   The &lt;structname&gt;pg_statio_all_sequences&lt;/structname&gt; view will contain
+   one row for each sequence in the current database,
+   showing statistics about I/O on that specific sequence.
+</span><code class="structname">pg_statio_all_sequences</code>ビューは現在のデータベース内のシーケンスごとに、特定シーケンスにおけるI/Oに関する統計情報を示す１行を保持します。
+  </p><div class="table" id="pg-stat-user-functions-view"><p class="title"><strong>表27.17 <code class="structname">pg_stat_user_functions</code>ビュー</strong></p><div class="table-contents"><span class="original">
+   &lt;title&gt;&lt;structname&gt;pg_stat_user_functions&lt;/structname&gt; View&lt;/title&gt;
+</span><table summary="pg_stat_user_functionsビュー" border="1"><colgroup><col /><col /><col /></colgroup><thead><tr><th>列</th><th>型</th><th>説明</th></tr></thead><tbody><tr><td><code class="structfield">funcid</code></td><td><code class="type">oid</code></td><td>関数のOIDです。</td></tr><tr><td><code class="structfield">schemaname</code></td><td><code class="type">name</code></td><td>関数が存在するスキーマの名前です。</td></tr><tr><td><code class="structfield">funcname</code></td><td><code class="type">name</code></td><td>関数の名前です。</td></tr><tr><td><code class="structfield">calls</code></td><td><code class="type">bigint</code></td><td>関数が呼び出された回数です。</td></tr><tr><td><code class="structfield">total_time</code></td><td><code class="type">double precision</code></td><td>関数とその関数から呼び出されるその他の関数で費やされた、ミリ秒単位の総時間です。
+     </td></tr><tr><td><code class="structfield">self_time</code></td><td><code class="type">double precision</code></td><td>その関数から呼び出されるその他の関数で費やされた時間を含まない、関数自身で費やされた、ミリ秒単位の総時間です。
+     </td></tr></tbody></table></div></div><br class="table-break" /><p><span class="original">
+   The &lt;structname&gt;pg_stat_user_functions&lt;/structname&gt; view will contain
+   one row for each tracked function, showing statistics about executions of
+   that function.  The &lt;xref linkend="guc-track-functions"&gt; parameter
+   controls exactly which functions are tracked.
+</span><code class="structname">pg_stat_user_functions</code>ビューは追跡された関数毎に、その関数の実行に関する統計情報を１行保持します。
+<a class="xref" href="runtime-config-statistics.html#guc-track-functions">track_functions</a>パラメータは関数が追跡されるかどうかを正確に制御します。
+  </p></div><div class="sect2" id="monitoring-stats-functions"><div class="titlepage"><div><div><h3 class="title">27.2.3. 統計情報関数</h3></div></div></div><span class="original">
+  &lt;title&gt;Statistics Functions&lt;/title&gt;
+</span><p><span class="original">
+   Other ways of looking at the statistics can be set up by writing
+   queries that use the same underlying statistics access functions used by
+   the standard views shown above.  For details such as the functions' names,
+   consult the definitions of the standard views.  (For example, in
+   &lt;application&gt;psql&lt;/&gt; you could issue &lt;literal&gt;\d+ pg_stat_activity&lt;/&gt;.)
+   The access functions for per-database statistics take a database OID as an
+   argument to identify which database to report on.
+   The per-table and per-index functions take a table or index OID.
+   The functions for per-function statistics take a function OID.
+   Note that only tables, indexes, and functions in the current database
+   can be seen with these functions.
+</span>統計情報を参照する他の方法は、上述の標準ビューによって使用される基礎的な統計情報アクセス関数と同じ関数を使用した問い合わせを作成することで設定することができます。
+こうした関数の名前などに関する詳細については、標準ビューの定義を参照してください。
+（例えば<span class="application">psql</span>では<code class="literal">\d+ pg_stat_activity</code>を発行してください。）
+データベースごとの統計情報についてのアクセス関数は、どのデータベースに対して報告するのかを識別するためにデータベースのOIDを取ります。
+テーブルごと、インデックスごとの関数はテーブルの、もしくはインデックスのOIDを取ります。
+関数ごとの統計情報の関数は、関数のOIDを取ります。
+これらの関数を使用して参照できるテーブルとインデックス、および関数は現在のデータベース内のものだけであることに注意してください。
+  </p><p><span class="original">
+   Additional functions related to statistics collection are listed in &lt;xref
+   linkend="monitoring-stats-funcs-table"&gt;.
+</span>その他の統計情報収集に関連した関数を<a class="xref" href="monitoring-stats.html#monitoring-stats-funcs-table" title="表27.18 その他の統計情報関数">表27.18「その他の統計情報関数」</a>に示します。
+  </p><div class="table" id="monitoring-stats-funcs-table"><p class="title"><strong>表27.18 その他の統計情報関数</strong></p><div class="table-contents"><span class="original">
+   &lt;title&gt;Additional Statistics Functions&lt;/title&gt;
+</span><table summary="その他の統計情報関数" border="1"><colgroup><col /><col /><col /></colgroup><thead><tr><th>関数</th><th>戻り値の型</th><th>説明</th></tr></thead><tbody><tr><td><code class="literal"><code class="function">pg_backend_pid()</code></code></td><td><code class="type">integer</code></td><td><span class="original">
+       Process ID of the server process handling the current session
+</span>現在のセッションを扱うサーバプロセスのプロセスID。
+      </td></tr><tr><td><code class="literal"><code class="function">pg_stat_get_activity</code>(<code class="type">integer</code>)</code><a id="idp80633600" class="indexterm"></a></td><td><code class="type">setof record</code></td><td>PIDが指定された場合、それに該当するバックエンドの情報のレコード、<code class="symbol">NULL</code>が指定された場合はシステム上のアクティブな各バックエンドに関するレコードが返されます。
+返される情報内容は<code class="structname">pg_stat_activity</code>の一部と同じです。
+      </td></tr><tr><td><code class="literal"><code class="function">pg_stat_get_snapshot_timestamp()</code></code><a id="idp80637904" class="indexterm"></a></td><td><code class="type">timestamp with time zone</code></td><td><span class="original">
+       Returns the timestamp of the current statistics snapshot
+</span>現在の統計情報のスナップショットの時刻を返します。
+      </td></tr><tr><td><code class="literal"><code class="function">pg_stat_clear_snapshot()</code></code><a id="idp80640832" class="indexterm"></a></td><td><code class="type">void</code></td><td><span class="original">
+       Discard the current statistics snapshot
+</span>現在の統計情報スナップショットを破棄します。
+      </td></tr><tr><td><code class="literal"><code class="function">pg_stat_reset()</code></code><a id="idp80643696" class="indexterm"></a></td><td><code class="type">void</code></td><td><span class="original">
+       Reset all statistics counters for the current database to zero
+       (requires superuser privileges by default, but EXECUTE for this
+       function can be granted to others.)
+</span>現在のデータベースに関する統計カウンタすべてをゼロにリセットします（スーパーユーザ権限が必要です）。 ★変更あり
+      </td></tr><tr><td><code class="literal"><code class="function">pg_stat_reset_shared</code>(text)</code><a id="idp80646976" class="indexterm"></a></td><td><code class="type">void</code></td><td><span class="original">
+       Reset some cluster-wide statistics counters to zero, depending on the
+       argument (requires superuser privileges by default, but EXECUTE for
+       this function can be granted to others).
+       Calling &lt;literal&gt;pg_stat_reset_shared('bgwriter')&lt;/&gt; will zero all the
+       counters shown in the &lt;structname&gt;pg_stat_bgwriter&lt;/&gt; view.
+       Calling &lt;literal&gt;pg_stat_reset_shared('archiver')&lt;/&gt; will zero all the
+       counters shown in the &lt;structname&gt;pg_stat_archiver&lt;/&gt; view.
+</span>引数に応じて、クラスタ全体の統計情報カウンタの一部をゼロに戻します（スーパーユーザ権限が必要です）。
+<code class="literal">pg_stat_reset_shared('bgwriter')</code>を呼び出すと、<code class="structname">pg_stat_bgwriter</code>ビューで示される値すべてがゼロになります。
+<code class="literal">pg_stat_reset_shared('archiver')</code>を呼び出すと、<code class="structname">pg_stat_archiver</code>ビューで示される値すべてがゼロになります。
+      </td></tr><tr><td><code class="literal"><code class="function">pg_stat_reset_single_table_counters</code>(oid)</code><a id="idp80652912" class="indexterm"></a></td><td><code class="type">void</code></td><td><span class="original">
+       Reset statistics for a single table or index in the current database to
+       zero (requires superuser privileges by default, but EXECUTE for this
+       function can be granted to others)
+</span>現在のデータベース内にある、ひとつのテーブルあるいはインデックスの統計情報をゼロにリセットします（スーパーユーザ権限が必要です）。★変更あり
+      </td></tr><tr><td><code class="literal"><code class="function">pg_stat_reset_single_function_counters</code>(oid)</code><a id="idp80656272" class="indexterm"></a></td><td><code class="type">void</code></td><td><span class="original">
+       Reset statistics for a single function in the current database to
+       zero (requires superuser privileges by default, but EXECUTE for this
+       function can be granted to others)
+</span>現在のデータベース内にある、ひとつの関数の統計情報をゼロにリセットします（スーパーユーザ権限が必要です）。
+      </td></tr></tbody></table></div></div><br class="table-break" /><p><span class="original">
+   &lt;function&gt;pg_stat_get_activity&lt;/function&gt;, the underlying function of
+   the &lt;structname&gt;pg_stat_activity&lt;/&gt; view, returns a set of records
+   containing all the available information about each backend process.
+   Sometimes it may be more convenient to obtain just a subset of this
+   information.  In such cases, an older set of per-backend statistics
+   access functions can be used; these are shown in &lt;xref
+   linkend="monitoring-stats-backend-funcs-table"&gt;.
+   These access functions use a backend ID number, which ranges from one
+   to the number of currently active backends.
+   The function &lt;function&gt;pg_stat_get_backend_idset&lt;/function&gt; provides a
+   convenient way to generate one row for each active backend for
+   invoking these functions.  For example, to show the &lt;acronym&gt;PID&lt;/&gt;s and
+   current queries of all backends:
+</span><code class="structname">pg_stat_activity</code>ビューの基礎となる<code class="function">pg_stat_get_activity</code>関数は、
+各バックエンドプロセスに関して利用可能な情報をすべて含むレコード集合を返します。
+この情報の一部のみを入手することがより簡便である場合があるかもしれません。
+このような場合、<a class="xref" href="monitoring-stats.html#monitoring-stats-backend-funcs-table" title="表27.19 バックエンド単位の統計情報関数">表27.19「バックエンド単位の統計情報関数」</a>に示す、古めのバックエンド単位の統計情報アクセス関数を使用することができます。
+これらのアクセス関数は、１から現在活動中のバックエンドの個数までの値を取る、バックエンドID番号を使用します。
+<code class="function">pg_stat_get_backend_idset</code>関数は、これらの関数を呼び出すために、活動中のバックエンド毎に１行を生成する簡便な方法を提供します。
+例えば以下はすべてのバックエンドについて<acronym class="acronym">PID</acronym>と現在の問い合わせを示します。
+
+</p><pre class="programlisting">SELECT pg_stat_get_backend_pid(s.backendid) AS pid,
+       pg_stat_get_backend_activity(s.backendid) AS query
+    FROM (SELECT pg_stat_get_backend_idset() AS backendid) AS s;</pre><p>
+  </p><div class="table" id="monitoring-stats-backend-funcs-table"><p class="title"><strong>表27.19 バックエンド単位の統計情報関数</strong></p><div class="table-contents"><span class="original">
+   &lt;title&gt;Per-Backend Statistics Functions&lt;/title&gt;
+</span><table summary="バックエンド単位の統計情報関数" border="1"><colgroup><col /><col /><col /></colgroup><thead><tr><th>関数</th><th>戻り値の型</th><th>説明</th></tr></thead><tbody><tr><td><code class="literal"><code class="function">pg_stat_get_backend_idset()</code></code></td><td><code class="type">setof integer</code></td><td>現在活動中のバックエンドID番号（１から活動中のバックエンドの個数まで）を設定します。</td></tr><tr><td><code class="literal"><code class="function">pg_stat_get_backend_activity(integer)</code></code></td><td><code class="type">text</code></td><td>バックエンドが最後に行った問い合わせテキストです。</td></tr><tr><td><code class="literal"><code class="function">pg_stat_get_backend_activity_start(integer)</code></code></td><td><code class="type">timestamp with time zone</code></td><td>最後の問い合わせが開始された時刻です。</td></tr><tr><td><code class="literal"><code class="function">pg_stat_get_backend_client_addr(integer)</code></code></td><td><code class="type">inet</code></td><td>バックエンドに接続したクライアントのIPアドレスです。</td></tr><tr><td><code class="literal"><code class="function">pg_stat_get_backend_client_port(integer)</code></code></td><td><code class="type">integer</code></td><td>クライアントが通信に使用しているTCPポート番号です。</td></tr><tr><td><code class="literal"><code class="function">pg_stat_get_backend_dbid(integer)</code></code></td><td><code class="type">oid</code></td><td>バックエンドが接続するデータベースのOIDです。</td></tr><tr><td><code class="literal"><code class="function">pg_stat_get_backend_pid(integer)</code></code></td><td><code class="type">integer</code></td><td>バックエンドのプロセスIDです。</td></tr><tr><td><code class="literal"><code class="function">pg_stat_get_backend_start(integer)</code></code></td><td><code class="type">timestamp with time zone</code></td><td>プロセスが開始された時刻です。</td></tr><tr><td><code class="literal"><code class="function">pg_stat_get_backend_userid(integer)</code></code></td><td><code class="type">oid</code></td><td>バックエンドにログインしたユーザのOIDです。</td></tr><tr><td><code class="literal"><code class="function">pg_stat_get_backend_wait_event_type(integer)</code></code></td><td><code class="type">text</code></td><td>Wait event type name if backend is currently waiting, otherwise NULL.
+        See <a class="xref" href="monitoring-stats.html#wait-event-table" title="表27.4 wait_event Description">表27.4「<code class="structname">wait_event</code> Description」</a> for details.
+        </td></tr><tr><td><code class="literal"><code class="function">pg_stat_get_backend_wait_event(integer)</code></code></td><td><code class="type">text</code></td><td>Wait event name if backend is currently waiting, otherwise NULL.
+       See <a class="xref" href="monitoring-stats.html#wait-event-table" title="表27.4 wait_event Description">表27.4「<code class="structname">wait_event</code> Description」</a> for details.
+       </td></tr><tr><td><code class="literal"><code class="function">pg_stat_get_backend_xact_start(integer)</code></code></td><td><code class="type">timestamp with time zone</code></td><td>現在のトランザクションが開始された時刻です。</td></tr></tbody></table></div></div><br class="table-break" /></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="monitoring-ps.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="monitoring.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="monitoring-locks.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">27.1. 標準的なUnixツール </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> 27.3. ロックの表示</td></tr></table></div></body></html>
