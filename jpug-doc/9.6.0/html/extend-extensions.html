@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>35.15. 関連するオブジェクトを拡張としてパッケージ化</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="PostgreSQL 9.6rc1文書" /><link rel="up" href="extend.html" title="第35章 SQLの拡張" /><link rel="prev" href="xindex.html" title="35.14. インデックス拡張機能へのインタフェース" /><link rel="next" href="extend-pgxs.html" title="35.16. 拡張構築基盤" /><link rel="copyright" href="legalnotice.html" title="法的告知" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><td width="20%" align="left" colspan="2"></td><th width="60%" align="center"><a accesskey="h" href="index.html">PostgreSQL 9.6rc1文書</a></th><td width="20%" align="right"><div class="actions"><a class="issue" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 9.6rc1 extend-extensions.html">誤訳等の報告</a></div></td></tr><tr><td width="10%" align="left" valign="top"><a accesskey="p" href="xindex.html">前へ</a> </td><td width="10%" align="left" valign="top"><a accesskey="u" href="extend.html">上へ</a></td><td width="60%" align="center">35.15. 関連するオブジェクトを拡張としてパッケージ化</td><td width="20%" align="right" valign="top"> <a accesskey="n" href="extend-pgxs.html">次へ</a></td></tr></table><hr /></div><div class="sect1" id="extend-extensions"><div class="titlepage"><div><div><h2 class="title" style="clear: both">35.15. 関連するオブジェクトを拡張としてパッケージ化</h2></div></div></div><span class="original">
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>36.15. 関連するオブジェクトを拡張としてパッケージ化</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="PostgreSQL 9.6.0文書" /><link rel="up" href="extend.html" title="第36章 SQLの拡張" /><link rel="prev" href="xindex.html" title="36.14. インデックス拡張機能へのインタフェース" /><link rel="next" href="extend-pgxs.html" title="36.16. 拡張構築基盤" /><link rel="copyright" href="legalnotice.html" title="法的告知" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><td width="20%" align="left" colspan="2"></td><th width="60%" align="center"><a accesskey="h" href="index.html">PostgreSQL 9.6.0文書</a></th><td width="20%" align="right"><div class="actions"><a class="issue" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 9.6.0 extend-extensions.html">誤訳等の報告</a></div></td></tr><tr><td width="10%" align="left" valign="top"><a accesskey="p" href="xindex.html">前へ</a> </td><td width="10%" align="left" valign="top"><a accesskey="u" href="extend.html">上へ</a></td><td width="60%" align="center">36.15. 関連するオブジェクトを拡張としてパッケージ化</td><td width="20%" align="right" valign="top"> <a accesskey="n" href="extend-pgxs.html">次へ</a></td></tr></table><hr /></div><div class="sect1" id="extend-extensions"><div class="titlepage"><div><div><h2 class="title" style="clear: both">36.15. 関連するオブジェクトを拡張としてパッケージ化</h2></div></div></div><span class="original">
    &lt;title&gt;Packaging Related Objects into an Extension&lt;/title&gt;
-</span><a id="idp90334416" class="indexterm"></a><p><span class="original">
+</span><a id="idp90544848" class="indexterm"></a><p><span class="original">
     A useful extension to &lt;productname&gt;PostgreSQL&lt;/&gt; typically includes
     multiple SQL objects; for example, a new data type will require new
     functions, new operators, and probably new index operator classes.
@@ -52,16 +52,18 @@
     by &lt;application&gt;pg_dump&lt;/&gt;.  Such a change is usually only sensible if
     you concurrently make the same change in the extension's script file.
     (But there are special provisions for tables containing configuration
-    data; see below.)
+    data; see &lt;xref linkend="extend-extensions-config-tables"&gt;.)
+    In production situations, it's generally better to create an extension
+    update script to perform changes to extension member objects.
 </span><span class="productname">PostgreSQL</span>はユーザに、拡張全体を削除させる以外に、拡張内に含まれる個々のオブジェクトを削除させません。
 また、拡張のメンバオブジェクトの定義を変更する（例えば関数では<code class="command">CREATE OR REPLACE FUNCTION</code>を介して変更する）ことはできますが、変更した定義は<span class="application">pg_dump</span>によりダンプされないことに留意してください。
 こうした変更は通常、同時に拡張のスクリプトファイルにも同じ変更を行った場合のみ認識することができます。
-（しかし後述するように設定データを持つテーブルに対しては特殊な準備があります。）
-   </p><p>    The extension script may set privileges on objects which are part of the
+（しかし後述するように設定データを持つテーブルに対しては特殊な準備があります。） ★追加訳あり
+   </p><p>    The extension script may set privileges on objects that are part of the
     extension via <code class="command">GRANT</code> and <code class="command">REVOKE</code>
     statements.  The final set of privileges for each object (if any are set)
     will be stored in the
-    <a class="link" href="catalog-pg-init-privs.html" title="49.28. pg_init_privs"><code class="structname">pg_init_privs</code></a>
+    <a class="link" href="catalog-pg-init-privs.html" title="50.28. pg_init_privs"><code class="structname">pg_init_privs</code></a>
     system catalog.  When <span class="application">pg_dump</span> is used, the
     <code class="command">CREATE EXTENSION</code> command will be included in the dump, followed
     by the set of <code class="command">GRANT</code> and <code class="command">REVOKE</code>
@@ -108,9 +110,9 @@
 拡張は非修飾名でいかなるスキーマ<span class="quote">「<span class="quote">の中に</span>」</span>も存在しません。
 しかし、拡張のメンバオブジェクトはオブジェクトの型が適切であればスキーマに属します。
 拡張が自身のメンバオブジェクトが属するスキーマを所有することは適切かも知れませんし、そうでないかも知れません。
-   </p><div class="sect2" id="idp90371840"><div class="titlepage"><div><div><h3 class="title">35.15.1. 拡張のファイル</h3></div></div></div><span class="original">
+   </p><div class="sect2" id="idp90582448"><div class="titlepage"><div><div><h3 class="title">36.15.1. 拡張のファイル</h3></div></div></div><span class="original">
     &lt;title&gt;Extension Files&lt;/title&gt;
-</span><a id="idp90372400" class="indexterm"></a><p><span class="original">
+</span><a id="idp90583008" class="indexterm"></a><p><span class="original">
      The &lt;xref linkend="sql-createextension"&gt; command relies on a control
      file for each extension, which must be named the same as the extension
      with a suffix of &lt;literal&gt;.control&lt;/&gt;, and must be placed in the
@@ -160,11 +162,13 @@
 これは省略することができますが、その場合<code class="literal">VERSION</code>オプションがない<code class="command">CREATE EXTENSION</code>は失敗します。
 ですので通常省略しようとは思わないでしょう。
        </p></dd><dt><span class="term"><code class="varname">comment</code> (<code class="type">string</code>)</span></dt><dd><p><span class="original">
-        A comment (any string) about the extension.  Alternatively,
-        the comment can be set by means of the &lt;xref linkend="sql-comment"&gt;
-        command in the script file.
+        A comment (any string) about the extension.  The comment is applied
+        when initially creating an extension, but not during extension updates
+        (since that might override user-added comments).  Alternatively,
+        the extension's comment can be set by writing
+        a &lt;xref linkend="sql-comment"&gt; command in the script file.
 </span>拡張に関するコメント（任意の文字列）です。
-この他の方法として、スクリプトファイル内で<a class="xref" href="sql-comment.html" title="COMMENT"><span class="refentrytitle">COMMENT</span></a>コマンドを使用してコメントを設定することができます。
+この他の方法として、スクリプトファイル内で<a class="xref" href="sql-comment.html" title="COMMENT"><span class="refentrytitle">COMMENT</span></a>コマンドを使用してコメントを設定することができます。 ★変更あり
        </p></dd><dt><span class="term"><code class="varname">encoding</code> (<code class="type">string</code>)</span></dt><dd><p><span class="original">
         The character set encoding used by the script file(s).  This should
         be specified if the script files contain any non-ASCII characters.
@@ -203,17 +207,20 @@
         its contained objects into a different schema after initial creation
         of the extension.  The default is &lt;literal&gt;false&lt;/&gt;, i.e. the
         extension is not relocatable.
-        See below for more information.
+        See &lt;xref linkend="extend-extensions-relocation"&gt; for more information.
 </span>拡張を最初に作成した後に拡張により含まれるオブジェクトを別のスキーマに移動することができる場合、拡張は<em class="firstterm">再配置可能</em>です。
 デフォルトは<code class="literal">false</code>、つまり、拡張は再配置可能ではありません。
-詳しくは後で説明します。
+詳しくは後で説明します。 ★変更あり
        </p></dd><dt><span class="term"><code class="varname">schema</code> (<code class="type">string</code>)</span></dt><dd><p><span class="original">
         This parameter can only be set for non-relocatable extensions.
         It forces the extension to be loaded into exactly the named schema
-        and not any other.  See below for more information.
+        and not any other.
+        The &lt;varname&gt;schema&lt;/varname&gt; parameter is consulted only when
+        initially creating an extension, not during extension updates.
+        See &lt;xref linkend="extend-extensions-relocation"&gt; for more information.
 </span>このパラメータは再配置可能ではない拡張に対してのみ設定することができます。
 拡張が指名したスキーマのみにロードされ、他にはロードされないことを強制します。
-詳しくは後で説明します。
+詳しくは後で説明します。 ★変更あり
        </p></dd></dl></div><p><span class="original">
      In addition to the primary control file
      &lt;literal&gt;&lt;replaceable&gt;extension&lt;/&gt;.control&lt;/literal&gt;,
@@ -244,7 +251,8 @@
      comments) by the extension mechanism.  This provision is commonly used
      to throw an error if the script file is fed to &lt;application&gt;psql&lt;/&gt;
      rather than being loaded via &lt;command&gt;CREATE EXTENSION&lt;/&gt; (see example
-     script below).  Without that, users might accidentally load the
+     script in &lt;xref linkend="extend-extensions-example"&gt;).
+     Without that, users might accidentally load the
      extension's contents as &lt;quote&gt;loose&lt;/&gt; objects rather than as an
      extension, a state of affairs that's a bit tedious to recover from.
 </span>拡張の<acronym class="acronym">SQL</acronym>スクリプトファイルには、<code class="literal">\echo</code>から始まる行を含めることができます。
@@ -263,7 +271,7 @@
 </span>スクリプトファイルは指定した符号化方式で認められる任意の文字を含めることができますが、<span class="productname">PostgreSQL</span>が制御ファイルの符号化方式が何かを把握する方法がありませんので、制御ファイルにはASCII文字のみを含めなければなりません。
 実際には、拡張のコメントに非ASCII文字を含めたい場合にのみ、これが問題になります。
 このような場合には、制御ファイルの<code class="varname">comment</code>を使用せず、代わりにコメントを設定するためにスクリプトファイル内で<code class="command">COMMENT ON EXTENSION</code>を使用することを勧めます。
-    </p></div><div class="sect2" id="idp90435328"><div class="titlepage"><div><div><h3 class="title">35.15.2. 拡張の再配置性</h3></div></div></div><span class="original">
+    </p></div><div class="sect2" id="extend-extensions-relocation"><div class="titlepage"><div><div><h3 class="title">36.15.2. 拡張の再配置性</h3></div></div></div><span class="original">
     &lt;title&gt;Extension Relocatability&lt;/title&gt;
 </span><p><span class="original">
      Users often wish to load the objects contained in an extension into a
@@ -363,7 +371,7 @@
 </span>再配置不可能な拡張は複数スキーマにまたがるオブジェクトを含めることができますが、通常、外部使用を意図したオブジェクトはすべて単一スキーマに格納することが望まれます。
 この単一スキーマが拡張の対象のスキーマとみなされます。
 こうした調整は依存する拡張を作成する間、デフォルトの<code class="varname">search_path</code>設定を都合に合わせて扱います。
-    </p></div><div class="sect2" id="idp90466496"><div class="titlepage"><div><div><h3 class="title">35.15.3. 拡張設定テーブル</h3></div></div></div><span class="original">
+    </p></div><div class="sect2" id="extend-extensions-config-tables"><div class="titlepage"><div><div><h3 class="title">36.15.3. 拡張設定テーブル</h3></div></div></div><span class="original">
     &lt;title&gt;Extension Configuration Tables&lt;/title&gt;
 </span><p><span class="original">
      Some extensions include configuration tables, which contain data that
@@ -379,7 +387,7 @@
 しかしこの振舞いは設定テーブルの場合望まれません。
 ユーザによってなされたデータ変更はダンプ内に含まれなければなりません。
 さもないとダンプしリストアした後で拡張の動作が変わってしまいます。
-    </p><a id="idp90469696" class="indexterm"></a><p><span class="original">
+    </p><a id="idp90681824" class="indexterm"></a><p><span class="original">
      To solve this problem, an extension's script file can mark a table
      or a sequence it has created as a configuration relation, which will
      cause &lt;application&gt;pg_dump&lt;/&gt; to include the table's or the sequence's
@@ -450,7 +458,7 @@ SELECT pg_catalog.pg_extension_config_dump('my_config', 'WHERE NOT standard_entr
     </p><p>     Sequences associated with <code class="type">serial</code> or <code class="type">bigserial</code> columns
      need to be directly marked to dump their state. Marking their parent
      relation is not enough for this purpose.
-    </p></div><div class="sect2" id="idp90488368"><div class="titlepage"><div><div><h3 class="title">35.15.4. 拡張の更新</h3></div></div></div><span class="original">
+    </p></div><div class="sect2" id="idp90700496"><div class="titlepage"><div><div><h3 class="title">36.15.4. 拡張の更新</h3></div></div></div><span class="original">
     &lt;title&gt;Extension Updates&lt;/title&gt;
 </span><p><span class="original">
      One advantage of the extension mechanism is that it provides convenient
@@ -572,7 +580,7 @@ SELECT pg_catalog.pg_extension_config_dump('my_config', 'WHERE NOT standard_entr
 経路は<code class="literal">--</code>を区切り文字として使用したテキスト形式で表示されます。
 配列形式の方が良ければ<code class="literal">regexp_split_to_array(path,'--')</code>を使用することができます。
 
-    </p></div><div class="sect2" id="idp90532592"><div class="titlepage"><div><div><h3 class="title">35.15.5. 拡張の例</h3></div></div></div><span class="original">
+    </p></div><div class="sect2" id="extend-extensions-example"><div class="titlepage"><div><div><h3 class="title">36.15.5. 拡張の例</h3></div></div></div><span class="original">
     &lt;title&gt;Extension Example&lt;/title&gt;
 </span><p><span class="original">
      Here is a complete example of an &lt;acronym&gt;SQL&lt;/&gt;-only
@@ -634,11 +642,11 @@ include $(PGXS)</pre><p>
      will install the control and script files into the correct
      directory as reported by &lt;application&gt;pg_config&lt;/&gt;.
 </span>
-このメークファイルは<a class="xref" href="extend-pgxs.html" title="35.16. 拡張構築基盤">35.16. 拡張構築基盤</a>で説明する<acronym class="acronym">PGXS</acronym>に依存します。
+このメークファイルは<a class="xref" href="extend-pgxs.html" title="36.16. 拡張構築基盤">36.16. 拡張構築基盤</a>で説明する<acronym class="acronym">PGXS</acronym>に依存します。
 <code class="literal">make install</code>コマンドは制御ファイルとスクリプトファイルを<span class="application">pg_config</span>で報告される正しいディレクトリにインストールします。
     </p><p><span class="original">
      Once the files are installed, use the
      &lt;xref linkend="sql-createextension"&gt; command to load the objects into
      any particular database.
 </span>ファイルがインストールされた後、<a class="xref" href="sql-createextension.html" title="CREATE EXTENSION"><span class="refentrytitle">CREATE EXTENSION</span></a>コマンドを使用してオブジェクトを任意の特定のデータベースにロードしてください。
-    </p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="xindex.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="extend.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="extend-pgxs.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">35.14. インデックス拡張機能へのインタフェース </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> 35.16. 拡張構築基盤</td></tr></table></div></body></html>
+    </p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="xindex.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="extend.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="extend-pgxs.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">36.14. インデックス拡張機能へのインタフェース </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> 36.16. 拡張構築基盤</td></tr></table></div></body></html>
