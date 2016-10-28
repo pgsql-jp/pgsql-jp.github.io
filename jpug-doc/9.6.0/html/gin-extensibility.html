@@ -152,9 +152,9 @@ NULLキーがこの関数に渡されることはありません。
 演算子クラスは、インデックス付けされた項目が問い合わせに一致するか確認する関数も提供しなければなりません。
 それは2つの方法で行なわれます。
 2値の<code class="function">consistent</code>関数と3値の<code class="function">triConsistent</code>関数です。
-<code class="function">triConsistent</code>が両方の機能を含みますので、triConsistentだけを提供しても十分です。
+<code class="function">triConsistent</code>が両方の機能を含みますので、<code class="function">triConsistent</code>だけを提供しても十分です。
 しかし、2値の亜種を計算するのが著しく安価であれば、両方を提供することは役に立つかもしれません。
-2値の亜種のみが提供されていれば、すべてのキーを取得する前にインデックス項目が一致しないことを確認することに基づく最適化の中には無効となるものもあります。 ★変更あり
+2値の亜種のみが提供されていれば、すべてのキーを取得する前にインデックス項目が一致しないことを確認することに基づく最適化の中には無効となるものもあります。
 
   </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="function">bool consistent(bool check[], StrategyNumber n, Datum query,
         int32 nkeys, Pointer extra_data[], bool *recheck,
@@ -228,18 +228,17 @@ NULLキーがこの関数に渡されることはありません。
        keys. If the result depends on the &lt;literal&gt;GIN_MAYBE&lt;/&gt; entries, i.e.,
        the match cannot be confirmed or refuted based on the known query keys,
        the function must return &lt;literal&gt;GIN_MAYBE&lt;/&gt;.
-</span><code class="function">triConsistent</code>は<code class="function">consistent</code>と似ていますが、論理値<code class="literal">check[]</code>の代わりに、各キーに対して3つの可能な値があります。<code class="literal">GIN_TRUE</code>、<code class="literal">GIN_FALSE</code>、<code class="literal">GIN_MAYBE</code>です。
-<code class="literal">GIN_FALSE</code>と<code class="literal">GIN_TRUE</code>は通常の論理値と同じ意味です。
-<code class="literal">GIN_MAYBE</code>はそのキーの存在が分からないこと意味します。
-<code class="literal">GIN_MAYBE</code>値があれば、インデックス項目が対応する問い合わせキーを含むかどうかに関わらず、項目が一致する場合にのみ関数はGIN_TRUEを返すべきです。
-同様に、GIN_MAYBEを含むかどうかに関わらず項目が一致しない場合にのみ関数はGIN_FALSEを返さなければなりません。
-結果がGIN_MAYBE項目に依存する、すなわち、分かっている問い合わせキーに基づいて、一致することもしないことも確認できない場合には、関数はGIN_MAYBEを返さなければなりません。
+</span><code class="function">triConsistent</code>は<code class="function">consistent</code>と似ていますが、<code class="literal">check</code>ベクターの論理値の代わりに、各キーに対して3つの可能な値があります。<code class="literal">GIN_TRUE</code>、<code class="literal">GIN_FALSE</code>、<code class="literal">GIN_MAYBE</code>です。
+<code class="literal">GIN_FALSE</code>と<code class="literal">GIN_TRUE</code>は通常の論理値と同じ意味であり、<code class="literal">GIN_MAYBE</code>はそのキーの存在が分からないこと意味します。
+<code class="literal">GIN_MAYBE</code>値があれば、インデックス項目が対応する問い合わせキーを含むかどうかに関わらず、項目が確実に一致する場合にのみ関数は<code class="literal">GIN_TRUE</code>を返すべきです。
+同様に、<code class="literal">GIN_MAYBE</code>を含むかどうかに関わらず項目が確実に一致しない場合にのみ関数は<code class="literal">GIN_FALSE</code>を返さなければなりません。
+結果が<code class="literal">GIN_MAYBE</code>項目に依存する、すなわち、分かっている問い合わせキーに基づいて、一致することもしないことも確認できない場合には、関数は<code class="literal">GIN_MAYBE</code>を返さなければなりません。
       </p><p><span class="original">
        When there are no &lt;literal&gt;GIN_MAYBE&lt;/&gt; values in the &lt;literal&gt;check&lt;/&gt;
        vector, a &lt;literal&gt;GIN_MAYBE&lt;/&gt; return value is the equivalent of
        setting the &lt;literal&gt;recheck&lt;/&gt; flag in the
        boolean &lt;function&gt;consistent&lt;/&gt; function.
-</span><code class="literal">check</code>ベクターにGIN_MAYBE値がなければ、<code class="literal">GIN_MAYBE</code>戻り値は論理値の<code class="function">consistent</code>関数で<code class="literal">recheck</code>フラグを設定することと同じです。 ★変更あり？
+</span><code class="literal">check</code>ベクターに<code class="literal">GIN_MAYBE</code>値がなければ、<code class="literal">GIN_MAYBE</code>戻り値は論理値の<code class="function">consistent</code>関数で<code class="literal">recheck</code>フラグを設定することと同じです。
       </p></dd></dl></div><p>
 <span class="original">
   Optionally, an operator class for &lt;acronym&gt;GIN&lt;/acronym&gt; can supply the
@@ -293,6 +292,7 @@ NULLキーがこの関数に渡されることはありません。
   though the actual type might be something else depending on the operator.
 </span>上記の各種<code class="literal">Datum</code>値の実データ型は、演算子クラスに依存して変動します。
 <code class="function">extractValue</code>に渡される項目値は常に演算子クラスの入力型であり、キー値はすべてそのクラスの<code class="literal">STORAGE</code>型でなければなりません。
-<code class="function">extractQuery</code>、<code class="function">consistent</code>および<code class="function">triConsistent</code>に渡される<code class="literal">query</code>引数は、戦略番号によって識別されるクラスのメンバ演算子の右辺入力型として指定されたものになります。
-正しい型のキー値がそこから抽出できる限り、これは項目の型と同じである必要はありません。
+<code class="function">extractQuery</code>、<code class="function">consistent</code>および<code class="function">triConsistent</code>に渡される<code class="literal">query</code>引数の型は、戦略番号によって識別されるクラスのメンバ演算子の右辺入力型です。
+正しい型のキー値がそこから抽出できる限り、これはインデックス付けされた型と同じである必要はありません。
+しかしながら、この3つのサポート関数のSQL宣言では、実際の型は演算子に依存して何か他のものであるとしても、<code class="literal">query</code>引数には演算子クラスのインデックス付けされたデータ型を使うことを勧めます。
  </p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="gin-builtin-opclasses.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="gin.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="gin-implementation.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">63.2. 組込み演算子クラス </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> 63.4. 実装</td></tr></table></div></body></html>
