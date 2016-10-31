@@ -167,18 +167,21 @@ my_consistent(PG_FUNCTION_ARGS)
 ここで、<code class="varname">key</code>はインデックス要素であり、<code class="varname">query</code>はインデックスに対して検索される値です。
 <code class="literal">StrategyNumber</code>パラメータは、演算子クラスのどの演算子が適用されるかを示します。
 これは<code class="command">CREATE OPERATOR CLASS</code>コマンドの演算子番号の1つに一致します。
-このクラスに含めた演算子が何かに応じて、<code class="varname">query</code>のデータ型は変動することがあります。
-しかし、上記骨格は変動しないものと考えられます。 ★変更あり
-      </p><p>       Depending on which operators you have included in the class, the data
-       type of <code class="varname">query</code> could vary with the operator, since it will
+      </p><p><span class="original">
+       Depending on which operators you have included in the class, the data
+       type of &lt;varname&gt;query&lt;/&gt; could vary with the operator, since it will
        be whatever type is on the righthand side of the operator, which might
        be different from the indexed data type appearing on the lefthand side.
        (The above code skeleton assumes that only one type is possible; if
-       not, fetching the <code class="varname">query</code> argument value would have to depend
+       not, fetching the &lt;varname&gt;query&lt;/&gt; argument value would have to depend
        on the operator.)  It is recommended that the SQL declaration of
-       the <code class="function">consistent</code> function use the opclass's indexed data
-       type for the <code class="varname">query</code> argument, even though the actual type
+       the &lt;function&gt;consistent&lt;/&gt; function use the opclass's indexed data
+       type for the &lt;varname&gt;query&lt;/&gt; argument, even though the actual type
        might be something else depending on the operator.
+</span>演算子の右辺にはいかなる型も来ることがあり、それは左辺に現れるインデックス付けされたデータ型とは違うものかもしれませんので、このクラスにどの演算子を含めたかに依存して、<code class="varname">query</code>のデータ型は演算子に応じて変動することがあります。
+(上のコードの骨格は型が1つだけ可能であることを仮定しています。
+そうでなければ、<code class="varname">query</code>引数の値を取得するのは演算子に依存しないといけないでしょう。)
+<code class="function">consistent</code>関数のSQL宣言では、実際の型は演算子に依存して何か他のものであるとしても、<code class="varname">query</code>引数の演算子クラスのインデックス付けされたデータ型を使うことをお勧めします。
       </p></dd><dt><span class="term"><code class="function">union</code></span></dt><dd><p><span class="original">
        This method consolidates information in the tree.  Given a set of
        entries, this function generates a new index entry that represents
@@ -239,18 +242,26 @@ my_union(PG_FUNCTION_ARGS)
         &lt;acronym&gt;GiST&lt;/&gt; support method.
 </span>ご覧になったように、この骨格で<code class="literal">union(X, Y, Z) = union(union(X, Y), Z)</code>であるようなデータ型を処理しています。
 この<acronym class="acronym">GiST</acronym>サポートメソッドに適切なunionアルゴリズムを実装することで、このような場合以外のデータ型をサポートすることは非常に容易です。
-      </p><p>        The result of the <code class="function">union</code> function must be a value of the
+      </p><p><span class="original">
+        The result of the &lt;function&gt;union&lt;/&gt; function must be a value of the
         index's storage type, whatever that is (it might or might not be
-        different from the indexed column's type).  The <code class="function">union</code>
-        function should return a pointer to newly <code class="function">palloc()</code>ed
+        different from the indexed column's type).  The &lt;function&gt;union&lt;/&gt;
+        function should return a pointer to newly &lt;function&gt;palloc()&lt;/&gt;ed
         memory. You can't just return the input value as-is, even if there is
         no type change.
-      </p><p>       As shown above, the <code class="function">union</code> function's
-       first <code class="type">internal</code> argument is actually
-       a <code class="structname">GistEntryVector</code> pointer.  The second argument is a
+</span><code class="function">union</code>関数の結果は、(インデックス付けされた列の型とは異なるかもしれないし、異ならないかもしれませんが)それが何であれインデックスの格納型の値でなければなりません。
+<code class="function">union</code>関数は新たに<code class="function">palloc()</code>されたメモリへのポインタを返さなければなりません。
+型の変更がなかったとしても、入力値をそのまま返すことはできません。
+      </p><p><span class="original">
+       As shown above, the &lt;function&gt;union&lt;/&gt; function's
+       first &lt;type&gt;internal&lt;/&gt; argument is actually
+       a &lt;structname&gt;GistEntryVector&lt;/&gt; pointer.  The second argument is a
        pointer to an integer variable, which can be ignored.  (It used to be
-       required that the <code class="function">union</code> function store the size of its
+       required that the &lt;function&gt;union&lt;/&gt; function store the size of its
        result value into that variable, but this is no longer necessary.)
+</span>上に示したように、<code class="function">union</code>関数の1番目の<code class="type">internal</code>引数は実際は<code class="structname">GistEntryVector</code>のポインタです。
+2番目の引数は整数の変数へのポインタであり、無視できます。
+(<code class="function">union</code>関数がその結果値の大きさをその変数に保存するのに必要だったのですが、これはもはや必要ではありません。)
       </p></dd><dt><span class="term"><code class="function">compress</code></span></dt><dd><p><span class="original">
        Converts the data item into a format suitable for physical storage in
        an index page.
@@ -376,12 +387,16 @@ my_penalty(PG_FUNCTION_ARGS)
     *penalty = my_penalty_implementation(orig, new);
     PG_RETURN_POINTER(penalty);
 }</pre><p>
-
-        For historical reasons, the <code class="function">penalty</code> function doesn't
-        just return a <code class="type">float</code> result; instead it has to store the value
+<span class="original">
+        For historical reasons, the &lt;function&gt;penalty&lt;/&gt; function doesn't
+        just return a &lt;type&gt;float&lt;/&gt; result; instead it has to store the value
         at the location indicated by the third argument.  The return
         value per se is ignored, though it's conventional to pass back the
         address of that argument.
+</span>
+歴史的な理由により、<code class="function">penalty</code>関数は単純に<code class="type">float</code>の結果を返しません。
+その代わり、3番目の引数で指定された場所に値を格納しなければなりません。
+その引数のアドレスを戻すのが慣例ですが、戻り値それ自体は無視されます。
       </p><p><span class="original">
         The &lt;function&gt;penalty&lt;/&gt; function is crucial to good performance of
         the index. It'll get used at insertion time to determine which branch
@@ -489,11 +504,14 @@ my_picksplit(PG_FUNCTION_ARGS)
     v-&gt;spl_rdatum = DataTypeGetDatum(unionR);
     PG_RETURN_POINTER(v);
 }</pre><p>
-
-       Notice that the <code class="function">picksplit</code> function's result is delivered
-       by modifying the passed-in <code class="structname">v</code> structure.  The return
+<span class="original">
+       Notice that the &lt;function&gt;picksplit&lt;/&gt; function's result is delivered
+       by modifying the passed-in &lt;structname&gt;v&lt;/&gt; structure.  The return
        value per se is ignored, though it's conventional to pass back the
-       address of <code class="structname">v</code>.
+       address of &lt;structname&gt;v&lt;/&gt;.
+</span>
+<code class="function">picksplit</code>関数の結果は渡された<code class="structname">v</code>構造体を修正することで返されることに注意してください。
+<code class="structname">v</code>のアドレスを戻すのが慣例ですが、戻り値それ自体は無視されます。
       </p><p><span class="original">
         Like &lt;function&gt;penalty&lt;/&gt;, the &lt;function&gt;picksplit&lt;/&gt; function
         is crucial to good performance of the index.  Designing suitable
@@ -506,7 +524,8 @@ my_picksplit(PG_FUNCTION_ARGS)
        Returns true if two index entries are identical, false otherwise.
        (An &lt;quote&gt;index entry&lt;/&gt; is a value of the index's storage type,
        not necessarily the original indexed column's type.)
-</span>２つのインデックス項目が同一の場合に真、さもなくば偽を返します。 ★変更あり
+</span>２つのインデックス項目が同一の場合に真、さもなくば偽を返します。
+(<span class="quote">「<span class="quote">インデックス項目</span>」</span>はインデックスの格納型の値であり、必ずしも元のインデックス付けされた列の型という訳ではありません。)
       </p><p><span class="original">
         The &lt;acronym&gt;SQL&lt;/&gt; declaration of the function must look like this:
 </span>この関数の<acronym class="acronym">SQL</acronym>宣言は以下のようになります。
@@ -540,7 +559,8 @@ my_same(PG_FUNCTION_ARGS)
         address of that argument.
 </span>
 歴史的な理由により、<code class="function">same</code>関数は単純に論理値の結果を返しません。
-その代わり、３番目の引数で指定された場所にフラグを格納しなければなりません。 ★変更あり
+その代わり、3番目の引数で指定された場所にフラグを格納しなければなりません。
+その引数のアドレスを戻すのが慣例ですが、戻り値それ自体は無視されます。
       </p></dd><dt><span class="term"><code class="function">distance</code></span></dt><dd><p><span class="original">
        Given an index entry &lt;literal&gt;p&lt;/&gt; and a query value &lt;literal&gt;q&lt;/&gt;,
        this function determines the index entry's
@@ -634,7 +654,7 @@ my_distance(PG_FUNCTION_ARGS)
        Converts the compressed index representation of a data item into the
        original data type, for index-only scans. The returned data must be an
        exact, non-lossy copy of the originally indexed value.
-</span>インデックスオンリースキャンで使用するため、データ項目の圧縮されたインデックス表現を元のデータ型に変換します。 ★変更あり
+</span>インデックスオンリースキャンで使用するため、データ項目の圧縮されたインデックス表現を元のデータ型に変換します。
 返されたデータは元のインデックス値の正確で、何も失われていない複製でなければなりません。
       </p><p><span class="original">
         The &lt;acronym&gt;SQL&lt;/&gt; declaration of the function must look like this:
@@ -654,9 +674,9 @@ LANGUAGE C STRICT;</pre><p>
         argument as-is.
 </span>
 引数は<code class="structname">GISTENTRY</code>構造体へのポインタです。
-entryにおいて、そのkeyフィールドには、NULLでないリーフデータが圧縮形式で入っています。
-戻り値は別の<code class="structname">GISTENTRY</code>構造体で、そのkeyフィールドには、同じデータが元の非圧縮形式で入っています。
-opclassの圧縮関数がリーフのエントリに対して何もしないなら、fetchメソッドは引数をそのまま返すことができます。 ★変更あり
+entryにおいて、その<code class="structfield">key</code>フィールドには、NULLでないリーフデータが圧縮形式で入っています。
+戻り値は別の<code class="structname">GISTENTRY</code>構造体で、その<code class="structfield">key</code>フィールドには、同じデータが元の非圧縮形式で入っています。
+opclassの圧縮関数がリーフのエントリに対して何もしないなら、<code class="function">fetch</code>メソッドは引数をそのまま返すことができます。
        </p><p><span class="original">
         The matching code in the C module could then follow this skeleton:
 </span>Cモジュールにおける対応するコードは次の骨格に従うことになります。
@@ -692,7 +712,7 @@ my_fetch(PG_FUNCTION_ARGS)
        If the compress method is lossy for leaf entries, the operator class
        cannot support index-only scans, and must not define
        a &lt;function&gt;fetch&lt;/&gt; function.
-</span>compressメソッドがリーフエントリに対してデータ損失がある場合、演算子クラスはインデックスオンリースキャンをサポートすることができず、fetch関数を定義してはいけません。★変更あり
+</span>compressメソッドがリーフエントリに対してデータ損失がある場合、演算子クラスはインデックスオンリースキャンをサポートすることができず、<code class="function">fetch</code>関数を定義してはいけません。
       </p></dd></dl></div><p><span class="original">
    All the GiST support methods are normally called in short-lived memory
    contexts; that is, &lt;varname&gt;CurrentMemoryContext&lt;/&gt; will get reset after

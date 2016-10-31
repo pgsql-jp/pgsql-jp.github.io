@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>36.15. 関連するオブジェクトを拡張としてパッケージ化</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="PostgreSQL 9.6.0文書" /><link rel="up" href="extend.html" title="第36章 SQLの拡張" /><link rel="prev" href="xindex.html" title="36.14. インデックス拡張機能へのインタフェース" /><link rel="next" href="extend-pgxs.html" title="36.16. 拡張構築基盤" /><link rel="copyright" href="legalnotice.html" title="法的告知" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><td width="20%" align="left" colspan="2"></td><th width="60%" align="center"><a accesskey="h" href="index.html">PostgreSQL 9.6.0文書</a></th><td width="20%" align="right"><div class="actions"><a class="issue" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 9.6.0 extend-extensions.html">誤訳等の報告</a></div></td></tr><tr><td width="10%" align="left" valign="top"><a accesskey="p" href="xindex.html">前へ</a> </td><td width="10%" align="left" valign="top"><a accesskey="u" href="extend.html">上へ</a></td><td width="60%" align="center">36.15. 関連するオブジェクトを拡張としてパッケージ化</td><td width="20%" align="right" valign="top"> <a accesskey="n" href="extend-pgxs.html">次へ</a></td></tr></table><hr /></div><div class="sect1" id="extend-extensions"><div class="titlepage"><div><div><h2 class="title" style="clear: both">36.15. 関連するオブジェクトを拡張としてパッケージ化</h2></div></div></div><span class="original">
    &lt;title&gt;Packaging Related Objects into an Extension&lt;/title&gt;
-</span><a id="idp90528096" class="indexterm"></a><p><span class="original">
+</span><a id="idp90417616" class="indexterm"></a><p><span class="original">
     A useful extension to &lt;productname&gt;PostgreSQL&lt;/&gt; typically includes
     multiple SQL objects; for example, a new data type will require new
     functions, new operators, and probably new index operator classes.
@@ -58,22 +58,31 @@
 </span><span class="productname">PostgreSQL</span>はユーザに、拡張全体を削除させる以外に、拡張内に含まれる個々のオブジェクトを削除させません。
 また、拡張のメンバオブジェクトの定義を変更する（例えば関数では<code class="command">CREATE OR REPLACE FUNCTION</code>を介して変更する）ことはできますが、変更した定義は<span class="application">pg_dump</span>によりダンプされないことに留意してください。
 こうした変更は通常、同時に拡張のスクリプトファイルにも同じ変更を行った場合のみ認識することができます。
-（しかし後述するように設定データを持つテーブルに対しては特殊な準備があります。） ★追加訳あり
-   </p><p>    The extension script may set privileges on objects that are part of the
-    extension via <code class="command">GRANT</code> and <code class="command">REVOKE</code>
+（しかし設定データを持つテーブルに対しては特殊な準備があります。<a class="xref" href="extend-extensions.html#extend-extensions-config-tables" title="36.15.3. 拡張設定テーブル">36.15.3. 拡張設定テーブル</a>を参照してください。）
+製造工程では、拡張メンバオブジェクトへの変更を処理するために拡張更新スクリプトを作成するのが一般により良い方法です。
+   </p><p><span class="original">
+    The extension script may set privileges on objects that are part of the
+    extension via &lt;command&gt;GRANT&lt;/command&gt; and &lt;command&gt;REVOKE&lt;/command&gt;
     statements.  The final set of privileges for each object (if any are set)
     will be stored in the
-    <a class="link" href="catalog-pg-init-privs.html" title="50.28. pg_init_privs"><code class="structname">pg_init_privs</code></a>
-    system catalog.  When <span class="application">pg_dump</span> is used, the
-    <code class="command">CREATE EXTENSION</code> command will be included in the dump, followed
-    by the set of <code class="command">GRANT</code> and <code class="command">REVOKE</code>
+    &lt;link linkend="catalog-pg-init-privs"&gt;&lt;structname&gt;pg_init_privs&lt;/structname&gt;&lt;/link&gt;
+    system catalog.  When &lt;application&gt;pg_dump&lt;/&gt; is used, the
+    &lt;command&gt;CREATE EXTENSION&lt;/&gt; command will be included in the dump, followed
+    by the set of &lt;command&gt;GRANT&lt;/command&gt; and &lt;command&gt;REVOKE&lt;/command&gt;
     statements necessary to set the privileges on the objects to what they were
     at the time the dump was taken.
-   </p><p>    <span class="productname">PostgreSQL</span> does not currently support extension scripts
-    issuing <code class="command">CREATE POLICY</code> or <code class="command">SECURITY LABEL</code>
+</span>拡張スクリプトは、<code class="command">GRANT</code>文と<code class="command">REVOKE</code>文を使って拡張の一部のオブジェクトに権限を設定するかもしれません。
+それぞれのオブジェクト（どれかが設定される場合）の最終的な権限のセットは、<a class="link" href="catalog-pg-init-privs.html" title="50.28. pg_init_privs"><code class="structname">pg_init_privs</code></a>システムカタログに格納されます。
+<span class="application">pg_dump</span>が使用される時に、<code class="command">CREATE EXTENSION</code>コマンドがダンプ内に含まれ、ダンプが取られた時点で権限の設定が必要となるオブジェクトに対する<code class="command">GRANT</code>文と<code class="command">REVOKE</code>文が伴います。
+   </p><p><span class="original">
+    &lt;productname&gt;PostgreSQL&lt;/&gt; does not currently support extension scripts
+    issuing &lt;command&gt;CREATE POLICY&lt;/command&gt; or &lt;command&gt;SECURITY LABEL&lt;/command&gt;
     statements.  These are expected to be set after the extension has been
     created.  All RLS policies and security labels on extension objects will be
-    included in dumps created by <span class="application">pg_dump</span>.
+    included in dumps created by &lt;application&gt;pg_dump&lt;/&gt;.
+</span><span class="productname">PostgreSQL</span>は、現在<code class="command">CREATE POLICY</code>文や<code class="command">SECURITY LABEL</code>文の拡張スクリプトをサポートしていません。
+これらは拡張が作成された後に設定されると予想されます。
+拡張オブジェクトのすべての行セキュリティポリシーとセキュリティラベルは<span class="application">pg_dump</span>によって作成されたダンプに含まれます。
    </p><p>    The extension mechanism also has provisions for packaging modification
     scripts that adjust the definitions of the SQL objects contained in an
     extension.  For example, if version 1.1 of an extension adds one function
@@ -110,9 +119,9 @@
 拡張は非修飾名でいかなるスキーマ<span class="quote">「<span class="quote">の中に</span>」</span>も存在しません。
 しかし、拡張のメンバオブジェクトはオブジェクトの型が適切であればスキーマに属します。
 拡張が自身のメンバオブジェクトが属するスキーマを所有することは適切かも知れませんし、そうでないかも知れません。
-   </p><div class="sect2" id="idp90565696"><div class="titlepage"><div><div><h3 class="title">36.15.1. 拡張のファイル</h3></div></div></div><span class="original">
+   </p><div class="sect2" id="idp90457472"><div class="titlepage"><div><div><h3 class="title">36.15.1. 拡張のファイル</h3></div></div></div><span class="original">
     &lt;title&gt;Extension Files&lt;/title&gt;
-</span><a id="idp90566256" class="indexterm"></a><p><span class="original">
+</span><a id="idp90458032" class="indexterm"></a><p><span class="original">
      The &lt;xref linkend="sql-createextension"&gt; command relies on a control
      file for each extension, which must be named the same as the extension
      with a suffix of &lt;literal&gt;.control&lt;/&gt;, and must be placed in the
@@ -168,7 +177,8 @@
         the extension's comment can be set by writing
         a &lt;xref linkend="sql-comment"&gt; command in the script file.
 </span>拡張に関するコメント（任意の文字列）です。
-この他の方法として、スクリプトファイル内で<a class="xref" href="sql-comment.html" title="COMMENT"><span class="refentrytitle">COMMENT</span></a>コマンドを使用してコメントを設定することができます。 ★変更あり
+最初に拡張が作成されるときにコメントは適用されますが、拡張が更新される間はされません（ユーザが追加したコメントを上書いてしまうため）。
+この他の方法として、スクリプトファイル内で<a class="xref" href="sql-comment.html" title="COMMENT"><span class="refentrytitle">COMMENT</span></a>コマンドを使用してコメントを設定することができます。
        </p></dd><dt><span class="term"><code class="varname">encoding</code> (<code class="type">string</code>)</span></dt><dd><p><span class="original">
         The character set encoding used by the script file(s).  This should
         be specified if the script files contain any non-ASCII characters.
@@ -210,7 +220,7 @@
         See &lt;xref linkend="extend-extensions-relocation"&gt; for more information.
 </span>拡張を最初に作成した後に拡張により含まれるオブジェクトを別のスキーマに移動することができる場合、拡張は<em class="firstterm">再配置可能</em>です。
 デフォルトは<code class="literal">false</code>、つまり、拡張は再配置可能ではありません。
-詳しくは後で説明します。 ★変更あり
+詳しくは<a class="xref" href="extend-extensions.html#extend-extensions-relocation" title="36.15.2. 拡張の再配置性">36.15.2. 拡張の再配置性</a>を参照してください。
        </p></dd><dt><span class="term"><code class="varname">schema</code> (<code class="type">string</code>)</span></dt><dd><p><span class="original">
         This parameter can only be set for non-relocatable extensions.
         It forces the extension to be loaded into exactly the named schema
@@ -220,7 +230,9 @@
         See &lt;xref linkend="extend-extensions-relocation"&gt; for more information.
 </span>このパラメータは再配置可能ではない拡張に対してのみ設定することができます。
 拡張が指名したスキーマのみにロードされ、他にはロードされないことを強制します。
-詳しくは後で説明します。 ★変更あり
+詳しくは後で説明します。 
+<code class="varname">schema</code>パラメータは、拡張を最初に作成するときにのみ参照され、拡張が更新される間はされません。
+詳しくは<a class="xref" href="extend-extensions.html#extend-extensions-relocation" title="36.15.2. 拡張の再配置性">36.15.2. 拡張の再配置性</a>を参照してください。
        </p></dd></dl></div><p><span class="original">
      In addition to the primary control file
      &lt;literal&gt;&lt;replaceable&gt;extension&lt;/&gt;.control&lt;/literal&gt;,
@@ -257,7 +269,7 @@
      extension, a state of affairs that's a bit tedious to recover from.
 </span>拡張の<acronym class="acronym">SQL</acronym>スクリプトファイルには、<code class="literal">\echo</code>から始まる行を含めることができます。
 この行は拡張の機構では無視されます（コメントとして扱われます）。
-これは、このスクリプトが<code class="command">CREATE EXTENSION</code>（後述のスクリプト例を参照）ではなく<span class="application">psql</span>に渡された場合にエラーを発生するために一般的に使用するために用意されたものです。
+これは、このスクリプトが<code class="command">CREATE EXTENSION</code>（<a class="xref" href="extend-extensions.html#extend-extensions-example" title="36.15.5. 拡張の例">36.15.5. 拡張の例</a>のスクリプト例を参照）ではなく<span class="application">psql</span>に渡された場合にエラーを発生するために一般的に使用するために用意されたものです。
 これがないと、ユーザは間違って拡張としてではなく、<span class="quote">「<span class="quote">まとまっていない</span>」</span>オブジェクトとして拡張の内容をロードしてしまい、復旧が多少困難な状態になる可能性があります。
     </p><p><span class="original">
      While the script files can contain any characters allowed by the specified
@@ -387,15 +399,15 @@
 しかしこの振舞いは設定テーブルの場合望まれません。
 ユーザによってなされたデータ変更はダンプ内に含まれなければなりません。
 さもないとダンプしリストアした後で拡張の動作が変わってしまいます。
-    </p><a id="idp90664880" class="indexterm"></a><p><span class="original">
+    </p><a id="idp90560240" class="indexterm"></a><p><span class="original">
      To solve this problem, an extension's script file can mark a table
      or a sequence it has created as a configuration relation, which will
      cause &lt;application&gt;pg_dump&lt;/&gt; to include the table's or the sequence's
      contents (not its definition) in dumps.  To do that, call the function
      &lt;function&gt;pg_extension_config_dump(regclass, text)&lt;/&gt; after creating the
      table or the sequence, for example
-</span>この問題を解消するために、拡張のスクリプトファイルでは設定テーブルとして作成されるテーブルに印を付け、<span class="application">pg_dump</span>にテーブルの内容をダンプに含める（定義は含まれません）ようにさせることができます。
-このためには、以下の例のようにテーブルを作成した後に<code class="function">pg_extension_config_dump(regclass, text)</code>関数を呼び出してください。★変更あり
+</span>この問題を解消するために、拡張のスクリプトファイルでは設定リレーションとして作成されるテーブル、またはシーケンスに印を付け、<span class="application">pg_dump</span>にテーブルの、またはシーケンスの内容をダンプに含める（定義は含まれません）ようにさせることができます。
+このためには、以下の例のようにテーブル、またはシーケンスを作成した後に<code class="function">pg_extension_config_dump(regclass, text)</code>関数を呼び出してください。
 </p><pre class="programlisting">CREATE TABLE my_config (key text, value text);
 CREATE SEQUENCE my_config_seq;
 
@@ -405,7 +417,8 @@ SELECT pg_catalog.pg_extension_config_dump('my_config_seq', '');</pre><p><span c
      associated with &lt;type&gt;serial&lt;/&gt; or &lt;type&gt;bigserial&lt;/&gt; columns can
      be marked as well.
 </span>
-任意数のテーブルをこの方法で印付けることができます。 ★　変更あり
+任意数のテーブル、またはシーケンスをこの方法で印付けることができます。
+<code class="type">serial</code>列または<code class="type">bigserial</code>列に関連したシーケンスが、同様に印付けることができます。
     </p><p><span class="original">
      When the second argument of &lt;function&gt;pg_extension_config_dump&lt;/&gt; is
      an empty string, the entire contents of the table are dumped by
@@ -426,8 +439,10 @@ SELECT pg_catalog.pg_extension_config_dump('my_config', 'WHERE NOT standard_entr
      in the rows created by the extension's script.
 </span>
 このようにした後、拡張のスクリプトで作成される行のみで<code class="structfield">standard_entry</code>が確実に真になるようにします。
-    </p><p>     For sequences, the second argument of <code class="function">pg_extension_config_dump</code>
+    </p><p><span class="original">
+     For sequences, the second argument of &lt;function&gt;pg_extension_config_dump&lt;/&gt;
      has no effect.
+</span>シーケンスにおいて、<code class="function">pg_extension_config_dump</code>の第２引数は何も影響を及ぼしません。
     </p><p><span class="original">
      More complicated situations, such as initially-provided rows that might
      be modified by users, can be handled by creating triggers on the
@@ -455,10 +470,13 @@ SELECT pg_catalog.pg_extension_config_dump('my_config', 'WHERE NOT standard_entr
 特に、pg_dumpは参照しているテーブルの前に参照されているテーブルをダンプしようとします。
 外部キーの関係はCREATE EXTENSION時(データがテーブルにロードされる前)に設定されますので、循環依存はサポートされません。
 循環依存が存在すれば、データはダンプされますが、そのダンプを直接はリストアできず、ユーザの介入が必要になります。
-    </p><p>     Sequences associated with <code class="type">serial</code> or <code class="type">bigserial</code> columns
+    </p><p><span class="original">
+     Sequences associated with &lt;type&gt;serial&lt;/&gt; or &lt;type&gt;bigserial&lt;/&gt; columns
      need to be directly marked to dump their state. Marking their parent
      relation is not enough for this purpose.
-    </p></div><div class="sect2" id="idp90683552"><div class="titlepage"><div><div><h3 class="title">36.15.4. 拡張の更新</h3></div></div></div><span class="original">
+</span><code class="type">serial</code>列または<code class="type">bigserial</code>列に関連したシーケンスは、それらの状態をダンプするために直接印付けする必要があります。
+親リレーションを印付けすることは、この目的に十分ではありません。
+    </p></div><div class="sect2" id="idp90580544"><div class="titlepage"><div><div><h3 class="title">36.15.4. 拡張の更新</h3></div></div></div><span class="original">
     &lt;title&gt;Extension Updates&lt;/title&gt;
 </span><p><span class="original">
      One advantage of the extension mechanism is that it provides convenient

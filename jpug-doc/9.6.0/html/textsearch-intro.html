@@ -133,7 +133,7 @@
 </span>前処理した文書を格納するために、データ型<code class="type">tsvector</code>が提供されています。また、処理済問合わせを表現するために<code class="type">tsquery</code>型も提供されています(<a class="xref" href="datatype-textsearch.html" title="8.11. テキスト検索に関する型">8.11. テキスト検索に関する型</a>)。これらのデータ型のために、多数の関数と演算子が利用できますが(<a class="xref" href="functions-textsearch.html" title="9.13. テキスト検索関数と演算子">9.13. テキスト検索関数と演算子</a>)、もっとも重要なのは、<a class="xref" href="textsearch-intro.html#textsearch-matching" title="12.1.2. 基本的なテキスト照合">12.1.2. 基本的なテキスト照合</a>で紹介している<code class="literal">@@</code>演算子です。全文検索はインデックス(<a class="xref" href="textsearch-indexes.html" title="12.9. GINおよびGiSTインデックス種類">12.9. GINおよびGiSTインデックス種類</a>)を使って高速化できます。
   </p><div class="sect2" id="textsearch-document"><div class="titlepage"><div><div><h3 class="title">12.1.1. 文書とは何か?</h3></div></div></div><span class="original">
    &lt;title&gt;What Is a Document?&lt;/title&gt;
-</span><a id="idp69861696" class="indexterm"></a><p><span class="original">
+</span><a id="idp69668992" class="indexterm"></a><p><span class="original">
     A &lt;firstterm&gt;document&lt;/&gt; is the unit of searching in a full text search
     system; for example, a magazine article or email message.  The text search
     engine must be able to parse documents and store associations of lexemes
@@ -218,9 +218,10 @@ SELECT 'fat &amp; cow'::tsquery @@ 'a fat cat sat on a mat and ate a fat rat'::t
     the text.  Similarly, &lt;function&gt;to_tsvector&lt;/&gt; is used to parse and
     normalize a document string.  So in practice a text search match would
     look more like this:
-</span>上記の例でわかるように、<code class="type">tsquery</code>は、<code class="type">tsvector</code>と違って、単なるテキストではありません。<code class="type">tsquery</code>は正規化済の語彙素である検索表現を含み、AND, OR, NOT演算子を使って複数の表現を組み合わせても構いません。
-(詳細は<a class="xref" href="datatype-textsearch.html" title="8.11. テキスト検索に関する型">8.11. テキスト検索に関する型</a>を見てください。)
-たとえば、テキスト中の単語を正規化することにより、ユーザが入力したテキストを適切な<code class="type">tsquery</code>に変換する<code class="function">to_tsquery</code>と<code class="function">plainto_tsquery</code>という関数があります。同様に、文書文字列をパースして正規化するために<code class="function">to_tsvector</code>が利用できます。
+</span>上記の例でわかるように、<code class="type">tsquery</code>は、<code class="type">tsvector</code>と違って、単なるテキストではありません。<code class="type">tsquery</code>は正規化済の語彙素である検索表現を含み、AND, OR, NOT, FOLLOWED BY演算子を使って複数の表現を組み合わせても構いません。
+(詳細は<a class="xref" href="datatype-textsearch.html#datatype-tsquery" title="8.11.2. tsquery">8.11.2. <code class="type">tsquery</code></a>を見てください。)
+主にテキスト中の単語を正規化することにより、ユーザが入力したテキストを適切な<code class="type">tsquery</code>に変換するのに便利な関数<code class="function">to_tsquery</code>、<code class="function">plainto_tsquery</code>、<code class="function">phraseto_tsquery</code>があります。
+同様に、文書文字列をパースして正規化するために<code class="function">to_tsvector</code>が利用できます。
 というわけで、実際にはテキスト検索照合はこんな感じになります。
 
 </p><pre class="programlisting">SELECT to_tsvector('fat cats ate fat rats') @@ to_tsquery('fat &amp; rat');
@@ -263,16 +264,23 @@ text @@ text</pre><p>
 </span>最初の2つについてはすでに説明しました。
 <code class="type">text</code> <code class="literal">@@</code> <code class="type">tsquery</code>という形式は、<code class="literal">to_tsvector(x) @@ y</code>と同じです。
 <code class="type">text</code> <code class="literal">@@</code> <code class="type">text</code>という形式は、<code class="literal">to_tsvector(x) @@plainto_tsquery(y)</code>と同じです。
-   </p><p>    Within a <code class="type">tsquery</code>, the <code class="literal">&amp;</code> (AND) operator
+   </p><p><span class="original">
+    Within a &lt;type&gt;tsquery&lt;/&gt;, the &lt;literal&gt;&amp;amp;&lt;/literal&gt; (AND) operator
     specifies that both its arguments must appear in the document to have a
-    match.  Similarly, the <code class="literal">|</code> (OR) operator specifies that
-    at least one of its arguments must appear, while the <code class="literal">!</code> (NOT)
-    operator specifies that its argument must <span class="emphasis"><em>not</em></span> appear in
+    match.  Similarly, the &lt;literal&gt;|&lt;/literal&gt; (OR) operator specifies that
+    at least one of its arguments must appear, while the &lt;literal&gt;!&lt;/&gt; (NOT)
+    operator specifies that its argument must &lt;emphasis&gt;not&lt;/&gt; appear in
     order to have a match.
-   </p><p>    Searching for phrases is possible with the help of
-    the <code class="literal">&lt;-&gt;</code> (FOLLOWED BY) <code class="type">tsquery</code> operator, which
+</span><code class="type">tsquery</code>内において、演算子 <code class="literal">&amp;</code> (AND) は、マッチと見なされるには引数の両方がドキュメント内に現れる必要があるということを指定します。
+同様に、演算子 <code class="literal">|</code> (OR) では、引数の少なくとも一方が現れる必要があり、また演算子 <code class="literal">!</code> (NOT) は、マッチと見なされるには引数が現れては<span class="emphasis"><em>ならない</em></span>ことを指定します。
+   </p><p><span class="original">
+    Searching for phrases is possible with the help of
+    the &lt;literal&gt;&amp;lt;-&amp;gt;&lt;/&gt; (FOLLOWED BY) &lt;type&gt;tsquery&lt;/&gt; operator, which
     matches only if its arguments have matches that are adjacent and in the
     given order.  For example:
+</span>句の検索は、<code class="type">tsquery</code>演算子 <code class="literal">&lt;-&gt;</code> (FOLLOWED BY)を使うことで可能です。
+この演算子は、その引数にマッチする語が隣接していて、かつ指定と同じ順序である場合にのみマッチします。
+例を示します。
 
 </p><pre class="programlisting">SELECT to_tsvector('fatal error') @@ to_tsquery('fatal &lt;-&gt; error');
  ?column? 
@@ -283,16 +291,22 @@ SELECT to_tsvector('error is not fatal') @@ to_tsquery('fatal &lt;-&gt; error');
  ?column? 
 ----------
  f</pre><p>
-
+<span class="original">
     There is a more general version of the FOLLOWED BY operator having the
-    form <code class="literal">&lt;<em class="replaceable"><code>N</code></em>&gt;</code>,
-    where <em class="replaceable"><code>N</code></em> is an integer standing for the difference between
-    the positions of the matching lexemes.  <code class="literal">&lt;1&gt;</code> is
-    the same as <code class="literal">&lt;-&gt;</code>, while <code class="literal">&lt;2&gt;</code>
+    form &lt;literal&gt;&amp;lt;&lt;replaceable&gt;N&lt;/&gt;&amp;gt;&lt;/literal&gt;,
+    where &lt;replaceable&gt;N&lt;/&gt; is an integer standing for the difference between
+    the positions of the matching lexemes.  &lt;literal&gt;&amp;lt;1&amp;gt;&lt;/literal&gt; is
+    the same as &lt;literal&gt;&amp;lt;-&amp;gt;&lt;/&gt;, while &lt;literal&gt;&amp;lt;2&amp;gt;&lt;/literal&gt;
     allows exactly one other lexeme to appear between the matches, and so
-    on.  The <code class="literal">phraseto_tsquery</code> function makes use of this
-    operator to construct a <code class="literal">tsquery</code> that can match a multi-word
+    on.  The &lt;literal&gt;phraseto_tsquery&lt;/&gt; function makes use of this
+    operator to construct a &lt;literal&gt;tsquery&lt;/&gt; that can match a multi-word
     phrase when some of the words are stop words.  For example:
+</span>
+FOLLOWED BY演算子にはもっと汎用的なバージョンがあり、それは<code class="literal">&lt;<em class="replaceable"><code>N</code></em>&gt;</code>という構文で使います。
+ここで<em class="replaceable"><code>N</code></em>は整数で、マッチする語彙素の位置の差を表します。
+<code class="literal">&lt;1&gt;</code>は<code class="literal">&lt;-&gt;</code>と同じですが、<code class="literal">&lt;2&gt;</code>ではマッチする語の間にちょうど1つ、他の語彙素が現れることを許容する、という具合です。
+<code class="literal">phraseto_tsquery</code>関数は、この演算子を利用して、ストップワードを含む複数語の句にマッチ可能な<code class="literal">tsquery</code>を構築するものです。
+例を示します。
 
 </p><pre class="programlisting">SELECT phraseto_tsquery('cats ate rats');
        phraseto_tsquery        
@@ -303,12 +317,17 @@ SELECT phraseto_tsquery('the cats ate the rats');
        phraseto_tsquery        
 -------------------------------
  'cat' &lt;-&gt; 'ate' &lt;2&gt; 'rat'</pre><p>
-   </p><p>    A special case that's sometimes useful is that <code class="literal">&lt;0&gt;</code>
+   </p><p><span class="original">
+    A special case that's sometimes useful is that &lt;literal&gt;&amp;lt;0&amp;gt;&lt;/literal&gt;
     can be used to require that two patterns match the same word.
-   </p><p>    Parentheses can be used to control nesting of the <code class="type">tsquery</code>
-    operators.  Without parentheses, <code class="literal">|</code> binds least tightly,
-    then <code class="literal">&amp;</code>, then <code class="literal">&lt;-&gt;</code>,
-    and <code class="literal">!</code> most tightly.
+</span>ときに役立つことがある特別な場合として、<code class="literal">&lt;0&gt;</code>を2つのパターンが同じ語にマッチすることを要求するために使うことができます。
+   </p><p><span class="original">
+    Parentheses can be used to control nesting of the &lt;type&gt;tsquery&lt;/&gt;
+    operators.  Without parentheses, &lt;literal&gt;|&lt;/literal&gt; binds least tightly,
+    then &lt;literal&gt;&amp;amp;&lt;/literal&gt;, then &lt;literal&gt;&amp;lt;-&amp;gt;&lt;/literal&gt;,
+    and &lt;literal&gt;!&lt;/literal&gt; most tightly.
+</span><code class="type">tsquery</code>演算子を入れ子にして管理するために括弧を使うことができます。
+括弧がない場合、<code class="literal">|</code>の結合が最も弱く、次が<code class="literal">&amp;</code>、その次が<code class="literal">&lt;-&gt;</code>で、<code class="literal">!</code>が最も強く結合します。
    </p></div><div class="sect2" id="textsearch-intro-configurations"><div class="titlepage"><div><div><h3 class="title">12.1.3. 設定</h3></div></div></div><span class="original">
    &lt;title&gt;Configurations&lt;/title&gt;
 </span><p><span class="original">

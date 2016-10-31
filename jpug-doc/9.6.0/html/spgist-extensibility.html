@@ -43,7 +43,9 @@
 </span>内部タプルは、探索木の分岐点となるため、もっと複雑です。
 それぞれの内部タプルは1つ以上の<em class="firstterm">ノード</em>の集合を含んでおり、ノードは類似のリーフ値のグループを表現します。
 ノードは下向きのリンクを含んでおり、これは下のレベルの別の内部タプルを指すか、あるいはすべて同じインデックスページ上に載っているリーフタプルの短いリストを指しています。
-それぞれのノードは、それを記述する<em class="firstterm">label</em>を持っています。
+それぞれのノードは、通常、それを記述する<em class="firstterm">ラベル</em>を持っています。
+（あるいは、すべての内部タプルについて、決まったノードの集合しか扱わないのであれば、演算子クラスはノードのラベルを省略することができます。
+<a class="xref" href="spgist-implementation.html#spgist-null-labels" title="62.4.2. ノードラベルのないSP-GiST">62.4.2. ノードラベルのないSP-GiST</a>を参照してください。）
 例えば、基数木では、ノードのラベルは文字列の値の次の文字にすることができます。
 省略可能ですが、内部タプルはそのすべてのメンバーを記述する<em class="firstterm">接頭辞</em>の値を持つことができます。
 基数木では、これは表現される文字列に共通の接頭辞とすることができます。
@@ -58,7 +60,7 @@
   value when that is needed, and for passing down additional data (called
   &lt;firstterm&gt;traverse values&lt;/&gt;) during a tree descent.
 </span>木構造のアルゴリズムには、現在のタプルのレベル(深さ)を知っていることが必要なものがあります。そこで、<acronym class="acronym">SP-GiST</acronym>のコアは、演算子クラスが木構造をたどって下がるときにレベル数の管理を可能にしています。
-また、必要であれば、表現される値を加算的に再構築することもサポートしています。★原文変更あり
+また、必要であれば、表現される値を加算的に再構築すること、また木構造を下る間に追加データ（<em class="firstterm">探索値</em>と呼ばれます）を渡すこともサポートしています。
  </p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">注記</h3><p><span class="original">
    The &lt;acronym&gt;SP-GiST&lt;/acronym&gt; core code takes care of null entries.
    Although &lt;acronym&gt;SP-GiST&lt;/acronym&gt; indexes do store entries for nulls
@@ -367,8 +369,7 @@ typedef struct spgPickSplitOut
        &lt;structfield&gt;nodeLabels&lt;/&gt;, &lt;structfield&gt;mapTuplesToNodes&lt;/&gt; and
        &lt;structfield&gt;leafTupleDatums&lt;/&gt; arrays.
 </span><code class="structfield">hasPrefix</code>は新しい内部タプルが接頭辞を持つかどうかを示し、持つ場合は<code class="structfield">prefixDatum</code>を接頭辞の値にセットします。
-<code class="structfield">nNodes</code>は新しい内部タプルが含むノードの数を示し、<code class="structfield">nodeLabels</code>はそのラベル値の配列にセットします。
-(ノードがラベルを必要としないときは、<code class="structfield">nodeLabels</code>をNULLにセットします。詳細は<a class="xref" href="spgist-implementation.html#spgist-null-labels" title="62.4.2. ノードラベルのないSP-GiST">62.4.2. ノードラベルのないSP-GiST</a>を参照してください。)
+<code class="structfield">nNodes</code>は新しい内部タプルが含むノードの数を示し、<code class="structfield">nodeLabels</code>はそのラベル値の配列に、ノードのラベルが必要でないときはNULLにセットします。
 <code class="structfield">mapTuplesToNodes</code>は、それぞれのリーフタプルが割り当てられるノードの番号(0から)の配列にセットします。
 <code class="structfield">leafTupleDatums</code>は新しいリーフタプルに格納される値の配列にセットします(演算子クラスがデータをあるレベルから次のレベルに変更しなければこれらは入力の<code class="structfield">datums</code>と同じになります)。
 <code class="function">picksplit</code>関数は、<code class="structfield">nodeLabels</code>、<code class="structfield">mapTuplesToNodes</code>、<code class="structfield">leafTupleDatums</code>の配列についてpallocしなければならないことに注意してください。
@@ -490,6 +491,8 @@ typedef struct spgInnerConsistentOut
 通常、consistent関数では、配列のそれぞれのエントリの<code class="structfield">sk_strategy</code>および<code class="structfield">sk_argument</code>フィールドのみが問題となります。これらのフィールドにはそれぞれインデックス付け可能な演算子と比較値が入ります。
 なお、比較値がNULLかどうかを確認するために<code class="structfield">sk_flags</code>を検査する必要はありません。なぜならSP-GiSTのコアのコードがそのような条件を除外するからです。
 <code class="structfield">reconstructedValue</code>は親タプルのために再構築された値で、ルートレベルの場合、あるいは親レベルの<code class="function">inner_consistent</code>関数が値を返さなかった場合は<code class="literal">(Datum) 0</code>となります。
+<code class="structfield">traversalValue</code>は親インデックスのタプルの<code class="function">inner_consistent</code>の前の呼び出しから渡された探索データへのポインタで、ルートレベルならNULLです。
+<code class="structfield">traversalMemoryContext</code>は出力探索値が格納されるメモリコンテキストです（以下を参照）。
 <code class="structfield">level</code>は現在の内部タプルのレベルを、ルートレベルを0として数えたものです。
 <code class="structfield">returnData</code>は、この問い合わせで再構築されたデータが必要な場合に<code class="literal">true</code>となりますが、これは<code class="function">config</code>関数が<code class="structfield">canReturnData</code>を確認した場合にのみ、そうなります。
 <code class="structfield">allTheSame</code>は、現在の内部タプルに<span class="quote">「<span class="quote">all-the-same</span>」</span>の印が付いている場合にtrueになります。この場合、すべてのノードは(ラベルがあれば)同じラベルを持っていますから、そのすべてが問い合わせにマッチするか、いずれもマッチしないかのいずれかになります(<a class="xref" href="spgist-implementation.html#spgist-all-the-same" title="62.4.3. 「All-the-same」内部タプル">62.4.3. <span class="quote">「<span class="quote">All-the-same</span>」</span>内部タプル</a>参照)。
@@ -526,7 +529,11 @@ typedef struct spgInnerConsistentOut
 演算子クラスがレベルを監視しているときは、それぞれのノードへと下って訪れるときに必要なレベルの増分の配列を<code class="structfield">levelAdds</code>にセットします。
 (この増分はすべてのノードについて同じになることも多いですが、必ずしもそうなるとは限らないので配列が使われます。)
 値の再構築が必要なときには、訪れるそれぞれの子ノードについて再構築された値の配列を<code class="structfield">reconstructedValues</code>にセットします。再構築が必要でなければ、<code class="structfield">reconstructedValues</code>をNULLのままにします。
-<code class="function">inner_consistent</code>関数は、<code class="structfield">nodeNumbers</code>、<code class="structfield">levelAdds</code>、<code class="structfield">reconstructedValues</code>の配列についてpallocしなければならないことに注意してください。★原文変更・追加あり
+追加の外部情報（<span class="quote">「<span class="quote">探索値</span>」</span>）をツリー探索の下位レベルに渡したい場合は、<code class="structfield">traversalValues</code>を適切な探索値、訪れるそれぞれの子ノードについて1つの配列にセットします。
+それ以外の場合は<code class="structfield">traversalValues</code>をNULLのままにします。
+<code class="function">inner_consistent</code>関数は、現在のメモリコンテキスト内の<code class="structfield">nodeNumbers</code>、<code class="structfield">levelAdds</code>、<code class="structfield">reconstructedValues</code>、<code class="structfield">traversalValues</code>の配列についてpallocしなければならないことに注意してください。
+ただし、<code class="structfield">traversalValues</code>配列が指すすべての出力探索値は<code class="structfield">traversalMemoryContext</code>内に割り当てられます。
+それぞれの探索値は1つのpallocされた塊でなければなりません。
       </p></dd><dt><span class="term"><code class="function">leaf_consistent</code></span></dt><dd><p><span class="original">
        Returns true if a leaf tuple satisfies a query.
 </span>リーフタプルが問い合わせを満たす場合、trueを返します。
@@ -592,6 +599,7 @@ typedef struct spgLeafConsistentOut
 通常、consistent関数では、配列のそれぞれのエントリの<code class="structfield">sk_strategy</code>および<code class="structfield">sk_argument</code>フィールドのみが問題となります。これらのフィールドにはそれぞれインデックス付け可能な演算子と比較値が入ります。
 なお、比較値がNULLかどうかを確認するために<code class="structfield">sk_flags</code>を検査する必要はありません。なぜならSP-GiSTのコアのコードがそのような条件を除外するからです。
 <code class="structfield">reconstructedValue</code>は親タプルのために再構築された値で、ルートレベルの場合、あるいは親レベルの<code class="function">inner_consistent</code>関数が値を返さなかった場合は<code class="literal">(Datum) 0</code>となります。
+<code class="structfield">traversalValue</code>は親インデックスのタプルの<code class="function">inner_consistent</code>の前の呼び出しから渡された探索データへのポインタで、ルートレベルならNULLです。
 <code class="structfield">level</code>は現在のリーフタプルのレベルを、ルートレベルを0として数えたものです。
 <code class="structfield">returnData</code>は、この問い合わせで再構築されたデータが必要な場合に<code class="literal">true</code>となりますが、これは<code class="function">config</code>関数が<code class="structfield">canReturnData</code>を確認した場合にのみ、そうなります。
 <code class="structfield">leafDatum</code>は現在のリーフタプルに格納されている鍵の値です。
