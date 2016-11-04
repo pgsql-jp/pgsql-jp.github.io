@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>第46章 バックグラウンドワーカプロセス</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="PostgreSQL 9.6.0文書" /><link rel="up" href="server-programming.html" title="パート V. サーバプログラミング" /><link rel="prev" href="spi-examples.html" title="45.5. 例" /><link rel="next" href="logicaldecoding.html" title="第47章 ロジカルデコーディング" /><link rel="copyright" href="legalnotice.html" title="法的告知" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><td width="20%" align="left" colspan="2"></td><th width="60%" align="center"><a accesskey="h" href="index.html">PostgreSQL 9.6.0文書</a></th><td width="20%" align="right"><div class="actions"><a class="issue" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 9.6.0 bgworker.html">誤訳等の報告</a></div></td></tr><tr><td width="10%" align="left" valign="top"><a accesskey="p" href="spi-examples.html">前へ</a> </td><td width="10%" align="left" valign="top"><a accesskey="u" href="server-programming.html">上へ</a></td><td width="60%" align="center">第46章 バックグラウンドワーカプロセス</td><td width="20%" align="right" valign="top"> <a accesskey="n" href="logicaldecoding.html">次へ</a></td></tr></table><hr /></div><div class="chapter" id="bgworker"><div class="titlepage"><div><div><h2 class="title">第46章 バックグラウンドワーカプロセス</h2></div></div></div><span class="original">
  &lt;title&gt;Background Worker Processes&lt;/title&gt;
-</span><a id="idp96074512" class="indexterm"></a><p><span class="original">
+</span><a id="idp96180080" class="indexterm"></a><p><span class="original">
   PostgreSQL can be extended to run user-supplied code in separate processes.
   Such processes are started, stopped and monitored by &lt;command&gt;postgres&lt;/command&gt;,
   which permits them to have a lifetime closely linked to the server's status.
@@ -76,8 +76,9 @@ typedef struct BackgroundWorker
        data structures, such as heavyweight or lightweight locks, shared
        buffers, or any custom data structures which the worker itself may
        wish to create and use.
-</span><a id="idp96096560" class="indexterm"></a>共有メモリへのアクセスを要求します。
-共有メモリアクセスがないワーカは、<span class="productname">PostgreSQL's</span>の共有データ構造、重量または軽量のロック、共有バッファ、ワーカ自身のカスタムデータ構造を作成や使用等ができません。
+</span><a id="idp96202128" class="indexterm"></a>
+共有メモリへのアクセスを要求します。
+共有メモリアクセスがないワーカは、<span class="productname">PostgreSQL's</span>の共有データ構造、重量または軽量のロック、共有バッファ、ワーカが作成して利用したいカスタムデータ構造の作成や使用等ができません。
       </p></dd><dt><span class="term"><code class="literal">BGWORKER_BACKEND_DATABASE_CONNECTION</code></span></dt><dd><p><span class="original">
        &lt;indexterm&gt;&lt;primary&gt;BGWORKER_BACKEND_DATABASE_CONNECTION&lt;/primary&gt;&lt;/indexterm&gt;
        Requests the ability to establish a database connection through which it
@@ -85,8 +86,9 @@ typedef struct BackgroundWorker
        &lt;literal&gt;BGWORKER_BACKEND_DATABASE_CONNECTION&lt;/literal&gt; to connect to a
        database must also attach shared memory using
        &lt;literal&gt;BGWORKER_SHMEM_ACCESS&lt;/literal&gt;, or worker start-up will fail.
-</span><a id="idp96100032" class="indexterm"></a>データベース接続を確立し、その後トランザクションやクエリの実行できることを要求します。
-<code class="literal">BGWORKER_BACKEND_DATABASE_CONNECTION</code>を使用するバックグラウンドワーカは<code class="literal">BGWORKER_SHMEM_ACCESS</code>を使用して共有メモリにアタッチしなければなりません。さもなければ起動時に失敗します。
+</span><a id="idp96205712" class="indexterm"></a>
+トランザクションやクエリの実行が出来るデータベース接続を要求します。
+<code class="literal">BGWORKER_BACKEND_DATABASE_CONNECTION</code>を使用してデータベースに接続するバックグラウンドワーカは<code class="literal">BGWORKER_SHMEM_ACCESS</code>を使用して共有メモリにアタッチしなければなりません。さもなければ起動時に失敗します。
       </p></dd></dl></div><p>
 
   </p><p><span class="original">
@@ -132,10 +134,11 @@ typedef struct BackgroundWorker
    precedence over &lt;structfield&gt;bgw_library_name&lt;/&gt; and
    &lt;structfield&gt;bgw_function_name&lt;/&gt;.
 </span><code class="structfield">bgw_main</code>は、プロセスが起動されたときに実行される関数へのポインタです。
-このフィールドは安全にコアサーバ内の関数を起動するために使用することができます。なぜならば、共有ライブラリは、異なるバックエンドプロセスにおける異なる開始アドレスにロードすることができるためです。
-ライブラリが、<a class="xref" href="runtime-config-client.html#guc-shared-preload-libraries">shared_preload_libraries</a>を除いて任意のメカニズムを使用してロードされた、すべてのプラットフォームで発生します。
-<code class="literal">EXEC_BACKEND</code>が使用される場合であっても、またアドレス空間レイアウトのバリエーションがWindowsの場合であっても、このメカニズムがまだ発生します。
-<code class="structfield">bgw_main</code>はNULLであってもよく、その場合は<code class="structfield">bgw_library_name</code>と<code class="structfield">bgw_function_name</code>がエントリポイントを決定するために使用されます。
+このフィールドはコアサーバ内の関数を起動する場合にのみ安全に使用することができます。なぜならば、共有ライブラリは、異なるバックエンドプロセスにおける異なる開始アドレスにロードすることができるためです。
+どのプラットフォームでも、ライブラリが<a class="xref" href="runtime-config-client.html#guc-shared-preload-libraries">shared_preload_libraries</a>以外の任意のメカニズムを使用してロードされた時に発生します。
+それを使う場合であっても、Windows上、および<code class="literal">EXEC_BACKEND</code>が使用される場合は、このメカニズムがまだ発生します。
+したがって、このAPIのほとんどのユーザーは、このフィールドがNULLに設定する必要があります。
+その場合は、<code class="structfield">bgw_library_name</code>と<code class="structfield">bgw_function_name</code>がエントリポイントを決定するために使用されます。
   </p><p><span class="original">
    &lt;structfield&gt;bgw_library_name&lt;/structfield&gt; is the name of a library in
    which the initial entry point for the background worker should be sought.
@@ -144,8 +147,8 @@ typedef struct BackgroundWorker
    function to be called.  If loading a function from the core code,
    &lt;structfield&gt;bgw_main&lt;/&gt; should be set instead.
 </span><code class="structfield">bgw_library_name</code>はバックグラウンドワーカの初期エントリーポイントのためのライブラリ名です。
-このライブラリの名前は、ワーカプロセスによって動的にロードされ、呼び出される関数を<code class="structfield">bgw_function_name</code>と識別するために使用されます。
-コアコードからロードされる関数は、<code class="structfield">bgw_main</code>の代わりに設定する必要があります。
+その指定されたライブラリがワーカプロセスによって動的にロードされます。呼び出すべき関数を特定するために<code class="structfield">bgw_function_name</code>が使用されます。
+コアコードから関数をロードする場合、<code class="structfield">bgw_main</code>の代わりに設定する必要があります。
   </p><p><span class="original">
    &lt;structfield&gt;bgw_function_name&lt;/structfield&gt; is the name of a function in
    a dynamically loaded library which should be used as the initial entry point
@@ -166,7 +169,7 @@ typedef struct BackgroundWorker
 </span><code class="structfield">bgw_main_arg</code>は、バックグラウンドワーカのメイン関数の<code class="type">Datum</code>引数です。
 <code class="structfield">bgw_main</code>経由か、<code class="function">bgw_library_name</code>と<code class="function">bgw_function_name</code>の組み合わせ経由であるかにかかわらず、メイン関数は単一の<code class="type">Datum</code>引数を取り、<code class="type">void</code>を返します。
 <code class="structfield">bgw_main_arg</code>は引数として渡されます。
-加えて、グローバル変数<code class="literal">MyBgworkerEntry</code>は、登録時に渡されたの<code class="structname">BackgroundWorker</code>構造体のコピーを指しています。
+加えて、グローバル変数<code class="literal">MyBgworkerEntry</code>は、登録時に渡された<code class="structname">BackgroundWorker</code>構造体のコピーを指しています。
 ワーカはこの構造を調べることがあり、役に立ちます。
   </p><p><span class="original">
    On Windows (and anywhere else where &lt;literal&gt;EXEC_BACKEND&lt;/literal&gt; is
@@ -176,7 +179,7 @@ typedef struct BackgroundWorker
    into an array allocated in shared memory. If a value like a &lt;type&gt;cstring&lt;/&gt;
    or &lt;type&gt;text&lt;/type&gt; is passed then the pointer won't be valid from the
    new background worker process.
-</span>Windowsの（どこか他の場所で<code class="literal">EXEC_BACKEND</code>が定義されている）場合、または動的バックグラウンドワーカは、渡された<code class="type">Datum</code>への参照は唯一の値であり安全ではありません。
+</span>Windowsの（どこか他の場所で<code class="literal">EXEC_BACKEND</code>が定義されている）場合、または動的バックグラウンドワーカは、<code class="type">Datum</code>を参照で渡すのは安全ではありません。値のみで渡してください。
 引数が必要な場合は、int32型または他の小さな値を渡し、共有メモリに割り当てられた配列へのインデックスとしてそれを使用するのが最も安全です。
 <code class="type">cstring</code>や<code class="type">text</code>のようなポインタを渡された場合は、新しいバックグラウンドワーカプロセスから有効になりません。
   </p><p><span class="original">
@@ -304,9 +307,8 @@ postmasterがバックグラウンドワーカを開始しようと試みたか�
    the &lt;command&gt;LISTEN&lt;/command&gt; through &lt;acronym&gt;SPI&lt;/acronym&gt;, the worker
    will log those notifications, but there is no programmatic way for the
    worker to intercept and respond to those notifications.
-</span>バックグラウンドワーカは、サーバプログラミングインターフェイス(<acronym class="acronym">SPI</acronym>)経由で<code class="command">NOTIFY</code>コマンドにより非同期に通知を送る場合、明示的に通知を配信することができるように囲んでいるトランザクションをコミットした後、<code class="function">ProcessCompletedNotifies</code>を呼ぶ必要があります。
-バックグラウンドワーカは、<acronym class="acronym">SPI</acronym>を通じて<code class="command">LISTEN</code>の非同期通知の受信を登録します。
-ワーカがこれらの通知をログに記録しますが、ワーカが傍受し、それらの通知に応答するためのプログラム的な方法はありません。
+</span>バックグラウンドワーカは、サーバプログラミングインターフェイス(<acronym class="acronym">SPI</acronym>)経由で<code class="command">NOTIFY</code>コマンドにより非同期に通知を送る場合、囲んでいるトランザクションをコミットした後、通知を配信することができるように明示的に<code class="function">ProcessCompletedNotifies</code>を呼ぶ必要があります。
+バックグラウンドワーカは、<acronym class="acronym">SPI</acronym>を通じて<code class="command">LISTEN</code>による非同期通知の受信を登録した場合、ワーカがこれらの通知をログに記録しますが、ワーカが傍受し、それらの通知に応答するためのプログラム的な方法はありません。
   </p><p><span class="original">
    The &lt;filename&gt;src/test/modules/worker_spi&lt;/&gt; module
    contains a working example,
