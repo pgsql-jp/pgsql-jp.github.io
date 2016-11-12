@@ -64,7 +64,7 @@
        &lt;structfield&gt;amcanorder&lt;/&gt; to true.
        Currently, such access methods must use btree-compatible strategy
        numbers for their equality and ordering operators.
-</span>常にそのデータ（btreeなど）の自然な順序で項目を返すアクセスメソッドは<code class="structname">pg_am</code>.<code class="structfield">amcanorder</code>を真に設定しなければなりません。
+</span>常にそのデータ（btreeなど）の自然な順序で項目を返すアクセスメソッドは<code class="structfield">amcanorder</code>を真に設定しなければなりません。
 現在、こうしたアクセスメソッドは、その等価性と順序付け演算子でbtree互換の戦略番号を使用しなければなりません。
       </p></li><li class="listitem"><p><span class="original">
        Access methods that support ordering operators should set
@@ -74,7 +74,7 @@
        &lt;replaceable&gt;operator&lt;/&gt; &lt;replaceable&gt;constant&lt;/&gt;.  Scan modifiers
        of that form can be passed to &lt;function&gt;amrescan&lt;/&gt; as described
        previously.
-</span>順序付け演算子をサポートするアクセスメソッドは<code class="structname">pg_am</code>.<code class="structfield">amcanorderbyop</code>を真に設定しなければなりません。
+</span>順序付け演算子をサポートするアクセスメソッドは<code class="structfield">amcanorderbyop</code>を真に設定しなければなりません。
 これは、インデックスが<code class="literal">ORDER BY</code> <em class="replaceable"><code>index_key</code></em> <em class="replaceable"><code>operator</code></em> <em class="replaceable"><code>constant</code></em>を満たす順序で項目を返すことができることを示します。
 前述の通り、この形式のスキャン修飾子を<code class="function">amrescan</code>に渡すことができます。
       </p></li></ul></div><p>
@@ -98,7 +98,7 @@
 そのため、<code class="function">amgettuple</code>は通常ならばインデックス内の最初に一致したタプルを返すところですが、最後に一致したタプルを返さなければなりません。
 （これは<code class="structfield">amcanorder</code>が真に設定されたアクセスメソッドでのみ発生します。）
 最初の呼び出しの後、<code class="function">amgettuple</code>は、最も最近に返された項目からどちらの方向にスキャンを進めるかを準備しなければなりません。
-（しかし<code class="structname">pg_am</code>.<code class="structfield">amcanbackward</code>が偽であれば、引き続くすべての呼び出しは最初のものと同じ方向を持ちます。）
+（しかし<code class="structfield">amcanbackward</code>が偽であれば、引き続くすべての呼び出しは最初のものと同じ方向を持ちます。）
   </p><p><span class="original">
    Access methods that support ordered scans must support &lt;quote&gt;marking&lt;/&gt; a
    position in a scan and later returning to the marked position.  The same
@@ -112,7 +112,7 @@
 同じ位置が複数回記録されるかもしれません。
 しかし、スキャン内の1つの位置のみを記録する必要があります。
 新しい<code class="function">ammarkpos</code>呼び出しにより前回記録された位置は上書きされます。
-順序付けされたスキャンをサポートしないアクセスメソッドであっても、<code class="structname">pg_am</code>内で記録用の関数と位置に戻るための関数を提供しなければなりませんが、呼び出されたとしてもエラーを返すだけで十分です。
+順序付けされたスキャンをサポートしないアクセスメソッドは<code class="structname">IndexAmRoutine</code>で<code class="function">ammarkpos</code>関数および<code class="function">amrestrpos</code>関数を提供する必要はないので、これらのポインタをNULLにセットしてください。
   </p><p><span class="original">
    Both the scan position and the mark position (if any) must be maintained
    consistently in the face of concurrent insertions or deletions in the
@@ -137,8 +137,9 @@
    This will only avoid I/O if the visibility map shows that the TID is on an
    all-visible page; else the heap tuple must be visited anyway to check
    MVCC visibility.  But that is no concern of the access method's.
-</span>インデックスが設定された列値がインデックスに格納されている(かつ、不可逆表現ではない)場合、ヒープタプルのTIDではなくインデックスに格納された実際のデータを返すインデックスオンリースキャンをサポートするのに有用です。
-これは、可視性マップによって可視化されたページ上のTIDが判断できる場合にのみ動作します。判断できない場合はMVCCを確認するためにヒープタプルにアクセスしなくてはなりません。
+</span>インデックスが設定された列値がインデックスに格納されている(かつ、不可逆表現ではない)場合、ヒープタプルのTIDではなくインデックスに格納された実際のデータを返す<a class="link" href="indexes-index-only-scans.html" title="11.11. インデックスオンリースキャン">インデックスオンリースキャン</a>をサポートするのに有用です。
+これは、可視性マップによってTIDが全可視のページ上にあると判断できる場合にI/Oを避けるだけのことです。
+判断できない場合はMVCCを確認するためにヒープタプルにアクセスしなくてはなりません。
 しかしその動作はアクセスメソッドでは考慮されていません。
   </p><p><span class="original">
    Instead of using &lt;function&gt;amgettuple&lt;/&gt;, an index scan can be done with

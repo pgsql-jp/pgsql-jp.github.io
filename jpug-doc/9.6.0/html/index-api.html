@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>59.1. ★インデックス用のカタログ項目</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="PostgreSQL 9.6.0文書" /><link rel="up" href="indexam.html" title="第59章 インデックスアクセスメソッドのインタフェース定義" /><link rel="prev" href="indexam.html" title="第59章 インデックスアクセスメソッドのインタフェース定義" /><link rel="next" href="index-functions.html" title="59.2. インデックスアクセスメソッド関数" /><link rel="copyright" href="legalnotice.html" title="法的告知" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><td width="20%" align="left" colspan="2"></td><th width="60%" align="center"><a accesskey="h" href="index.html">PostgreSQL 9.6.0文書</a></th><td width="20%" align="right"><div class="actions"><a class="issue" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 9.6.0 index-api.html">誤訳等の報告</a></div></td></tr><tr><td width="10%" align="left" valign="top"><a accesskey="p" href="indexam.html">前へ</a> </td><td width="10%" align="left" valign="top"><a accesskey="u" href="indexam.html">上へ</a></td><td width="60%" align="center">59.1. ★インデックス用のカタログ項目</td><td width="20%" align="right" valign="top"> <a accesskey="n" href="index-functions.html">次へ</a></td></tr></table><hr /></div><div class="sect1" id="index-api"><div class="titlepage"><div><div><h2 class="title" style="clear: both">59.1. ★インデックス用のカタログ項目</h2></div></div></div><span class="original">
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>59.1. インデックスの基本的API構造</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="PostgreSQL 9.6.0文書" /><link rel="up" href="indexam.html" title="第59章 インデックスアクセスメソッドのインタフェース定義" /><link rel="prev" href="indexam.html" title="第59章 インデックスアクセスメソッドのインタフェース定義" /><link rel="next" href="index-functions.html" title="59.2. インデックスアクセスメソッド関数" /><link rel="copyright" href="legalnotice.html" title="法的告知" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><td width="20%" align="left" colspan="2"></td><th width="60%" align="center"><a accesskey="h" href="index.html">PostgreSQL 9.6.0文書</a></th><td width="20%" align="right"><div class="actions"><a class="issue" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 9.6.0 index-api.html">誤訳等の報告</a></div></td></tr><tr><td width="10%" align="left" valign="top"><a accesskey="p" href="indexam.html">前へ</a> </td><td width="10%" align="left" valign="top"><a accesskey="u" href="indexam.html">上へ</a></td><td width="60%" align="center">59.1. インデックスの基本的API構造</td><td width="20%" align="right" valign="top"> <a accesskey="n" href="index-functions.html">次へ</a></td></tr></table><hr /></div><div class="sect1" id="index-api"><div class="titlepage"><div><div><h2 class="title" style="clear: both">59.1. インデックスの基本的API構造</h2></div></div></div><span class="original">
   &lt;title&gt;Basic API Structure for Indexes&lt;/title&gt;
 </span><p><span class="original">
    Each index access method is described by a row in the
@@ -9,28 +9,35 @@
    method.  These entries can be created and deleted using the
    &lt;xref linkend="sql-create-access-method"&gt; and
    &lt;xref linkend="sql-drop-access-method"&gt; SQL commands.
-</span>各インデックスメソッドは、<code class="structname">pg_am</code>システムカタログ（<a class="xref" href="catalog-pg-am.html" title="50.3. pg_am">50.3. <code class="structname">pg_am</code></a>を参照）内の行によって記述されます。
-<code class="structname">pg_am</code>行の主な内容は、アクセスメソッドで提供されるインデックスアクセス関数を識別する<a class="link" href="catalog-pg-proc.html" title="50.38. pg_proc"><code class="structname">pg_proc</code></a>項目への参照です。
-本章の後でこの関数用のAPIを定義します。
-<code class="structname">pg_am</code>行はさらに、複数列のインデックスをサポートするかなどといった、アクセスメソッドの固定属性をいくつか規定します。
-現時点では、<code class="structname">pg_am</code>項目の作成や削除に関する特別な補助はありません。
-新しいアクセスメソッドを作成することができる人間ならば、適切な行を挿入できる能力があると想定しています。
-  </p><p>   An index access method handler function must be declared to accept a
-   single argument of type <code class="type">internal</code> and to return the
-   pseudo-type <code class="type">index_am_handler</code>.  The argument is a dummy value that
+</span>各インデックスメソッドは<a class="link" href="catalog-pg-am.html" title="50.3. pg_am"><code class="structname">pg_am</code></a>システムカタログの行で説明されます。
+<code class="structname">pg_am</code>エントリはアクセスメソッドの名前と<em class="firstterm">ハンドラ関数</em>を指定します。
+これらのエントリはSQLコマンド<a class="xref" href="sql-create-access-method.html" title="CREATE ACCESS METHOD"><span class="refentrytitle">CREATE ACCESS METHOD</span></a>と<a class="xref" href="sql-drop-access-method.html" title="DROP ACCESS METHOD"><span class="refentrytitle">DROP ACCESS METHOD</span></a>を使って、作成および削除することができます。
+  </p><p><span class="original">
+   An index access method handler function must be declared to accept a
+   single argument of type &lt;type&gt;internal&lt;/&gt; and to return the
+   pseudo-type &lt;type&gt;index_am_handler&lt;/&gt;.  The argument is a dummy value that
    simply serves to prevent handler functions from being called directly from
    SQL commands.  The result of the function must be a palloc'd struct of
-   type <code class="structname">IndexAmRoutine</code>, which contains everything
+   type &lt;structname&gt;IndexAmRoutine&lt;/structname&gt;, which contains everything
    that the core code needs to know to make use of the index access method.
-   The <code class="structname">IndexAmRoutine</code> struct, also called the access
-   method's <em class="firstterm">API struct</em>, includes fields specifying assorted
+   The &lt;structname&gt;IndexAmRoutine&lt;/structname&gt; struct, also called the access
+   method's &lt;firstterm&gt;API struct&lt;/&gt;, includes fields specifying assorted
    fixed properties of the access method, such as whether it can support
    multicolumn indexes.  More importantly, it contains pointers to support
    functions for the access method, which do all of the real work to access
    indexes.  These support functions are plain C functions and are not
    visible or callable at the SQL level.  The support functions are described
-   in <a class="xref" href="index-functions.html" title="59.2. インデックスアクセスメソッド関数">59.2. インデックスアクセスメソッド関数</a>.
-  </p><p>   The structure <code class="structname">IndexAmRoutine</code> is defined thus:
+   in &lt;xref linkend="index-functions"&gt;.
+</span>インデックスメソッドのハンドラ関数は、<code class="type">internal</code>型の引数を1つ取り、疑似型<code class="type">index_am_handler</code>を返すものとして宣言しなければなりません。
+引数は単にハンドラ関数がSQLコマンドから直接呼び出されるのを防ぐためのダミーの値です。
+関数の結果は型<code class="structname">IndexAmRoutine</code>のpallocされた構造体でなければならず、そこにはインデックスアクセスメソッドを使用するためにコアコードが知っている必要のあるすべてのことが含まれています。
+<code class="structname">IndexAmRoutine</code>構造体は、アクセスメソッドの<em class="firstterm">API構造体</em>とも呼ばれ、複数列のインデックスをサポートするかどうかなどといった、アクセスメソッドに関する様々な既定の属性を指定するフィールドが含まれます。
+さらに重要なことに、この構造体にはアクセスメソッドのサポート関数へのポインタが含まれ、これによってインデックスにアクセスするためのすべての実際の処理が行われます。
+これらのサポート関数は単なるCの関数で、SQLレベルでは見ることも呼び出すこともできません。
+サポート関数は<a class="xref" href="index-functions.html" title="59.2. インデックスアクセスメソッド関数">59.2. インデックスアクセスメソッド関数</a>で説明されています。
+  </p><p><span class="original">
+   The structure &lt;structname&gt;IndexAmRoutine&lt;/structname&gt; is defined thus:
+</span>構造体<code class="structname">IndexAmRoutine</code>は以下のように定義されています。
 </p><pre class="programlisting">typedef struct IndexAmRoutine
 {
     NodeTag     type;
@@ -163,7 +170,7 @@
    &lt;structfield&gt;amsearchnulls&lt;/structfield&gt;, indicating that it supports
    &lt;literal&gt;IS NULL&lt;/&gt; and &lt;literal&gt;IS NOT NULL&lt;/&gt; clauses as search
    conditions.
-</span><code class="structname">pg_am</code>のフラグ列の中には、明確な意味を持たないものがあります。
+</span><code class="structname">IndexAmRoutine</code>のフラグフィールドの中には、意味がわかりにくいものがあります。
 <code class="structfield">amcanunique</code>の必要条件は<a class="xref" href="index-unique-checks.html" title="59.5. インデックス一意性検査">59.5. インデックス一意性検査</a>で説明されています。
 <code class="structfield">amcanmulticol</code>フラグはアクセスメソッドが複数列に対するインデックスをサポートすることを表し、<code class="structfield">amoptionalkey</code>は、インデックス可能な制限句が最初のインデックス列に指定されていないスキャンを許可することを表します。
 <code class="structfield">amcanmulticol</code>が偽の場合、<code class="structfield">amoptionalkey</code>は基本的に、アクセスメソッドが制限句なしで完全なインデックススキャンをサポートするかどうかを表します。
