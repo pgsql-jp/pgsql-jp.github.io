@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>第46章 バックグラウンドワーカプロセス</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="PostgreSQL 9.6.0文書" /><link rel="up" href="server-programming.html" title="パート V. サーバプログラミング" /><link rel="prev" href="spi-examples.html" title="45.5. 例" /><link rel="next" href="logicaldecoding.html" title="第47章 ロジカルデコーディング" /><link rel="copyright" href="legalnotice.html" title="法的告知" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><td width="20%" align="left" colspan="2"></td><th width="60%" align="center"><a accesskey="h" href="index.html">PostgreSQL 9.6.0文書</a></th><td width="20%" align="right"><div class="actions"><a class="issue" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 9.6.0 bgworker.html">誤訳等の報告</a></div></td></tr><tr><td width="10%" align="left" valign="top"><a accesskey="p" href="spi-examples.html">前へ</a> </td><td width="10%" align="left" valign="top"><a accesskey="u" href="server-programming.html">上へ</a></td><td width="60%" align="center">第46章 バックグラウンドワーカプロセス</td><td width="20%" align="right" valign="top"> <a accesskey="n" href="logicaldecoding.html">次へ</a></td></tr></table><hr /></div><div class="chapter" id="bgworker"><div class="titlepage"><div><div><h2 class="title">第46章 バックグラウンドワーカプロセス</h2></div></div></div><span class="original">
  &lt;title&gt;Background Worker Processes&lt;/title&gt;
-</span><a id="idp95710384" class="indexterm"></a><p><span class="original">
+</span><a id="idp95981360" class="indexterm"></a><p><span class="original">
   PostgreSQL can be extended to run user-supplied code in separate processes.
   Such processes are started, stopped and monitored by &lt;command&gt;postgres&lt;/command&gt;,
   which permits them to have a lifetime closely linked to the server's status.
@@ -11,7 +11,7 @@
   process.  Also, by linking to &lt;application&gt;libpq&lt;/&gt; they can connect to the
   server and behave like a regular client application.
 </span>PostgreSQLはユーザ提供のコードを別のプロセスとして実行できるように拡張することができます。
-このプロセスは<code class="command">postgres</code>によって起動、終了、監視され、サーバの状態に密接にリンクしています。
+このプロセスは<code class="command">postgres</code>によって起動、終了、監視され、サーバの状態に密接にリンクした寿命を持つことができます。
 これらのプロセスは<span class="productname">PostgreSQL</span>の共有メモリ領域にアタッチしたり、データベースの内部に接続するオプションを持ちます。これらはまた、通常のクライアントに接続された実際のサーバプロセスのように複数のトランザクションを連続して実行することができます。
 また、アプリケーションは<span class="application">libpq</span>とリンクすることにより通常のクライアントアプリケーションのようにサーバに接続して動作することができます。
  </p><div class="warning" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">警告</h3><p><span class="original">
@@ -22,7 +22,7 @@
    caution.  Only carefully audited modules should be permitted to run
    background worker processes.
 </span>バックグラウンドワーカを使うにあたっては、堅牢性とセキュリティリスクを考慮しなくてはなりません。なぜならば、<code class="literal">C</code>言語で書かれており、データへのアクセスが制限されていないためです。
-バックグラウンドワーカプロセスを有効にしたいと思っている管理者は厳重に注意して実践してください。
+バックグラウンドワーカプロセスを含むモジュールを有効にしたいと思っている管理者は、細心の注意を払って実践してください。
 バックグラウンドワーカプロセスの実行は、注意深く検査されたモジュールだけを許可する必要があります。
   </p></div><p><span class="original">
   Background workers can be initialized at the time that
@@ -37,9 +37,9 @@
   &lt;function&gt;RegisterBackgroundWorker&lt;/&gt;, which can only be called from within
   the postmaster, &lt;function&gt;RegisterDynamicBackgroundWorker&lt;/function&gt; must be
   called from a regular backend.
-</span>バックグラウンドワーカは<span class="productname">PostgreSQL</span>スタート時にモジュールを<code class="varname">shared_preload_libraries</code>に記すことによって実行できます。
-バックグラウンドワーカとして実行したいモジュールは<code class="function">RegisterBackgroundWorker(<code class="type">BackgroundWorker *worker</code>)</code>を<code class="function">_PG_init()</code>から呼び出して登録する必要があります。
-バックグラウンドワーカはシステム起動後も<code class="function">RegisterDynamicBackgroundWorker(<code class="type">BackgroundWorker *worker, BackgroundWorkerHandle **handle</code>)</code>を呼び出すことによって実行することができます。
+</span>バックグラウンドワーカは、モジュールを<code class="varname">shared_preload_libraries</code>に記すことによって、<span class="productname">PostgreSQL</span>スタート時に初期化できます。
+バックグラウンドワーカとして実行したいモジュールは、<code class="function">_PG_init()</code>から<code class="function">RegisterBackgroundWorker(<code class="type">BackgroundWorker *worker</code>)</code>を呼び出すことで登録できます。
+バックグラウンドワーカはシステム起動後も<code class="function">RegisterDynamicBackgroundWorker(<code class="type">BackgroundWorker *worker, BackgroundWorkerHandle **handle</code>)</code>を呼び出すことによって開始することができます。
 postmasterからのみ呼び出すことができる<code class="function">RegisterBackgroundWorker</code>とは異なり、<code class="function">RegisterDynamicBackgroundWorker</code>は通常のバックエンドから呼び出す必要があります。
  </p><p><span class="original">
   The structure &lt;structname&gt;BackgroundWorker&lt;/structname&gt; is defined thus:
@@ -78,7 +78,7 @@ typedef struct BackgroundWorker
        data structures, such as heavyweight or lightweight locks, shared
        buffers, or any custom data structures which the worker itself may
        wish to create and use.
-</span><a id="idp95732432" class="indexterm"></a>
+</span><a id="idp96003568" class="indexterm"></a>
 共有メモリへのアクセスを要求します。
 共有メモリアクセスがないワーカは、重量または軽量のロック、共有バッファ、ワーカが作成して利用したいカスタムデータ構造等、<span class="productname">PostgreSQL</span>の共有データ構造にアクセスできません。
       </p></dd><dt><span class="term"><code class="literal">BGWORKER_BACKEND_DATABASE_CONNECTION</code></span></dt><dd><p><span class="original">
@@ -88,7 +88,7 @@ typedef struct BackgroundWorker
        &lt;literal&gt;BGWORKER_BACKEND_DATABASE_CONNECTION&lt;/literal&gt; to connect to a
        database must also attach shared memory using
        &lt;literal&gt;BGWORKER_SHMEM_ACCESS&lt;/literal&gt;, or worker start-up will fail.
-</span><a id="idp95736160" class="indexterm"></a>
+</span><a id="idp96007296" class="indexterm"></a>
 トランザクションやクエリの実行が出来るデータベース接続を要求します。
 <code class="literal">BGWORKER_BACKEND_DATABASE_CONNECTION</code>を使用してデータベースに接続するバックグラウンドワーカは<code class="literal">BGWORKER_SHMEM_ACCESS</code>を使用して共有メモリにアタッチしなければなりません。さもなければ起動時に失敗します。
       </p></dd></dl></div><p>
@@ -110,9 +110,9 @@ typedef struct BackgroundWorker
 </span><code class="structfield">bgw_start_time</code>は、<code class="command">postgres</code>がプロセスを起動するべきタイミングを指定します。
 そのタイミングは、以下のうちの１つです。
 <code class="literal">BgWorkerStart_PostmasterStart</code>（<code class="command">postgres</code>自身が初期化を終えるとすぐに起動します。これを要求するプロセスはデータベース接続に望ましいものではありません）、
-<code class="literal">BgWorkerStart_ConsistentState</code>（ホットスタンバイで一貫性のある状態に到達すると、つまりデータベースに接続して参照のみのクエリを許可する状態になると起動します）、
-<code class="literal">BgWorkerStart_RecoveryFinished</code>（システムが参照/更新クエリを実行すると起動します）。
-最後の２つの値は、ホットスタンバイのサーバーでは同等ではないことに注意してください。
+<code class="literal">BgWorkerStart_ConsistentState</code>（ホットスタンバイで一貫性のある状態に到達し、データベースに接続して参照のみのクエリが実行できるようになると起動します）、
+<code class="literal">BgWorkerStart_RecoveryFinished</code>（システムが通常の参照/更新クエリを実行できるようになると起動します）。
+最後の２つの値は、ホットスタンバイでないサーバでは同等であることに注意してください。
 この設定はいつプロセスが起動されるかを示すだけであることに注意してください。
 これらのプロセスは、違う状態になったときに停止するわけではありません。
   </p><p><span class="original">
@@ -198,8 +198,8 @@ typedef struct BackgroundWorker
    at postmaster startup time, or when the backend registering the worker does
    not wish to wait for the worker to start up.  Otherwise, it should be
    initialized to &lt;literal&gt;MyProcPid&lt;/&gt;.
-</span><code class="structfield">bgw_notify_pid</code>はプロセスの開始時と終了時にpostmasterにSIGUSR1を送信するPostgreSQLバックエンドプロセスのPIDです。
-それはpostmasterの起動時間、またはワーカが起動するのを待ちたくない場合に0である必要があります。
+</span><code class="structfield">bgw_notify_pid</code>はプロセスの開始時と終了時にpostmasterが<code class="literal">SIGUSR1</code>を送信するPostgreSQLバックエンドプロセスのPIDです。
+それはpostmasterの起動時に登録されたワーカの場合、またはワーカを登録しているバックエンドがワーカーの起動をを待ちたくない場合は0にする必要があります。
 それ以外の場合は、<code class="literal">MyProcPid</code>で初期化する必要があります。
   </p><span class="original">
   &lt;para&gt;Once running, the process can connect to a database by calling
@@ -218,7 +218,7 @@ typedef struct BackgroundWorker
 </span><p>ひとたび実行すると、このプロセスは<code class="function">BackgroundWorkerInitializeConnection(<em class="parameter"><code>char *dbname</code></em>, <em class="parameter"><code>char *username</code></em>)</code>または<code class="function">BackgroundWorkerInitializeConnectionByOid(<em class="parameter"><code>Oid dboid</code></em>, <em class="parameter"><code>Oid useroid</code></em>)</code>を呼び出すことによって、データベースに接続できます。
 これはプロセスに<code class="literal">SPI</code>インタフェースを使用してのトランザクションとクエリの実行を許します。
 もし、<code class="varname">dbname</code>がNULLであった場合、または<code class="varname">dboid</code>が<code class="literal">InvalidOid</code>であった場合には、そのセッションは特定のデータベースに接続しません。しかし、共有カタログにはアクセス出来ます。
-もし、<code class="varname">username</code> がNULLの場合、または<code class="varname">useroid</code>が<code class="literal">InvalidOid</code>の場合には、そのプロセスは <code class="command">initdb</code>時に作成されたスーパーユーザとして実行されます。
+もし、<code class="varname">username</code>がNULLの場合、または<code class="varname">useroid</code>が<code class="literal">InvalidOid</code>の場合には、そのプロセスは<code class="command">initdb</code>時に作成されたスーパーユーザとして実行されます。
 バックグラウンドワーカはこれら２つの関数をどちらかを一度だけ呼ぶことが出来ます。
 データベースを切り替えることができません。
   </p><p><span class="original">
@@ -228,8 +228,8 @@ typedef struct BackgroundWorker
    Signals can be unblocked in the new process by calling
    &lt;function&gt;BackgroundWorkerUnblockSignals&lt;/&gt; and blocked by calling
    &lt;function&gt;BackgroundWorkerBlockSignals&lt;/&gt;.
-</span>制御が<code class="structfield">bgw_main</code>関数に達したとき、シグナルはまずブロックされます。このブロックは解除されなければなりません。
-このことは、必要があれば、プロセスにそのシグナルハンドラをカスタマイズできることを意味します。
+</span>制御が<code class="structfield">bgw_main</code>関数に達したとき、シグナルはまずブロックされます。このブロックはbgwmainで解除されなければなりません。
+これは、必要に応じてプロセスがシグナルハンドラをカスタマイズできるようにするためです。
 シグナルは新しいプロセスで<code class="function">BackgroundWorkerUnblockSignals</code>を呼び出すことにより、解除でき、<code class="function">BackgroundWorkerBlockSignals</code>を呼び出すことでブロックできます。
   </p><p><span class="original">
    If &lt;structfield&gt;bgw_restart_time&lt;/structfield&gt; for a background worker is
@@ -245,9 +245,9 @@ typedef struct BackgroundWorker
    &lt;literal&gt;WL_POSTMASTER_DEATH&lt;/&gt; flag is set when calling that function, and
    verify the return code for a prompt exit in the emergency case that
    &lt;command&gt;postgres&lt;/&gt; itself has terminated.
-</span>バックグラウンドワーカは<code class="structfield">bgw_restart_time</code>が<code class="literal">BGW_NEVER_RESTART</code>に設定されている場合、または<code class="function">TerminateBackgroundWorker</code>によって0で終了した場合、postmasterに自動的に登録が解除されて終了します。
-それ以外の場合、<code class="structfield">bgw_restart_time</code>で設定された時間の後に再起動します。または、バックエンドの障害のためにposmasterが最初期化された場合はすぐに再起動します。
-終了よりも一時的にのみ実行を停止する必要があるバックエンドは、割り込み可能なスリープを使用する必要があります。
+</span>バックグラウンドワーカは、<code class="structfield">bgw_restart_time</code>が<code class="literal">BGW_NEVER_RESTART</code>に設定されている場合、または終了コード0で終了した場合、または<code class="function">TerminateBackgroundWorker</code>によって終了した場合、postmasterに自動的に登録が解除されて終了します。
+それ以外の場合、<code class="structfield">bgw_restart_time</code>で設定された時間の後に再起動します。または、バックエンドの障害のためにposmasterがクラスタを再初期化した場合は、すぐに再起動します。
+一時的に実行を中断するだけでよいバックエンドは、終了するのではなく、割り込み可能なスリープを使用する必要があります。
 これは<code class="function">WaitLatch()</code>を呼び出すことによって可能になります。
 この関数を呼び出すときには<code class="literal">WL_POSTMASTER_DEATH</code>フラグが設定されているか確認し、<code class="command">postgres</code>自身が終了する緊急事態には、リターンコードを確認するようにしてください。
   </p><p><span class="original">
@@ -272,14 +272,14 @@ typedef struct BackgroundWorker
    &lt;literal&gt;SIGTERM&lt;/&gt; to the worker if it is running, and to unregister it
    as soon as it is not.
 </span>バックグラウンドワーカを<code class="function">RegisterDynamicBackgroundWorker</code>関数により登録している場合、登録を実行するバックエンドはワーカの状態に関する情報を取得することが可能です。
-取得したい場合は<code class="function">RegisterDynamicBackgroundWorker</code>に<code class="type">BackgroundWorkerHandle *</code>のアドレスを渡す必要があります。
-もし登録に成功した場合、<code class="function">GetBackgroundWorkerPid(<em class="parameter"><code>BackgroundWorkerHandle *</code></em>,<em class="parameter"><code>pid_t *</code></em>)</code>または<code class="function">TerminateBackgroundWorker(<em class="parameter"><code>BackgroundWorkerHandle *</code></em>)</code>のポインタは初期化されます。
+取得したい場合は<code class="function">RegisterDynamicBackgroundWorker</code>に2番目の引数として<code class="type">BackgroundWorkerHandle *</code>のアドレスを渡す必要があります。
+もし登録に成功した場合、このポインタは後で<code class="function">GetBackgroundWorkerPid(<em class="parameter"><code>BackgroundWorkerHandle *</code></em>,<em class="parameter"><code>pid_t *</code></em>)</code>または<code class="function">TerminateBackgroundWorker(<em class="parameter"><code>BackgroundWorkerHandle *</code></em>)</code>に渡すことができるopaue(不透明)ハンドルで、初期化されます。
 <code class="function">GetBackgroundWorkerPid</code>はワーカの状態を監視することができます。以下の返り値が得られます。
 <code class="literal">BGWH_NOT_YET_STARTED</code>ワーカはまだpostmasterにより開始されていない。
 <code class="literal">BGWH_STOPPED</code>開始されたが、もはや実行されていない。
 <code class="literal">BGWH_STARTED</code>実行中です。
-この最後のケースでは、PIDは、第二の引数を介して返されます。
-<code class="function">TerminateBackgroundWorker</code>はワーカが実行していた場合postmasterがワーカに<code class="literal">SIGTERM</code>を送信し、まもなく登録を解除します。
+この最後のケースでは、PIDは、2番目の引数を介して返されます。
+<code class="function">TerminateBackgroundWorker</code>はワーカが実行していた場合postmasterがワーカに<code class="literal">SIGTERM</code>を送信し、実行が終了次第すぐに登録を解除します。
   </p><p><span class="original">
    In some cases, a process which registers a background worker may wish to
    wait for the worker to start up.  This can be accomplished by initializing
@@ -294,8 +294,8 @@ typedef struct BackgroundWorker
    the PID will be written to the provided address.  Otherwise, the return
    value will be &lt;literal&gt;BGWH_STOPPED&lt;/literal&gt; or
    &lt;literal&gt;BGWH_POSTMASTER_DIED&lt;/literal&gt;.
-</span>場合によっては、バックグラウンドワーカを登録する処理は、ワーカが起動するのを待つことをお勧めします。
-これは <code class="structfield">bgw_notify_pid</code>から<code class="literal">MyProcPid</code>で初期化し登録時に得られた<code class="type">BackgroundWorkerHandle *</code>を使用して<code class="function">WaitForBackgroundWorkerStartup(<em class="parameter"><code>BackgroundWorkerHandle *handle</code></em>,<em class="parameter"><code>pid_t *</code></em>)</code>関数を呼び出すことで実現します。
+</span>場合によっては、バックグラウンドワーカが起動するのを待ってから、ワーカを登録したい場合もあるでしょう。
+これは <code class="structfield">bgw_notify_pid</code>を<code class="literal">MyProcPid</code>で初期化し、登録時に得られた<code class="type">BackgroundWorkerHandle *</code>を使用して<code class="function">WaitForBackgroundWorkerStartup(<em class="parameter"><code>BackgroundWorkerHandle *handle</code></em>,<em class="parameter"><code>pid_t *</code></em>)</code>関数を呼び出すことで実現します。
 postmasterがバックグラウンドワーカを開始しようと試みたか、postmasterが死ぬまで、この関数はブロックします。
 バックグラウンドランナーが実行されている場合、戻り値は<code class="literal">BGWH_STARTED</code>、およびPIDが提供されたアドレスに書き込まれます。
 そうでない場合、戻り値は<code class="literal">BGWH_STOPPED</code>または<code class="literal">BGWH_POSTMASTER_DIED</code>になります。
