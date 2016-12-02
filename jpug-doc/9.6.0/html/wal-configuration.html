@@ -25,7 +25,7 @@
    the redo record are no longer needed and can be recycled or removed. (When
    &lt;acronym&gt;WAL&lt;/acronym&gt; archiving is being done, the log segments must be
    archived before being recycled or removed.)
-</span><em class="firstterm">チェックポイント</em><a id="idp81571472" class="indexterm"></a>は、一連のトランザクションにおいて、そのチェックポイント以前に書かれた全ての情報によりヒープとインデックスファイルがすでに更新されていることを保証する場所です。
+</span><em class="firstterm">チェックポイント</em><a id="idp81284544" class="indexterm"></a>は、一連のトランザクションにおいて、そのチェックポイント以前に書かれた全ての情報によりヒープとインデックスファイルがすでに更新されていることを保証する場所です。
 チェックポイントの時刻において、全てのダーティページデータはディスクにフラッシュされ、特殊なチェックポイントレコードがログファイルに書き込まれます。
 (変更されたレコードは以前に<acronym class="acronym">WAL</acronym>フラッシュされています。)
 クラッシュした時、クラッシュからの復旧処理は最後のチェックポイントレコードを見つけ、ログの中でどのレコード（これはredoレコードと呼ばれています）から復旧処理がREDOログ操作を開始すべきかを決定します。
@@ -149,7 +149,7 @@ I/Oの割合は、チェックポイントの起動時から<code class="varname
    often help to reduce transaction latency, but it also can an adverse effect
    on performance; particularly for workloads that are bigger than
    &lt;xref linkend="guc-shared-buffers"&gt;, but smaller than the OS's page cache.
-</span>LinuxおよびPOSIXプラットホームでは、チェックポイントによって書かれたページを、設定したバイト数の後にディスクに吐き出すように<a class="xref" href="runtime-config-wal.html#guc-checkpoint-flush-after">checkpoint_flush_after</a>を使ってOSに強制させることができます。
+</span>LinuxおよびPOSIXプラットフォームでは、チェックポイントによって書かれたページを、設定したバイト数の後にディスクに吐き出すように<a class="xref" href="runtime-config-wal.html#guc-checkpoint-flush-after">checkpoint_flush_after</a>を使ってOSに強制させることができます。
 この設定がない場合はこのページはOSのページキャッシュに保持されるかもしれず、チェックポイントの最後に<code class="literal">fsync</code>が発行された際の速度低下を招きます。
 この設定は、しばしばトランザクションの遅延を減少させるのに役立ちます。
 しかし、とりわけワークロードが<a class="xref" href="runtime-config-resource.html#guc-shared-buffers">shared_buffers</a>よりも大きく、かつOSのページキャッシュよりも小さい場合には性能上不利になることもあります。
@@ -212,7 +212,7 @@ WALが生成されるペースにWALのアーカイブ処理が追いつかな�
    during recovery, by up to one checkpoint cycle's worth of WAL.
    (&lt;varname&gt;max_wal_size&lt;/&gt; is never a hard limit anyway, so you should
    always leave plenty of headroom to avoid running out of disk space.)
-</span>アーカイブからのリカバリもしくはスタンバイモードにおいて、サーバでは定期的に通常運用でのチェックポイント処理と似た<em class="firstterm">再開始点</em><a id="idp81618288" class="indexterm"></a>処理を行います。これは、すでに再生されたWALを再度読み込む必要がないよう、ディスクに現在の状態を強制的に書き込み、<code class="filename">pg_control</code>ファイルを更新します。また<code class="filename">pg_xlog</code>ディレクトリの中の古いログセグメントを再利用できるようにします。
+</span>アーカイブからのリカバリもしくはスタンバイモードにおいて、サーバでは定期的に通常運用でのチェックポイント処理と似た<em class="firstterm">再開始点</em><a id="idp81331328" class="indexterm"></a>処理を行います。これは、すでに再生されたWALを再度読み込む必要がないよう、ディスクに現在の状態を強制的に書き込み、<code class="filename">pg_control</code>ファイルを更新します。また<code class="filename">pg_xlog</code>ディレクトリの中の古いログセグメントを再利用できるようにします。
 再開始点処理はチェックポイントレコードに対してしか実施されないので、マスタ側のチェックポイント処理よりも発生頻度が多いということはありません。
 再開始点は、最後の再開始点より少なくとも<code class="varname">checkpoint_timeout</code>秒が経過しているか、あるいは<code class="varname">max_wal_size</code>を超えそうな場合に起動されます。
 しかし、再開始点が実施できるための制約事項により、リカバリの際には1回のチェックポイント分のWALを上限に、<code class="varname">max_wal_size</code>を超えてしまいがちです。
@@ -274,7 +274,7 @@ WALが生成されるペースにWALのアーカイブ処理が追いつかな�
 すべてが上位者の結果として生ずる同期操作によりフラッシュされるように、この遅延は他のサーバプロセスがそれらのコミットレコードをWALバッファに追加することを許容します。
 <a class="xref" href="runtime-config-wal.html#guc-fsync">fsync</a>が有効でないか、または<a class="xref" href="runtime-config-wal.html#guc-commit-siblings">commit_siblings</a>より少ない他のセッションがその時点で活動しているトランザクションであれば休止は行われません。
 他の何らかのセッションが直ぐにでもコミットするという起こりそうにない時の休止を避けるものです。
-いくつかのプラットホームにおいて、休止要求の分解能は10ミリ秒で、１から10000マイクロ秒の間の<code class="varname">commit_delay</code>の設定は、どの値でも同じ効果となることを覚えておいてください。
+いくつかのプラットフォームにおいて、休止要求の分解能は10ミリ秒で、１から10000マイクロ秒の間の<code class="varname">commit_delay</code>の設定は、どの値でも同じ効果となることを覚えておいてください。
 いくつかのプラットフォームで、休止操作はパラメータによって要求された時間よりわずかに長くなることも覚えておいてください。
   </p><p><span class="original">
    Since the purpose of &lt;varname&gt;commit_delay&lt;/varname&gt; is to allow the
