@@ -1,0 +1,341 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>E.1. Release 9.6.1</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="PostgreSQL 9.6.1文書" /><link rel="up" href="release.html" title="付録E リリースノート" /><link rel="prev" href="release.html" title="付録E リリースノート" /><link rel="next" href="release-9-6.html" title="E.2. リリース9.6" /><link rel="copyright" href="legalnotice.html" title="法的告知" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><td width="20%" align="left" colspan="2"></td><th width="60%" align="center"><a accesskey="h" href="index.html">PostgreSQL 9.6.1文書</a></th><td width="20%" align="right"><div class="actions"><a class="issue" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 9.6.1 release-9-6-1.html">誤訳等の報告</a></div></td></tr><tr><td width="10%" align="left" valign="top"><a accesskey="p" href="release.html">前へ</a> </td><td width="10%" align="left" valign="top"><a accesskey="u" href="release.html">上へ</a></td><td width="60%" align="center">E.1. Release 9.6.1</td><td width="20%" align="right" valign="top"> <a accesskey="n" href="release-9-6.html">次へ</a></td></tr></table><hr /></div><div class="sect1" id="release-9-6-1"><div class="titlepage"><div><div><h2 class="title" style="clear: both">E.1. Release 9.6.1</h2></div></div></div><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Release Date</h3><p>2016-10-27</p></div><p>   This release contains a variety of fixes from 9.6.0.
+   For information about new features in the 9.6 major release, see
+   <a class="xref" href="release-9-6.html" title="E.2. リリース9.6">E.2. リリース9.6</a>.
+  </p><div class="sect2" id="idp122979360"><div class="titlepage"><div><div><h3 class="title">E.1.1. Migration to Version 9.6.1</h3></div></div></div><p>    A dump/restore is not required for those running 9.6.X.
+   </p><p>    However, if your installation has been affected by the bugs described in
+    the first two changelog entries below, then after updating you may need
+    to take action to repair corrupted free space maps and/or visibility
+    maps.
+   </p></div><div class="sect2" id="idp122980640"><div class="titlepage"><div><div><h3 class="title">E.1.2. Changes</h3></div></div></div><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><span class="original">
+Author: Heikki Linnakangas &lt;heikki.linnakangas@iki.fi&gt;
+Branch: master [917dc7d23] 2016-10-19 14:26:05 +0300
+Branch: REL9_6_STABLE [142530ef0] 2016-10-19 14:43:34 +0300
+Branch: REL9_5_STABLE [b82573d6e] 2016-10-19 15:00:06 +0300
+Branch: REL9_4_STABLE [2523bef15] 2016-10-19 15:00:10 +0300
+Branch: REL9_3_STABLE [1c02ee314] 2016-10-19 15:00:34 +0300
+</span><p>      Fix WAL-logging of truncation of relation free space maps and
+      visibility maps (Pavan Deolasee, Heikki Linnakangas)
+     </p><p>      It was possible for these files to not be correctly restored during
+      crash recovery, or to be written incorrectly on a standby server.
+      Bogus entries in a free space map could lead to attempts to access
+      pages that have been truncated away from the relation itself, typically
+      producing errors like <span class="quote">「<span class="quote">could not read block <em class="replaceable"><code>XXX</code></em>:
+      read only 0 of 8192 bytes</span>」</span>.  Checksum failures in the
+      visibility map are also possible, if checksumming is enabled.
+     </p><p>      Procedures for determining whether there is a problem and repairing it
+      if so are discussed at
+      <a class="ulink" href="https://wiki.postgresql.org/wiki/Free_Space_Map_Problems" target="_top">https://wiki.postgresql.org/wiki/Free_Space_Map_Problems</a>.
+     </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+Branch: master [5afcd2aa7] 2016-09-30 20:40:55 -0400
+Branch: REL9_6_STABLE [b6d906073] 2016-09-30 20:39:06 -0400
+</span><p>      Fix possible data corruption when <span class="application">pg_upgrade</span> rewrites
+      a relation visibility map into 9.6 format (Tom Lane)
+     </p><p>      On big-endian machines, bytes of the new visibility map were written
+      in the wrong order, leading to a completely incorrect map.  On
+      Windows, the old map was read using text mode, leading to incorrect
+      results if the map happened to contain consecutive bytes that matched
+      a carriage return/line feed sequence.  The latter error would almost
+      always lead to a <span class="application">pg_upgrade</span> failure due to the map
+      file appearing to be the wrong length.
+     </p><p>      If you are using a big-endian machine (many non-Intel architectures
+      are big-endian) and have used <span class="application">pg_upgrade</span> to upgrade
+      from a pre-9.6 release, you should assume that all visibility maps are
+      incorrect and need to be regenerated.  It is sufficient to truncate
+      each relation's visibility map
+      with <code class="filename">contrib/pg_visibility</code>'s
+      <code class="function">pg_truncate_visibility_map()</code> function.
+      For more information see
+      <a class="ulink" href="https://wiki.postgresql.org/wiki/Visibility_Map_Problems" target="_top">https://wiki.postgresql.org/wiki/Visibility_Map_Problems</a>.
+     </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+Branch: master [a6c0a5b6e] 2016-10-23 18:36:13 -0400
+Branch: REL9_6_STABLE [c4016fcb1] 2016-10-23 18:36:13 -0400
+Branch: REL9_5_STABLE [65d85b8f9] 2016-10-23 18:36:13 -0400
+</span><p>      Don't throw serialization errors for self-conflicting insertions
+      in <code class="command">INSERT ... ON CONFLICT</code> (Thomas Munro, Peter Geoghegan)
+     </p></li><li class="listitem"><span class="original">
+Author: Heikki Linnakangas &lt;heikki.linnakangas@iki.fi&gt;
+Branch: master [d8589946d] 2016-10-17 12:13:16 +0300
+Branch: REL9_6_STABLE [a5f0bd77a] 2016-10-17 12:13:35 +0300
+</span><p>      Fix use-after-free hazard in execution of aggregate functions
+      using <code class="literal">DISTINCT</code> (Peter Geoghegan)
+     </p><p>      This could lead to a crash or incorrect query results.
+     </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+Branch: master [ac4a9d92f] 2016-10-09 12:49:37 -0400
+Branch: REL9_6_STABLE [dca25c256] 2016-10-09 12:49:37 -0400
+</span><p>      Fix incorrect handling of polymorphic aggregates used as window
+      functions (Tom Lane)
+     </p><p>      The aggregate's transition function was told that its first argument
+      and result were of the aggregate's output type, rather than the
+      state type.  This led to errors or crashes with
+      polymorphic transition functions.
+     </p></li><li class="listitem"><span class="original">
+Author: Stephen Frost &lt;sfrost@snowman.net&gt;
+Branch: master [814b9e9b8] 2016-10-03 16:22:57 -0400
+Branch: REL9_6_STABLE [190765a05] 2016-10-03 16:23:02 -0400
+Branch: REL9_5_STABLE [647a86e37] 2016-10-03 16:23:12 -0400
+</span><p>      Fix <code class="command">COPY</code> with a column name list from a table that has
+      row-level security enabled (Adam Brightwell)
+     </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+Branch: master [709e461be] 2016-10-20 17:17:50 -0400
+Branch: REL9_6_STABLE [033666515] 2016-10-20 17:17:57 -0400
+Branch: REL9_5_STABLE [cc0e4c567] 2016-10-20 17:18:01 -0400
+Branch: REL9_4_STABLE [adb199711] 2016-10-20 17:18:05 -0400
+Branch: REL9_3_STABLE [edb514306] 2016-10-20 17:18:09 -0400
+Branch: REL9_2_STABLE [f17c26dbd] 2016-10-20 17:18:14 -0400
+</span><p>      Fix <code class="command">EXPLAIN</code> to emit valid XML when
+      <a class="xref" href="runtime-config-statistics.html#guc-track-io-timing">track_io_timing</a> is on (Markus Winand)
+     </p><p>      Previously the XML output-format option produced syntactically invalid
+      tags such as <code class="literal">&lt;I/O-Read-Time&gt;</code>.  That is now
+      rendered as <code class="literal">&lt;I-O-Read-Time&gt;</code>.
+     </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+Branch: master [81e82a2bd] 2016-10-13 19:46:05 -0400
+Branch: REL9_6_STABLE [03f2bf70a] 2016-10-13 19:46:06 -0400
+Branch: REL9_5_STABLE [3cd504254] 2016-10-13 19:45:58 -0400
+</span><p>      Fix statistics update for <code class="command">TRUNCATE</code> in a prepared
+      transaction (Stas Kelvich)
+     </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+Branch: master [e55a946a8] 2016-10-08 19:29:27 -0400
+Branch: REL9_6_STABLE [b605aeba0] 2016-10-08 19:29:27 -0400
+Branch: REL9_5_STABLE [d1a9f128d] 2016-10-08 19:29:27 -0400
+Branch: REL9_4_STABLE [12230c478] 2016-10-08 19:29:27 -0400
+Branch: REL9_3_STABLE [56a047f46] 2016-10-08 19:29:28 -0400
+Branch: REL9_2_STABLE [a54faa659] 2016-10-08 19:29:28 -0400
+Branch: master [3cca13cbf] 2016-10-13 17:05:14 -0400
+Branch: REL9_6_STABLE [f9e8b05e5] 2016-10-13 17:05:14 -0400
+Branch: REL9_5_STABLE [3217ac3a9] 2016-10-13 17:05:15 -0400
+Branch: REL9_4_STABLE [f2024d59a] 2016-10-13 17:05:15 -0400
+Branch: REL9_3_STABLE [f0bf0f233] 2016-10-13 17:05:15 -0400
+Branch: REL9_2_STABLE [6f2db29ec] 2016-10-13 17:05:15 -0400
+</span><p>      Fix bugs in merging inherited <code class="literal">CHECK</code> constraints while
+      creating or altering a table (Tom Lane, Amit Langote)
+     </p><p>      Allow identical <code class="literal">CHECK</code> constraints to be added to a parent
+      and child table in either order.  Prevent merging of a valid
+      constraint from the parent table with a <code class="literal">NOT VALID</code>
+      constraint on the child.  Likewise, prevent merging of a <code class="literal">NO
+      INHERIT</code> child constraint with an inherited constraint.
+     </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+Branch: master [6bc811c99] 2016-10-03 16:40:25 -0400
+Branch: REL9_6_STABLE [993d94c59] 2016-10-03 16:40:26 -0400
+Branch: REL9_5_STABLE [f50fa46cc] 2016-10-03 16:40:27 -0400
+</span><p>      Show a sensible value
+      in <code class="structname">pg_settings</code>.<code class="structfield">unit</code>
+      for <code class="varname">min_wal_size</code> and <code class="varname">max_wal_size</code> (Tom Lane)
+     </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+Branch: master [9c4cc9e2c] 2016-10-13 00:25:48 -0400
+Branch: REL9_6_STABLE [0e9e64c07] 2016-10-13 00:25:28 -0400
+</span><p>      Fix replacement of array elements in <code class="function">jsonb_set()</code>
+      (Tom Lane)
+     </p><p>      If the target is an existing JSON array element, it got deleted
+      instead of being replaced with a new value.
+     </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+Branch: master [6292c2339] 2016-10-23 15:01:24 -0400
+Branch: REL9_6_STABLE [5beb73b49] 2016-10-23 15:01:24 -0400
+Branch: REL9_5_STABLE [913e7e598] 2016-10-23 15:01:24 -0400
+Branch: REL9_4_STABLE [9ec21591f] 2016-10-23 15:01:24 -0400
+Branch: REL9_3_STABLE [676c60375] 2016-10-23 15:01:24 -0400
+Branch: REL9_2_STABLE [9bc01e7a4] 2016-10-23 15:01:24 -0400
+Branch: REL9_1_STABLE [d4fa18a55] 2016-10-23 15:01:24 -0400
+Branch: master [8f1fb7d62] 2016-10-23 19:14:32 -0400
+Branch: REL9_6_STABLE [fdcee9f1f] 2016-10-23 19:14:32 -0400
+Branch: REL9_5_STABLE [beac79369] 2016-10-23 19:14:32 -0400
+</span><p>      Avoid very-low-probability data corruption due to testing tuple
+      visibility without holding buffer lock (Thomas Munro, Peter Geoghegan,
+      Tom Lane)
+     </p></li><li class="listitem"><span class="original">
+Author: Alvaro Herrera &lt;alvherre@alvh.no-ip.org&gt;
+Branch: master [00f15338b] 2016-10-24 09:45:48 -0300
+Branch: REL9_6_STABLE [c8329f934] 2016-10-24 09:46:49 -0300
+Branch: REL9_5_STABLE [7a2fa5774] 2016-10-24 09:38:28 -0300
+</span><p>      Preserve commit timestamps across server restart
+      (Julien Rouhaud, Craig Ringer)
+     </p><p>      With <a class="xref" href="runtime-config-replication.html#guc-track-commit-timestamp">track_commit_timestamp</a> turned on, old
+      commit timestamps became inaccessible after a clean server restart.
+     </p></li><li class="listitem"><span class="original">
+Author: Andres Freund &lt;andres@anarazel.de&gt;
+Branch: master [61633f790] 2016-10-03 22:11:36 -0700
+Branch: REL9_6_STABLE [76c0b73df] 2016-10-03 22:12:31 -0700
+Branch: REL9_5_STABLE [ce603a34a] 2016-10-03 22:13:10 -0700
+Branch: REL9_4_STABLE [07172b20f] 2016-10-03 22:14:12 -0700
+</span><p>      Fix logical WAL decoding to work properly when a subtransaction's WAL
+      output is large enough to spill to disk (Andres Freund)
+     </p></li><li class="listitem"><span class="original">
+Author: Robert Haas &lt;rhaas@postgresql.org&gt;
+Branch: master [308985b0b] 2016-09-28 11:19:46 -0400
+Branch: REL9_6_STABLE [32841fa32] 2016-09-28 11:22:39 -0400
+</span><p>      Fix dangling-pointer problem in logical WAL decoding (Stas Kelvich)
+     </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+Branch: master [cb775768e] 2016-10-13 15:06:46 -0400
+Branch: REL9_6_STABLE [2dd9e315d] 2016-10-13 15:06:57 -0400
+Branch: REL9_5_STABLE [43d17489d] 2016-10-13 15:07:04 -0400
+Branch: REL9_4_STABLE [6d3cbbf59] 2016-10-13 15:07:11 -0400
+</span><p>      Round shared-memory allocation request to a multiple of the actual
+      huge page size when attempting to use huge pages on Linux (Tom Lane)
+     </p><p>      This avoids possible failures during <code class="function">munmap()</code> on systems
+      with atypical default huge page sizes.  Except in crash-recovery
+      cases, there were no ill effects other than a log message.
+     </p></li><li class="listitem"><span class="original">
+Author: Heikki Linnakangas &lt;heikki.linnakangas@iki.fi&gt;
+Branch: master [8bb14cdd3] 2016-10-07 12:20:39 +0300
+Branch: REL9_6_STABLE [341acf235] 2016-10-07 12:21:52 +0300
+Branch: REL9_5_STABLE [cb38c056f] 2016-10-07 12:22:19 +0300
+Branch: REL9_4_STABLE [31895abd8] 2016-10-07 12:22:45 +0300
+Branch: REL9_3_STABLE [fde92dc22] 2016-10-07 12:23:06 +0300
+Branch: REL9_2_STABLE [e7bb327e3] 2016-10-07 12:23:58 +0300
+Branch: REL9_1_STABLE [e76d06d7f] 2016-10-07 12:23:52 +0300
+Branch: master [275bf9860] 2016-10-07 12:51:52 +0300
+Branch: REL9_6_STABLE [4d3ecbfee] 2016-10-07 12:53:40 +0300
+Branch: REL9_5_STABLE [f0ca54037] 2016-10-07 12:53:42 +0300
+Branch: REL9_4_STABLE [418cd758a] 2016-10-07 12:53:45 +0300
+Branch: REL9_3_STABLE [b5afc6f67] 2016-10-07 12:53:47 +0300
+Branch: REL9_2_STABLE [5d5dc6f68] 2016-10-07 12:53:49 +0300
+Branch: REL9_1_STABLE [e84e4761f] 2016-10-07 12:53:51 +0300
+</span><p>      Don't try to share SSL contexts across multiple connections
+      in <span class="application">libpq</span> (Heikki Linnakangas)
+     </p><p>      This led to assorted corner-case bugs, particularly when trying to use
+      different SSL parameters for different connections.
+     </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+Branch: master [886f6c5cc] 2016-10-10 10:35:58 -0400
+Branch: REL9_6_STABLE [bb211b66f] 2016-10-10 10:35:58 -0400
+Branch: REL9_5_STABLE [4f87f7640] 2016-10-10 10:35:58 -0400
+Branch: REL9_4_STABLE [eb6bc03bf] 2016-10-10 10:35:58 -0400
+Branch: REL9_3_STABLE [455eaf984] 2016-10-10 10:35:58 -0400
+Branch: REL9_2_STABLE [7397f62e7] 2016-10-10 10:35:58 -0400
+Branch: REL9_1_STABLE [fb6825fe5] 2016-10-10 10:35:58 -0400
+</span><p>      Avoid corner-case memory leak in <span class="application">libpq</span> (Tom Lane)
+     </p><p>      The reported problem involved leaking an error report
+      during <code class="function">PQreset()</code>, but there might be related cases.
+     </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+Branch: master [83c249200] 2016-10-03 10:07:49 -0400
+Branch: REL9_6_STABLE [bac56dbe0] 2016-10-03 10:07:39 -0400
+Branch: REL9_5_STABLE [0f259bd17] 2016-10-03 10:07:39 -0400
+</span><p>      In <span class="application">pg_upgrade</span>, check library loadability in name order
+      (Tom Lane)
+     </p><p>      This is a workaround to deal with cross-extension dependencies from
+      language transform modules to their base language and data type
+      modules.
+     </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+Branch: master [e8bdee277] 2016-10-02 14:31:28 -0400
+Branch: REL9_6_STABLE [f40334b85] 2016-10-02 14:31:28 -0400
+</span><p>      Fix <span class="application">pg_upgrade</span> to work correctly for extensions
+      containing index access methods (Tom Lane)
+     </p><p>      To allow this, the server has been extended to support <code class="command">ALTER
+      EXTENSION ADD/DROP ACCESS METHOD</code>.  That functionality should have
+      been included in the original patch to support dynamic creation of
+      access methods, but it was overlooked.
+     </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+Branch: master [f002ed2b8] 2016-09-30 20:40:56 -0400
+Branch: REL9_6_STABLE [53fbeed40] 2016-09-30 20:40:27 -0400
+</span><p>      Improve error reporting in <span class="application">pg_upgrade</span>'s file
+      copying/linking/rewriting steps (Tom Lane, Álvaro Herrera)
+     </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+Branch: master [4806f26f9] 2016-10-07 09:51:18 -0400
+Branch: REL9_6_STABLE [1749332ec] 2016-10-07 09:51:28 -0400
+</span><p>      Fix <span class="application">pg_dump</span> to work against pre-7.4 servers
+      (Amit Langote, Tom Lane)
+     </p></li><li class="listitem"><span class="original">
+Author: Heikki Linnakangas &lt;heikki.linnakangas@iki.fi&gt;
+Branch: master [0d4d7d618] 2016-10-07 14:35:17 +0300
+Branch: REL9_6_STABLE [2933ed036] 2016-10-07 14:35:41 +0300
+Branch: REL9_5_STABLE [010a1b561] 2016-10-07 14:35:45 +0300
+</span><p>      Disallow specifying both <code class="option">--source-server</code>
+      and <code class="option">--source-target</code> options to <span class="application">pg_rewind</span>
+      (Michael Banck)
+     </p></li><li class="listitem"><span class="original">
+Author: Heikki Linnakangas &lt;heikki.linnakangas@iki.fi&gt;
+Branch: master [d7eb76b90] 2016-10-06 13:24:46 +0300
+Branch: REL9_6_STABLE [aab809664] 2016-10-06 13:34:38 +0300
+Branch: REL9_5_STABLE [69da71254] 2016-10-06 13:34:32 +0300
+</span><p>      Make <span class="application">pg_rewind</span> turn off <code class="varname">synchronous_commit</code>
+      in its session on the source server (Michael Banck, Michael Paquier)
+     </p><p>      This allows <span class="application">pg_rewind</span> to work even when the source
+      server is using synchronous replication that is not working for some
+      reason.
+     </p></li><li class="listitem"><span class="original">
+Author: Magnus Hagander &lt;magnus@hagander.net&gt;
+Branch: master [3d39244e6] 2016-09-30 11:22:00 +0200
+Branch: REL9_6_STABLE [41d58e97a] 2016-09-30 11:22:20 +0200
+Branch: REL9_5_STABLE [d8b4c3490] 2016-09-30 11:22:32 +0200
+Branch: REL9_4_STABLE [da3f71a08] 2016-09-30 11:22:49 +0200
+Branch: REL9_3_STABLE [4bff35cca] 2016-09-30 11:23:25 +0200
+</span><p>      In <span class="application">pg_xlogdump</span>, retry opening new WAL segments when
+      using <code class="option">--follow</code> option (Magnus Hagander)
+     </p><p>      This allows for a possible delay in the server's creation of the next
+      segment.
+     </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+Branch: master [9a109452d] 2016-10-01 16:32:54 -0400
+Branch: REL9_6_STABLE [f4e787c82] 2016-10-01 16:32:55 -0400
+</span><p>      Fix <code class="filename">contrib/pg_visibility</code> to report the correct TID for
+      a corrupt tuple that has been the subject of a rolled-back update
+      (Tom Lane)
+     </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+Branch: master [7107d58ec] 2016-10-01 13:35:13 -0400
+Branch: REL9_6_STABLE [68fb75e10] 2016-10-01 13:35:20 -0400
+</span><p>      Fix makefile dependencies so that parallel make
+      of <span class="application">PL/Python</span> by itself will succeed reliably
+      (Pavel Raiskup)
+     </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+Branch: master [5e21b6811] 2016-10-20 15:40:07 -0400
+Branch: REL9_6_STABLE [845a8ea3e] 2016-10-20 15:40:14 -0400
+Branch: REL9_5_STABLE [aac898ac5] 2016-10-20 15:40:18 -0400
+Branch: REL9_4_STABLE [a8518738a] 2016-10-20 15:40:22 -0400
+Branch: REL9_3_STABLE [92da75278] 2016-10-20 15:40:26 -0400
+Branch: REL9_2_STABLE [b2aee4cb6] 2016-10-20 15:40:30 -0400
+Branch: REL9_1_STABLE [37ecf07d3] 2016-10-20 15:40:34 -0400
+Branch: master [d8fc45bd0] 2016-10-20 15:20:11 -0400
+Branch: REL9_6_STABLE [80ba149b0] 2016-10-20 15:20:17 -0400
+Branch: REL9_5_STABLE [8cddedc17] 2016-10-20 15:20:21 -0400
+Branch: REL9_4_STABLE [1d388ba2c] 2016-10-20 15:20:26 -0400
+Branch: REL9_3_STABLE [ff68f434f] 2016-10-20 15:20:30 -0400
+Branch: REL9_2_STABLE [3c5fae786] 2016-10-20 15:20:35 -0400
+Branch: REL9_1_STABLE [9345bf08c] 2016-10-20 15:20:39 -0400
+Branch: master [f3094920a] 2016-10-19 18:55:52 -0400
+Branch: REL9_6_STABLE [7fec5e101] 2016-10-19 18:55:57 -0400
+Branch: REL9_5_STABLE [bc59c1236] 2016-10-19 18:56:01 -0400
+Branch: REL9_4_STABLE [381c4b03b] 2016-10-19 18:56:05 -0400
+Branch: REL9_3_STABLE [ad6f67179] 2016-10-19 18:56:09 -0400
+Branch: REL9_2_STABLE [66adeefda] 2016-10-19 18:56:14 -0400
+Branch: REL9_1_STABLE [2877b102e] 2016-10-19 18:56:18 -0400
+Branch: master [ecbac3e6e] 2016-10-19 17:56:38 -0400
+Branch: REL9_6_STABLE [0c2f4c54c] 2016-10-19 17:56:45 -0400
+Branch: REL9_5_STABLE [5508d0c0b] 2016-10-19 17:56:49 -0400
+Branch: REL9_4_STABLE [9727dac58] 2016-10-19 17:56:53 -0400
+Branch: REL9_3_STABLE [7abda82ef] 2016-10-19 17:56:57 -0400
+Branch: REL9_2_STABLE [a03339aef] 2016-10-19 17:57:01 -0400
+Branch: REL9_1_STABLE [22cf97635] 2016-10-19 17:57:06 -0400
+</span><p>      Update time zone data files to <span class="application">tzdata</span> release 2016h
+      for DST law changes in Palestine and Turkey, plus historical
+      corrections for Turkey and some regions of Russia.
+      Switch to numeric abbreviations for some time zones in Antarctica,
+      the former Soviet Union, and Sri Lanka.
+     </p><p>      The IANA time zone database previously provided textual abbreviations
+      for all time zones, sometimes making up abbreviations that have little
+      or no currency among the local population.  They are in process of
+      reversing that policy in favor of using numeric UTC offsets in zones
+      where there is no evidence of real-world use of an English
+      abbreviation.  At least for the time being, <span class="productname">PostgreSQL</span>
+      will continue to accept such removed abbreviations for timestamp input.
+      But they will not be shown in the <code class="structname">pg_timezone_names</code>
+      view nor used for output.
+     </p><p>      In this update, <code class="literal">AMT</code> is no longer shown as being in use to
+      mean Armenia Time.  Therefore, we have changed the <code class="literal">Default</code>
+      abbreviation set to interpret it as Amazon Time, thus UTC-4 not UTC+4.
+     </p></li></ul></div></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="release.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="release.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="release-9-6.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">付録E リリースノート </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> E.2. リリース9.6</td></tr></table></div></body></html>
