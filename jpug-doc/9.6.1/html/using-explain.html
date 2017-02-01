@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>14.1. EXPLAINの利用</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="PostgreSQL 9.6.1文書" /><link rel="up" href="performance-tips.html" title="第14章 性能に関するヒント" /><link rel="prev" href="performance-tips.html" title="第14章 性能に関するヒント" /><link rel="next" href="planner-stats.html" title="14.2. プランナで使用される統計情報" /><link rel="copyright" href="legalnotice.html" title="法的告知" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><td width="20%" align="left" colspan="2"></td><th width="60%" align="center"><a accesskey="h" href="index.html">PostgreSQL 9.6.1文書</a></th><td width="20%" align="right"><div class="actions"><a class="issue" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 9.6.1 using-explain.html">誤訳等の報告</a></div></td></tr><tr><td width="10%" align="left" valign="top"><a accesskey="p" href="performance-tips.html">前へ</a> </td><td width="10%" align="left" valign="top"><a accesskey="u" href="performance-tips.html">上へ</a></td><td width="60%" align="center">14.1. <code class="command">EXPLAIN</code>の利用</td><td width="20%" align="right" valign="top"> <a accesskey="n" href="planner-stats.html">次へ</a></td></tr></table><hr /></div><div class="sect1" id="using-explain"><div class="titlepage"><div><div><h2 class="title" style="clear: both">14.1. <code class="command">EXPLAIN</code>の利用</h2></div></div></div><span class="original">
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>14.1. EXPLAINの利用</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="prev" href="performance-tips.html" title="第14章 性能に関するヒント" /><link rel="next" href="planner-stats.html" title="14.2. プランナで使用される統計情報" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><td width="20%" align="left" colspan="2"></td><th width="60%" align="center"><a accesskey="h" href="index.html">PostgreSQL 9.6.1文書</a></th><td width="20%" align="right"><div class="actions"><a class="issue" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 9.6.1 using-explain.html">誤訳等の報告</a></div></td></tr><tr><td width="10%" align="left" valign="top"><a accesskey="p" href="performance-tips.html">前へ</a> </td><td width="10%" align="left" valign="top"><a accesskey="u" href="performance-tips.html">上へ</a></td><td width="60%" align="center">14.1. <code class="command">EXPLAIN</code>の利用</td><td width="20%" align="right" valign="top"> <a accesskey="n" href="planner-stats.html">次へ</a></td></tr></table><hr /></div><div class="sect1" id="using-explain"><div class="titlepage"><div><div><h2 class="title" style="clear: both">14.1. <code class="command">EXPLAIN</code>の利用</h2></div></div></div><span class="original">
   &lt;title&gt;Using &lt;command&gt;EXPLAIN&lt;/command&gt;&lt;/title&gt;
-</span><a id="idp71925424" class="indexterm"></a><a id="idp71926448" class="indexterm"></a><p><span class="original">
+</span><a id="idp71697056" class="indexterm"></a><a id="idp71698080" class="indexterm"></a><p><span class="original">
     &lt;productname&gt;PostgreSQL&lt;/productname&gt; devises a &lt;firstterm&gt;query
     plan&lt;/firstterm&gt; for each query it receives.  Choosing the right
     plan to match the query structure and the properties of the data
@@ -388,12 +388,12 @@ WHERE t1.unique1 &lt; 10 AND t1.unique2 = t2.unique2;
     costs of the loop node are then set on the basis of the cost of the outer
     scan, plus one repetition of the inner scan for each outer row (10 * 7.87,
     here), plus a little CPU time for join processing.
-</span>この計画では、入力または子として２つのテーブルスキャンを持つ入れ子状ループ結合ノードがあります。
+</span>この計画では、入力または子として２つのテーブルスキャンを持つネステッドループ結合ノードがあります。
 計画のツリー構造を反映して、ノード要約行はインデント付けされます。
 結合の先頭、<span class="quote">「<span class="quote">外部</span>」</span>、子は以前に説明したものと似たビットマップスキャンです。
 そのコストと行数は、該当ノードに<code class="literal">unique1 &lt; 10</code> <code class="literal">WHERE</code>句が適用されるため、<code class="literal">SELECT ... WHERE unique1 &lt; 10</code>で得られたものと同じです。
 この段階では<code class="literal">t1.unique2 = t2.unique2</code>句は関係しておらず、外部スキャンにおける出力行数に影響していません。
-入れ子状ループ結合ノードは、外部の子から得られた行毎に、その２番目または<span class="quote">「<span class="quote">内部の</span>」</span>子を一回実行します。
+ネステッドループ結合ノードは、外部の子から得られた行毎に、その２番目または<span class="quote">「<span class="quote">内部の</span>」</span>子を一回実行します。
 現在の外部の行からの列の値は内部スキャンに組み込まれます。
 ここで、外部行からの<code class="literal">t1.unique2</code>の値が利用できますので、上述の単純な<code class="literal">SELECT ... WHERE t2.unique2 = <em class="replaceable"><code>constant</code></em></code>の場合に示したものと似た計画とコストが得られます。
 （実際、推定コストは、<code class="literal">t2</code>に対するインデックススキャンが繰り返される間に発生することが想定されるキャッシュの結果、上で示した値よりわずかに低くなります。）
@@ -441,7 +441,7 @@ WHERE t1.unique1 &lt; 10 AND t2.unique2 &lt; 10 AND t1.hundred &lt; t2.hundred;
     in memory as it's read, and then returns the data from memory on each
     subsequent pass.
 </span>ここではプランナが、具体化計画ノードをその上に挿入することで、結合の内部リレーションの<span class="quote">「<span class="quote">具体化</span>」</span>を選択していることに注意してください。
-これは、たとえ入れ子上ループ結合ノードが外部リレーションから各行につき一度、そのデータを10回読む必要があったとしても、<code class="literal">t2</code>インデックススキャンが一度だけ行なわれることを意味します。
+これは、たとえネステッドループ結合ノードが外部リレーションから各行につき一度、そのデータを10回読む必要があったとしても、<code class="literal">t2</code>インデックススキャンが一度だけ行なわれることを意味します。
 具体化ノードはそのデータを読んだときにメモリに保存し、その後の読み出しではそのデータをメモリから返します。
    </p><p><span class="original">
     When dealing with outer joins, you might see join plan nodes with both
@@ -602,7 +602,7 @@ WHERE t1.unique1 &lt; 10 AND t1.unique2 = t2.unique2;
     the node.  In the above example, we spent a total of 0.220 milliseconds
     executing the index scans on &lt;literal&gt;tenk2&lt;/&gt;.
 </span>問い合わせ計画の中には、何回も副計画ノードを実行する可能性のあるものがあります。
-例えば、上述の入れ子状ループの計画では、内部インデックススキャンは外部の行ごとに一度行われます。
+例えば、上述のネステッドループの計画では、内部インデックススキャンは外部の行ごとに一度行われます。
 このような場合、<code class="literal">loops</code>値はそのノードを実行する総回数を報告し、表示される実際の時間と行数は1実行当たりの平均です。
 これで値を表示された推定コストと比較できるようになります。
 <code class="literal">loops</code>値をかけることで、そのノードで実際に費やされた総時間を得ることができます。
