@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>13.3. 明示的ロック</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="prev" href="transaction-iso.html" title="13.2. トランザクションの分離" /><link rel="next" href="applevel-consistency.html" title="13.4. アプリケーションレベルでのデータの一貫性チェック" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><td width="20%" align="left" colspan="2"></td><th width="60%" align="center"><a accesskey="h" href="index.html">PostgreSQL 9.6.1文書</a></th><td width="20%" align="right"><div class="actions"><a class="issue" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 9.6.1 explicit-locking.html">誤訳等の報告</a></div></td></tr><tr><td width="10%" align="left" valign="top"><a accesskey="p" href="transaction-iso.html">前へ</a> </td><td width="10%" align="left" valign="top"><a accesskey="u" href="mvcc.html">上へ</a></td><td width="60%" align="center">13.3. 明示的ロック</td><td width="20%" align="right" valign="top"> <a accesskey="n" href="applevel-consistency.html">次へ</a></td></tr></table><hr /></div><div class="sect1" id="explicit-locking"><div class="titlepage"><div><div><h2 class="title" style="clear: both">13.3. 明示的ロック</h2></div></div></div><span class="original">
    &lt;title&gt;Explicit Locking&lt;/title&gt;
-</span><a id="idp71953744" class="indexterm"></a><p><span class="original">
+</span><a id="idp71751952" class="indexterm"></a><p><span class="original">
     &lt;productname&gt;PostgreSQL&lt;/productname&gt; provides various lock modes
     to control concurrent access to data in tables.  These modes can
     be used for application-controlled locking in situations where
@@ -15,19 +15,18 @@
 </span><span class="productname">PostgreSQL</span>は、テーブル内のデータに対する同時アクセスを制御するために様々な種類のロックモードを備えています。
 これらのモードは、<acronym class="acronym">MVCC</acronym>では必要な動作を得られない場合、アプリケーション制御のロックに使用することができます。
 また、ほとんどの<span class="productname">PostgreSQL</span>コマンドでは、参照されるテーブルがそのコマンドの実行中に別の方法で削除もしくは変更されていないことを確実にするために、適切なモードのロックを自動的に獲得します。
-（例えば、<code class="command">TRUNCATE</code>コマンドは、同じテーブルに対する他の操作とは同時に実行することは危険です。
-そのため、そのテーブルへの排他ロックを強制的に獲得します。）
+（例えば、<code class="command">TRUNCATE</code>コマンドは、同じテーブルに対する他の操作と同時に安全に実行することはできないので、それを確実に実行するため、そのテーブルの排他ロックを獲得します。）
    </p><p><span class="original">
     To examine a list of the currently outstanding locks in a database
     server, use the
     &lt;link linkend="view-pg-locks"&gt;&lt;structname&gt;pg_locks&lt;/structname&gt;&lt;/link&gt;
     system view. For more information on monitoring the status of the lock
     manager subsystem, refer to &lt;xref linkend="monitoring"&gt;.
-</span>現在のデータベースサーバで重要なロックの一覧を確認するには、<a class="link" href="view-pg-locks.html" title="50.65. pg_locks"><code class="structname">pg_locks</code></a>システムビューを使用してください。
+</span>現在のデータベースサーバに残っているロックの一覧を確認するには、<a class="link" href="view-pg-locks.html" title="50.65. pg_locks"><code class="structname">pg_locks</code></a>システムビューを使用してください。
 ロック管理サブシステムの状況監視についての詳細は<a class="xref" href="monitoring.html" title="第28章 データベース活動状況の監視">28章<em>データベース活動状況の監視</em></a>を参照してください。
    </p><div class="sect2" id="locking-tables"><div class="titlepage"><div><div><h3 class="title">13.3.1. テーブルレベルロック</h3></div></div></div><span class="original">
    &lt;title&gt;Table-level Locks&lt;/title&gt;
-</span><a id="idp71962624" class="indexterm"></a><p><span class="original">
+</span><a id="idp71760960" class="indexterm"></a><p><span class="original">
     The list below shows the available lock modes and the contexts in
     which they are used automatically by
     &lt;productname&gt;PostgreSQL&lt;/productname&gt;.  You can also acquire any
@@ -50,7 +49,7 @@
     an &lt;literal&gt;ACCESS EXCLUSIVE&lt;/literal&gt; lock cannot be held by more than one
     transaction at a time) while others are not self-conflicting (for example,
     an &lt;literal&gt;ACCESS SHARE&lt;/literal&gt; lock can be held by multiple transactions).
-</span>以下のリストに、<span class="productname">PostgreSQL</span>で自動的に使用される、使用可能なロックモードとその文脈を示します。
+</span>以下のリストに、使用可能なロックモードとそれらが<span class="productname">PostgreSQL</span>で自動的に使用される文脈を示します。
 また、<a class="xref" href="sql-lock.html" title="LOCK"><span class="refentrytitle">LOCK</span></a>コマンドを使用して、こうしたロックを明示的に獲得することもできます。
 これらのロックモードは、たとえその名前に<span class="quote">「<span class="quote">row（行）</span>」</span>という言葉が付いていても、全てテーブルレベルのロックであることに注意してください。
 ロックモードの名前は歴史的なものです。
@@ -332,7 +331,7 @@
 アプリケーション開発者は通常ページレベルロックを考慮する必要はありませんが、ロックについて全てを説明したかったためここで取り上げました。
     </p></div><div class="sect2" id="locking-deadlocks"><div class="titlepage"><div><div><h3 class="title">13.3.4. デッドロック</h3></div></div></div><span class="original">
     &lt;title&gt;Deadlocks&lt;/title&gt;
-</span><a id="idp72160816" class="indexterm"></a><p><span class="original">
+</span><a id="idp71959072" class="indexterm"></a><p><span class="original">
      The use of explicit locking can increase the likelihood of
      &lt;firstterm&gt;deadlocks&lt;/&gt;, wherein two (or more) transactions each
      hold locks that the other wants.  For example, if transaction 1
@@ -425,7 +424,7 @@ UPDATE accounts SET balance = balance - 100.00 WHERE acctnum = 11111;</pre><p>
 したがって、アプリケーションで長時間（例えば、ユーザの入力待ち）トランザクションを開いたまま保持しておくのは、推奨されません。
     </p></div><div class="sect2" id="advisory-locks"><div class="titlepage"><div><div><h3 class="title">13.3.5. 勧告的ロック</h3></div></div></div><span class="original">
     &lt;title&gt;Advisory Locks&lt;/title&gt;
-</span><a id="idp72181360" class="indexterm"></a><a id="idp72182608" class="indexterm"></a><p><span class="original">
+</span><a id="idp71979616" class="indexterm"></a><a id="idp71980864" class="indexterm"></a><p><span class="original">
      &lt;productname&gt;PostgreSQL&lt;/productname&gt; provides a means for
      creating locks that have application-defined meanings.  These are
      called &lt;firstterm&gt;advisory locks&lt;/&gt;, because the system does not
