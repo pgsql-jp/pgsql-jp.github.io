@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>6.4. Returning Data From Modified Rows</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="prev" href="dml-delete.html" title="6.3. データの削除" /><link rel="next" href="queries.html" title="第7章 問い合わせ" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><td width="20%" align="left" colspan="2"></td><th width="60%" align="center"><a accesskey="h" href="index.html">PostgreSQL 9.6.2文書</a></th><td width="20%" align="right"><div class="actions"><a class="issue" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 9.6.2 dml-returning.html">誤訳等の報告</a></div></td></tr><tr><td width="10%" align="left" valign="top"><a accesskey="p" href="dml-delete.html">前へ</a> </td><td width="10%" align="left" valign="top"><a accesskey="u" href="dml.html">上へ</a></td><td width="60%" align="center">6.4. Returning Data From Modified Rows</td><td width="20%" align="right" valign="top"> <a accesskey="n" href="queries.html">次へ</a></td></tr></table><hr /></div><div class="sect1" id="dml-returning"><div class="titlepage"><div><div><h2 class="title" style="clear: both">6.4. Returning Data From Modified Rows</h2></div></div></div><a id="idp59376624" class="indexterm"></a><a id="idp59377728" class="indexterm"></a><a id="idp59379088" class="indexterm"></a><a id="idp59380448" class="indexterm"></a><p>   Sometimes it is useful to obtain data from modified rows while they are
+   being manipulated.  The <code class="command">INSERT</code>, <code class="command">UPDATE</code>,
+   and <code class="command">DELETE</code> commands all have an
+   optional <code class="literal">RETURNING</code> clause that supports this.  Use
+   of <code class="literal">RETURNING</code> avoids performing an extra database query to
+   collect the data, and is especially valuable when it would otherwise be
+   difficult to identify the modified rows reliably.
+  </p><p>   The allowed contents of a <code class="literal">RETURNING</code> clause are the same as
+   a <code class="command">SELECT</code> command's output list
+   (see <a class="xref" href="queries-select-lists.html" title="7.3. 選択リスト">7.3. 選択リスト</a>).  It can contain column
+   names of the command's target table, or value expressions using those
+   columns.  A common shorthand is <code class="literal">RETURNING *</code>, which selects
+   all columns of the target table in order.
+  </p><p>   In an <code class="command">INSERT</code>, the data available to <code class="literal">RETURNING</code> is
+   the row as it was inserted.  This is not so useful in trivial inserts,
+   since it would just repeat the data provided by the client.  But it can
+   be very handy when relying on computed default values.  For example,
+   when using a <a class="link" href="datatype-numeric.html#datatype-serial" title="8.1.4. 連番型"><code class="type">serial</code></a>
+   column to provide unique identifiers, <code class="literal">RETURNING</code> can return
+   the ID assigned to a new row:
+</p><pre class="programlisting">CREATE TABLE users (firstname text, lastname text, id serial primary key);
+
+INSERT INTO users (firstname, lastname) VALUES ('Joe', 'Cool') RETURNING id;</pre><p>
+   The <code class="literal">RETURNING</code> clause is also very useful
+   with <code class="literal">INSERT ... SELECT</code>.
+  </p><p>   In an <code class="command">UPDATE</code>, the data available to <code class="literal">RETURNING</code> is
+   the new content of the modified row.  For example:
+</p><pre class="programlisting">UPDATE products SET price = price * 1.10
+  WHERE price &lt;= 99.99
+  RETURNING name, price AS new_price;</pre><p>
+  </p><p>   In a <code class="command">DELETE</code>, the data available to <code class="literal">RETURNING</code> is
+   the content of the deleted row.  For example:
+</p><pre class="programlisting">DELETE FROM products
+  WHERE obsoletion_date = 'today'
+  RETURNING *;</pre><p>
+  </p><p>   If there are triggers (<a class="xref" href="triggers.html" title="第37章 トリガ">37章<em>トリガ</em></a>) on the target table,
+   the data available to <code class="literal">RETURNING</code> is the row as modified by
+   the triggers.  Thus, inspecting columns computed by triggers is another
+   common use-case for <code class="literal">RETURNING</code>.
+  </p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="dml-delete.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="dml.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="queries.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">6.3. データの削除 </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> 第7章 問い合わせ</td></tr></table></div></body></html>
