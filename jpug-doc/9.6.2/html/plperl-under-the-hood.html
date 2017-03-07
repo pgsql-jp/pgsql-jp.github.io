@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>43.8. PL/Perlの内部</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="prev" href="plperl-event-triggers.html" title="43.7. PL/Perlイベントトリガ" /><link rel="next" href="plpython.html" title="第44章 PL/Python - Python手続き言語" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><td width="20%" align="left" colspan="2"></td><th width="60%" align="center"><a accesskey="h" href="index.html">PostgreSQL 9.6.2文書</a></th><td width="20%" align="right"><div class="actions"><a class="issue" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 9.6.2 plperl-under-the-hood.html">誤訳等の報告</a></div></td></tr><tr><td width="10%" align="left" valign="top"><a accesskey="p" href="plperl-event-triggers.html">前へ</a> </td><td width="10%" align="left" valign="top"><a accesskey="u" href="plperl.html">上へ</a></td><td width="60%" align="center">43.8. PL/Perlの内部</td><td width="20%" align="right" valign="top"> <a accesskey="n" href="plpython.html">次へ</a></td></tr></table><hr /></div><div class="sect1" id="plperl-under-the-hood"><div class="titlepage"><div><div><h2 class="title" style="clear: both">43.8. PL/Perlの内部</h2></div></div></div><span class="original">
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>43.8. PL/Perlの内部</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.78.1" /><link rel="home" href="index.html" title="PostgreSQL 9.6.2文書" /><link rel="up" href="plperl.html" title="第43章 PL/Perl - Perl手続き言語" /><link rel="prev" href="plperl-event-triggers.html" title="43.7. PL/Perlイベントトリガ" /><link rel="next" href="plpython.html" title="第44章 PL/Python - Python手続き言語" /><link rel="copyright" href="legalnotice.html" title="法的告知" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><td width="20%" align="left" colspan="2"></td><th width="60%" align="center"><a accesskey="h" href="index.html">PostgreSQL 9.6.2文書</a></th><td width="20%" align="right"><div class="actions"><a class="issue" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 9.6.2 plperl-under-the-hood.html">誤訳等の報告</a></div></td></tr><tr><td width="10%" align="left" valign="top"><a accesskey="p" href="plperl-event-triggers.html">前へ</a> </td><td width="10%" align="left" valign="top"><a accesskey="u" href="plperl.html">上へ</a></td><td width="60%" align="center">43.8. PL/Perlの内部</td><td width="20%" align="right" valign="top"> <a accesskey="n" href="plpython.html">次へ</a></td></tr></table><hr /></div><div class="sect1" id="plperl-under-the-hood"><div class="titlepage"><div><div><h2 class="title" style="clear: both">43.8. PL/Perlの内部</h2></div></div></div><span class="original">
   &lt;title&gt;PL/Perl Under the Hood&lt;/title&gt;
 </span><div class="sect2" id="plperl-config"><div class="titlepage"><div><div><h3 class="title">43.8.1. 設定</h3></div></div></div><span class="original">
   &lt;title&gt;Configuration&lt;/title&gt;
@@ -7,7 +7,7 @@
   This section lists configuration parameters that affect &lt;application&gt;PL/Perl&lt;/&gt;.
 </span>本節では<span class="application">PL/Perl</span>に影響する設定パラメータを列挙します。
   </p><div class="variablelist"><dl class="variablelist"><dt id="guc-plperl-on-init"><span class="term">       <code class="varname">plperl.on_init</code> (<code class="type">string</code>)
-      <a id="idp95176736" class="indexterm"></a>
+      <a id="idp95854800" class="indexterm"></a>
       </span></dt><dd><p><span class="original">
         Specifies Perl code to be executed when a Perl interpreter is first
         initialized, before it is specialized for use by &lt;literal&gt;plperl&lt;/&gt; or
@@ -63,9 +63,9 @@ plperl.on_init = 'use lib "/my/app"; use MyApp::PgInit;'</pre><p>
        This parameter can only be set in the &lt;filename&gt;postgresql.conf&lt;/filename&gt; file or on the server command line.
 </span>このパラメータは<code class="filename">postgresql.conf</code>ファイルまたはサーバのコマンドラインでのみ設定可能です。
        </p></dd><dt id="guc-plperl-on-plperl-init"><span class="term">       <code class="varname">plperl.on_plperl_init</code> (<code class="type">string</code>)
-       <a id="idp95195504" class="indexterm"></a>
+       <a id="idp95873568" class="indexterm"></a>
       <br /></span><span class="term">       <code class="varname">plperl.on_plperlu_init</code> (<code class="type">string</code>)
-       <a id="idp95198048" class="indexterm"></a>
+       <a id="idp95876112" class="indexterm"></a>
       </span></dt><dd><p><span class="original">
         These parameters specify Perl code to be executed when a Perl
         interpreter is specialized for &lt;literal&gt;plperl&lt;/&gt; or
@@ -102,7 +102,7 @@ Perl内ですでに行われた処理は取り消されません。
 </span>スーパーユーザのみがこれらの設定を変更することができます。
 これらの設定はセッション内で変更することができますが、このような変更は関数を実行するためにすでに使用されたPerlインタプリタには影響を与えません。
        </p></dd><dt id="guc-plperl-use-strict"><span class="term">       <code class="varname">plperl.use_strict</code> (<code class="type">boolean</code>)
-       <a id="idp95210016" class="indexterm"></a>
+       <a id="idp95888144" class="indexterm"></a>
       </span></dt><dd><p><span class="original">
         When set true subsequent compilations of PL/Perl functions will have
         the &lt;literal&gt;strict&lt;/&gt; pragma enabled.  This parameter does not affect
