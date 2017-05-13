@@ -25,7 +25,7 @@
    the redo record are no longer needed and can be recycled or removed. (When
    &lt;acronym&gt;WAL&lt;/acronym&gt; archiving is being done, the log segments must be
    archived before being recycled or removed.)
-</span><em class="firstterm">チェックポイント</em><a id="idm46593542695344" class="indexterm"></a>は、一連のトランザクションにおいて、そのチェックポイント以前に書かれた全ての情報によりヒープとインデックスファイルがすでに更新されていることを保証する場所です。
+</span><em class="firstterm">チェックポイント</em><a id="idm46731596962512" class="indexterm"></a>は、一連のトランザクションにおいて、そのチェックポイント以前に書かれた全ての情報によりヒープとインデックスファイルがすでに更新されていることを保証する場所です。
 チェックポイントの時刻において、全てのダーティページデータはディスクにフラッシュされ、特殊なチェックポイントレコードがログファイルに書き込まれます。
 (変更されたレコードは以前に<acronym class="acronym">WAL</acronym>フラッシュされています。)
 クラッシュした時、クラッシュからの復旧処理は最後のチェックポイントレコードを見つけ、ログの中でどのレコード（これはredoレコードと呼ばれています）から復旧処理がREDOログ操作を開始すべきかを決定します。
@@ -60,7 +60,7 @@
 <a class="xref" href="runtime-config-wal.html#guc-checkpoint-timeout">checkpoint_timeout</a>秒が経過するか、または<a class="xref" href="runtime-config-wal.html#guc-max-wal-size">max_wal_size</a>に達するか、どちらかの条件が最初に満たされるとチェックポイントが開始されます。
 デフォルトの設定では、それぞれ5分と1GBとなっています。
 前回のチェックポイント以降書き出すWALがない場合、<code class="varname">checkpoint_timeout</code>が経過したとしても新しいチェックポイントが飛ばされます。
-WALアーカイブ処理を使用しており、かつ、データ損失の可能性を限定するためにファイルのアーカイブ頻度に対する下限を設定したい場合、このチェックポイントパラメータではなく<a class="xref" href="runtime-config-wal.html#guc-archive-timeout">archive_timeout</a>パラメータを調節しなければなりません。
+WALアーカイブ処理を使用しており、かつ、データ損失の可能性を限定するためにファイルのアーカイブ頻度に対する下限を設定したい場合、チェックポイント関連のパラメータよりも、<a class="xref" href="runtime-config-wal.html#guc-archive-timeout">archive_timeout</a>パラメータを調節するべきです。
 また、<code class="command">CHECKPOINT</code> SQLコマンドで強制的にチェックポイントを作成することもできます。
   </p><p><span class="original">
    Reducing &lt;varname&gt;checkpoint_timeout&lt;/varname&gt; and/or
@@ -212,7 +212,7 @@ WALが生成されるペースにWALのアーカイブ処理が追いつかな�
    during recovery, by up to one checkpoint cycle's worth of WAL.
    (&lt;varname&gt;max_wal_size&lt;/&gt; is never a hard limit anyway, so you should
    always leave plenty of headroom to avoid running out of disk space.)
-</span>アーカイブからのリカバリもしくはスタンバイモードにおいて、サーバでは定期的に通常運用でのチェックポイント処理と似た<em class="firstterm">再開始点</em><a id="idm46593542648528" class="indexterm"></a>処理を行います。これは、すでに再生されたWALを再度読み込む必要がないよう、ディスクに現在の状態を強制的に書き込み、<code class="filename">pg_control</code>ファイルを更新します。また<code class="filename">pg_xlog</code>ディレクトリの中の古いログセグメントを再利用できるようにします。
+</span>アーカイブからのリカバリもしくはスタンバイモードにおいて、サーバでは定期的に通常運用でのチェックポイント処理と似た<em class="firstterm">再開始点</em><a id="idm46731596915712" class="indexterm"></a>処理を行います。これは、すでに再生されたWALを再度読み込む必要がないよう、ディスクに現在の状態を強制的に書き込み、<code class="filename">pg_control</code>ファイルを更新します。また<code class="filename">pg_xlog</code>ディレクトリの中の古いログセグメントを再利用できるようにします。
 再開始点処理はチェックポイントレコードに対してしか実施されないので、マスタ側のチェックポイント処理よりも発生頻度が多いということはありません。
 再開始点は、最後の再開始点より少なくとも<code class="varname">checkpoint_timeout</code>秒が経過しているか、あるいは<code class="varname">max_wal_size</code>を超えそうな場合に起動されます。
 しかし、再開始点が実施できるための制約事項により、リカバリの際には1回のチェックポイント分のWALを上限に、<code class="varname">max_wal_size</code>を超えてしまいがちです。
