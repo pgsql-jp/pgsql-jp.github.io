@@ -1,0 +1,662 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>E.1. Release 9.6.3</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="release.html" title="付録E リリースノート" /><link rel="next" href="release-9-6-2.html" title="E.2. リリース9.6.2" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><td width="20%" align="left" colspan="2"></td><th width="60%" align="center"><a accesskey="h" href="index.html">PostgreSQL 9.6.3文書</a></th><td width="20%" align="right"><div class="actions"><a class="issue" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 9.6.3 release-9-6-3.html">誤訳等の報告</a></div></td></tr><tr><td width="10%" align="left" valign="top"><a accesskey="p" href="release.html">前へ</a> </td><td width="10%" align="left" valign="top"><a accesskey="u" href="release.html">上へ</a></td><td width="60%" align="center">E.1. Release 9.6.3</td><td width="20%" align="right" valign="top"> <a accesskey="n" href="release-9-6-2.html">次へ</a></td></tr></table><hr /></div><div class="sect1" id="release-9-6-3"><div class="titlepage"><div><div><h2 class="title" style="clear: both">E.1. Release 9.6.3</h2></div></div></div><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Release Date</h3><p>2017-05-11</p></div><p>   This release contains a variety of fixes from 9.6.2.
+   For information about new features in the 9.6 major release, see
+   <a class="xref" href="release-9-6.html" title="E.4. リリース9.6">E.4. リリース9.6</a>.
+  </p><div class="sect2" id="idm46816230437440"><div class="titlepage"><div><div><h3 class="title">E.1.1. Migration to Version 9.6.3</h3></div></div></div><p>    A dump/restore is not required for those running 9.6.X.
+   </p><p>    However, if you use foreign data servers that make use of user
+    passwords for authentication, see the first changelog entry below.
+   </p><p>    Also, if you are using third-party replication tools that depend
+    on <span class="quote">「<span class="quote">logical decoding</span>」</span>, see the fourth changelog entry below.
+   </p><p>    Also, if you are upgrading from a version earlier than 9.6.2,
+    see <a class="xref" href="release-9-6-2.html" title="E.2. リリース9.6.2">E.2. リリース9.6.2</a>.
+   </p></div><div class="sect2" id="idm46816230434384"><div class="titlepage"><div><div><h3 class="title">E.1.2. Changes</h3></div></div></div><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><span class="original">
+Author: Noah Misch &lt;noah@leadboat.com&gt;
+Branch: master [3eefc5105] 2017-05-08 07:24:24 -0700
+Branch: REL9_6_STABLE [c928addfc] 2017-05-08 07:24:27 -0700
+Branch: REL9_5_STABLE [db2158108] 2017-05-08 07:24:27 -0700
+Branch: REL9_4_STABLE [b2423f0fa] 2017-05-08 07:24:27 -0700
+Branch: REL9_3_STABLE [b5b124046] 2017-05-08 07:24:28 -0700
+Branch: REL9_2_STABLE [99cbb0bd9] 2017-05-08 07:24:28 -0700
+</span><p>      Restrict visibility
+      of <code class="structname">pg_user_mappings</code>.<code class="structfield">umoptions</code>, to
+      protect passwords stored as user mapping options
+      (Michael Paquier, Feike Steenbergen)
+     </p><p>      The previous coding allowed the owner of a foreign server object,
+      or anyone he has granted server <code class="literal">USAGE</code> permission to,
+      to see the options for all user mappings associated with that server.
+      This might well include passwords for other users.
+      Adjust the view definition to match the behavior of
+      <code class="structname">information_schema.user_mapping_options</code>, namely that
+      these options are visible to the user being mapped, or if the mapping
+      is for <code class="literal">PUBLIC</code> and the current user is the server
+      owner, or if the current user is a superuser.
+      (CVE-2017-7486)
+     </p><p>      By itself, this patch will only fix the behavior in newly initdb'd
+      databases.  If you wish to apply this change in an existing database,
+      you will need to do the following:
+     </p><div class="procedure"><ol class="procedure" type="1"><li class="step"><p>        Restart the postmaster after adding <code class="literal">allow_system_table_mods
+        = true</code> to <code class="filename">postgresql.conf</code>.  (In versions
+        supporting <code class="command">ALTER SYSTEM</code>, you can use that to make the
+        configuration change, but you'll still need a restart.)
+       </p></li><li class="step"><p>        In <span class="emphasis"><em>each</em></span> database of the cluster,
+        run the following commands as superuser:
+</p><pre class="programlisting">SET search_path = pg_catalog;
+CREATE OR REPLACE VIEW pg_user_mappings AS
+    SELECT
+        U.oid       AS umid,
+        S.oid       AS srvid,
+        S.srvname   AS srvname,
+        U.umuser    AS umuser,
+        CASE WHEN U.umuser = 0 THEN
+            'public'
+        ELSE
+            A.rolname
+        END AS usename,
+        CASE WHEN (U.umuser &lt;&gt; 0 AND A.rolname = current_user)
+                    OR (U.umuser = 0 AND pg_has_role(S.srvowner, 'USAGE'))
+                    OR (SELECT rolsuper FROM pg_authid WHERE rolname = current_user)
+                    THEN U.umoptions
+                 ELSE NULL END AS umoptions
+    FROM pg_user_mapping U
+         LEFT JOIN pg_authid A ON (A.oid = U.umuser) JOIN
+        pg_foreign_server S ON (U.umserver = S.oid);</pre><p>
+       </p></li><li class="step"><p>        Do not forget to include the <code class="literal">template0</code>
+        and <code class="literal">template1</code> databases, or the vulnerability will still
+        exist in databases you create later.  To fix <code class="literal">template0</code>,
+        you'll need to temporarily make it accept connections.
+        In <span class="productname">PostgreSQL</span> 9.5 and later, you can use
+</p><pre class="programlisting">ALTER DATABASE template0 WITH ALLOW_CONNECTIONS true;</pre><p>
+        and then after fixing <code class="literal">template0</code>, undo that with
+</p><pre class="programlisting">ALTER DATABASE template0 WITH ALLOW_CONNECTIONS false;</pre><p>
+        In prior versions, instead use
+</p><pre class="programlisting">UPDATE pg_database SET datallowconn = true WHERE datname = 'template0';
+UPDATE pg_database SET datallowconn = false WHERE datname = 'template0';</pre><p>
+       </p></li><li class="step"><p>        Finally, remove the <code class="literal">allow_system_table_mods</code> configuration
+        setting, and again restart the postmaster.
+       </p></li></ol></div></li><li class="listitem"><span class="original">
+Author: Peter Eisentraut &lt;peter_e@gmx.net&gt;
+Branch: master [e2d4ef8de] 2017-05-08 09:26:32 -0400
+Branch: REL9_6_STABLE [c33c42362] 2017-05-08 09:18:57 -0400
+Branch: REL9_5_STABLE [d45cd7c0e] 2017-05-08 09:19:07 -0400
+Branch: REL9_4_STABLE [3e5ea1f9b] 2017-05-08 09:19:15 -0400
+Branch: REL9_3_STABLE [4f1b2089a] 2017-05-08 09:19:23 -0400
+Branch: REL9_2_STABLE [d035c1b97] 2017-05-08 09:19:42 -0400
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+Branch: master [b6576e591] 2017-05-08 11:18:40 -0400
+Branch: REL9_6_STABLE [cad159432] 2017-05-08 11:18:54 -0400
+Branch: REL9_5_STABLE [a199582ef] 2017-05-08 11:19:00 -0400
+Branch: REL9_4_STABLE [d3f3f9568] 2017-05-08 11:19:04 -0400
+Branch: REL9_3_STABLE [703da1795] 2017-05-08 11:19:08 -0400
+</span><p>      Prevent exposure of statistical information via leaky operators
+      (Peter Eisentraut)
+     </p><p>      Some selectivity estimation functions in the planner will apply
+      user-defined operators to values obtained
+      from <code class="structname">pg_statistic</code>, such as most common values and
+      histogram entries.  This occurs before table permissions are checked,
+      so a nefarious user could exploit the behavior to obtain these values
+      for table columns he does not have permission to read.  To fix,
+      fall back to a default estimate if the operator's implementation
+      function is not certified leak-proof and the calling user does not have
+      permission to read the table column whose statistics are needed.
+      At least one of these criteria is satisfied in most cases in practice.
+      (CVE-2017-7484)
+     </p></li><li class="listitem"><span class="original">
+Author: Noah Misch &lt;noah@leadboat.com&gt;
+Branch: master [0170b10df] 2017-05-08 07:24:24 -0700
+Branch: REL9_6_STABLE [aafbd1df9] 2017-05-08 07:24:27 -0700
+Branch: REL9_5_STABLE [96d745492] 2017-05-08 07:24:27 -0700
+Branch: REL9_4_STABLE [ed36c1fe1] 2017-05-08 07:24:27 -0700
+Branch: REL9_3_STABLE [3eab81127] 2017-05-08 07:24:28 -0700
+</span><p>      Restore <span class="application">libpq</span>'s recognition of
+      the <code class="envar">PGREQUIRESSL</code> environment variable (Daniel Gustafsson)
+     </p><p>      Processing of this environment variable was unintentionally dropped
+      in <span class="productname">PostgreSQL</span> 9.3, but its documentation remained.
+      This creates a security hazard, since users might be relying on the
+      environment variable to force SSL-encrypted connections, but that
+      would no longer be guaranteed.  Restore handling of the variable,
+      but give it lower priority than <code class="envar">PGSSLMODE</code>, to avoid
+      breaking configurations that work correctly with post-9.3 code.
+      (CVE-2017-7485)
+     </p></li><li class="listitem"><span class="original">
+Author: Andres Freund &lt;andres@anarazel.de&gt;
+Branch: master [2bef06d51] 2017-04-27 13:13:36 -0700
+Branch: REL9_6_STABLE [28afff347] 2017-04-27 13:13:36 -0700
+Branch: REL9_5_STABLE [47f896b5c] 2017-04-27 13:13:37 -0700
+Branch: REL9_4_STABLE [5da646138] 2017-04-27 13:13:37 -0700
+Branch: master [56e19d938] 2017-04-27 15:29:15 -0700
+Branch: REL9_6_STABLE [29e8c881d] 2017-04-27 15:29:33 -0700
+Branch: REL9_5_STABLE [54270d7eb] 2017-04-27 15:29:43 -0700
+Branch: REL9_4_STABLE [b6ecf26cc] 2017-04-27 15:29:52 -0700
+</span><p>      Fix possibly-invalid initial snapshot during logical decoding
+      (Petr Jelinek, Andres Freund)
+     </p><p>      The initial snapshot created for a logical decoding replication slot
+      was potentially incorrect.  This could cause third-party tools that
+      use logical decoding to copy incomplete/inconsistent initial data.
+      This was more likely to happen if the source server was busy at the
+      time of slot creation, or if another logical slot already existed.
+     </p><p>      If you are using a replication tool that depends on logical decoding,
+      and it should have copied a nonempty data set at the start of
+      replication, it is advisable to recreate the replica after
+      installing this update, or to verify its contents against the source
+      server.
+     </p></li><li class="listitem"><span class="original">
+Author: Robert Haas &lt;rhaas@postgresql.org&gt;
+Branch: master [87f998203] 2017-03-14 11:51:11 -0400
+Branch: REL9_6_STABLE [36fcb36b8] 2017-03-14 11:52:27 -0400
+Branch: REL9_5_STABLE [c17a3f57e] 2017-03-14 12:03:29 -0400
+Branch: REL9_4_STABLE [bbd5e600f] 2017-03-14 12:06:36 -0400
+Branch: REL9_3_STABLE [6bd7816e7] 2017-03-14 12:08:14 -0400
+Branch: REL9_2_STABLE [b2ae1d6c4] 2017-03-14 12:10:36 -0400
+</span><p>      Fix possible corruption of <span class="quote">「<span class="quote">init forks</span>」</span> of unlogged indexes
+      (Robert Haas, Michael Paquier)
+     </p><p>      This could result in an unlogged index being set to an invalid state
+      after a crash and restart.  Such a problem would persist until the
+      index was dropped and rebuilt.
+     </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+Branch: master [0874d4f3e] 2017-04-23 13:11:06 -0400
+Branch: REL9_6_STABLE [f5885488d] 2017-04-23 13:11:08 -0400
+Branch: REL9_5_STABLE [a66e01bbc] 2017-04-23 13:10:57 -0400
+Branch: REL9_4_STABLE [2e14541c4] 2017-04-23 13:10:57 -0400
+Branch: REL9_3_STABLE [856580873] 2017-04-23 13:10:57 -0400
+Branch: REL9_2_STABLE [952e33b05] 2017-04-23 13:10:58 -0400
+</span><p>      Fix incorrect reconstruction of <code class="structname">pg_subtrans</code> entries
+      when a standby server replays a prepared but uncommitted two-phase
+      transaction (Tom Lane)
+     </p><p>      In most cases this turned out to have no visible ill effects, but in
+      corner cases it could result in circular references
+      in <code class="structname">pg_subtrans</code>, potentially causing infinite loops
+      in queries that examine rows modified by the two-phase transaction.
+     </p></li><li class="listitem"><span class="original">
+Author: Fujii Masao &lt;fujii@postgresql.org&gt;
+Branch: master [1d04a59be] 2017-02-22 03:11:58 +0900
+Branch: REL9_6_STABLE [9fab155c6] 2017-02-22 08:29:32 +0900
+Branch: REL9_5_STABLE [feb659cce] 2017-02-22 08:29:44 +0900
+Branch: REL9_4_STABLE [a3eb715a3] 2017-02-22 08:29:57 +0900
+</span><p>      Avoid possible crash in <span class="application">walsender</span> due to failure
+      to initialize a string buffer (Stas Kelvich, Fujii Masao)
+     </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+Branch: master [3f074845a] 2017-05-04 13:59:39 -0400
+Branch: REL9_6_STABLE [855f0e924] 2017-05-04 13:59:13 -0400
+Branch: REL9_5_STABLE [6cfb428b0] 2017-05-04 13:59:13 -0400
+</span><p>      Fix possible crash when rescanning a nearest-neighbor index-only scan
+      on a GiST index (Tom Lane)
+     </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+Branch: master [893902085] 2017-04-24 13:00:30 -0400
+Branch: REL9_6_STABLE [dfa4baf91] 2017-04-24 13:00:23 -0400
+Branch: master [aa1351f1e] 2017-04-26 16:17:34 -0400
+Branch: REL9_6_STABLE [e880df25e] 2017-04-26 16:17:29 -0400
+</span><p>      Prevent delays in postmaster's launching of multiple parallel worker
+      processes (Tom Lane)
+     </p><p>      There could be a significant delay (up to tens of seconds) before
+      satisfying a query's request for more than one worker process, or when
+      multiple queries requested workers simultaneously.  On most platforms
+      this required unlucky timing, but on some it was the typical case.
+     </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+Branch: master [4fe04244b] 2017-04-24 12:16:58 -0400
+Branch: REL9_6_STABLE [63f64d282] 2017-04-24 12:16:58 -0400
+Branch: REL9_5_STABLE [dba1f310a] 2017-04-24 12:16:58 -0400
+Branch: REL9_4_STABLE [436b560b8] 2017-04-24 12:16:58 -0400
+</span><p>      Fix postmaster's handling of <code class="function">fork()</code> failure for a
+      background worker process (Tom Lane)
+     </p><p>      Previously, the postmaster updated portions of its state as though
+      the process had been launched successfully, resulting in subsequent
+      confusion.
+     </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+Branch: master [89deca582] 2017-04-07 12:18:38 -0400
+Branch: REL9_6_STABLE [c0a493e17] 2017-04-07 12:18:38 -0400
+</span><p>      Fix possible <span class="quote">「<span class="quote">no relation entry for relid 0</span>」</span> error when
+      planning nested set operations (Tom Lane)
+     </p></li><li class="listitem"><span class="original">
+Author: Robert Haas &lt;rhaas@postgresql.org&gt;
+Branch: master [1ea60ad60] 2017-03-15 12:28:54 -0400
+Branch: REL9_6_STABLE [5feb78ae8] 2017-03-15 12:41:00 -0400
+Branch: master [f120b614e] 2017-03-24 12:30:39 -0400
+Branch: REL9_6_STABLE [5674a258f] 2017-03-24 12:39:07 -0400
+Branch: master [7d8f6986b] 2017-03-31 21:01:20 -0400
+Branch: REL9_6_STABLE [fb1879c37] 2017-03-31 21:10:30 -0400
+</span><p>      Fix assorted minor issues in planning of parallel queries (Robert Haas)
+     </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+Branch: master [76799fc89] 2017-04-17 15:29:15 -0400
+Branch: REL9_6_STABLE [6c73b390b] 2017-04-17 15:29:00 -0400
+Branch: REL9_5_STABLE [6f0f98bb0] 2017-04-17 15:29:00 -0400
+</span><p>      Avoid applying <span class="quote">「<span class="quote">physical targetlist</span>」</span> optimization to custom
+      scans (Dmitry Ivanov, Tom Lane)
+     </p><p>      This optimization supposed that retrieving all columns of a tuple
+      is inexpensive, which is true for ordinary Postgres tuples; but it
+      might not be the case for a custom scan provider.
+     </p></li><li class="listitem"><span class="original">
+Author: Stephen Frost &lt;sfrost@snowman.net&gt;
+Branch: master [aa5d3c0b3] 2017-05-06 21:46:35 -0400
+Branch: REL9_6_STABLE [92b15224b] 2017-05-06 21:46:41 -0400
+Branch: REL9_5_STABLE [d617c7629] 2017-05-06 21:46:56 -0400
+</span><p>      Use the correct sub-expression when applying a <code class="literal">FOR ALL</code>
+      row-level-security policy (Stephen Frost)
+     </p><p>      In some cases the <code class="literal">WITH CHECK</code> restriction would be applied
+      when the <code class="literal">USING</code> restriction is more appropriate.
+     </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+Branch: master [9209e0760] 2017-05-02 18:06:09 -0400
+Branch: REL9_6_STABLE [d56b8b41b] 2017-05-02 18:05:54 -0400
+Branch: REL9_5_STABLE [d0d3a57bf] 2017-05-02 18:05:54 -0400
+Branch: REL9_4_STABLE [c6b3d0706] 2017-05-02 18:05:54 -0400
+Branch: REL9_3_STABLE [062824edd] 2017-05-02 18:05:54 -0400
+Branch: REL9_2_STABLE [c9d6c564f] 2017-05-02 18:05:54 -0400
+</span><p>      Ensure parsing of queries in extension scripts sees the results of
+      immediately-preceding DDL (Julien Rouhaud, Tom Lane)
+     </p><p>      Due to lack of a cache flush step between commands in an extension
+      script file, non-utility queries might not see the effects of an
+      immediately preceding catalog change, such as <code class="command">ALTER TABLE
+      ... RENAME</code>.
+     </p></li><li class="listitem"><span class="original">
+Author: Noah Misch &lt;noah@leadboat.com&gt;
+Branch: master [f30f34e58] 2017-02-12 16:03:41 -0500
+Branch: REL9_6_STABLE [4d43d5d35] 2017-02-12 16:03:46 -0500
+Branch: REL9_5_STABLE [660e457f5] 2017-02-12 16:03:54 -0500
+Branch: REL9_4_STABLE [804aad8ff] 2017-02-12 16:04:09 -0500
+Branch: REL9_3_STABLE [b167d57d5] 2017-02-12 16:05:12 -0500
+Branch: REL9_2_STABLE [27a8c8033] 2017-02-12 16:05:23 -0500
+</span><p>      Skip tablespace privilege checks when <code class="command">ALTER TABLE ... ALTER
+      COLUMN TYPE</code> rebuilds an existing index (Noah Misch)
+     </p><p>      The command failed if the calling user did not currently have
+      <code class="literal">CREATE</code> privilege for the tablespace containing the index.
+      That behavior seems unhelpful, so skip the check, allowing the
+      index to be rebuilt where it is.
+     </p></li><li class="listitem"><span class="original">
+Author: Robert Haas &lt;rhaas@postgresql.org&gt;
+Branch: master [6a4dda44e] 2017-04-28 14:48:38 -0400
+Branch: REL9_6_STABLE [8a9c83bfa] 2017-04-28 14:48:44 -0400
+Branch: REL9_5_STABLE [a0291c330] 2017-04-28 14:50:36 -0400
+Branch: REL9_4_STABLE [93a07a68e] 2017-04-28 14:52:20 -0400
+Branch: REL9_3_STABLE [954744f7a] 2017-04-28 14:53:56 -0400
+Branch: REL9_2_STABLE [f60f0c8fe] 2017-04-28 14:55:42 -0400
+</span><p>      Fix <code class="command">ALTER TABLE ... VALIDATE CONSTRAINT</code> to not recurse
+      to child tables when the constraint is marked <code class="literal">NO INHERIT</code>
+      (Amit Langote)
+     </p><p>      This fix prevents unwanted <span class="quote">「<span class="quote">constraint does not exist</span>」</span> failures
+      when no matching constraint is present in the child tables.
+     </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+Branch: master [a8df75b0a] 2017-03-06 16:50:47 -0500
+Branch: REL9_6_STABLE [943140d57] 2017-03-06 16:50:47 -0500
+Branch: REL9_5_STABLE [420d9ec0a] 2017-03-06 16:50:47 -0500
+</span><p>      Avoid dangling pointer in <code class="command">COPY ... TO</code> when row-level
+      security is active for the source table (Tom Lane)
+     </p><p>      Usually this had no ill effects, but sometimes it would cause
+      unexpected errors or crashes.
+     </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+Branch: master [dbca84f04] 2017-03-04 16:09:33 -0500
+Branch: REL9_6_STABLE [68f7b91e5] 2017-03-04 16:09:33 -0500
+Branch: REL9_5_STABLE [807df31d1] 2017-03-04 16:09:33 -0500
+</span><p>      Avoid accessing an already-closed relcache entry in <code class="command">CLUSTER</code>
+      and <code class="command">VACUUM FULL</code> (Tom Lane)
+     </p><p>      With some bad luck, this could lead to indexes on the target
+      relation getting rebuilt with the wrong persistence setting.
+     </p></li><li class="listitem"><span class="original">
+Author: Andrew Gierth &lt;rhodiumtoad@postgresql.org&gt;
+Branch: master [1914c5ea7] 2017-03-16 22:28:03 +0000
+Branch: REL9_6_STABLE [9b626f6c3] 2017-03-16 22:31:49 +0000
+Branch: REL9_5_STABLE [ee78ad5bc] 2017-03-16 22:33:59 +0000
+Branch: REL9_4_STABLE [269efd052] 2017-03-16 22:32:56 +0000
+Branch: REL9_3_STABLE [8f8a5aefc] 2017-03-16 22:33:18 +0000
+Branch: REL9_2_STABLE [a494ff4b0] 2017-03-16 22:33:38 +0000
+Branch: master [64ae420b2] 2017-03-17 14:35:54 +0000
+Branch: REL9_6_STABLE [733488dc6] 2017-03-17 14:46:15 +0000
+</span><p>      Fix <code class="command">VACUUM</code> to account properly for pages that could not
+      be scanned due to conflicting page pins (Andrew Gierth)
+     </p><p>      This tended to lead to underestimation of the number of tuples in
+      the table.  In the worst case of a small heavily-contended
+      table, <code class="command">VACUUM</code> could incorrectly report that the table
+      contained no tuples, leading to very bad planning choices.
+     </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+Branch: master [f2ec57dee] 2017-02-15 16:40:05 -0500
+Branch: REL9_6_STABLE [354dfa235] 2017-02-15 16:40:05 -0500
+Branch: REL9_5_STABLE [96ba17640] 2017-02-15 16:40:06 -0500
+Branch: REL9_4_STABLE [d0e9c0e31] 2017-02-15 16:40:06 -0500
+Branch: REL9_3_STABLE [6a4941f8c] 2017-02-15 16:40:06 -0500
+Branch: REL9_2_STABLE [030705e4f] 2017-02-15 16:40:06 -0500
+</span><p>      Ensure that bulk-tuple-transfer loops within a hash join are
+      interruptible by query cancel requests (Tom Lane, Thomas Munro)
+     </p></li><li class="listitem"><span class="original">
+Author: Teodor Sigaev &lt;teodor@sigaev.ru&gt;
+Branch: master [d5286aa90] 2017-03-21 16:23:10 +0300
+Branch: REL9_6_STABLE [a4d07d2e9] 2017-03-21 16:24:10 +0300
+</span><p>      Fix incorrect support for certain <code class="type">box</code> operators in SP-GiST
+      (Nikita Glukhov)
+     </p><p>      SP-GiST index scans using the operators <code class="literal">&amp;&lt;</code>
+      <code class="literal">&amp;&gt;</code> <code class="literal">&amp;&lt;|</code> and <code class="literal">|&amp;&gt;</code>
+      would yield incorrect answers.
+     </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+Branch: master [df1a699e5] 2017-04-05 23:51:27 -0400
+Branch: REL9_6_STABLE [fd52b8834] 2017-04-05 23:51:28 -0400
+Branch: REL9_5_STABLE [d68a2b20a] 2017-04-05 23:51:28 -0400
+Branch: REL9_4_STABLE [8851bcf88] 2017-04-05 23:51:28 -0400
+</span><p>      Fix integer-overflow problems in <code class="type">interval</code> comparison (Kyotaro
+      Horiguchi, Tom Lane)
+     </p><p>      The comparison operators for type <code class="type">interval</code> could yield wrong
+      answers for intervals larger than about 296000 years.  Indexes on
+      columns containing such large values should be reindexed, since they
+      may be corrupt.
+     </p></li><li class="listitem"><span class="original">
+Author: Peter Eisentraut &lt;peter_e@gmx.net&gt;
+Branch: master [0de791ed7] 2017-05-03 21:41:10 -0400
+Branch: REL9_6_STABLE [071d13395] 2017-05-04 21:17:46 -0400
+Branch: REL9_5_STABLE [9750a9583] 2017-05-04 21:20:26 -0400
+Branch: REL9_4_STABLE [12dd58d64] 2017-05-04 21:22:48 -0400
+Branch: REL9_3_STABLE [6e86b448f] 2017-05-04 21:31:12 -0400
+Branch: REL9_2_STABLE [a48d47908] 2017-05-04 22:39:23 -0400
+</span><p>      Fix <code class="function">cursor_to_xml()</code> to produce valid output
+      with <em class="replaceable"><code>tableforest</code></em> = false
+      (Thomas Munro, Peter Eisentraut)
+     </p><p>      Previously it failed to produce a wrapping <code class="literal">&lt;table&gt;</code>
+      element.
+     </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+Branch: master [8f93bd851] 2017-02-08 18:04:59 -0500
+Branch: REL9_6_STABLE [404756fe8] 2017-02-08 18:04:59 -0500
+Branch: REL9_5_STABLE [7786b9848] 2017-02-08 18:04:59 -0500
+Branch: REL9_4_STABLE [1888fad44] 2017-02-08 18:04:59 -0500
+Branch: master [5d2adf0f8] 2017-02-09 15:50:16 -0500
+Branch: REL9_6_STABLE [fc96a5fbc] 2017-02-09 15:49:57 -0500
+Branch: REL9_5_STABLE [cf73c6bfc] 2017-02-09 15:49:57 -0500
+Branch: REL9_4_STABLE [86ef376bb] 2017-02-09 15:49:58 -0500
+</span><p>      Fix roundoff problems in <code class="function">float8_timestamptz()</code>
+      and <code class="function">make_interval()</code> (Tom Lane)
+     </p><p>      These functions truncated, rather than rounded, when converting a
+      floating-point value to integer microseconds; that could cause
+      unexpectedly off-by-one results.
+     </p></li><li class="listitem"><span class="original">
+Author: Alvaro Herrera &lt;alvherre@alvh.no-ip.org&gt;
+Branch: master [a3eac988c] 2017-03-16 12:51:08 -0300
+Branch: REL9_6_STABLE [41306a511] 2017-03-16 12:51:08 -0300
+Branch: REL9_5_STABLE [087e696f0] 2017-03-16 12:51:08 -0300
+Branch: REL9_6_STABLE [1ec36a9eb] 2017-04-16 20:49:40 -0400
+Branch: REL9_5_STABLE [b6e6ae1dc] 2017-04-16 20:50:31 -0400
+</span><p>      Fix <code class="function">pg_get_object_address()</code> to handle members of operator
+      families correctly (Álvaro Herrera)
+     </p></li><li class="listitem"><span class="original">
+Author: Teodor Sigaev &lt;teodor@sigaev.ru&gt;
+Branch: master [78874531b] 2017-03-24 13:53:40 +0300
+Branch: REL9_6_STABLE [8de6278d3] 2017-03-24 13:55:02 +0300
+</span><p>      Fix cancelling of <code class="function">pg_stop_backup()</code> when attempting to stop
+      a non-exclusive backup (Michael Paquier, David Steele)
+     </p><p>      If <code class="function">pg_stop_backup()</code> was cancelled while waiting for a
+      non-exclusive backup to end, related state was left inconsistent;
+      a new exclusive backup could not be started, and there were other minor
+      problems.
+     </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+Branch: master [af2c5aa88] 2017-05-02 21:50:35 -0400
+Branch: REL9_6_STABLE [c521d5a8d] 2017-05-02 21:50:42 -0400
+Branch: REL9_5_STABLE [724cd4f06] 2017-05-02 21:50:47 -0400
+Branch: REL9_4_STABLE [5557b6af5] 2017-05-02 21:50:52 -0400
+Branch: REL9_3_STABLE [35ac926bf] 2017-05-02 21:50:56 -0400
+Branch: REL9_2_STABLE [1b6db75ef] 2017-05-02 21:51:01 -0400
+Branch: master [5788a5670] 2017-05-07 11:34:31 -0400
+Branch: REL9_6_STABLE [5042e9492] 2017-05-07 11:34:41 -0400
+Branch: REL9_5_STABLE [38ed45c91] 2017-05-07 11:34:48 -0400
+Branch: REL9_4_STABLE [6eedc6c18] 2017-05-07 11:34:58 -0400
+Branch: REL9_3_STABLE [07987304d] 2017-05-07 11:35:05 -0400
+Branch: REL9_2_STABLE [9061680f0] 2017-05-07 11:35:11 -0400
+</span><p>      Improve performance of <code class="structname">pg_timezone_names</code> view
+      (Tom Lane, David Rowley)
+     </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+Branch: master [ff97741bc] 2017-03-08 12:21:23 -0500
+Branch: REL9_6_STABLE [e0a6ed8a2] 2017-03-08 12:21:12 -0500
+Branch: REL9_5_STABLE [50a9d714a] 2017-03-08 12:21:12 -0500
+Branch: REL9_4_STABLE [8dd5c4171] 2017-03-08 12:21:12 -0500
+</span><p>      Reduce memory management overhead for contexts containing many large
+      blocks (Tom Lane)
+     </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+Branch: master [f97de05a1] 2017-02-21 17:51:37 -0500
+Branch: REL9_6_STABLE [62ed08422] 2017-02-21 17:51:27 -0500
+Branch: REL9_5_STABLE [ff1b032a9] 2017-02-21 17:51:28 -0500
+Branch: REL9_4_STABLE [d9959e6eb] 2017-02-21 17:51:28 -0500
+Branch: REL9_3_STABLE [3f613c6a4] 2017-02-21 17:51:28 -0500
+Branch: REL9_2_STABLE [775227590] 2017-02-21 17:51:28 -0500
+</span><p>      Fix sloppy handling of corner-case errors from <code class="function">lseek()</code>
+      and <code class="function">close()</code> (Tom Lane)
+     </p><p>      Neither of these system calls are likely to fail in typical situations,
+      but if they did, <code class="filename">fd.c</code> could get quite confused.
+     </p></li><li class="listitem"><span class="original">
+Author: Heikki Linnakangas &lt;heikki.linnakangas@iki.fi&gt;
+Branch: master [ff30aec75] 2017-03-17 11:14:01 +0200
+Branch: REL9_6_STABLE [38bdba54a] 2017-03-17 11:14:36 +0200
+Branch: REL9_5_STABLE [96fd76dd2] 2017-03-17 11:14:45 +0200
+Branch: REL9_4_STABLE [6b584c36a] 2017-03-17 11:14:49 +0200
+Branch: REL9_3_STABLE [3ebcc2498] 2017-03-17 11:14:53 +0200
+Branch: REL9_2_STABLE [9c52ddfce] 2017-03-17 11:14:58 +0200
+Branch: REL9_6_STABLE [4ae0805bb] 2017-03-24 12:39:23 +0200
+Branch: REL9_5_STABLE [42a60aa7f] 2017-03-24 12:39:20 +0200
+Branch: REL9_4_STABLE [6423ed7d4] 2017-03-24 12:39:17 +0200
+Branch: REL9_3_STABLE [e0e1ef46d] 2017-03-24 12:39:14 +0200
+Branch: REL9_2_STABLE [8ae3ff64b] 2017-03-24 12:39:01 +0200
+</span><p>      Fix incorrect check for whether postmaster is running as a Windows
+      service (Michael Paquier)
+     </p><p>      This could result in attempting to write to the event log when that
+      isn't accessible, so that no logging happens at all.
+     </p></li><li class="listitem"><span class="original">
+Author: Michael Meskes &lt;meskes@postgresql.org&gt;
+Branch: master [43c79c7d6] 2017-03-13 21:03:55 +0100
+Branch: REL9_6_STABLE [f08a90ecd] 2017-03-13 20:50:48 +0100
+Branch: REL9_5_STABLE [a8b3262ab] 2017-03-13 20:51:46 +0100
+Branch: REL9_4_STABLE [e060baaad] 2017-03-13 20:51:56 +0100
+Branch: REL9_3_STABLE [04207ef76] 2017-03-13 20:52:05 +0100
+Branch: REL9_2_STABLE [d8c207437] 2017-03-13 20:52:16 +0100
+</span><p>      Fix <span class="application">ecpg</span> to support <code class="command">COMMIT PREPARED</code>
+      and <code class="command">ROLLBACK PREPARED</code> (Masahiko Sawada)
+     </p></li><li class="listitem"><span class="original">
+Author: Michael Meskes &lt;meskes@postgresql.org&gt;
+Branch: master [d1ca82d0a] 2017-03-10 10:32:41 +0100
+Branch: REL9_6_STABLE [d0fef0654] 2017-03-10 10:50:46 +0100
+Branch: REL9_5_STABLE [466ee7a53] 2017-03-10 10:51:24 +0100
+Branch: REL9_4_STABLE [f6b906599] 2017-03-10 10:51:40 +0100
+Branch: REL9_3_STABLE [af471919b] 2017-03-10 10:51:51 +0100
+Branch: REL9_2_STABLE [731afc91f] 2017-03-10 10:52:01 +0100
+</span><p>      Fix a double-free error when processing dollar-quoted string literals
+      in <span class="application">ecpg</span> (Michael Meskes)
+     </p></li><li class="listitem"><span class="original">
+Author: Teodor Sigaev &lt;teodor@sigaev.ru&gt;
+Branch: REL9_6_STABLE [2ed391f95] 2017-03-24 19:23:13 +0300
+</span><p>      Fix <span class="application">pgbench</span> to handle the combination
+      of <code class="option">--connect</code> and <code class="option">--rate</code> options correctly
+      (Fabien Coelho)
+     </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+Branch: master [ef2662394] 2017-03-07 11:36:42 -0500
+Branch: REL9_6_STABLE [0e2c85d13] 2017-03-07 11:36:35 -0500
+</span><p>      Fix <span class="application">pgbench</span> to honor the long-form option
+      spelling <code class="option">--builtin</code>, as per its documentation (Tom Lane)
+     </p></li><li class="listitem"><span class="original">
+Author: Stephen Frost &lt;sfrost@snowman.net&gt;
+Branch: master [330b84d8c] 2017-03-06 23:29:02 -0500
+Branch: REL9_6_STABLE [e961341cc] 2017-03-06 23:29:08 -0500
+</span><p>      Fix <span class="application">pg_dump</span>/<span class="application">pg_restore</span> to correctly
+      handle privileges for the <code class="literal">public</code> schema when
+      using <code class="option">--clean</code> option (Stephen Frost)
+     </p><p>      Other schemas start out with no privileges granted,
+      but <code class="literal">public</code> does not; this requires special-case treatment
+      when it is dropped and restored due to the <code class="option">--clean</code> option.
+     </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+Branch: master [299990ba1] 2017-03-06 19:33:59 -0500
+Branch: REL9_6_STABLE [8ea8178cd] 2017-03-06 19:33:59 -0500
+Branch: REL9_5_STABLE [b6882e9ec] 2017-03-06 19:33:59 -0500
+Branch: REL9_4_STABLE [db9b4b716] 2017-03-06 19:33:59 -0500
+Branch: REL9_3_STABLE [783acfd4d] 2017-03-06 19:33:59 -0500
+Branch: REL9_2_STABLE [0ab75448e] 2017-03-06 19:33:59 -0500
+</span><p>      In <span class="application">pg_dump</span>, fix incorrect schema and owner marking for
+      comments and security labels of some types of database objects
+      (Giuseppe Broccolo, Tom Lane)
+     </p><p>      In simple cases this caused no ill effects; but for example, a
+      schema-selective restore might omit comments it should include, because
+      they were not marked as belonging to the schema of their associated
+      object.
+     </p></li><li class="listitem"><span class="original">
+Author: Peter Eisentraut &lt;peter_e@gmx.net&gt;
+Branch: master [39370e6a0] 2017-02-17 15:06:28 -0500
+Branch: REL9_6_STABLE [4e8b2fd33] 2017-02-17 15:06:34 -0500
+</span><p>      Fix typo in <span class="application">pg_dump</span>'s query for initial privileges
+      of a procedural language (Peter Eisentraut)
+     </p><p>      This resulted in <span class="application">pg_dump</span> always believing that the
+      language had no initial privileges.  Since that's true for most
+      procedural languages, ill effects from this bug are probably rare.
+     </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+Branch: master [f39ddd843] 2017-03-10 14:15:09 -0500
+Branch: REL9_6_STABLE [4cdd81d90] 2017-03-10 14:15:09 -0500
+Branch: REL9_5_STABLE [88f3743cb] 2017-03-10 14:15:09 -0500
+Branch: REL9_4_STABLE [64d132c29] 2017-03-10 14:15:09 -0500
+Branch: REL9_3_STABLE [0c0a95c2f] 2017-03-10 14:15:09 -0500
+Branch: REL9_2_STABLE [e6d2ba419] 2017-03-10 14:15:09 -0500
+</span><p>      Avoid emitting an invalid list file in <code class="literal">pg_restore -l</code>
+      when SQL object names contain newlines (Tom Lane)
+     </p><p>      Replace newlines by spaces, which is sufficient to make the output
+      valid for <code class="literal">pg_restore -L</code>'s purposes.
+     </p></li><li class="listitem"><span class="original">
+Author: Stephen Frost &lt;sfrost@snowman.net&gt;
+Branch: master [ff992c074] 2017-03-06 17:03:57 -0500
+Branch: REL9_6_STABLE [65a3f233b] 2017-03-06 17:04:06 -0500
+Branch: REL9_5_STABLE [6be8647f7] 2017-03-06 17:04:13 -0500
+Branch: REL9_4_STABLE [93598898c] 2017-03-06 17:04:22 -0500
+Branch: REL9_3_STABLE [7f831f09b] 2017-03-06 17:04:29 -0500
+Branch: REL9_2_STABLE [e864cd25b] 2017-03-06 17:04:55 -0500
+</span><p>      Fix <span class="application">pg_upgrade</span> to transfer comments and security labels
+      attached to <span class="quote">「<span class="quote">large objects</span>」</span> (blobs) (Stephen Frost)
+     </p><p>      Previously, blobs were correctly transferred to the new database, but
+      any comments or security labels attached to them were lost.
+     </p></li><li class="listitem"><span class="original">
+Author: Noah Misch &lt;noah@leadboat.com&gt;
+Branch: master [944a026b4] 2017-03-12 19:35:31 -0400
+Branch: REL9_6_STABLE [08c6d42c8] 2017-03-12 19:35:49 -0400
+Branch: REL9_5_STABLE [d0e5ac736] 2017-03-12 19:35:57 -0400
+Branch: REL9_4_STABLE [4b2669ada] 2017-03-12 19:36:06 -0400
+Branch: REL9_3_STABLE [e03c6d93b] 2017-03-12 19:36:15 -0400
+Branch: REL9_2_STABLE [0276da5eb] 2017-03-12 19:36:28 -0400
+</span><p>      Improve error handling
+      in <code class="filename">contrib/adminpack</code>'s <code class="function">pg_file_write()</code>
+      function (Noah Misch)
+     </p><p>      Notably, it failed to detect errors reported
+      by <code class="function">fclose()</code>.
+     </p></li><li class="listitem"><span class="original">
+Author: Joe Conway &lt;mail@joeconway.com&gt;
+Branch: master [cd1e23e93] 2017-03-11 13:32:18 -0800
+Branch: REL9_6_STABLE [8469923f3] 2017-03-11 13:32:26 -0800
+Branch: REL9_5_STABLE [82f3792a4] 2017-03-11 13:32:40 -0800
+Branch: REL9_4_STABLE [166dfb3a9] 2017-03-11 13:33:14 -0800
+Branch: REL9_3_STABLE [f6cfc14e5] 2017-03-11 13:33:22 -0800
+Branch: REL9_2_STABLE [c4613c3f4] 2017-03-11 13:33:30 -0800
+</span><p>      In <code class="filename">contrib/dblink</code>, avoid leaking the previous unnamed
+      connection when establishing a new unnamed connection (Joe Conway)
+     </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+Branch: master [9e43e8714] 2017-02-22 15:04:26 -0500
+Branch: REL9_6_STABLE [16500d227] 2017-02-22 15:04:07 -0500
+Branch: REL9_5_STABLE [513c9f9de] 2017-02-22 15:04:07 -0500
+Branch: REL9_4_STABLE [98755681a] 2017-02-22 15:04:07 -0500
+Branch: REL9_3_STABLE [53b5a8c13] 2017-02-22 15:04:07 -0500
+Branch: master [1dffabed4] 2017-04-14 14:52:21 -0400
+Branch: REL9_6_STABLE [d51279433] 2017-04-14 14:52:03 -0400
+Branch: REL9_5_STABLE [9b48ce377] 2017-04-14 14:52:03 -0400
+Branch: REL9_4_STABLE [e0eda580d] 2017-04-14 14:52:03 -0400
+Branch: REL9_3_STABLE [fad06b287] 2017-04-14 14:52:03 -0400
+Branch: master [6cfaffc0d] 2017-04-13 17:18:35 -0400
+Branch: REL9_6_STABLE [a70b18b89] 2017-04-13 17:18:35 -0400
+Branch: REL9_5_STABLE [67665a71c] 2017-04-13 17:18:35 -0400
+Branch: REL9_4_STABLE [b179684c7] 2017-04-13 17:18:35 -0400
+Branch: REL9_3_STABLE [5be58cc89] 2017-04-13 17:18:35 -0400
+</span><p>      Fix <code class="filename">contrib/pg_trgm</code>'s extraction of trigrams from regular
+      expressions (Tom Lane)
+     </p><p>      In some cases it would produce a broken data structure that could never
+      match anything, leading to GIN or GiST indexscans that use a trigram
+      index not finding any matches to the regular expression.
+     </p></li><li class="listitem"><span class="original">
+Author: Peter Eisentraut &lt;peter_e@gmx.net&gt;
+Branch: master [332bec1e6] 2017-04-24 22:50:07 -0400
+Branch: REL9_6_STABLE [86e640a69] 2017-04-26 09:14:21 -0400
+</span><p>      In <code class="filename">contrib/postgres_fdw</code>, allow join conditions that
+      contain shippable extension-provided functions to be pushed to the
+      remote server (David Rowley, Ashutosh Bapat)
+     </p></li><li class="listitem"><span class="original">
+Author: Alvaro Herrera &lt;alvherre@alvh.no-ip.org&gt;
+Branch: master [14722c69f] 2017-05-05 12:38:29 -0300
+Branch: REL9_6_STABLE [19a403378] 2017-05-05 12:05:34 -0300
+Branch: REL9_5_STABLE [adfad4222] 2017-05-05 12:05:34 -0300
+Branch: REL9_4_STABLE [41ba2ca08] 2017-05-05 12:05:34 -0300
+Branch: REL9_3_STABLE [f692583dd] 2017-05-05 12:05:34 -0300
+Branch: REL9_2_STABLE [992e581bf] 2017-05-05 12:05:34 -0300
+</span><p>      Support Tcl 8.6 in MSVC builds (Álvaro Herrera)
+     </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+Branch: master [e18b2c480] 2017-04-30 15:13:51 -0400
+Branch: REL9_6_STABLE [6872d96a3] 2017-04-30 15:14:06 -0400
+Branch: REL9_5_STABLE [4d4d8fa77] 2017-04-30 15:14:11 -0400
+Branch: REL9_4_STABLE [96cad6f24] 2017-04-30 15:14:15 -0400
+Branch: REL9_3_STABLE [f8cf9719d] 2017-04-30 15:14:20 -0400
+Branch: REL9_2_STABLE [54aeb8d3e] 2017-04-30 15:14:24 -0400
+Branch: master [a54d5875f] 2017-05-07 12:33:12 -0400
+Branch: REL9_6_STABLE [fab2d0d7f] 2017-05-07 12:33:18 -0400
+Branch: REL9_5_STABLE [74e747fbd] 2017-05-07 12:33:22 -0400
+Branch: REL9_4_STABLE [e829385f5] 2017-05-07 12:33:27 -0400
+Branch: REL9_3_STABLE [9e5f3d013] 2017-05-07 12:33:31 -0400
+Branch: REL9_2_STABLE [da55df018] 2017-05-07 12:33:35 -0400
+</span><p>      Sync our copy of the timezone library with IANA release tzcode2017b
+      (Tom Lane)
+     </p><p>      This fixes a bug affecting some DST transitions in January 2038.
+     </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+Branch: master [74a20d0ab] 2017-05-01 11:53:11 -0400
+Branch: REL9_6_STABLE [1fdc3f6e8] 2017-05-01 11:53:42 -0400
+Branch: REL9_5_STABLE [9a8cc157c] 2017-05-01 11:53:49 -0400
+Branch: REL9_4_STABLE [1c8862346] 2017-05-01 11:53:56 -0400
+Branch: REL9_3_STABLE [dc93cafca] 2017-05-01 11:54:02 -0400
+Branch: REL9_2_STABLE [c96ccc40e] 2017-05-01 11:54:08 -0400
+</span><p>      Update time zone data files to <span class="application">tzdata</span> release 2017b
+      for DST law changes in Chile, Haiti, and Mongolia, plus historical
+      corrections for Ecuador, Kazakhstan, Liberia, and Spain.
+      Switch to numeric abbreviations for numerous time zones in South
+      America, the Pacific and Indian oceans, and some Asian and Middle
+      Eastern countries.
+     </p><p>      The IANA time zone database previously provided textual abbreviations
+      for all time zones, sometimes making up abbreviations that have little
+      or no currency among the local population.  They are in process of
+      reversing that policy in favor of using numeric UTC offsets in zones
+      where there is no evidence of real-world use of an English
+      abbreviation.  At least for the time being, <span class="productname">PostgreSQL</span>
+      will continue to accept such removed abbreviations for timestamp input.
+      But they will not be shown in the <code class="structname">pg_timezone_names</code>
+      view nor used for output.
+     </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+Branch: master [d4e59c552] 2017-05-07 11:57:41 -0400
+Branch: REL9_6_STABLE [f75472817] 2017-05-07 11:57:41 -0400
+Branch: REL9_5_STABLE [2f66002df] 2017-05-07 11:57:41 -0400
+Branch: REL9_4_STABLE [62a288312] 2017-05-07 11:57:41 -0400
+Branch: REL9_3_STABLE [5971accd8] 2017-05-07 11:57:41 -0400
+Branch: REL9_2_STABLE [82e7d3dfd] 2017-05-07 11:57:41 -0400
+</span><p>      Use correct daylight-savings rules for POSIX-style time zone names
+      in MSVC builds (David Rowley)
+     </p><p>      The Microsoft MSVC build scripts neglected to install
+      the <code class="filename">posixrules</code> file in the timezone directory tree.
+      This resulted in the timezone code falling back to its built-in
+      rule about what DST behavior to assume for a POSIX-style time zone
+      name.  For historical reasons that still corresponds to the DST rules
+      the USA was using before 2007 (i.e., change on first Sunday in April
+      and last Sunday in October).  With this fix, a POSIX-style zone name
+      will use the current and historical DST transition dates of
+      the <code class="literal">US/Eastern</code> zone.  If you don't want that, remove
+      the <code class="filename">posixrules</code> file, or replace it with a copy of some
+      other zone file (see <a class="xref" href="datatype-datetime.html#datatype-timezones" title="8.5.3. 時間帯">8.5.3. 時間帯</a>).  Note that
+      due to caching, you may need to restart the server to get such changes
+      to take effect.
+     </p></li></ul></div></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="release.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="release.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="release-9-6-2.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">付録E リリースノート </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> E.2. リリース9.6.2</td></tr></table></div></body></html>
