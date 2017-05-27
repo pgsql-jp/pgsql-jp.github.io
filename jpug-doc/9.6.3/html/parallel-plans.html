@@ -43,14 +43,11 @@
     Each worker will execute the inner side of the join in full,  which for
     hash join means that an identical hash table is built in each worker
     process.
-</span>処理対象のテーブルは、1個以上の他のテーブルとネステッドループか、ハッシュ結合で結合されます。
-結合の外側は、パラレルワーカー中で実行しても安全だという条件下で、プランナがサポートするどのような非パラレルプランであっても構いません。
-たとえば、内側のテーブルの列の値を参照するインデックススキャンでも構いません。
-各々のワーカーは外側のプラン全体を実行します。
-これがマージ結合がサポートされていない理由です。
-マージ結合の外側は、しばしば内側のテーブル全体のソートを引き起こします。
-たとえインデックスが使用されるとしても、内側のテーブルのフルインデックススキャンを行う複数のプロセスを持つのは生産的とは言えません。
-★変更あり
+</span>処理対象のテーブルは、1個以上の他のテーブルとネステッドループか、ハッシュ結合で結合することができます。
+結合の内側は、パラレルワーカー中で実行しても安全だという条件下で、プランナがサポートするどのような非パラレルプランであっても構いません。
+たとえば、外側のテーブルの列の値を参照するインデックススキャンでも構いません。
+各々のワーカーは内側のプラン全体を実行します。
+これはハッシュ結合では、同一のハッシュテーブルがそれぞれのワーカープロセスによって作成されることを意味します。
   </p></div><div class="sect2" id="parallel-aggregation"><div class="titlepage"><div><div><h3 class="title">15.3.3. パラレル集約</h3></div></div></div><span class="original">
   &lt;title&gt;Parallel Aggregation&lt;/title&gt;
 </span><p><span class="original">
@@ -63,14 +60,12 @@
     leader re-aggregates the results across all workers in order to produce
     the final result.  This is reflected in the plan as a
     &lt;literal&gt;Finalize Aggregate&lt;/&gt; node.
-</span>クエリの集約部分全体を並列実行するのは不可能です。
-たとえば、クエリが<code class="literal">COUNT(*)</code>を検索するとして、個々のワーカーは合計は計算できるでしょう。
-しかし、これらの合計値は最終結果を生成するために併合しなければなりません。
-もしクエリが<code class="literal">GROUP BY</code>句を実行すると、各々のグループで別々の合計を計算する必要があります。
-たとえ集約処理全体がパラレルにならないとしても、集約処理を伴うクエリは、しばしばパラレルクエリの良い候補となります。
-集約処理は、典型的には多数の行を読み、少数の行だけをクライアントに返すからです。
-多くの行をクライアントに返す処理では、しばしばクライアントがデータを読む速度に制限され、パラレルクエリはあまり助けになりません。
-★変更あり
+</span><span class="productname">PostgreSQL</span>は、ふたつのステージで集約処理を行うことによってパラレル集約処理をサポートします。
+まず、クエリのパラレル部分に参加している個々のプロセスが集約ステップを実行し、それぞれのプロセスが認識しているグループに対する部分的な結果を生成します。
+これは<code class="literal">Partial Aggregate</code>ノードとしてプラン中に反映されています。
+次に、<code class="literal">Gather</code>ノードを通じて部分的な結果がリーダーに転送されます。
+最後に、リーダーは、すべてのワーカーにまたがる結果を再集約して、最終的な結果を生成します。
+これは、<code class="literal">Finalize Aggregate</code>ノードとしてプラン中に反映されています。
   </p><p><span class="original">
     Because the &lt;literal&gt;Finalize Aggregate&lt;/&gt; node runs on the leader
     process, queries which produce a relatively large number of groups in
@@ -82,12 +77,10 @@
     going to be no performance benefit to using parallel aggregation. The
     query planner takes this into account during the planning process and is
     unlikely to choose parallel aggregate in this scenario.
-</span><span class="productname">PostgreSQL</span>は、集約処理を2回行うことによってパラレル集約処理をサポートします。
-まず、クエリのパラレル部分に参加している個々のプロセスが集約ステップを実行し、それぞれのプロセスが認識しているグループに対する部分的な結果を生成します。
-これは<code class="literal">PartialAggregate</code>ノードとしてプラン中に反映されています。
-次に、<code class="literal">Gather</code>ノードを通じて部分的な結果がリーダーに転送されます。
-最後に、最終的な結果を生成するために、リーダーはすべてのワーカーにまたがる結果を再集約します。
-これは、<code class="literal">FinalizeAggregate</code>ノードとしてプラン中に反映されています。 ★変更あり
+</span><code class="literal">Finalize Aggregate</code>ノードはリーダープロセスで実行されるので、入力行数の割には、比較的多数のグループを生成するクエリは、クエリプランナはあまり好ましくないものとして認識します。
+たとえば最悪の場合、<code class="literal">Finalize Aggregate</code>ノードが認識するグループ数は、<code class="literal">Partial Aggregate</code>ですべてのワーカープロセスが認識する入力行数と同じだけの数になります。
+こうした場合には、明らかにパラレル集約を利用する性能上の利点がないことになります。
+クエリプランナはプラン処理中にこれを考慮するので、このシナリオでパラレル集約を採用することはまずありません。
   </p><p><span class="original">
     Parallel aggregation is not supported in all situations.  Each aggregate
     must be &lt;link linkend="parallel-safety"&gt;safe&lt;/&gt; for parallelism and must
@@ -103,9 +96,8 @@
 個々の集約は並列処理<a class="link" href="parallel-safety.html" title="15.4. パラレル安全">安全</a>で、合同関数(combine function)を持っていなければなりません。
 その集約が<code class="literal">internal</code>型の遷移状態を持っているならば、シリアライズ関数とデシリアライズ関数を持っていなければなりません。
 更なる詳細は<a class="xref" href="sql-createaggregate.html" title="CREATE AGGREGATE"><span class="refentrytitle">CREATE AGGREGATE</span></a>をご覧ください。
-パラレル集約は、順序集合集約、あるいはクエリが<code class="literal">GROUPING SETS</code>を実行する場合にはサポートされません。
+パラレル集約は、集約関数呼び出しが<code class="literal">DISTINCT</code>あるいは<code class="literal">ORDER BY</code>句を含む場合、また 順序集合集約、あるいはクエリが<code class="literal">GROUPING SETS</code>を実行する場合にはサポートされません。
 パラレル集約は、クエリの中で実行されるすべての結合が、プラン中の並列実行部分の一部であるときにのみ利用できます。
- ★変更あり
   </p></div><div class="sect2" id="parallel-plan-tips"><div class="titlepage"><div><div><h3 class="title">15.3.4. パラレルプランに関するヒント</h3></div></div></div><span class="original">
   &lt;title&gt;Parallel Plan Tips&lt;/title&gt;
 </span><p><span class="original">
