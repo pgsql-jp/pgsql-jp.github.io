@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>14.2. プランナで使用される統計情報</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="using-explain.html" title="14.1. EXPLAINの利用" /><link rel="next" href="explicit-joins.html" title="14.3. 明示的なJOIN句でプランナを制御する" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><td width="20%" align="left" colspan="2"></td><th width="60%" align="center"><a accesskey="h" href="index.html">PostgreSQL 9.6.4文書</a></th><td width="20%" align="right"><div class="actions"><a class="issue" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 9.6.4 planner-stats.html">誤訳等の報告</a></div></td></tr><tr><td width="10%" align="left" valign="top"><a accesskey="p" href="using-explain.html">前へ</a> </td><td width="10%" align="left" valign="top"><a accesskey="u" href="performance-tips.html">上へ</a></td><td width="60%" align="center">14.2. プランナで使用される統計情報</td><td width="20%" align="right" valign="top"> <a accesskey="n" href="explicit-joins.html">次へ</a></td></tr></table><hr /></div><div class="sect1" id="planner-stats"><div class="titlepage"><div><div><h2 class="title" style="clear: both">14.2. プランナで使用される統計情報</h2></div></div></div><span class="original">
+  &lt;title&gt;Statistics Used by the Planner&lt;/title&gt;
+</span><a id="idm46026197364256" class="indexterm"></a><p><span class="original">
+   As we saw in the previous section, the query planner needs to estimate
+   the number of rows retrieved by a query in order to make good choices
+   of query plans.  This section provides a quick look at the statistics
+   that the system uses for these estimates.
+</span>前節で説明した通り、問い合わせプランナは、より良い問い合わせ計画を選択するために問い合わせによって取り出される行数の推定値を必要としています。
+本節では、システムがこの推定に使用する統計情報について簡単に説明します。
+  </p><p><span class="original">
+   One component of the statistics is the total number of entries in
+   each table and index, as well as the number of disk blocks occupied
+   by each table and index.  This information is kept in the table
+   &lt;link linkend="catalog-pg-class"&gt;&lt;structname&gt;pg_class&lt;/structname&gt;&lt;/link&gt;,
+   in the columns &lt;structfield&gt;reltuples&lt;/structfield&gt; and
+   &lt;structfield&gt;relpages&lt;/structfield&gt;.  We can look at it with
+   queries similar to this one:
+</span>統計情報の1つの構成要素は、各テーブルとインデックスの項目の総数と、各テーブルとインデックスが占めるディスクブロック数です。
+この情報は<a class="link" href="catalog-pg-class.html" title="50.11. pg_class"><code class="structname">pg_class</code></a>の<code class="structfield">reltuples</code>と<code class="structfield">relpages</code>列に保持されます。
+以下のような問い合わせによりこれを参照することができます。
+
+</p><pre class="screen">SELECT relname, relkind, reltuples, relpages
+FROM pg_class
+WHERE relname LIKE 'tenk1%';
+
+       relname        | relkind | reltuples | relpages
+----------------------+---------+-----------+----------
+ tenk1                | r       |     10000 |      358
+ tenk1_hundred        | i       |     10000 |       30
+ tenk1_thous_tenthous | i       |     10000 |       30
+ tenk1_unique1        | i       |     10000 |       30
+ tenk1_unique2        | i       |     10000 |       30
+(5 rows)</pre><p>
+<span class="original">
+   Here we can see that &lt;structname&gt;tenk1&lt;/structname&gt; contains 10000
+   rows, as do its indexes, but the indexes are (unsurprisingly) much
+   smaller than the table.
+</span>
+ここで、<code class="structname">tenk1</code>とそのインデックスには10000行が存在し、そして、（驚くには値しませんが）インデックスはテーブルよりもかなり小さなものであることがわかります。
+  </p><p><span class="original">
+   For efficiency reasons, &lt;structfield&gt;reltuples&lt;/structfield&gt;
+   and &lt;structfield&gt;relpages&lt;/structfield&gt; are not updated on-the-fly,
+   and so they usually contain somewhat out-of-date values.
+   They are updated by &lt;command&gt;VACUUM&lt;/&gt;, &lt;command&gt;ANALYZE&lt;/&gt;, and a
+   few DDL commands such as &lt;command&gt;CREATE INDEX&lt;/&gt;.  A &lt;command&gt;VACUUM&lt;/&gt;
+   or &lt;command&gt;ANALYZE&lt;/&gt; operation that does not scan the entire table
+   (which is commonly the case) will incrementally update the
+   &lt;structfield&gt;reltuples&lt;/structfield&gt; count on the basis of the part
+   of the table it did scan, resulting in an approximate value.
+   In any case, the planner
+   will scale the values it finds in &lt;structname&gt;pg_class&lt;/structname&gt;
+   to match the current physical table size, thus obtaining a closer
+   approximation.
+</span>効率を上げるため、<code class="structfield">reltuples</code>と<code class="structfield">relpages</code>は処理の度には更新されず、したがって通常は多少古い値のみ所有しています。
+これらは<code class="command">VACUUM</code>、<code class="command">ANALYZE</code>、<code class="command">CREATE INDEX</code>などの一部のDDLコマンドによって更新されます。
+テーブル全体をスキャンしない<code class="command">VACUUM</code>、<code class="command">ANALYZE</code>操作（一般的な状況です）は、スキャンされたテーブルの部分に基づいて<code class="structfield">reltuples</code>値を漸次更新し、概算値を生成します。
+いずれの場合でもプランナは、現在の物理的なテーブルサイズに合わせるために<code class="structname">pg_class</code>から検索した値を調整して、より高精度な近似値を得ます。
+  </p><a id="idm46026197348672" class="indexterm"></a><p><span class="original">
+   Most queries retrieve only a fraction of the rows in a table, due
+   to &lt;literal&gt;WHERE&lt;/&gt; clauses that restrict the rows to be
+   examined.  The planner thus needs to make an estimate of the
+   &lt;firstterm&gt;selectivity&lt;/&gt; of &lt;literal&gt;WHERE&lt;/&gt; clauses, that is,
+   the fraction of rows that match each condition in the
+   &lt;literal&gt;WHERE&lt;/&gt; clause.  The information used for this task is
+   stored in the
+   &lt;link linkend="catalog-pg-statistic"&gt;&lt;structname&gt;pg_statistic&lt;/structname&gt;&lt;/link&gt;
+   system catalog.  Entries in &lt;structname&gt;pg_statistic&lt;/structname&gt;
+   are updated by the &lt;command&gt;ANALYZE&lt;/&gt; and &lt;command&gt;VACUUM
+   ANALYZE&lt;/&gt; commands, and are always approximate even when freshly
+   updated.
+</span>ほとんどの問い合わせは、検証される行を制限する<code class="literal">WHERE</code>句によって、テーブル内の行の一部のみを取り出します。
+したがって、プランナは<code class="literal">WHERE</code>句の<em class="firstterm">選択性</em>、つまり<code class="literal">WHERE</code>句の各条件にどれだけの行が一致するかを推定する必要があります。
+この処理に使用される情報は<a class="link" href="catalog-pg-statistic.html" title="50.46. pg_statistic"><code class="structname">pg_statistic</code></a>システムカタログ内に格納されます。
+<code class="structname">pg_statistic</code>内の項目は、<code class="command">ANALYZE</code>と<code class="command">VACUUM ANALYZE</code>コマンドによって更新され、また１から更新がかかったとしても常に概算値になります。
+  </p><a id="idm46026197340848" class="indexterm"></a><p><span class="original">
+   Rather than look at &lt;structname&gt;pg_statistic&lt;/structname&gt; directly,
+   it's better to look at its view
+   &lt;link linkend="view-pg-stats"&gt;&lt;structname&gt;pg_stats&lt;/structname&gt;&lt;/link&gt;
+   when examining the statistics manually.  &lt;structname&gt;pg_stats&lt;/structname&gt;
+   is designed to be more easily readable.  Furthermore,
+   &lt;structname&gt;pg_stats&lt;/structname&gt; is readable by all, whereas
+   &lt;structname&gt;pg_statistic&lt;/structname&gt; is only readable by a superuser.
+   (This prevents unprivileged users from learning something about
+   the contents of other people's tables from the statistics.  The
+   &lt;structname&gt;pg_stats&lt;/structname&gt; view is restricted to show only
+   rows about tables that the current user can read.)
+   For example, we might do:
+</span>統計情報を手作業で確認する場合、<code class="structname">pg_statistic</code>を直接参照するのではなく、<a class="link" href="view-pg-stats.html" title="50.77. pg_stats"><code class="structname">pg_stats</code></a>ビューを参照する方が良いでしょう。
+<code class="structname">pg_stats</code>はより読みやすくなるように設計されています。
+さらに、<code class="structname">pg_stats</code>は誰でも読み取ることができますが、<code class="structname">pg_statistic</code>はスーパーユーザのみ読み取ることができます。
+（これは、非特権ユーザが統計情報から他人のテーブルの内容に関わる事項を読み取ることを防止します。
+<code class="structname">pg_stats</code>ビューは現在のユーザが読み取ることができるテーブルに関する行のみを表示するよう制限されています。）
+例えば、以下を行うことができます。
+
+</p><pre class="screen">SELECT attname, inherited, n_distinct,
+       array_to_string(most_common_vals, E'\n') as most_common_vals
+FROM pg_stats
+WHERE tablename = 'road';
+
+ attname | inherited | n_distinct |          most_common_vals
+---------+-----------+------------+------------------------------------
+ name    | f         |  -0.363388 | I- 580                        Ramp+
+         |           |            | I- 880                        Ramp+
+         |           |            | Sp Railroad                       +
+         |           |            | I- 580                            +
+         |           |            | I- 680                        Ramp
+ name    | t         |  -0.284859 | I- 880                        Ramp+
+         |           |            | I- 580                        Ramp+
+         |           |            | I- 680                        Ramp+
+         |           |            | I- 580                            +
+         |           |            | State Hwy 13                  Ramp
+(2 rows)</pre><p>
+<span class="original">
+   Note that two rows are displayed for the same column, one corresponding
+   to the complete inheritance hierarchy starting at the
+   &lt;literal&gt;road&lt;/literal&gt; table (&lt;literal&gt;inherited&lt;/&gt;=&lt;literal&gt;t&lt;/&gt;),
+   and another one including only the &lt;literal&gt;road&lt;/literal&gt; table itself
+   (&lt;literal&gt;inherited&lt;/&gt;=&lt;literal&gt;f&lt;/&gt;).
+</span>
+同じ列に対して2行が表示されていることに注意してください。
+1つは<code class="literal">road</code>テーブルが始まる継承階層(<code class="literal">inherited</code>=<code class="literal">t</code>)全体に相当し、もう1つは<code class="literal">road</code>テーブル自身(<code class="literal">inherited</code>=<code class="literal">f</code>)のみを含むものです。
+  </p><p><span class="original">
+   The amount of information stored in &lt;structname&gt;pg_statistic&lt;/structname&gt;
+   by &lt;command&gt;ANALYZE&lt;/&gt;, in particular the maximum number of entries in the
+   &lt;structfield&gt;most_common_vals&lt;/&gt; and &lt;structfield&gt;histogram_bounds&lt;/&gt;
+   arrays for each column, can be set on a
+   column-by-column basis using the &lt;command&gt;ALTER TABLE SET STATISTICS&lt;/&gt;
+   command, or globally by setting the
+   &lt;xref linkend="guc-default-statistics-target"&gt; configuration variable.
+   The default limit is presently 100 entries.  Raising the limit
+   might allow more accurate planner estimates to be made, particularly for
+   columns with irregular data distributions, at the price of consuming
+   more space in &lt;structname&gt;pg_statistic&lt;/structname&gt; and slightly more
+   time to compute the estimates.  Conversely, a lower limit might be
+   sufficient for columns with simple data distributions.
+</span><code class="command">ANALYZE</code>により<code class="structname">pg_statistic</code>に格納される情報量、具体的には、それぞれの列に対する<code class="structfield">most_common_vals</code>内と<code class="structfield">histogram_bounds</code>配列のエントリの最大数は、<code class="command">ALTER TABLE SET STATISTICS</code>コマンドによって列ごとに、<a class="xref" href="runtime-config-query.html#guc-default-statistics-target">default_statistics_target</a>設定パラメータを設定することによってグローバルに設定することができます。
+現在のデフォルトの上限は100エントリです。
+この上限を上げることで、特に、少し変わったデータ分布を持つ列でより正確なプランナの推定が行われますが、<code class="structname">pg_statistic</code>により多くの容量が必要になり、多少推定計算にかかる時間が多くなります。
+反対に上限を下げることは、単純なデータ分布の列に対して順当です。
+  </p><p><span class="original">
+   Further details about the planner's use of statistics can be found in
+   &lt;xref linkend="planner-stats-details"&gt;.
+</span>プランナによる統計情報の使用に関する詳細については<a class="xref" href="planner-stats-details.html" title="第67章 プランナは統計情報をどのように使用するか">67章<em>プランナは統計情報をどのように使用するか</em></a>を参照してください。
+  </p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="using-explain.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="performance-tips.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="explicit-joins.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">14.1. <code class="command">EXPLAIN</code>の利用 </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> 14.3. 明示的な<code class="literal">JOIN</code>句でプランナを制御する</td></tr></table></div></body></html>
