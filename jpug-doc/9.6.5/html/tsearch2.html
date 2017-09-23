@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>F.41. tsearch2</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="test-decoding.html" title="F.40. test_decoding" /><link rel="next" href="tsm-system-rows.html" title="F.42. tsm_system_rows" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><td width="20%" align="left" colspan="2"></td><th width="60%" align="center"><a accesskey="h" href="index.html">PostgreSQL 9.6.5文書</a></th><td width="20%" align="right"><div class="actions"><a class="issue" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 9.6.5 tsearch2.html">誤訳等の報告</a></div></td></tr><tr><td width="10%" align="left" valign="top"><a accesskey="p" href="test-decoding.html">前へ</a> </td><td width="10%" align="left" valign="top"><a accesskey="u" href="contrib.html">上へ</a></td><td width="60%" align="center">F.41. tsearch2</td><td width="20%" align="right" valign="top"> <a accesskey="n" href="tsm-system-rows.html">次へ</a></td></tr></table><hr /></div><div class="sect1" id="tsearch2"><div class="titlepage"><div><div><h2 class="title" style="clear: both">F.41. tsearch2</h2></div></div></div><a id="idm45660251468560" class="indexterm"></a><p><span class="original">
+  The &lt;application&gt;tsearch2&lt;/&gt; module provides backwards-compatible
+  text search functionality for applications that used
+  &lt;application&gt;tsearch2&lt;/&gt; before text searching was integrated
+  into core &lt;productname&gt;PostgreSQL&lt;/productname&gt; in release 8.3.
+</span><span class="application">tsearch2</span>モジュールは、テキスト検索がリリース8.3でコア<span class="productname">PostgreSQL</span>に統合される前の、<span class="application">tsearch2</span>を使用したアプリケーション向けの後方互換のテキスト検索機能を提供します。
+ </p><div class="sect2" id="idm45660251464640"><div class="titlepage"><div><div><h3 class="title">F.41.1. 移植に関する問題</h3></div></div></div><span class="original">
+  &lt;title&gt;Portability Issues&lt;/title&gt;
+</span><p><span class="original">
+   Although the built-in text search features were based on
+   &lt;application&gt;tsearch2&lt;/&gt; and are largely similar to it,
+   there are numerous small differences that will create portability
+   issues for existing applications:
+</span>組み込みのテキスト検索機能は<span class="application">tsearch2</span>を基にしており、大部分は似ていますが、多くの小さな違いがあります。
+このため、既存のアプリケーションにおいて移植に関する問題が発生します。
+  </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: bullet; "><li class="listitem" style="list-style-type: disc"><p><span class="original">
+     Some functions' names were changed, for example &lt;function&gt;rank&lt;/&gt;
+     to &lt;function&gt;ts_rank&lt;/&gt;.
+     The replacement &lt;literal&gt;tsearch2&lt;/literal&gt; module
+     provides aliases having the old names.
+</span>一部の関数名が変わりました。
+例えば<code class="function">rank</code>は<code class="function">ts_rank</code>になりました。
+置き換え版の<code class="literal">tsearch2</code>モジュールは古い名前を別名として提供します。
+    </p></li><li class="listitem" style="list-style-type: disc"><p><span class="original">
+     The built-in text search data types and functions all exist within
+     the system schema &lt;literal&gt;pg_catalog&lt;/&gt;.  In an installation using
+     &lt;application&gt;tsearch2&lt;/&gt;, these objects would usually have been in
+     the &lt;literal&gt;public&lt;/&gt; schema, though some users chose to place them
+     in a separate schema of their own.  Explicitly schema-qualified
+     references to the objects will therefore fail in either case.
+     The replacement &lt;literal&gt;tsearch2&lt;/literal&gt; module
+     provides alias objects that are stored in &lt;literal&gt;public&lt;/&gt;
+     (or another schema if necessary) so that such references will still work.
+</span>組み込みのテキスト検索データ型と関数はすべて<code class="literal">pg_catalog</code>システムスキーマ内に存在します。
+<span class="application">tsearch2</span>を使用したインストレーションでは、これらのオブジェクトは通常<code class="literal">public</code>スキーマ内にありましたが、ユーザによっては独自に別のスキーマに格納することを選択していました。
+したがって、これらのオブジェクトへの明示的にスキーマ修飾された参照はどちらの場合も失敗します。
+置き換え版の<code class="literal">tsearch2</code>モジュールは、こうした参照が動作し続けられるように、<code class="literal">public</code>（必要ならば他のスキーマ）に格納される別名オブジェクトを提供します。
+    </p></li><li class="listitem" style="list-style-type: disc"><p><span class="original">
+     There is no concept of a &lt;quote&gt;current parser&lt;/&gt; or &lt;quote&gt;current
+     dictionary&lt;/&gt; in the built-in text search features, only of a current
+     search configuration (set by the &lt;varname&gt;default_text_search_config&lt;/&gt;
+     parameter).  While the current parser and current dictionary were used
+     only by functions intended for debugging, this might still pose
+     a porting obstacle in some cases.
+     The replacement &lt;literal&gt;tsearch2&lt;/literal&gt; module emulates these
+     additional state variables and provides backwards-compatible functions
+     for setting and retrieving them.
+</span>組み込みのテキスト検索機能では<span class="quote">「<span class="quote">現在のパーサ</span>」</span>または<span class="quote">「<span class="quote">現在の辞書</span>」</span>という概念はなく、(<code class="varname">default_text_search_config</code>パラメータにより設定される)現在の検索設定のみがあります。
+現在のパーサや現在の辞書はデバッグ目的の関数でのみ使用されていましたが、これが移植の問題を引き起こす場合があります。
+置き換え版の<code class="literal">tsearch2</code>モジュールはこれらの追加状態変数を模擬し、その設定および抽出に関する後方互換を持つ関数を提供します。
+    </p></li></ul></div><p><span class="original">
+   There are some issues that are not addressed by the replacement
+   &lt;literal&gt;tsearch2&lt;/literal&gt; module, and will therefore require
+   application code changes in any case:
+</span>置き換え版の<code class="literal">tsearch2</code>で対応されていない問題もいくつか存在します。
+このため、以下のいずれかの場合はアプリケーションコードの変更が必要です。
+  </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: bullet; "><li class="listitem" style="list-style-type: disc"><p><span class="original">
+     The old &lt;function&gt;tsearch2&lt;/&gt; trigger function allowed items in its
+     argument list to be names of functions to be invoked on the text data
+     before it was converted to &lt;type&gt;tsvector&lt;/&gt; format.  This was removed
+     as being a security hole, since it was not possible to guarantee that
+     the function invoked was the one intended.  The recommended approach
+     if the data must be massaged before being indexed is to write a custom
+     trigger that does the work for itself.
+</span>過去の<code class="function">tsearch2</code>トリガ関数では、引数リスト内の項目を<code class="type">tsvector</code>書式に変換される前にテキストデータに対して呼び出される関数名にすることができました。
+これはセキュリティ問題になりますので削除されました。
+このため、呼び出される関数が意図したものであることを保証することはできません。
+インデックス付けされる前にデータをいじる必要がある場合の推奨方式は、専用の作業を行う独自トリガを作成することです。
+    </p></li><li class="listitem" style="list-style-type: disc"><p><span class="original">
+     Text search configuration information has been moved into core
+     system catalogs that are noticeably different from the tables used
+     by &lt;application&gt;tsearch2&lt;/&gt;.  Any applications that examined
+     or modified those tables will need adjustment.
+</span>テキスト検索設定の情報は、<span class="application">tsearch2</span>で使用されたテーブルと大きく異なる中核のシステムカタログに移動されました。
+こうしたテーブルの検査、変更を行うアプリケーションはすべて調整する必要があります。
+    </p></li><li class="listitem" style="list-style-type: disc"><p><span class="original">
+     If an application used any custom text search configurations,
+     those will need to be set up in the core
+     catalogs using the new text search configuration SQL commands.
+     The replacement &lt;literal&gt;tsearch2&lt;/literal&gt; module offers a little
+     bit of support for this by making it possible to load an old set
+     of &lt;application&gt;tsearch2&lt;/&gt; configuration tables into
+     &lt;productname&gt;PostgreSQL&lt;/productname&gt; 8.3.  (Without the module,
+     it is not possible to load the configuration data because values in the
+     &lt;type&gt;regprocedure&lt;/&gt; columns cannot be resolved to functions.)
+     While those configuration tables won't actually &lt;emphasis&gt;do&lt;/&gt;
+     anything, at least their contents will be available to be consulted
+     while setting up an equivalent custom configuration in 8.3.
+</span>アプリケーションが独自のテキスト検索設定を使用していた場合、それらを新しいテキスト検索設定SQLコマンドを使用してコアカタログ内に構築する必要があります。
+置き換え版の<code class="literal">tsearch2</code>モジュールは、古い<span class="application">tsearch2</span>の設定テーブルの集合を<span class="productname">PostgreSQL</span> 8.3にロードできるようにすることで、多少のサポートを行います。
+（このモジュールがなければ、<code class="type">regprocedure</code>列の値を関数に解決できませんので、設定データをロードすることは不可能です。）
+こうした設定テーブルは実際に何も<span class="emphasis"><em>行いません</em></span>が、少なくとも8.3で同等の独自設定を構築する際に、その内容を考慮することは可能です。
+    </p></li><li class="listitem" style="list-style-type: disc"><p><span class="original">
+     The old &lt;function&gt;reset_tsearch()&lt;/&gt; and &lt;function&gt;get_covers()&lt;/&gt;
+     functions are not supported.
+</span>古い<code class="function">reset_tsearch()</code>および<code class="function">get_covers()</code>はサポートされません。
+    </p></li><li class="listitem" style="list-style-type: disc"><p><span class="original">
+     The replacement &lt;literal&gt;tsearch2&lt;/literal&gt; module does not define
+     any alias operators, relying entirely on the built-in ones.
+     This would only pose an issue if an application used explicitly
+     schema-qualified operator names, which is very uncommon.
+</span>置き換え版の<code class="literal">tsearch2</code>モジュールは別名演算子をまったく定義しません。
+完全に組み込みのものに依存しています。
+まったく一般的ではありませんが、アプリケーションが明示的にスキーマ修飾した演算子名を使用する場合のみ、問題が発生します。
+    </p></li></ul></div></div><div class="sect2" id="idm45660251433488"><div class="titlepage"><div><div><h3 class="title">F.41.2. 8.3より前のインストレーションを変換</h3></div></div></div><span class="original">
+  &lt;title&gt;Converting a pre-8.3 Installation&lt;/title&gt;
+</span><p><span class="original">
+   The recommended way to update a pre-8.3 installation that uses
+   &lt;application&gt;tsearch2&lt;/&gt; is:
+</span><span class="application">tsearch2</span>を使用した、8.3より前のインストレーションからの推奨更新方法を以下に示します。
+  </p><div class="procedure"><ol class="procedure" type="1"><li class="step"><p><span class="original">
+     Make a dump from the old installation in the usual way,
+     but be sure not to use &lt;literal&gt;-c&lt;/&gt; (&lt;literal&gt;&amp;#045;&amp;#045;clean&lt;/&gt;)
+     option of &lt;application&gt;pg_dump&lt;/&gt; or &lt;application&gt;pg_dumpall&lt;/&gt;.
+</span>通常の方法で古いインストレーションのダンプを作成します。
+ただし、<span class="application">pg_dump</span>または<span class="application">pg_dumpall</span>の<code class="literal">-c</code> (<code class="literal">--clean</code>)オプションは使用しないでください。
+    </p></li><li class="step"><p><span class="original">
+     In the new installation, create empty database(s) and install
+     the replacement &lt;literal&gt;tsearch2&lt;/literal&gt; module into each
+     database that will use text search.  This must be done
+     &lt;emphasis&gt;before&lt;/&gt; loading the dump data!  If your old installation
+     had the &lt;application&gt;tsearch2&lt;/&gt; objects in a schema other
+     than &lt;literal&gt;public&lt;/&gt;, be sure to adjust the
+     &lt;command&gt;CREATE EXTENSION&lt;/&gt; command so that the replacement
+     objects are created in that same schema.
+</span>新しいインストレーションで、空のデータベースを作成し、置き換え版の<code class="literal">tsearch2</code>をテキスト検索を使用する各データベースにインストールしてください。
+これをダンプデータをロードする<span class="emphasis"><em>前に</em></span>行う必要があります。
+古いインストレーションが<code class="literal">public</code>以外のスキーマに<span class="application">tsearch2</span>のオブジェクトを持つ場合は、置き換え版のオブジェクトが同じスキーマ内に生成されるように<code class="command">CREATE EXTENSION</code>コマンドを確実に調整してください。
+    </p></li><li class="step"><p><span class="original">
+     Load the dump data.  There will be quite a few errors reported
+     due to failure to recreate the original &lt;application&gt;tsearch2&lt;/&gt;
+     objects.  These errors can be ignored, but this means you cannot
+     restore the dump in a single transaction (eg, you cannot use
+     &lt;application&gt;pg_restore&lt;/&gt;'s &lt;option&gt;-1&lt;/&gt; switch).
+</span>ダンプデータをロードしてください。
+実際、元の<span class="application">tsearch2</span>のオブジェクトの再作成に失敗するため、いくつかエラーが報告されます。
+これらのエラーは無視することができますが、単一トランザクションでダンプをリストアすることができないことを意味します。
+（例えば、<span class="application">pg_restore</span>の<code class="option">-1</code>スイッチを使用することはできません。）
+    </p></li><li class="step"><p><span class="original">
+     Examine the contents of the restored &lt;application&gt;tsearch2&lt;/&gt;
+     configuration tables (&lt;structname&gt;pg_ts_cfg&lt;/&gt; and so on), and
+     create equivalent built-in text search configurations as needed.
+     You may drop the old configuration tables once you've extracted
+     all the useful information from them.
+</span>リストアした<span class="application">tsearch2</span>の設定テーブル（<code class="structname">pg_ts_cfg</code>など）の内容を検査してください。
+そして、必要に応じて同等の組み込みテキスト検索設定を作成してください。
+古い設定テーブルから有用な情報をすべて取り出した後、これらを削除することができます。
+    </p></li><li class="step"><p><span class="original">
+     Test your application.
+</span>アプリケーションを試験します。
+    </p></li></ol></div><p><span class="original">
+   At a later time you may wish to rename application references
+   to the alias text search objects, so that you can eventually
+   uninstall the replacement &lt;literal&gt;tsearch2&lt;/literal&gt; module.
+</span>後で、最終的に置き換え版の<code class="literal">tsearch2</code>モジュールをアンインストールできるように、アプリケーション内の別名テキスト検索オブジェクトへの参照の名前を変更する方がよいでしょう。
+  </p></div><div class="sect2" id="idm45660251413856"><div class="titlepage"><div><div><h3 class="title">F.41.3. 参考資料</h3></div></div></div><span class="original">
+  &lt;title&gt;References&lt;/title&gt;
+</span><p><span class="original">
+   Tsearch2 Development Site
+</span>tsearch2開発サイト
+   <a class="ulink" href="http://www.sai.msu.su/~megera/postgres/gist/tsearch/V2/" target="_top">http://www.sai.msu.su/~megera/postgres/gist/tsearch/V2/</a>
+  </p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="test-decoding.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="contrib.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="tsm-system-rows.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">F.40. test_decoding </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> F.42. tsm_system_rows</td></tr></table></div></body></html>
