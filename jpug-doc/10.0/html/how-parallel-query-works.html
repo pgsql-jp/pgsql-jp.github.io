@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>15.1. パラレルクエリはどのように動くのか</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="parallel-query.html" title="第15章 パラレルクエリ" /><link rel="next" href="when-can-parallel-query-be-used.html" title="15.2. When Can Parallel Query Be Used?" /></head><body><div xmlns="http://www.w3.org/TR/xhtml1/transitional" class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="5" align="center">15.1. パラレルクエリはどのように動くのか</th></tr><tr><td width="10%" align="left"><a accesskey="p" href="parallel-query.html" title="第15章 パラレルクエリ">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="parallel-query.html" title="第15章 パラレルクエリ">上へ</a></td><th width="60%" align="center">第15章 パラレルクエリ</th><td width="10%" align="right"><a accesskey="h" href="index.html" title="PostgreSQL 10.0文書">ホーム</a></td><td width="10%" align="right"> <a accesskey="n" href="when-can-parallel-query-be-used.html" title="15.2. When Can Parallel Query Be Used?">次へ</a></td></tr></table><hr></hr></div><div class="sect1" id="how-parallel-query-works"><div class="titlepage"><div><div><h2 class="title" style="clear: both">15.1. パラレルクエリはどのように動くのか</h2></div></div></div><!--
-  <title>How Parallel Query Works</title>
---><p><!--
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>15.1. パラレルクエリはどのように動くのか</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="parallel-query.html" title="第15章 パラレルクエリ" /><link rel="next" href="when-can-parallel-query-be-used.html" title="15.2. When Can Parallel Query Be Used?" /></head><body><div xmlns="http://www.w3.org/TR/xhtml1/transitional" class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="5" align="center">15.1. パラレルクエリはどのように動くのか</th></tr><tr><td width="10%" align="left"><a accesskey="p" href="parallel-query.html" title="第15章 パラレルクエリ">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="parallel-query.html" title="第15章 パラレルクエリ">上へ</a></td><th width="60%" align="center">第15章 パラレルクエリ</th><td width="10%" align="right"><a accesskey="h" href="index.html" title="PostgreSQL 10.0文書">ホーム</a></td><td width="10%" align="right"> <a accesskey="n" href="when-can-parallel-query-be-used.html" title="15.2. When Can Parallel Query Be Used?">次へ</a></td></tr></table><hr></hr></div><div class="sect1" id="how-parallel-query-works"><div class="titlepage"><div><div><h2 class="title" style="clear: both">15.1. パラレルクエリはどのように動くのか</h2></div></div></div><span class="original">
+  &lt;title&gt;How Parallel Query Works&lt;/title&gt;
+</span><p><span class="original">
     When the optimizer determines that parallel query is the fastest execution
     strategy for a particular query, it will create a query plan which includes
-    a <firstterm>Gather</firstterm> or <firstterm>Gather Merge</firstterm>
+    a &lt;firstterm&gt;Gather&lt;/firstterm&gt; or &lt;firstterm&gt;Gather Merge&lt;/firstterm&gt;
     node.  Here is a simple example:
--->あるクエリの最速の実行戦略がパラレルクエリであるとオプティマイザが決定すると、<em class="firstterm">Gather ノード</em>を含むクエリプランを作成します。
+</span>あるクエリの最速の実行戦略がパラレルクエリであるとオプティマイザが決定すると、<em class="firstterm">Gather ノード</em>を含むクエリプランを作成します。
 単純な例を示します。
 
 </p><pre class="screen">EXPLAIN SELECT * FROM pgbench_accounts WHERE filler LIKE '%x%';
@@ -17,18 +17,18 @@
    -&gt;  Parallel Seq Scan on pgbench_accounts  (cost=0.00..216018.33 rows=1 width=97)
          Filter: (filler ~~ '%x%'::text)
 (4 rows)</pre><p>
-   </p><p><!--
-    In all cases, the <literal>Gather</literal> or
-    <literal>Gather Merge</literal> node will have exactly one
+   </p><p><span class="original">
+    In all cases, the &lt;literal&gt;Gather&lt;/literal&gt; or
+    &lt;literal&gt;Gather Merge&lt;/literal&gt; node will have exactly one
     child plan, which is the portion of the plan that will be executed in
-    parallel.  If the <literal>Gather</> or <literal>Gather Merge</> node is
+    parallel.  If the &lt;literal&gt;Gather&lt;/&gt; or &lt;literal&gt;Gather Merge&lt;/&gt; node is
     at the very top of the plan tree, then the entire query will execute in
     parallel.  If it is somewhere else in the plan tree, then only the portion
     of the plan below it will run in parallel.  In the example above, the
     query accesses only one table, so there is only one plan node other than
-    the <literal>Gather</> node itself; since that plan node is a child of the
-    <literal>Gather</> node, it will run in parallel.
--->どの場合でも、<code class="literal">Gather</code>ノードは正確に一つの子ノードを持ちます。
+    the &lt;literal&gt;Gather&lt;/&gt; node itself; since that plan node is a child of the
+    &lt;literal&gt;Gather&lt;/&gt; node, it will run in parallel.
+</span>どの場合でも、<code class="literal">Gather</code>ノードは正確に一つの子ノードを持ちます。
 子プランは、プランの中で並列に実行される部分です。
 <code class="literal">Gather</code>ノードがプランツリーの中で最上位にある場合は、クエリ全体が並列に実行されます。
 <code class="literal">Gather</code>ノードがプランツリーの他の部分にある場合は、その部分だけが並列に実行されます。

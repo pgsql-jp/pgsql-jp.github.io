@@ -1,21 +1,21 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>第58章 カスタムスキャンプロバイダの作成</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="tablesample-support-functions.html" title="57.1. サンプリングメソッドサポート関数" /><link rel="next" href="custom-scan-path.html" title="58.1. カスタムスキャンパスの作成" /></head><body><div xmlns="http://www.w3.org/TR/xhtml1/transitional" class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="5" align="center">第58章 カスタムスキャンプロバイダの作成</th></tr><tr><td width="10%" align="left"><a accesskey="p" href="tablesample-support-functions.html" title="57.1. サンプリングメソッドサポート関数">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="internals.html" title="パート VII. 内部情報">上へ</a></td><th width="60%" align="center">パート VII. 内部情報</th><td width="10%" align="right"><a accesskey="h" href="index.html" title="PostgreSQL 10.0文書">ホーム</a></td><td width="10%" align="right"> <a accesskey="n" href="custom-scan-path.html" title="58.1. カスタムスキャンパスの作成">次へ</a></td></tr></table><hr></hr></div><div class="chapter" id="custom-scan"><div class="titlepage"><div><div><h2 class="title">第58章 カスタムスキャンプロバイダの作成</h2></div></div></div><div class="toc"><p><strong>目次</strong></p><dl class="toc"><dt><span class="sect1"><a href="custom-scan-path.html">58.1. カスタムスキャンパスの作成</a></span></dt><dd><dl><dt><span class="sect2"><a href="custom-scan-path.html#custom-scan-path-callbacks">58.1.1. カスタムスキャンパスのコールバック</a></span></dt></dl></dd><dt><span class="sect1"><a href="custom-scan-plan.html">58.2. カスタムスキャン計画の作成</a></span></dt><dd><dl><dt><span class="sect2"><a href="custom-scan-plan.html#custom-scan-plan-callbacks">58.2.1. カスタムスキャン計画のコールバック</a></span></dt></dl></dd><dt><span class="sect1"><a href="custom-scan-execution.html">58.3. カスタムスキャンの実行</a></span></dt><dd><dl><dt><span class="sect2"><a href="custom-scan-execution.html#custom-scan-execution-callbacks">58.3.1. カスタムスキャン実行のコールバック</a></span></dt></dl></dd></dl></div><!--
- <title>Writing A Custom Scan Provider</title>
---><a id="idm46270510374640" class="indexterm"></a><p><!--
-  <productname>PostgreSQL</> supports a set of experimental facilities which
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>第58章 カスタムスキャンプロバイダの作成</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="tablesample-support-functions.html" title="57.1. サンプリングメソッドサポート関数" /><link rel="next" href="custom-scan-path.html" title="58.1. カスタムスキャンパスの作成" /></head><body><div xmlns="http://www.w3.org/TR/xhtml1/transitional" class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="5" align="center">第58章 カスタムスキャンプロバイダの作成</th></tr><tr><td width="10%" align="left"><a accesskey="p" href="tablesample-support-functions.html" title="57.1. サンプリングメソッドサポート関数">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="internals.html" title="パート VII. 内部情報">上へ</a></td><th width="60%" align="center">パート VII. 内部情報</th><td width="10%" align="right"><a accesskey="h" href="index.html" title="PostgreSQL 10.0文書">ホーム</a></td><td width="10%" align="right"> <a accesskey="n" href="custom-scan-path.html" title="58.1. カスタムスキャンパスの作成">次へ</a></td></tr></table><hr></hr></div><div class="chapter" id="custom-scan"><div class="titlepage"><div><div><h2 class="title">第58章 カスタムスキャンプロバイダの作成</h2></div></div></div><div class="toc"><p><strong>目次</strong></p><dl class="toc"><dt><span class="sect1"><a href="custom-scan-path.html">58.1. カスタムスキャンパスの作成</a></span></dt><dd><dl><dt><span class="sect2"><a href="custom-scan-path.html#custom-scan-path-callbacks">58.1.1. カスタムスキャンパスのコールバック</a></span></dt></dl></dd><dt><span class="sect1"><a href="custom-scan-plan.html">58.2. カスタムスキャン計画の作成</a></span></dt><dd><dl><dt><span class="sect2"><a href="custom-scan-plan.html#custom-scan-plan-callbacks">58.2.1. カスタムスキャン計画のコールバック</a></span></dt></dl></dd><dt><span class="sect1"><a href="custom-scan-execution.html">58.3. カスタムスキャンの実行</a></span></dt><dd><dl><dt><span class="sect2"><a href="custom-scan-execution.html#custom-scan-execution-callbacks">58.3.1. カスタムスキャン実行のコールバック</a></span></dt></dl></dd></dl></div><span class="original">
+ &lt;title&gt;Writing A Custom Scan Provider&lt;/title&gt;
+</span><a id="idm44940597795216" class="indexterm"></a><p><span class="original">
+  &lt;productname&gt;PostgreSQL&lt;/&gt; supports a set of experimental facilities which
   are intended to allow extension modules to add new scan types to the system.
-  Unlike a <link linkend="fdwhandler">foreign data wrapper</>, which is only
+  Unlike a &lt;link linkend="fdwhandler"&gt;foreign data wrapper&lt;/&gt;, which is only
   responsible for knowing how to scan its own foreign tables, a custom scan
   provider can provide an alternative method of scanning any relation in the
   system.  Typically, the motivation for writing a custom scan provider will
   be to allow the use of some optimization not supported by the core
   system, such as caching or some form of hardware acceleration.  This chapter
   outlines how to write a new custom scan provider.
---><span class="productname">PostgreSQL</span>では、システムに新しいスキャン方式を追加する拡張モジュールを可能にするためのいくつかの実験的機構をサポートしています。
+</span><span class="productname">PostgreSQL</span>では、システムに新しいスキャン方式を追加する拡張モジュールを可能にするためのいくつかの実験的機構をサポートしています。
 <a class="link" href="fdwhandler.html" title="第56章 外部データラッパの作成">外部データラッパ</a>が自分の外部テーブルのスキャン方法を知っていることだけを担当するのと異なり、カスタムスキャンプロバイダはシステム内のリレーションをスキャンする代替方式を提供することができます。
 典型的には、カスタムスキャンプロバイダを作成する理由は、キャッシュの利用や何らかの形式のハードウェアアクセラレーションといったコアシステムによってサポートされない最適化を利用可能にすることでしょう。
 本章では新しいカスタムスキャンプロバイダの作成方法について概要を説明します。
- </p><p><!--
+ </p><p><span class="original">
   Implementing a new type of custom scan is a three-step process.  First,
   during planning, it is necessary to generate access paths representing a
   scan using the proposed strategy.  Second, if one of those access paths
@@ -24,7 +24,7 @@
   Finally, it must be possible to execute the plan and generate the same
   results that would have been generated for any other access path targeting
   the same relation.
--->新しい種類のカスタムスキャンの実装には3段階のプロセスがあります。
+</span>新しい種類のカスタムスキャンの実装には3段階のプロセスがあります。
 第一に、計画段階において、提案される戦略を用いたスキャンを表現するアクセスパスを生成する必要があります。
 第二に、プランナがあるリレーションをスキャンするための最適戦略として、そのアクセスパスの一つを選んだとき、アクセスパスが計画に変換されなければなりません。
 最後に、計画を実行して、同じリレーションを対象とする他のアクセスパスが生成するのと同じ結果を生成することが可能でなければなりません。

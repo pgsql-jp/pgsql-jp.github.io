@@ -1,314 +1,314 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>33.18. SSLサポート</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="libpq-ldap.html" title="33.17. 接続パラメータのLDAP検索" /><link rel="next" href="libpq-threading.html" title="33.19. スレッド化プログラムの振舞い" /></head><body><div xmlns="http://www.w3.org/TR/xhtml1/transitional" class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="5" align="center">33.18. SSLサポート</th></tr><tr><td width="10%" align="left"><a accesskey="p" href="libpq-ldap.html" title="33.17. 接続パラメータのLDAP検索">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="libpq.html" title="第33章 libpq - C ライブラリ">上へ</a></td><th width="60%" align="center">第33章 <span xmlns="http://www.w3.org/1999/xhtml" class="application">libpq</span> - C ライブラリ</th><td width="10%" align="right"><a accesskey="h" href="index.html" title="PostgreSQL 10.0文書">ホーム</a></td><td width="10%" align="right"> <a accesskey="n" href="libpq-threading.html" title="33.19. スレッド化プログラムの振舞い">次へ</a></td></tr></table><hr></hr></div><div class="sect1" id="libpq-ssl"><div class="titlepage"><div><div><h2 class="title" style="clear: both">33.18. SSLサポート</h2></div></div></div><div class="toc"><dl class="toc"><dt><span class="sect2"><a href="libpq-ssl.html#libq-ssl-certificates">33.18.1. サーバ証明書のクライアント検証</a></span></dt><dt><span class="sect2"><a href="libpq-ssl.html#libpq-ssl-clientcert">33.18.2. クライアント証明書</a></span></dt><dt><span class="sect2"><a href="libpq-ssl.html#libpq-ssl-protection">33.18.3. 異なるモードで提供される保護</a></span></dt><dt><span class="sect2"><a href="libpq-ssl.html#libpq-ssl-fileusage">33.18.4. SSLクライアントファイル使用方法</a></span></dt><dt><span class="sect2"><a href="libpq-ssl.html#libpq-ssl-initialize">33.18.5. SSLライブラリの初期化</a></span></dt></dl></div><!--
-  <title>SSL Support</title>
---><a id="idm46270545921152" class="indexterm"></a><p><!--
-   <productname>PostgreSQL</> has native support for using <acronym>SSL</>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>33.18. SSLサポート</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="libpq-ldap.html" title="33.17. 接続パラメータのLDAP検索" /><link rel="next" href="libpq-threading.html" title="33.19. スレッド化プログラムの振舞い" /></head><body><div xmlns="http://www.w3.org/TR/xhtml1/transitional" class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="5" align="center">33.18. SSLサポート</th></tr><tr><td width="10%" align="left"><a accesskey="p" href="libpq-ldap.html" title="33.17. 接続パラメータのLDAP検索">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="libpq.html" title="第33章 libpq - C ライブラリ">上へ</a></td><th width="60%" align="center">第33章 <span xmlns="http://www.w3.org/1999/xhtml" class="application">libpq</span> - C ライブラリ</th><td width="10%" align="right"><a accesskey="h" href="index.html" title="PostgreSQL 10.0文書">ホーム</a></td><td width="10%" align="right"> <a accesskey="n" href="libpq-threading.html" title="33.19. スレッド化プログラムの振舞い">次へ</a></td></tr></table><hr></hr></div><div class="sect1" id="libpq-ssl"><div class="titlepage"><div><div><h2 class="title" style="clear: both">33.18. SSLサポート</h2></div></div></div><div class="toc"><dl class="toc"><dt><span class="sect2"><a href="libpq-ssl.html#libq-ssl-certificates">33.18.1. サーバ証明書のクライアント検証</a></span></dt><dt><span class="sect2"><a href="libpq-ssl.html#libpq-ssl-clientcert">33.18.2. クライアント証明書</a></span></dt><dt><span class="sect2"><a href="libpq-ssl.html#libpq-ssl-protection">33.18.3. 異なるモードで提供される保護</a></span></dt><dt><span class="sect2"><a href="libpq-ssl.html#libpq-ssl-fileusage">33.18.4. SSLクライアントファイル使用方法</a></span></dt><dt><span class="sect2"><a href="libpq-ssl.html#libpq-ssl-initialize">33.18.5. SSLライブラリの初期化</a></span></dt></dl></div><span class="original">
+  &lt;title&gt;SSL Support&lt;/title&gt;
+</span><a id="idm44940633341584" class="indexterm"></a><p><span class="original">
+   &lt;productname&gt;PostgreSQL&lt;/&gt; has native support for using &lt;acronym&gt;SSL&lt;/&gt;
    connections to encrypt client/server communications for increased
-   security. See <xref linkend="ssl-tcp"> for details about the server-side
-   <acronym>SSL</> functionality.
---><span class="productname">PostgreSQL</span>は、セキュリティを高めるためにクライアントサーバ間の通信を暗号化する<acronym class="acronym">SSL</acronym>接続の使用を元来サポートしています。
+   security. See &lt;xref linkend="ssl-tcp"&gt; for details about the server-side
+   &lt;acronym&gt;SSL&lt;/&gt; functionality.
+</span><span class="productname">PostgreSQL</span>は、セキュリティを高めるためにクライアントサーバ間の通信を暗号化する<acronym class="acronym">SSL</acronym>接続の使用を元来サポートしています。
 サーバ側の<acronym class="acronym">SSL</acronym>機能についての詳細は<a class="xref" href="ssl-tcp.html" title="18.9. SSLによる安全なTCP/IP接続">18.9</a>を参照してください。
-  </p><p><!--
-   <application>libpq</application> reads the system-wide
-   <productname>OpenSSL</productname> configuration file. By default, this
-   file is named <filename>openssl.cnf</filename> and is located in the
-   directory reported by <literal>openssl version -d</>.  This default
+  </p><p><span class="original">
+   &lt;application&gt;libpq&lt;/application&gt; reads the system-wide
+   &lt;productname&gt;OpenSSL&lt;/productname&gt; configuration file. By default, this
+   file is named &lt;filename&gt;openssl.cnf&lt;/filename&gt; and is located in the
+   directory reported by &lt;literal&gt;openssl version -d&lt;/&gt;.  This default
    can be overridden by setting environment variable
-   <envar>OPENSSL_CONF</envar> to the name of the desired configuration
+   &lt;envar&gt;OPENSSL_CONF&lt;/envar&gt; to the name of the desired configuration
    file.
---><span class="application">libpq</span>はシステム全体に対する<span class="productname">OpenSSL</span>設定ファイルを読み込みます。
+</span><span class="application">libpq</span>はシステム全体に対する<span class="productname">OpenSSL</span>設定ファイルを読み込みます。
 デフォルトでは、ファイル名は<code class="filename">openssl.cnf</code>で、<code class="literal">openssl version -d</code>で報告されるディレクトリに格納されています。
 このデフォルトは<code class="envar">OPENSSL_CONF</code>環境変数に希望する設定ファイル名を設定することで変更することができます。
-  </p><div class="sect2" id="libq-ssl-certificates"><div class="titlepage"><div><div><h3 class="title">33.18.1. サーバ証明書のクライアント検証</h3></div></div></div><!--
-  <title>Client Verification of Server Certificates</title>
---><p><!--
-   By default, <productname>PostgreSQL</> will not perform any verification of
+  </p><div class="sect2" id="libq-ssl-certificates"><div class="titlepage"><div><div><h3 class="title">33.18.1. サーバ証明書のクライアント検証</h3></div></div></div><span class="original">
+  &lt;title&gt;Client Verification of Server Certificates&lt;/title&gt;
+</span><p><span class="original">
+   By default, &lt;productname&gt;PostgreSQL&lt;/&gt; will not perform any verification of
    the server certificate. This means that it is possible to spoof the server
    identity (for example by modifying a DNS record or by taking over the server
    IP address) without the client knowing. In order to prevent spoofing,
-   <acronym>SSL</> certificate verification must be used.
--->デフォルトでは<span class="productname">PostgreSQL</span>はサーバ証明書の検証をまったく行いません。
+   &lt;acronym&gt;SSL&lt;/&gt; certificate verification must be used.
+</span>デフォルトでは<span class="productname">PostgreSQL</span>はサーバ証明書の検証をまったく行いません。
 これは、（例えば、DNSレコードを変更したり、もしくはサーバのIPアドレスを接収したりして）クライアントに知られずにサーバの属性をなりすませることを意味します。
 なりすましを防止するには<acronym class="acronym">SSL</acronym>証明書検証を使用しなければなりません。
-  </p><p><!--
-   If the parameter <literal>sslmode</> is set to <literal>verify-ca</>,
+  </p><p><span class="original">
+   If the parameter &lt;literal&gt;sslmode&lt;/&gt; is set to &lt;literal&gt;verify-ca&lt;/&gt;,
    libpq will verify that the server is trustworthy by checking the
    certificate chain up to a trusted certificate authority
-   (<acronym>CA</>). If <literal>sslmode</> is set to <literal>verify-full</>,
-   libpq will <emphasis>also</> verify that the server host name matches its
+   (&lt;acronym&gt;CA&lt;/&gt;). If &lt;literal&gt;sslmode&lt;/&gt; is set to &lt;literal&gt;verify-full&lt;/&gt;,
+   libpq will &lt;emphasis&gt;also&lt;/&gt; verify that the server host name matches its
    certificate. The SSL connection will fail if the server certificate cannot
-   be verified. <literal>verify-full</> is recommended in most
+   be verified. &lt;literal&gt;verify-full&lt;/&gt; is recommended in most
    security-sensitive environments.
--->パラメータ<code class="literal">sslmode</code>が<code class="literal">verify-ca</code>に設定されている場合、libpqは信頼される認証局(<acronym class="acronym">CA</acronym>)までの証明書連鎖を検査することで、サーバが信用に足るかを検証します。
+</span>パラメータ<code class="literal">sslmode</code>が<code class="literal">verify-ca</code>に設定されている場合、libpqは信頼される認証局(<acronym class="acronym">CA</acronym>)までの証明書連鎖を検査することで、サーバが信用に足るかを検証します。
 <code class="literal">sslmode</code>が<code class="literal">verify-full</code>に設定されていると、libpqは<span class="emphasis"><em>同時に</em></span>サーバホスト名が証明書のそれと一致するかを検証します。
 SSL接続はサーバ証明書が検証されない場合失敗します。
 安全性に慎重を期するほとんどのサーバ環境では<code class="literal">verify-full</code>を推奨します。
-  </p><p><!--
-   In <literal>verify-full</> mode, the host name is matched against the
+  </p><p><span class="original">
+   In &lt;literal&gt;verify-full&lt;/&gt; mode, the host name is matched against the
    certificate's Subject Alternative Name attribute(s), or against the
-   Common Name attribute if no Subject Alternative Name of type <literal>dNSName</literal> is
+   Common Name attribute if no Subject Alternative Name of type &lt;literal&gt;dNSName&lt;/literal&gt; is
    present.  If the certificate's name attribute starts with an asterisk
-   (<literal>*</>), the asterisk will be treated as
-   a wildcard, which will match all characters <emphasis>except</> a dot
-   (<literal>.</>). This means the certificate will not match subdomains.
+   (&lt;literal&gt;*&lt;/&gt;), the asterisk will be treated as
+   a wildcard, which will match all characters &lt;emphasis&gt;except&lt;/&gt; a dot
+   (&lt;literal&gt;.&lt;/&gt;). This means the certificate will not match subdomains.
    If the connection is made using an IP address instead of a host name, the
    IP address will be matched (without doing any DNS lookups).
---><code class="literal">verify-full</code>モードでは、ホスト名を証明書のサブジェクト別名(Subject Alternative Name)属性と、あるいは<code class="literal">dNSName</code>タイプのサブジェクト別名がないときはコモンネーム属性とマッチさせます。
+</span><code class="literal">verify-full</code>モードでは、ホスト名を証明書のサブジェクト別名(Subject Alternative Name)属性と、あるいは<code class="literal">dNSName</code>タイプのサブジェクト別名がないときはコモンネーム属性とマッチさせます。
 証明書の名前属性がアスタリスク（<code class="literal">*</code>）で始まると、それはワイルドカードとして取り扱われ、ドット（<code class="literal">.</code>）を除くすべての文字とマッチします。
 これは、証明書がサブドメインとマッチしないことを意味します。
 もし接続がホスト名ではなくIPアドレスを使用するのであれば、（いかなるDNS検索もせず）IPアドレスがマッチさせられます。
-  </p><p><!--
+  </p><p><span class="original">
    To allow server certificate verification, the certificate(s) of one or more
-   trusted <acronym>CA</>s must be
-   placed in the file <filename>~/.postgresql/root.crt</> in the user's home
-   directory. If intermediate <acronym>CA</>s appear in
-   <filename>root.crt</filename>, the file must also contain certificate
-   chains to their root <acronym>CA</>s. (On Microsoft Windows the file is named
-   <filename>%APPDATA%\postgresql\root.crt</filename>.)
--->サーバ証明書の検証を可能にするには、1つ以上の信頼する<acronym class="acronym">CA</acronym>の証明書を、ユーザのホームディレクトリの<code class="filename">~/.postgresql/root.crt</code>ファイルに置かなければなりません。
+   trusted &lt;acronym&gt;CA&lt;/&gt;s must be
+   placed in the file &lt;filename&gt;~/.postgresql/root.crt&lt;/&gt; in the user's home
+   directory. If intermediate &lt;acronym&gt;CA&lt;/&gt;s appear in
+   &lt;filename&gt;root.crt&lt;/filename&gt;, the file must also contain certificate
+   chains to their root &lt;acronym&gt;CA&lt;/&gt;s. (On Microsoft Windows the file is named
+   &lt;filename&gt;%APPDATA%\postgresql\root.crt&lt;/filename&gt;.)
+</span>サーバ証明書の検証を可能にするには、1つ以上の信頼する<acronym class="acronym">CA</acronym>の証明書を、ユーザのホームディレクトリの<code class="filename">~/.postgresql/root.crt</code>ファイルに置かなければなりません。
 中間<acronym class="acronym">CA</acronym>が<code class="filename">root.crt</code>にあるのであれば、そのファイルはそのルート<acronym class="acronym">CA</acronym>への証明書チェーンも含まなければなりません。
 （Microsoft Windowsの場合、このファイルの名前は<code class="filename">%APPDATA%\postgresql\root.crt</code>です。）
-  </p><p><!--
+  </p><p><span class="original">
    Certificate Revocation List (CRL) entries are also checked
-   if the file <filename>~/.postgresql/root.crl</filename> exists
-   (<filename>%APPDATA%\postgresql\root.crl</filename> on Microsoft
+   if the file &lt;filename&gt;~/.postgresql/root.crl&lt;/filename&gt; exists
+   (&lt;filename&gt;%APPDATA%\postgresql\root.crl&lt;/filename&gt; on Microsoft
    Windows).
---><code class="filename">~/.postgresql/root.crl</code>ファイル（Microsoft Windowsでは<code class="filename">%APPDATA%\postgresql\root.crl</code>）が存在する場合、証明書失効リスト（CRL）の項目もまた検査されます。
-  </p><p><!--
+</span><code class="filename">~/.postgresql/root.crl</code>ファイル（Microsoft Windowsでは<code class="filename">%APPDATA%\postgresql\root.crl</code>）が存在する場合、証明書失効リスト（CRL）の項目もまた検査されます。
+  </p><p><span class="original">
    The location of the root certificate file and the CRL can be changed by
    setting
-   the connection parameters <literal>sslrootcert</> and <literal>sslcrl</>
-   or the environment variables <envar>PGSSLROOTCERT</> and <envar>PGSSLCRL</>.
--->ルート証明書ファイルとCRLの格納場所を接続パラメータ<code class="literal">sslrootcert</code>と<code class="literal">sslcrl</code>、もしくは環境変数<code class="envar">PGSSLROOTCERT</code>と<code class="envar">PGSSLCRL</code>で変更することができます。
-  </p><div class="note"><h3 class="title">注記</h3><p><!--
+   the connection parameters &lt;literal&gt;sslrootcert&lt;/&gt; and &lt;literal&gt;sslcrl&lt;/&gt;
+   or the environment variables &lt;envar&gt;PGSSLROOTCERT&lt;/&gt; and &lt;envar&gt;PGSSLCRL&lt;/&gt;.
+</span>ルート証明書ファイルとCRLの格納場所を接続パラメータ<code class="literal">sslrootcert</code>と<code class="literal">sslcrl</code>、もしくは環境変数<code class="envar">PGSSLROOTCERT</code>と<code class="envar">PGSSLCRL</code>で変更することができます。
+  </p><div class="note"><h3 class="title">注記</h3><p><span class="original">
     For backwards compatibility with earlier versions of PostgreSQL, if a
     root CA file exists, the behavior of
-    <literal>sslmode</literal>=<literal>require</literal> will be the same
-    as that of <literal>verify-ca</literal>, meaning the server certificate
+    &lt;literal&gt;sslmode&lt;/literal&gt;=&lt;literal&gt;require&lt;/literal&gt; will be the same
+    as that of &lt;literal&gt;verify-ca&lt;/literal&gt;, meaning the server certificate
     is validated against the CA. Relying on this behavior is discouraged,
     and applications that need certificate validation should always use
-    <literal>verify-ca</literal> or <literal>verify-full</literal>.
--->より古いバージョンのPostgreSQLとの後方互換性のために、ルートCAファイルが存在する場合、<code class="literal">sslmode</code>=<code class="literal">require</code>の動作は<code class="literal">verify-ca</code>の場合と同じになっています。
+    &lt;literal&gt;verify-ca&lt;/literal&gt; or &lt;literal&gt;verify-full&lt;/literal&gt;.
+</span>より古いバージョンのPostgreSQLとの後方互換性のために、ルートCAファイルが存在する場合、<code class="literal">sslmode</code>=<code class="literal">require</code>の動作は<code class="literal">verify-ca</code>の場合と同じになっています。
 つまり、サーバ証明書がCAに対して検証されます。
 この動作に依存することは勧めません。
 また証明書の検証を必要とするアプリケーションは常に<code class="literal">verify-ca</code>または<code class="literal">verify-full</code>を使用すべきです。
-   </p></div></div><div class="sect2" id="libpq-ssl-clientcert"><div class="titlepage"><div><div><h3 class="title">33.18.2. クライアント証明書</h3></div></div></div><!--
-  <title>Client Certificates</title>
---><p><!--
+   </p></div></div><div class="sect2" id="libpq-ssl-clientcert"><div class="titlepage"><div><div><h3 class="title">33.18.2. クライアント証明書</h3></div></div></div><span class="original">
+  &lt;title&gt;Client Certificates&lt;/title&gt;
+</span><p><span class="original">
    If the server requests a trusted client certificate,
-   <application>libpq</application> will send the certificate stored in
-   file <filename>~/.postgresql/postgresql.crt</> in the user's home
+   &lt;application&gt;libpq&lt;/application&gt; will send the certificate stored in
+   file &lt;filename&gt;~/.postgresql/postgresql.crt&lt;/&gt; in the user's home
    directory.  The certificate must be signed by one of the certificate
-   authorities (<acronym>CA</acronym>) trusted by the server.  A matching
-   private key file <filename>~/.postgresql/postgresql.key</> must also
+   authorities (&lt;acronym&gt;CA&lt;/acronym&gt;) trusted by the server.  A matching
+   private key file &lt;filename&gt;~/.postgresql/postgresql.key&lt;/&gt; must also
    be present. The private
    key file must not allow any access to world or group; achieve this by the
-   command <command>chmod 0600 ~/.postgresql/postgresql.key</command>.
+   command &lt;command&gt;chmod 0600 ~/.postgresql/postgresql.key&lt;/command&gt;.
    On Microsoft Windows these files are named
-   <filename>%APPDATA%\postgresql\postgresql.crt</filename> and
-   <filename>%APPDATA%\postgresql\postgresql.key</filename>, and there
+   &lt;filename&gt;%APPDATA%\postgresql\postgresql.crt&lt;/filename&gt; and
+   &lt;filename&gt;%APPDATA%\postgresql\postgresql.key&lt;/filename&gt;, and there
    is no special permissions check since the directory is presumed secure.
    The location of the certificate and key files can be overridden by the
-   connection parameters <literal>sslcert</> and <literal>sslkey</> or the
-   environment variables <envar>PGSSLCERT</> and <envar>PGSSLKEY</>.
--->サーバが信頼できるクライアント証明書を要求する場合、<span class="application">libpq</span>はユーザのホームディレクトリにある<code class="filename">~/.postgresql/postgresql.crt</code>ファイルに格納された証明書を送信します。
+   connection parameters &lt;literal&gt;sslcert&lt;/&gt; and &lt;literal&gt;sslkey&lt;/&gt; or the
+   environment variables &lt;envar&gt;PGSSLCERT&lt;/&gt; and &lt;envar&gt;PGSSLKEY&lt;/&gt;.
+</span>サーバが信頼できるクライアント証明書を要求する場合、<span class="application">libpq</span>はユーザのホームディレクトリにある<code class="filename">~/.postgresql/postgresql.crt</code>ファイルに格納された証明書を送信します。
 証明書はサーバで信頼された認証局（<acronym class="acronym">CA</acronym>）のいずれかで署名されなければなりません。
 対応する<code class="filename">~/.postgresql/postgresql.key</code>秘密キーファイルも存在しなければなりません。
 秘密キーファイルは他者やグループからのアクセスを許可してはいけません。
 <code class="command">chmod 0600 ~/.postgresql/postgresql.key</code>コマンドでこれを実現してください。
 Microsoft Windowsでは、このファイルの名前はそれぞれ<code class="filename">%APPDATA%\postgresql\postgresql.crt</code>と<code class="filename">%APPDATA%\postgresql\postgresql.key</code>であり、このディレクトリは安全であると想定されますので、特別な権限検査は行われません。
 証明書とキーファイルの格納場所は<code class="literal">sslcert</code>および<code class="literal">sslkey</code>接続パラメータ、または<code class="envar">PGSSLCERT</code>および<code class="envar">PGSSLKEY</code>環境変数で上書きされます。
-  </p><p><!--
+  </p><p><span class="original">
    In some cases, the client certificate might be signed by an
-   <quote>intermediate</> certificate authority, rather than one that is
+   &lt;quote&gt;intermediate&lt;/&gt; certificate authority, rather than one that is
    directly trusted by the server.  To use such a certificate, append the
-   certificate of the signing authority to the <filename>postgresql.crt</>
+   certificate of the signing authority to the &lt;filename&gt;postgresql.crt&lt;/&gt;
    file, then its parent authority's certificate, and so on up to a certificate
-   authority, <quote>root</> or <quote>intermediate</>, that is trusted by
+   authority, &lt;quote&gt;root&lt;/&gt; or &lt;quote&gt;intermediate&lt;/&gt;, that is trusted by
    the server, i.e. signed by a certificate in the server's
-   <filename>root.crt</filename> file.
--->クライアント証明書が、サーバにより直接信頼された認証局ではなく、<span class="quote">「<span class="quote">中間</span>」</span>認証局で署名されている場合があります。
+   &lt;filename&gt;root.crt&lt;/filename&gt; file.
+</span>クライアント証明書が、サーバにより直接信頼された認証局ではなく、<span class="quote">「<span class="quote">中間</span>」</span>認証局で署名されている場合があります。
 こうした証明書を使用するためには、署名した認証局の証明書を、さらにその親の認証局の証明書を、サーバにより信頼される<span class="quote">「<span class="quote">ルート</span>」</span>もしくは<span class="quote">「<span class="quote">中間</span>」</span>認証局まで<code class="filename">postgresql.crt</code>ファイルに追加してください。
 サーバにより信頼されるとは、すなわちサーバの<code class="filename">root.crt</code>ファイルにある証明書により署名されているということです。
-  </p><p><!--
-   Note that the client's <filename>~/.postgresql/root.crt</> lists the top-level CAs
+  </p><p><span class="original">
+   Note that the client's &lt;filename&gt;~/.postgresql/root.crt&lt;/&gt; lists the top-level CAs
    that are considered trusted for signing server certificates.  In principle it need
    not list the CA that signed the client's certificate, though in most cases
    that CA would also be trusted for server certificates.
--->クライアントの<code class="filename">~/.postgresql/root.crt</code>には、サーバ証明書の署名に関して信頼できるとみなされる、最上位のCAが列挙されていることに注意してください。
+</span>クライアントの<code class="filename">~/.postgresql/root.crt</code>には、サーバ証明書の署名に関して信頼できるとみなされる、最上位のCAが列挙されていることに注意してください。
 原理的にはクライアント証明書を署名するCAを列挙する必要はありませんが、ほとんどの場合において、そのCAは同時にサーバ証明書に対しても信頼されています。
-  </p></div><div class="sect2" id="libpq-ssl-protection"><div class="titlepage"><div><div><h3 class="title">33.18.3. 異なるモードで提供される保護</h3></div></div></div><!--
-  <title>Protection Provided in Different Modes</title>
---><p><!--
-   The different values for the <literal>sslmode</> parameter provide different
+  </p></div><div class="sect2" id="libpq-ssl-protection"><div class="titlepage"><div><div><h3 class="title">33.18.3. 異なるモードで提供される保護</h3></div></div></div><span class="original">
+  &lt;title&gt;Protection Provided in Different Modes&lt;/title&gt;
+</span><p><span class="original">
+   The different values for the &lt;literal&gt;sslmode&lt;/&gt; parameter provide different
    levels of protection. SSL can provide
    protection against three types of attacks:
---><code class="literal">sslmode</code>パラメータ値を変更することで、異なったレベルの保護を提供します。
+</span><code class="literal">sslmode</code>パラメータ値を変更することで、異なったレベルの保護を提供します。
 SSLは以下の３種類の攻撃に対する保護を提供することができます。
 
-   </p><div class="variablelist"><dl class="variablelist"><dt><span class="term">盗聴</span></dt><dd><!--
-      <para>If a third party can examine the network traffic between the
+   </p><div class="variablelist"><dl class="variablelist"><dt><span class="term">盗聴</span></dt><dd><span class="original">
+      &lt;para&gt;If a third party can examine the network traffic between the
        client and the server, it can read both connection information (including
-       the user name and password) and the data that is passed. <acronym>SSL</>
+       the user name and password) and the data that is passed. &lt;acronym&gt;SSL&lt;/&gt;
        uses encryption to prevent this.
---><p>クライアント・サーバ間のネットワークトラフィックを第三者が監視することができれば、（ユーザ名とパスワードを含め）双方の接続情報と通過するデータを読み取ることができます。
+</span><p>クライアント・サーバ間のネットワークトラフィックを第三者が監視することができれば、（ユーザ名とパスワードを含め）双方の接続情報と通過するデータを読み取ることができます。
 <acronym class="acronym">SSL</acronym>はこれを防止するために暗号を使用します。
-      </p></dd><dt><span class="term">中間者攻撃（<acronym class="acronym">MITM</acronym>）</span></dt><dd><!--
-      <para>If a third party can modify the data while passing between the
+      </p></dd><dt><span class="term">中間者攻撃（<acronym class="acronym">MITM</acronym>）</span></dt><dd><span class="original">
+      &lt;para&gt;If a third party can modify the data while passing between the
        client and server, it can pretend to be the server and therefore see and
-       modify data <emphasis>even if it is encrypted</>. The third party can then
+       modify data &lt;emphasis&gt;even if it is encrypted&lt;/&gt;. The third party can then
        forward the connection information and data to the original server,
        making it impossible to detect this attack. Common vectors to do this
        include DNS poisoning and address hijacking, whereby the client is directed
        to a different server than intended. There are also several other
-       attack methods that can accomplish this. <acronym>SSL</> uses certificate
+       attack methods that can accomplish this. &lt;acronym&gt;SSL&lt;/&gt; uses certificate
        verification to prevent this, by authenticating the server to the client.
---><p>データがクライアント・サーバ間で渡されている時に、第三者がそのデータを変更できれば、サーバを装うことができ、従って<span class="emphasis"><em>たとえ暗号化されていても</em></span>データを理解し変更することができます。
+</span><p>データがクライアント・サーバ間で渡されている時に、第三者がそのデータを変更できれば、サーバを装うことができ、従って<span class="emphasis"><em>たとえ暗号化されていても</em></span>データを理解し変更することができます。
 第三者はそこで、この攻撃を検出不可能にする接続情報とデータを元のサーバに送ることができます。
 これを行う共通した媒介はDNSポイズニングとアドレス乗っ取りを含み、それに従ってクライアントは意図したサーバではなく異なったサーバに誘導されます。
 同時に、このことを成し遂げるいくつかの異なった攻撃も存在します。
 <acronym class="acronym">SSL</acronym>はクライアントに対しサーバを認証することで、この防止に証明書検証を使用します。
-      </p></dd><dt><span class="term">なりすまし</span></dt><dd><!--
-      <para>If a third party can pretend to be an authorized client, it can
+      </p></dd><dt><span class="term">なりすまし</span></dt><dd><span class="original">
+      &lt;para&gt;If a third party can pretend to be an authorized client, it can
        simply access data it should not have access to. Typically this can
-       happen through insecure password management. <acronym>SSL</> uses
+       happen through insecure password management. &lt;acronym&gt;SSL&lt;/&gt; uses
        client certificates to prevent this, by making sure that only holders
        of valid certificates can access the server.
---><p>第三者が認定されたクライアントを装うことができれば、それはアクセスしてはならないデータに簡単にアクセス可能になります。
+</span><p>第三者が認定されたクライアントを装うことができれば、それはアクセスしてはならないデータに簡単にアクセス可能になります。
 典型的にこれは心もとないパスワード管理から生じます。
 <acronym class="acronym">SSL</acronym>は有効な証明書の所持者のみサーバにアクセスできることを確実にすることで、この防止策としてクライアント証明書を使用します。
       </p></dd></dl></div><p>
-  </p><p><!--
+  </p><p><span class="original">
    For a connection to be known secure, SSL usage must be configured
-   on <emphasis>both the client and the server</> before the connection
+   on &lt;emphasis&gt;both the client and the server&lt;/&gt; before the connection
    is made. If it is only configured on the server, the client may end up
    sending sensitive information (e.g. passwords) before
    it knows that the server requires high security. In libpq, secure
    connections can be ensured
-   by setting the <literal>sslmode</> parameter to <literal>verify-full</> or
-   <literal>verify-ca</>, and providing the system with a root certificate to
-   verify against. This is analogous to using an <literal>https</>
-   <acronym>URL</> for encrypted web browsing.
--->信頼できるとされる接続では、SSLの使用を接続確立前に<span class="emphasis"><em>クライアントとサーバの双方において</em></span>設定されなければなりません。
+   by setting the &lt;literal&gt;sslmode&lt;/&gt; parameter to &lt;literal&gt;verify-full&lt;/&gt; or
+   &lt;literal&gt;verify-ca&lt;/&gt;, and providing the system with a root certificate to
+   verify against. This is analogous to using an &lt;literal&gt;https&lt;/&gt;
+   &lt;acronym&gt;URL&lt;/&gt; for encrypted web browsing.
+</span>信頼できるとされる接続では、SSLの使用を接続確立前に<span class="emphasis"><em>クライアントとサーバの双方において</em></span>設定されなければなりません。
 サーバのみに構成されると、クライアントはサーバが高度なセキュリティを必要とすることが判る以前に、（例えばパスワードのような）機密事項を扱う情報を結局送ることになります。
 libpqにおいて、<code class="literal">sslmode</code>パラメータを<code class="literal">verify-full</code>または<code class="literal">verify-ca</code>に設定し、そして対象を検証するためルート証明書をシステムに提供することで、安全な接続を確実に行うことができます。
 これは暗号化されたweb閲覧に対する<code class="literal">https</code> <acronym class="acronym">URL</acronym>の使用とよく似ています。
-  </p><p><!--
+  </p><p><span class="original">
    Once the server has been authenticated, the client can pass sensitive data.
    This means that up until this point, the client does not need to know if
    certificates will be used for authentication, making it safe to specify that
    only in the server configuration.
--->一度サーバが認証されると、クライアントは機密事項を扱うデータを送ることができます。
+</span>一度サーバが認証されると、クライアントは機密事項を扱うデータを送ることができます。
 この意味は、これまでクライアントは認証に証明書が使われているかどうかを知る必要がなく、サーバ構成においてのみこのことを指定しても安全だと言うことです。
-  </p><p><!--
-   All <acronym>SSL</> options carry overhead in the form of encryption and
+  </p><p><span class="original">
+   All &lt;acronym&gt;SSL&lt;/&gt; options carry overhead in the form of encryption and
    key-exchange, so there is a trade-off that has to be made between performance
-   and security. <xref linkend="libpq-ssl-sslmode-statements">
-   illustrates the risks the different <literal>sslmode</> values
+   and security. &lt;xref linkend="libpq-ssl-sslmode-statements"&gt;
+   illustrates the risks the different &lt;literal&gt;sslmode&lt;/&gt; values
    protect against, and what statement they make about security and overhead.
--->すべての<acronym class="acronym">SSL</acronym>オプションでは暗号化の形式と鍵交換といったオーバヘッドがかかります。
+</span>すべての<acronym class="acronym">SSL</acronym>オプションでは暗号化の形式と鍵交換といったオーバヘッドがかかります。
 このため性能と安全性との間で決定されるべきトレードオフがあります。
 <a class="xref" href="libpq-ssl.html#libpq-ssl-sslmode-statements" title="表33.1 SSLモードの説明">表 33.1</a>は異なる<code class="literal">sslmode</code>値が防御する危険性と、安全性とオーバヘッドに対する声明を示したものです。
-  </p><div class="table" id="libpq-ssl-sslmode-statements"><p class="title"><strong>表33.1 SSLモードの説明</strong></p><div class="table-contents"><!--
-   <title>SSL Mode Descriptions</title>
---><table class="table" summary="SSLモードの説明" border="1"><colgroup><col /><col /><col /><col /></colgroup><thead><tr><th><code class="literal">sslmode</code></th><th>盗聴防止</th><th><acronym class="acronym">MITM</acronym>防止</th><th>声明</th></tr></thead><tbody><tr><td><code class="literal">disable</code></td><td>いいえ</td><td>いいえ</td><td>セキュリティはどうでもよく、暗号化の負荷を払いたくない
+  </p><div class="table" id="libpq-ssl-sslmode-statements"><p class="title"><strong>表33.1 SSLモードの説明</strong></p><div class="table-contents"><span class="original">
+   &lt;title&gt;SSL Mode Descriptions&lt;/title&gt;
+</span><table class="table" summary="SSLモードの説明" border="1"><colgroup><col /><col /><col /><col /></colgroup><thead><tr><th><code class="literal">sslmode</code></th><th>盗聴防止</th><th><acronym class="acronym">MITM</acronym>防止</th><th>声明</th></tr></thead><tbody><tr><td><code class="literal">disable</code></td><td>いいえ</td><td>いいえ</td><td>セキュリティはどうでもよく、暗号化の負荷を払いたくない
       </td></tr><tr><td><code class="literal">allow</code></td><td>たぶん</td><td>いいえ</td><td>セキュリティはどうでもよいが、サーバがそれを強く要求するのであれば暗号化のオーバヘッドを払ってもよい
       </td></tr><tr><td><code class="literal">prefer</code></td><td>たぶん</td><td>いいえ</td><td>セキュリティはどうでもよいが、サーバがそれをサポートするのであれば暗号化のオーバヘッドを払ってもよい
       </td></tr><tr><td><code class="literal">require</code></td><td>はい</td><td>いいえ</td><td>データを暗号化して欲しい。そしてオーバヘッドも受け入れる。意図したサーバに常に接続することをネットワークが確実にしてくれると信用する
       </td></tr><tr><td><code class="literal">verify-ca</code></td><td>はい</td><td><code class="literal">CA</code>の規定に<code class="literal">依存</code></td><td>データを暗号化して欲しい。そしてオーバヘッドも受け入れる。信頼するサーバに確実に接続したい
       </td></tr><tr><td><code class="literal">verify-full</code></td><td>はい</td><td>はい</td><td>データを暗号化して欲しい。そしてオーバヘッドも受け入れる。信頼するサーバに接続すること、そのサーバが指定したものであることを確実にしたい
-       </td></tr></tbody></table></div></div><br class="table-break" /><p><!--
-   The difference between <literal>verify-ca</> and <literal>verify-full</>
-   depends on the policy of the root <acronym>CA</>. If a public
-   <acronym>CA</> is used, <literal>verify-ca</> allows connections to a server
-   that <emphasis>somebody else</> may have registered with the <acronym>CA</>.
-   In this case, <literal>verify-full</> should always be used. If
-   a local <acronym>CA</> is used, or even a self-signed certificate, using
-   <literal>verify-ca</> often provides enough protection.
---><code class="literal">verify-ca</code>と<code class="literal">verify-full</code>の差異はルート<acronym class="acronym">CA</acronym>の規定に依存します。
+       </td></tr></tbody></table></div></div><br class="table-break" /><p><span class="original">
+   The difference between &lt;literal&gt;verify-ca&lt;/&gt; and &lt;literal&gt;verify-full&lt;/&gt;
+   depends on the policy of the root &lt;acronym&gt;CA&lt;/&gt;. If a public
+   &lt;acronym&gt;CA&lt;/&gt; is used, &lt;literal&gt;verify-ca&lt;/&gt; allows connections to a server
+   that &lt;emphasis&gt;somebody else&lt;/&gt; may have registered with the &lt;acronym&gt;CA&lt;/&gt;.
+   In this case, &lt;literal&gt;verify-full&lt;/&gt; should always be used. If
+   a local &lt;acronym&gt;CA&lt;/&gt; is used, or even a self-signed certificate, using
+   &lt;literal&gt;verify-ca&lt;/&gt; often provides enough protection.
+</span><code class="literal">verify-ca</code>と<code class="literal">verify-full</code>の差異はルート<acronym class="acronym">CA</acronym>の規定に依存します。
 公的な<acronym class="acronym">CA</acronym>が使用されるとき、<code class="literal">verify-ca</code>はその<acronym class="acronym">CA</acronym>で<span class="emphasis"><em>他の誰か</em></span>が登録したかもしれないサーバへの接続を許可します。
 この場合、<code class="literal">verify-full</code>が常に使用されなければなりません。
 独自<acronym class="acronym">CA</acronym>が使用されるとき、または自己署名証明書であったとしても<code class="literal">verify-ca</code>は十分な防御策を提供します。
-  </p><p><!--
-   The default value for <literal>sslmode</> is <literal>prefer</>. As is shown
+  </p><p><span class="original">
+   The default value for &lt;literal&gt;sslmode&lt;/&gt; is &lt;literal&gt;prefer&lt;/&gt;. As is shown
    in the table, this makes no sense from a security point of view, and it only
    promises performance overhead if possible. It is only provided as the default
    for backward compatibility, and is not recommended in secure deployments.
---><code class="literal">sslmode</code>のデフォルト値は<code class="literal">prefer</code>です。
+</span><code class="literal">sslmode</code>のデフォルト値は<code class="literal">prefer</code>です。
 表で示したように、これはセキュリティの視点では意味がなく、可能であれば性能上のオーバヘッドを保証するだけです。
 これは後方互換性を提供するためのみにデフォルトとなっているもので、安全性確保の観点からは推奨されません。
-  </p></div><div class="sect2" id="libpq-ssl-fileusage"><div class="titlepage"><div><div><h3 class="title">33.18.4. SSLクライアントファイル使用方法</h3></div></div></div><!--
-  <title>SSL Client File Usage</title>
---><p><!--
-   <xref linkend="libpq-ssl-file-usage"> summarizes the files that are
+  </p></div><div class="sect2" id="libpq-ssl-fileusage"><div class="titlepage"><div><div><h3 class="title">33.18.4. SSLクライアントファイル使用方法</h3></div></div></div><span class="original">
+  &lt;title&gt;SSL Client File Usage&lt;/title&gt;
+</span><p><span class="original">
+   &lt;xref linkend="libpq-ssl-file-usage"&gt; summarizes the files that are
    relevant to the SSL setup on the client.
---><a class="xref" href="libpq-ssl.html#libpq-ssl-file-usage" title="表33.2 libpq/クライアントにおけるSSLファイルの使用方法">表 33.2</a>にクライアントにおけるSSL設定に関連するファイルをまとめます。
-  </p><div class="table" id="libpq-ssl-file-usage"><p class="title"><strong>表33.2 libpq/クライアントにおけるSSLファイルの使用方法</strong></p><div class="table-contents"><!--
-   <title>Libpq/Client SSL File Usage</title>
---><table class="table" summary="libpq/クライアントにおけるSSLファイルの使用方法" border="1"><colgroup><col /><col /><col /></colgroup><thead><tr><th>ファイル</th><th>内容</th><th>効果</th></tr></thead><tbody><tr><td><code class="filename">~/.postgresql/postgresql.crt</code></td><td>クライアント証明書</td><td>サーバにより要求されます</td></tr><tr><td><code class="filename">~/.postgresql/postgresql.key</code></td><td>クライアントの秘密キー</td><td>所有者により送信されるクライアント証明書を証明します。証明書の所有者が信頼できることを意味していません。</td></tr><tr><td><code class="filename">~/.postgresql/root.crt</code></td><td>信頼できる認証局</td><td>サーバ証明書が信頼できる認証局により署名されたか検査します。</td></tr><tr><td><code class="filename">~/.postgresql/root.crl</code></td><td>認証局により失効された証明書</td><td>サーバ証明書はこのリストにあってはいけません</td></tr></tbody></table></div></div><br class="table-break" /></div><div class="sect2" id="libpq-ssl-initialize"><div class="titlepage"><div><div><h3 class="title">33.18.5. SSLライブラリの初期化</h3></div></div></div><!--
-  <title>SSL Library Initialization</title>
---><p><!--
-   If your application initializes <literal>libssl</> and/or
-   <literal>libcrypto</> libraries and <application>libpq</application>
-   is built with <acronym>SSL</> support, you should call
-   <function>PQinitOpenSSL</> to tell <application>libpq</application>
-   that the <literal>libssl</> and/or <literal>libcrypto</> libraries
+</span><a class="xref" href="libpq-ssl.html#libpq-ssl-file-usage" title="表33.2 libpq/クライアントにおけるSSLファイルの使用方法">表 33.2</a>にクライアントにおけるSSL設定に関連するファイルをまとめます。
+  </p><div class="table" id="libpq-ssl-file-usage"><p class="title"><strong>表33.2 libpq/クライアントにおけるSSLファイルの使用方法</strong></p><div class="table-contents"><span class="original">
+   &lt;title&gt;Libpq/Client SSL File Usage&lt;/title&gt;
+</span><table class="table" summary="libpq/クライアントにおけるSSLファイルの使用方法" border="1"><colgroup><col /><col /><col /></colgroup><thead><tr><th>ファイル</th><th>内容</th><th>効果</th></tr></thead><tbody><tr><td><code class="filename">~/.postgresql/postgresql.crt</code></td><td>クライアント証明書</td><td>サーバにより要求されます</td></tr><tr><td><code class="filename">~/.postgresql/postgresql.key</code></td><td>クライアントの秘密キー</td><td>所有者により送信されるクライアント証明書を証明します。証明書の所有者が信頼できることを意味していません。</td></tr><tr><td><code class="filename">~/.postgresql/root.crt</code></td><td>信頼できる認証局</td><td>サーバ証明書が信頼できる認証局により署名されたか検査します。</td></tr><tr><td><code class="filename">~/.postgresql/root.crl</code></td><td>認証局により失効された証明書</td><td>サーバ証明書はこのリストにあってはいけません</td></tr></tbody></table></div></div><br class="table-break" /></div><div class="sect2" id="libpq-ssl-initialize"><div class="titlepage"><div><div><h3 class="title">33.18.5. SSLライブラリの初期化</h3></div></div></div><span class="original">
+  &lt;title&gt;SSL Library Initialization&lt;/title&gt;
+</span><p><span class="original">
+   If your application initializes &lt;literal&gt;libssl&lt;/&gt; and/or
+   &lt;literal&gt;libcrypto&lt;/&gt; libraries and &lt;application&gt;libpq&lt;/application&gt;
+   is built with &lt;acronym&gt;SSL&lt;/&gt; support, you should call
+   &lt;function&gt;PQinitOpenSSL&lt;/&gt; to tell &lt;application&gt;libpq&lt;/application&gt;
+   that the &lt;literal&gt;libssl&lt;/&gt; and/or &lt;literal&gt;libcrypto&lt;/&gt; libraries
    have been initialized by your application, so that
-   <application>libpq</application> will not also initialize those libraries.
--->   <!-- 原文コメント If this URL changes replace it with a URL to www.archive.org. --><!--
-   See <ulink
-   url="http://h71000.www7.hp.com/doc/83final/ba554_90007/ch04.html"></ulink>
+   &lt;application&gt;libpq&lt;/application&gt; will not also initialize those libraries.
+</span>   <span class="original"> 原文コメント If this URL changes replace it with a URL to www.archive.org. </span><span class="original">
+   See &lt;ulink
+   url="http://h71000.www7.hp.com/doc/83final/ba554_90007/ch04.html"&gt;&lt;/ulink&gt;
    for details on the SSL API.
--->
+</span>
 使用するアプリケーションが<code class="literal">libssl</code>と<code class="literal">libcrypto</code>の両方またはいずれか一方のライブラリを初期化し、<span class="application">libpq</span>が<acronym class="acronym">SSL</acronym>サポート付きで構築された場合、<code class="literal">libssl</code>と<code class="literal">libcrypto</code>の両方またはいずれか一方のライブラリはアプリケーションによって初期化されたことを<span class="application">libpq</span>に伝えるため<code class="function">PQinitOpenSSL</code>を呼び出さなければなりません。
 これにより、<span class="application">libpq</span>はこれらのライブラリを初期化しなくなります。
 SSL APIの詳細は<a class="ulink" href="http://h71000.www7.hp.com/doc/83final/BA554_90007/ch04.html" target="_top">http://h71000.www7.hp.com/doc/83final/BA554_90007/ch04.html</a>を参照してください。
   </p><p>   </p><div class="variablelist"><dl class="variablelist"><dt id="libpq-pqinitopenssl"><span class="term">      <code class="function">PQinitOpenSSL</code>
-      <a id="idm46270545793184" class="indexterm"></a>
-     </span></dt><dd><p><!--
+      <a id="idm44940633213744" class="indexterm"></a>
+     </span></dt><dd><p><span class="original">
        Allows applications to select which security libraries to initialize.
--->アプリケーションがどのセキュリティライブラリを初期化するか選択することができます。
+</span>アプリケーションがどのセキュリティライブラリを初期化するか選択することができます。
 </p><pre class="synopsis">void PQinitOpenSSL(int do_ssl, int do_crypto);</pre><p>
-      </p><p><!--
-       When <parameter>do_ssl</> is non-zero, <application>libpq</application>
-       will initialize the <application>OpenSSL</> library before first
-       opening a database connection.  When <parameter>do_crypto</> is
-       non-zero, the <literal>libcrypto</> library will be initialized.  By
-       default (if <function>PQinitOpenSSL</> is not called), both libraries
+      </p><p><span class="original">
+       When &lt;parameter&gt;do_ssl&lt;/&gt; is non-zero, &lt;application&gt;libpq&lt;/application&gt;
+       will initialize the &lt;application&gt;OpenSSL&lt;/&gt; library before first
+       opening a database connection.  When &lt;parameter&gt;do_crypto&lt;/&gt; is
+       non-zero, the &lt;literal&gt;libcrypto&lt;/&gt; library will be initialized.  By
+       default (if &lt;function&gt;PQinitOpenSSL&lt;/&gt; is not called), both libraries
        are initialized.  When SSL support is not compiled in, this function is
        present but does nothing.
---><em class="parameter"><code>do_ssl</code></em>が非ゼロの時、<span class="application">libpq</span>は最初のデータベース接続を開始する以前に<span class="application">OpenSSL</span>ライブラリを初期化します。
+</span><em class="parameter"><code>do_ssl</code></em>が非ゼロの時、<span class="application">libpq</span>は最初のデータベース接続を開始する以前に<span class="application">OpenSSL</span>ライブラリを初期化します。
 <em class="parameter"><code>do_crypto</code></em>が非ゼロの時、<code class="literal">libcrypto</code>ライブラリが初期化されます。
 デフォルトでは（<code class="function">PQinitOpenSSL</code>が呼ばれない場合）、両方のライブラリが初期化されます。
 SSLサポートがコンパイルされていない場合、この関数は存在しますが何もしません。
-      </p><p><!--
-       If your application uses and initializes either <application>OpenSSL</>
-       or its underlying <literal>libcrypto</> library, you <emphasis>must</>
+      </p><p><span class="original">
+       If your application uses and initializes either &lt;application&gt;OpenSSL&lt;/&gt;
+       or its underlying &lt;literal&gt;libcrypto&lt;/&gt; library, you &lt;emphasis&gt;must&lt;/&gt;
        call this function with zeroes for the appropriate parameter(s)
        before first opening a database connection.  Also be sure that you
        have done that initialization before opening a database connection.
--->使用するアプリケーションが<span class="application">OpenSSL</span>またはその基礎をなす<code class="literal">libcrypto</code>ライブラリのいずれかを使用し、そして初期化するのであれば、最初のデータベース接続開始以前に、適切なパラメータをゼロにしてこの関数を呼び出さなければ<span class="emphasis"><em>なりません</em></span>。
+</span>使用するアプリケーションが<span class="application">OpenSSL</span>またはその基礎をなす<code class="literal">libcrypto</code>ライブラリのいずれかを使用し、そして初期化するのであれば、最初のデータベース接続開始以前に、適切なパラメータをゼロにしてこの関数を呼び出さなければ<span class="emphasis"><em>なりません</em></span>。
 同時に、データベース接続開始前に初期化を行ったことの確認をしてください。
       </p></dd><dt id="libpq-pqinitssl"><span class="term">      <code class="function">PQinitSSL</code>
-      <a id="idm46270545780896" class="indexterm"></a>
-     </span></dt><dd><p><!--
+      <a id="idm44940633201392" class="indexterm"></a>
+     </span></dt><dd><p><span class="original">
        Allows applications to select which security libraries to initialize.
--->アプリケーションがどのセキュリティライブラリを初期化するか選択することができます。
+</span>アプリケーションがどのセキュリティライブラリを初期化するか選択することができます。
 </p><pre class="synopsis">void PQinitSSL(int do_ssl);</pre><p>
-      </p><p><!--
+      </p><p><span class="original">
        This function is equivalent to
-       <literal>PQinitOpenSSL(do_ssl, do_ssl)</>.
+       &lt;literal&gt;PQinitOpenSSL(do_ssl, do_ssl)&lt;/&gt;.
        It is sufficient for applications that initialize both or neither
-       of <application>OpenSSL</> and <literal>libcrypto</>.
--->この関数は<code class="literal">PQinitOpenSSL(do_ssl, do_ssl)</code>と等価です。
+       of &lt;application&gt;OpenSSL&lt;/&gt; and &lt;literal&gt;libcrypto&lt;/&gt;.
+</span>この関数は<code class="literal">PQinitOpenSSL(do_ssl, do_ssl)</code>と等価です。
 <span class="application">OpenSSL</span>および<code class="literal">libcrypto</code>の両方を初期化する、もしくは両方ともしないアプリケーションにとっては（この関数で）十分です。
-      </p><p><!--
-       <function>PQinitSSL</> has been present since
-       <productname>PostgreSQL</> 8.0, while <function>PQinitOpenSSL</>
-       was added in <productname>PostgreSQL</> 8.4, so <function>PQinitSSL</>
+      </p><p><span class="original">
+       &lt;function&gt;PQinitSSL&lt;/&gt; has been present since
+       &lt;productname&gt;PostgreSQL&lt;/&gt; 8.0, while &lt;function&gt;PQinitOpenSSL&lt;/&gt;
+       was added in &lt;productname&gt;PostgreSQL&lt;/&gt; 8.4, so &lt;function&gt;PQinitSSL&lt;/&gt;
        might be preferable for applications that need to work with older
-       versions of <application>libpq</application>.
---><span class="productname">PostgreSQL</span> 8.0以降、<code class="function">PQinitSSL</code>は含まれていますが、<code class="function">PQinitOpenSSL</code>は<span class="productname">PostgreSQL</span> 8.4で追加されました。
+       versions of &lt;application&gt;libpq&lt;/application&gt;.
+</span><span class="productname">PostgreSQL</span> 8.0以降、<code class="function">PQinitSSL</code>は含まれていますが、<code class="function">PQinitOpenSSL</code>は<span class="productname">PostgreSQL</span> 8.4で追加されました。
 従って、旧バージョンの<span class="application">libpq</span>で動かす必要があるアプリケーションでは<code class="function">PQinitSSL</code>の方が好ましいかもしれません。
       </p></dd></dl></div><p>
   </p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="libpq-ldap.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="libpq.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="libpq-threading.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">33.17. 接続パラメータのLDAP検索 </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> 33.19. スレッド化プログラムの振舞い</td></tr></table></div></body></html>
