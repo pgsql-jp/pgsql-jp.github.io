@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>34.4. サーバ側の関数</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="lo-interfaces.html" title="34.3. クライアントインタフェース" /><link rel="next" href="lo-examplesect.html" title="34.5. サンプルプログラム" /></head><body><div xmlns="http://www.w3.org/TR/xhtml1/transitional" class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="5" align="center">34.4. サーバ側の関数</th></tr><tr><td width="10%" align="left"><a accesskey="p" href="lo-interfaces.html" title="34.3. クライアントインタフェース">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="largeobjects.html" title="第34章 ラージオブジェクト">上へ</a></td><th width="60%" align="center">第34章 ラージオブジェクト</th><td width="10%" align="right"><a accesskey="h" href="index.html" title="PostgreSQL 10.0文書">ホーム</a></td><td width="10%" align="right"> <a accesskey="n" href="lo-examplesect.html" title="34.5. サンプルプログラム">次へ</a></td></tr></table><hr></hr></div><div class="sect1" id="lo-funcs"><div class="titlepage"><div><div><h2 class="title" style="clear: both">34.4. サーバ側の関数</h2></div></div></div><!--
+<title>Server-side Functions</title>
+--><p><!--
+   Server-side functions tailored for manipulating large objects from SQL are
+   listed in <xref linkend="lo-funcs-table">.
+-->SQLからラージオブジェクトを操作するのに適応したサーバ側の関数を<a class="xref" href="lo-funcs.html#lo-funcs-table" title="表34.1 SQL向けラージオブジェクト関数">表 34.1</a>に列挙します。
+  </p><div class="table" id="lo-funcs-table"><p class="title"><strong>表34.1 SQL向けラージオブジェクト関数</strong></p><div class="table-contents"><!--
+   <title>SQL-oriented Large Object Functions</title>
+--><table class="table" summary="SQL向けラージオブジェクト関数" border="1"><colgroup><col /><col /><col /><col /><col /></colgroup><thead><tr><th>関数</th><th>戻り値の型</th><th>説明</th><th>例</th><th>結果</th></tr></thead><tbody><tr><td>       <a id="idm46270545441360" class="indexterm"></a>
+       <code class="literal"><code class="function">lo_from_bytea(<em class="parameter"><code>loid</code></em> <code class="type">oid</code>, <em class="parameter"><code>string</code></em> <code class="type">bytea</code>)</code></code>
+      </td><td><code class="type">oid</code></td><td><!--
+       Create a large object and store data there, returning its OID.
+       Pass <literal>0</> to have the system choose an OID.
+-->ラージオブジェクトを作成してそこにデータを格納し、そのOIDを返す。
+システムにOIDを選ばせるには<code class="literal">0</code>を渡す。
+      </td><td><code class="literal">lo_from_bytea(0, E'\\xffffff00')</code></td><td><code class="literal">24528</code></td></tr><tr><td>       <a id="idm46270545433728" class="indexterm"></a>
+       <code class="literal"><code class="function">lo_put(<em class="parameter"><code>loid</code></em> <code class="type">oid</code>, <em class="parameter"><code>offset</code></em> <code class="type">bigint</code>, <em class="parameter"><code>str</code></em> <code class="type">bytea</code>)</code></code>
+      </td><td><code class="type">void</code></td><td><!--
+       Write data at the given offset.
+-->与えられたオフセットにデータを書き込む。
+      </td><td><code class="literal">lo_put(24528, 1, E'\\xaa')</code></td><td> </td></tr><tr><td>       <a id="idm46270545426352" class="indexterm"></a>
+       <code class="literal"><code class="function">lo_get(<em class="parameter"><code>loid</code></em> <code class="type">oid</code> [<span class="optional">, <em class="parameter"><code>from</code></em> <code class="type">bigint</code>, <em class="parameter"><code>for</code></em> <code class="type">int</code></span>])</code></code>
+      </td><td><code class="type">bytea</code></td><td><!--
+       Extract contents or a substring thereof.
+-->そこから内容または部分文字列を取り出す。
+      </td><td><code class="literal">lo_get(24528, 0, 3)</code></td><td><code class="literal">\xffaaff</code></td></tr></tbody></table></div></div><br class="table-break" /><p><!--
+   There are additional server-side functions corresponding to each of the
+   client-side functions described earlier; indeed, for the most part the
+   client-side functions are simply interfaces to the equivalent server-side
+   functions.  The ones just as convenient to call via SQL commands are
+   <function>lo_creat</function><indexterm><primary>lo_creat</></>,
+   <function>lo_create</function>,
+   <function>lo_unlink</function><indexterm><primary>lo_unlink</></>,
+   <function>lo_import</function><indexterm><primary>lo_import</></>, and
+   <function>lo_export</function><indexterm><primary>lo_export</></>.
+   Here are examples of their use:
+
+-->これまで説明したクライアント側の関数それぞれに対応する、追加のサーバ側の関数があります。
+実際、ほとんどのクライアント側の関数は対応するサーバ側の関数に対する単なるインタフェースです。
+SQLコマンドからの呼び出しが便利な関数は、<code class="function">lo_creat</code><a id="idm46270545416272" class="indexterm"></a>、<code class="function">lo_create</code>、<code class="function">lo_unlink</code><a id="idm46270545414176" class="indexterm"></a>、<code class="function">lo_import</code><a id="idm46270545412768" class="indexterm"></a>、<code class="function">lo_export</code><a id="idm46270545411360" class="indexterm"></a>です。
+これらの使用例を示します。
+</p><pre class="programlisting">CREATE TABLE image (
+    name            text,
+    raster          oid
+);
+<!--
+SELECT lo_creat(-1);       &#045;- returns OID of new, empty large object
+-->
+SELECT lo_creat(-1);       -- 新しい空のラージオブジェクトのOIDを返します
+<!--
+SELECT lo_create(43213);   &#045;- attempts to create large object with OID 43213
+-->
+SELECT lo_create(43213);   -- OID 43213でラージオブジェクトの生成を試行します
+<!--
+SELECT lo_unlink(173454);  &#045;- deletes large object with OID 173454
+-->
+SELECT lo_unlink(173454);  -- OID 173454のラージオブジェクトを削除します
+
+INSERT INTO image (name, raster)
+    VALUES ('beautiful image', lo_import('/etc/motd'));
+<!--
+INSERT INTO image (name, raster)  &#045;&#045; same as above, but specify OID to use
+    VALUES ('beautiful image', lo_import('/etc/motd', 68583));
+-->
+INSERT INTO image (name, raster)  -- 上と同じですが使用するOIDを指定します
+    VALUES ('beautiful image', lo_import('/etc/motd', 68583));
+
+SELECT lo_export(image.raster, '/tmp/motd') FROM image
+    WHERE name = 'beautiful image';</pre><p>
+  </p><p><!--
+    The server-side <function>lo_import</function> and
+    <function>lo_export</function> functions behave considerably differently
+    from their client-side analogs.  These two functions read and write files
+    in the server's file system, using the permissions of the database's
+    owning user.  Therefore, their use is restricted to superusers.  In
+    contrast, the client-side import and export functions read and write files
+    in the client's file system, using the permissions of the client program.
+    The client-side functions do not require superuser privilege.
+-->サーバ側の<code class="function">lo_import</code>および<code class="function">lo_export</code>関数の動作はクライアント側の関数とかなり異なります。
+この2つの関数はサーバのファイルシステム上のファイルの読み書きを、データベースを所有するユーザの権限で行います。
+したがって、これらの使用はスーパーユーザに限定されています。
+対照的に、クライアント側のインポート関数とエクスポート関数はクライアントのファイルシステム上のファイルをクライアントプログラムの権限で読み書きします。
+このクライアント側の関数はスーパーユーザ権限を必要としません。
+  </p><p><!--
+    The functionality of <function>lo_read</function> and
+    <function>lo_write</function> is also available via server-side calls,
+    but the names of the server-side functions differ from the client side
+    interfaces in that they do not contain underscores.  You must call
+    these functions as <function>loread</> and <function>lowrite</>.
+-->また<code class="function">lo_read</code>および<code class="function">lo_write</code>の機能はサーバサイドの呼び出しを介しても利用することができます。
+しかしサーバサイドの関数名はクライアント側のインタフェースとは異なり、アンダースコアが含まれません。
+<code class="function">loread</code>および<code class="function">lowrite</code>としてこれらの関数を呼び出さなければなりません。
+  </p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="lo-interfaces.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="largeobjects.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="lo-examplesect.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">34.3. クライアントインタフェース </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> 34.5. サンプルプログラム</td></tr></table></div></body></html>
