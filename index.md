@@ -15,7 +15,7 @@ layout: default
 
 | HTML （オンライン）           | PDF                                           | EPUB                                         | 更新日     |
 |:------------------------------|:---------------------------------------------:|:--------------------------------------------:|:----------:|
-| [9.6.5](jpug-doc/9.6.5/html/) | [PDF](jpug-doc/9.6.5/postgresql-9.6.5-A4.pdf) | [EPUB](jpug-doc/9.6.5/postgresql-9.6.5.epub) | 2017-10-04 |
+| [9.6.5](jpug-doc/9.6.5/html/) | [PDF](jpug-doc/9.6.5/postgresql-9.6.5-A4.pdf) | [EPUB](jpug-doc/9.6.5/postgresql-9.6.5.epub) | 2017-10-18 |
 | [9.6.4](jpug-doc/9.6.4/html/) | [PDF](jpug-doc/9.6.4/postgresql-9.6.4-A4.pdf) | [EPUB](jpug-doc/9.6.4/postgresql-9.6.4.epub) | 2017-09-13 |
 | [9.6.3](jpug-doc/9.6.3/html/) | [PDF](jpug-doc/9.6.3/postgresql-9.6.3-A4.pdf) | [EPUB](jpug-doc/9.6.3/postgresql-9.6.3.epub) | 2017-08-10 |
 | [9.6.2](jpug-doc/9.6.2/html/) | [PDF](jpug-doc/9.6.2/postgresql-9.6.2-A4.pdf) | [EPUB](jpug-doc/9.6.2/postgresql-9.6.2.epub) | 2017-05-13 |
