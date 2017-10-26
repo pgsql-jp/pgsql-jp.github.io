@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>18.4. カーネルリソースの管理</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="server-start.html" title="18.3. データベースサーバの起動" /><link rel="next" href="server-shutdown.html" title="18.5. サーバのシャットダウン" /></head><body><div xmlns="http://www.w3.org/TR/xhtml1/transitional" class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="5" align="center">18.4. カーネルリソースの管理</th></tr><tr><td width="10%" align="left"><a accesskey="p" href="server-start.html" title="18.3. データベースサーバの起動">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="runtime.html" title="第18章 サーバの準備と運用">上へ</a></td><th width="60%" align="center">第18章 サーバの準備と運用</th><td width="10%" align="right"><a accesskey="h" href="index.html" title="PostgreSQL 10.0文書">ホーム</a></td><td width="10%" align="right"> <a accesskey="n" href="server-shutdown.html" title="18.5. サーバのシャットダウン">次へ</a></td></tr></table><hr></hr></div><div class="sect1" id="kernel-resources"><div class="titlepage"><div><div><h2 class="title" style="clear: both">18.4. カーネルリソースの管理</h2></div></div></div><div class="toc"><dl class="toc"><dt><span class="sect2"><a href="kernel-resources.html#sysvipc">18.4.1. 共有メモリとセマフォ</a></span></dt><dt><span class="sect2"><a href="kernel-resources.html#systemd-removeipc">18.4.2. systemd RemoveIPC</a></span></dt><dt><span class="sect2"><a href="kernel-resources.html#idm46014663696128">18.4.3. リソースの制限</a></span></dt><dt><span class="sect2"><a href="kernel-resources.html#linux-memory-overcommit">18.4.4. Linuxのメモリオーバーコミット</a></span></dt><dt><span class="sect2"><a href="kernel-resources.html#linux-huge-pages">18.4.5. LinuxのHugePages</a></span></dt></dl></div><span class="original">
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>18.4. カーネルリソースの管理</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="server-start.html" title="18.3. データベースサーバの起動" /><link rel="next" href="server-shutdown.html" title="18.5. サーバのシャットダウン" /></head><body><div xmlns="http://www.w3.org/TR/xhtml1/transitional" class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="5" align="center">18.4. カーネルリソースの管理</th></tr><tr><td width="10%" align="left"><a accesskey="p" href="server-start.html" title="18.3. データベースサーバの起動">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="runtime.html" title="第18章 サーバの準備と運用">上へ</a></td><th width="60%" align="center">第18章 サーバの準備と運用</th><td width="10%" align="right"><a accesskey="h" href="index.html" title="PostgreSQL 10.0文書">ホーム</a></td><td width="10%" align="right"> <a accesskey="n" href="server-shutdown.html" title="18.5. サーバのシャットダウン">次へ</a></td></tr></table><hr></hr></div><div class="sect1" id="kernel-resources"><div class="titlepage"><div><div><h2 class="title" style="clear: both">18.4. カーネルリソースの管理</h2></div></div></div><div class="toc"><dl class="toc"><dt><span class="sect2"><a href="kernel-resources.html#sysvipc">18.4.1. 共有メモリとセマフォ</a></span></dt><dt><span class="sect2"><a href="kernel-resources.html#systemd-removeipc">18.4.2. systemd RemoveIPC</a></span></dt><dt><span class="sect2"><a href="kernel-resources.html#idm45388804276128">18.4.3. リソースの制限</a></span></dt><dt><span class="sect2"><a href="kernel-resources.html#linux-memory-overcommit">18.4.4. Linuxのメモリオーバーコミット</a></span></dt><dt><span class="sect2"><a href="kernel-resources.html#linux-huge-pages">18.4.5. LinuxのHugePages</a></span></dt></dl></div><span class="original">
   &lt;title&gt;Managing Kernel Resources&lt;/title&gt;
 </span><p><span class="original">
    &lt;productname&gt;PostgreSQL&lt;/&gt; can sometimes exhaust various operating system
@@ -11,7 +11,7 @@
 本節では、<span class="productname">PostgreSQL</span>で使用されるカーネルリソース、およびカーネルリソース消費に関連した問題を解消する時に取ることができる手順について説明します。
   </p><div class="sect2" id="sysvipc"><div class="titlepage"><div><div><h3 class="title">18.4.1. 共有メモリとセマフォ</h3></div></div></div><span class="original">
    &lt;title&gt;Shared Memory and Semaphores&lt;/title&gt;
-</span><a id="idm46014663903792" class="indexterm"></a><a id="idm46014663902528" class="indexterm"></a><p>    <span class="productname">PostgreSQL</span> requires the operating system to provide
+</span><a id="idm45388804483824" class="indexterm"></a><a id="idm45388804482560" class="indexterm"></a><p>    <span class="productname">PostgreSQL</span> requires the operating system to provide
     inter-process communication (<acronym class="acronym">IPC</acronym>) features, specifically
     shared memory and semaphores.  Unix-derived systems typically provide
     <span class="quote">「<span class="quote"><span class="systemitem">System V</span></span>」</span> <acronym class="acronym">IPC</acronym>,
@@ -139,7 +139,7 @@
    </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><span class="systemitem">AIX</span><span class="original">
       &lt;indexterm&gt;&lt;primary&gt;AIX&lt;/&gt;&lt;secondary&gt;IPC configuration&lt;/&gt;&lt;/&gt;
 </span>
-      <a id="idm46014663835840" class="indexterm"></a>
+      <a id="idm45388804415840" class="indexterm"></a>
       </span></dt><dd><p><span class="original">
         At least as of version 5.1, it should not be necessary to do
         any special configuration for such parameters as
@@ -161,7 +161,7 @@
        </p></dd><dt><span class="term"><span class="systemitem">FreeBSD</span><span class="original">
       &lt;indexterm&gt;&lt;primary&gt;FreeBSD&lt;/&gt;&lt;secondary&gt;IPC configuration&lt;/&gt;&lt;/&gt;
 </span>
-      <a id="idm46014663827568" class="indexterm"></a>
+      <a id="idm45388804407568" class="indexterm"></a>
       </span></dt><dd><p><span class="original">
         The default settings can be changed using
         the &lt;command&gt;sysctl&lt;/command&gt; or
@@ -219,7 +219,7 @@ kern.ipc.semmnu=256</pre><p><span class="original">
        </p></dd><dt><span class="term"><span class="systemitem">NetBSD</span><span class="original">
       &lt;indexterm&gt;&lt;primary&gt;NetBSD&lt;/&gt;&lt;secondary&gt;IPC configuration&lt;/&gt;&lt;/&gt;
 </span>
-      <a id="idm46014663803632" class="indexterm"></a>
+      <a id="idm45388804383632" class="indexterm"></a>
       </span></dt><dd><p><span class="original">
         In &lt;systemitem class="osname"&gt;NetBSD&lt;/&gt; 5.0 and later,
         IPC parameters can be adjusted using &lt;command&gt;sysctl&lt;/command&gt;,
@@ -247,7 +247,7 @@ kern.ipc.semmnu=256</pre><p><span class="original">
        </p></dd><dt><span class="term"><span class="systemitem">OpenBSD</span><span class="original">
       &lt;indexterm&gt;&lt;primary&gt;OpenBSD&lt;/&gt;&lt;secondary&gt;IPC configuration&lt;/&gt;&lt;/&gt;
 </span>
-      <a id="idm46014663789136" class="indexterm"></a>
+      <a id="idm45388804369136" class="indexterm"></a>
       </span></dt><dd><p><span class="original">
         The options &lt;varname&gt;SYSVSHM&lt;/&gt; and &lt;varname&gt;SYSVSEM&lt;/&gt; need
         to be enabled when the kernel is compiled. (They are by
@@ -276,7 +276,7 @@ option        SEMMAP=256</pre><p>
        </p></dd><dt><span class="term"><span class="systemitem">HP-UX</span><span class="original">
       &lt;indexterm&gt;&lt;primary&gt;HP-UX&lt;/&gt;&lt;secondary&gt;IPC configuration&lt;/&gt;&lt;/&gt;
 </span>
-      <a id="idm46014663781056" class="indexterm"></a>
+      <a id="idm45388804361056" class="indexterm"></a>
       </span></dt><dd><p><span class="original">
         The default settings tend to suffice for normal installations.
         On &lt;productname&gt;HP-UX&lt;/&gt; 10, the factory default for
@@ -295,7 +295,7 @@ option        SEMMAP=256</pre><p>
        </p></dd><dt><span class="term"><span class="systemitem">Linux</span><span class="original">
       &lt;indexterm&gt;&lt;primary&gt;Linux&lt;/&gt;&lt;secondary&gt;IPC configuration&lt;/&gt;&lt;/&gt;
 </span>
-      <a id="idm46014663771776" class="indexterm"></a>
+      <a id="idm45388804351776" class="indexterm"></a>
       </span></dt><dd><p><span class="original">
         The default maximum segment size is 32 MB, and the
         default maximum total size is 2097152
@@ -331,7 +331,7 @@ option        SEMMAP=256</pre><p>
         do not require changes.
 </span>他のデフォルトはかなり豊富なサイズですので、通常は変更する必要はありません。
        </p></dd><dt><span class="term"><span class="systemitem">macOS</span>
-      <a id="idm46014663755216" class="indexterm"></a>
+      <a id="idm45388804335216" class="indexterm"></a>
       </span></dt><dd><p><span class="original">
         The recommended method for configuring shared memory in macOS
         is to create a file named &lt;filename&gt;/etc/sysctl.conf&lt;/&gt;,
@@ -389,7 +389,7 @@ sysctl -w kern.sysv.shmall</pre><p><span class="original">
         &lt;filename&gt;/System/Library/StartupItems/SystemTuning/SystemTuning&lt;/&gt;.
 </span>OS X 10.2以前では、代わりに<code class="filename">/System/Library/StartupItems/SystemTuning/SystemTuning</code>ファイル内にあるこれらのコマンドを編集してください。
        </p></dd><dt><span class="term"><span class="systemitem">Solaris</span> 2.6から2.9 (Solaris 6からSolaris 9)
-      <a id="idm46014663737232" class="indexterm"></a>
+      <a id="idm45388804317232" class="indexterm"></a>
       </span></dt><dd><p><span class="original">
         The relevant settings can be changed in
         &lt;filename&gt;/etc/system&lt;/&gt;, for example:
@@ -449,7 +449,7 @@ project.max-msg-ids=(priv,4096,deny)</pre><p>
         information on &lt;literal&gt;projects&lt;/&gt; and &lt;command&gt;prctl&lt;/&gt;.
 </span>さらに、ゾーン内で<span class="productname">PostgreSQL</span>を実行している場合、ゾーンのリソース使用上限も上げる必要があるかもしれません。
 <code class="literal">projects</code>と<code class="command">prctl</code>については<em class="citetitle">System Administrator's Guide</em>の第2章 プロジェクトとタスクを参照してください。
-       </p></dd></dl></div></div><div class="sect2" id="systemd-removeipc"><div class="titlepage"><div><div><h3 class="title">18.4.2. systemd RemoveIPC</h3></div></div></div><a id="idm46014663713168" class="indexterm"></a><p>    If <span class="productname">systemd</span> is in use, some care must be taken
+       </p></dd></dl></div></div><div class="sect2" id="systemd-removeipc"><div class="titlepage"><div><div><h3 class="title">18.4.2. systemd RemoveIPC</h3></div></div></div><a id="idm45388804293168" class="indexterm"></a><p>    If <span class="productname">systemd</span> is in use, some care must be taken
     that IPC resources (shared memory and semaphores) are not prematurely
     removed by the operating system.  This is especially of concern when
     installing PostgreSQL from source.  Users of distribution packages of
@@ -489,7 +489,7 @@ project.max-msg-ids=(priv,4096,deny)</pre><p>
     configuration file.
    </p><div class="caution"><h3 class="title">注意</h3><p>     At least one of these two things has to be ensured, or the PostgreSQL
      server will be very unreliable.
-    </p></div></div><div class="sect2" id="idm46014663696128"><div class="titlepage"><div><div><h3 class="title">18.4.3. リソースの制限</h3></div></div></div><span class="original">
+    </p></div></div><div class="sect2" id="idm45388804276128"><div class="titlepage"><div><div><h3 class="title">18.4.3. リソースの制限</h3></div></div></div><span class="original">
    &lt;title&gt;Resource Limits&lt;/title&gt;
 </span><p><span class="original">
     Unix-like operating systems enforce various kinds of resource limits
@@ -581,7 +581,7 @@ BSD派生システム上では<code class="filename">/etc/login.conf</code>フ�
 この発生を検知し、システム全体の制限の変更を望まない場合は、<span class="productname">PostgreSQL</span>の<a class="xref" href="runtime-config-resource.html#guc-max-files-per-process">max_files_per_process</a>設定パラメータを設定し、オープンファイルの消費を制限することができます。
    </p></div><div class="sect2" id="linux-memory-overcommit"><div class="titlepage"><div><div><h3 class="title">18.4.4. Linuxのメモリオーバーコミット</h3></div></div></div><span class="original">
    &lt;title&gt;Linux Memory Overcommit&lt;/title&gt;
-</span><a id="idm46014663670064" class="indexterm"></a><a id="idm46014663669200" class="indexterm"></a><a id="idm46014663668496" class="indexterm"></a><p><span class="original">
+</span><a id="idm45388804250128" class="indexterm"></a><a id="idm45388804249312" class="indexterm"></a><a id="idm45388804248608" class="indexterm"></a><p><span class="original">
     In Linux 2.4 and later, the default virtual memory behavior is not
     optimal for &lt;productname&gt;PostgreSQL&lt;/productname&gt;. Because of the
     way that the kernel implements memory overcommit, the kernel might
