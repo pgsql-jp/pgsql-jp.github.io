@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>ALTER TABLE</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="sql-altersystem.html" title="ALTER SYSTEM" /><link rel="next" href="sql-altertablespace.html" title="ALTER TABLESPACE" /></head><body><div xmlns="http://www.w3.org/TR/xhtml1/transitional" class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="5" align="center">ALTER TABLE</th></tr><tr><td width="10%" align="left"><a accesskey="p" href="sql-altersystem.html" title="ALTER SYSTEM">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="sql-commands.html" title="SQLコマンド">上へ</a></td><th width="60%" align="center">SQLコマンド</th><td width="10%" align="right"><a accesskey="h" href="index.html" title="PostgreSQL 10.0文書">ホーム</a></td><td width="10%" align="right"> <a accesskey="n" href="sql-altertablespace.html" title="ALTER TABLESPACE">次へ</a></td></tr></table><hr></hr></div><div class="refentry" id="sql-altertable"><div class="titlepage"></div><a id="idm45388778960192" class="indexterm"></a><div class="refnamediv"><h2><span class="refentrytitle">ALTER TABLE</span></h2><p>ALTER TABLE<span class="original">
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>ALTER TABLE</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="sql-altersystem.html" title="ALTER SYSTEM" /><link rel="next" href="sql-altertablespace.html" title="ALTER TABLESPACE" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 10.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="sql-commands.html" title="SQLコマンド">SQLコマンド</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 10.0 &#10;                      sql-altertable.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="sql-altersystem.html" title="ALTER SYSTEM">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="sql-commands.html" title="SQLコマンド">上へ</a></td><td width="60%" align="center">ALTER TABLE</td><td width="20%" align="right"> <a accesskey="n" href="sql-altertablespace.html" title="ALTER TABLESPACE">次へ</a></td></tr></table><hr /></div><div class="refentry" id="sql-altertable"><div class="titlepage"></div><a id="idm45803918707424" class="indexterm"></a><div class="refnamediv"><h2><span class="refentrytitle">ALTER TABLE</span></h2><p>ALTER TABLE<span class="original">
   &lt;refpurpose&gt;change the definition of a table&lt;/refpurpose&gt;
 </span> — テーブル定義を変更する</p></div><div class="refsynopsisdiv"><h2>概要</h2><pre class="synopsis">ALTER TABLE [ IF EXISTS ] [ ONLY ] <em class="replaceable"><code>name</code></em> [ * ]
     <em class="replaceable"><code>action</code></em> [, ... ]
@@ -73,7 +74,7 @@ ALTER TABLE [ IF EXISTS ] <em class="replaceable"><code>name</code></em>
 
     [ CONSTRAINT <em class="replaceable"><code>constraint_name</code></em> ]
     { UNIQUE | PRIMARY KEY } USING INDEX <em class="replaceable"><code>index_name</code></em>
-    [ DEFERRABLE | NOT DEFERRABLE ] [ INITIALLY DEFERRED | INITIALLY IMMEDIATE ]</pre></div><div class="refsect1" id="idm45388778900912"><h2>説明</h2><span class="original">
+    [ DEFERRABLE | NOT DEFERRABLE ] [ INITIALLY DEFERRED | INITIALLY IMMEDIATE ]</pre></div><div class="refsect1" id="idm45803918648144"><h2>説明</h2><span class="original">
   &lt;title&gt;Description&lt;/title&gt;
 </span><p><span class="original">
    &lt;command&gt;ALTER TABLE&lt;/command&gt; changes the definition of an existing table.
@@ -108,6 +109,7 @@ ALTER TABLE [ IF EXISTS ] <em class="replaceable"><code>name</code></em>
       is issued instead.
 </span>この構文を使用すると、テーブルから列を削除できます。
 削除する列を含んでいるインデックスおよびテーブル制約も自動的に削除されます。
+削除する列を参照する多変量統計がある場合、列の削除の結果、その統計が1つの列のデータしか含まないようになるなら、それも削除されます。
 また、削除する列にテーブル以外が依存（例えば、外部キー制約、ビューなど）している場合、<code class="literal">CASCADE</code>を付ける必要があります。
 <code class="literal">IF EXISTS</code>が指定されている場合、もしその列がなかったとしてもエラーにはなりません。
 この場合は代わりに注意が出力されます。
@@ -147,24 +149,38 @@ ALTER TABLE [ IF EXISTS ] <em class="replaceable"><code>name</code></em>
       NOT NULL&lt;/&gt; when the column contains no null values.
 </span>これらの構文は、列の値としてNULL値を使用できるかどうか設定します。
 <code class="literal">SET NOT NULL</code>は、その列にNULL値が1つもない場合にのみ設定可能です。
-     </p><p>      If this table is a partition, one cannot perform <code class="literal">DROP NOT NULL</code>
-      on a column if it is marked <code class="literal">NOT NULL</code> in the parent
-      table.  To drop the <code class="literal">NOT NULL</code> constraint from all the
-      partitions, perform <code class="literal">DROP NOT NULL</code> on the parent
-      table.  Even if there is no <code class="literal">NOT NULL</code> constraint on the
+     </p><p><span class="original">
+      If this table is a partition, one cannot perform &lt;literal&gt;DROP NOT NULL&lt;/literal&gt;
+      on a column if it is marked &lt;literal&gt;NOT NULL&lt;/literal&gt; in the parent
+      table.  To drop the &lt;literal&gt;NOT NULL&lt;/literal&gt; constraint from all the
+      partitions, perform &lt;literal&gt;DROP NOT NULL&lt;/literal&gt; on the parent
+      table.  Even if there is no &lt;literal&gt;NOT NULL&lt;/&gt; constraint on the
       parent, such a constraint can still be added to individual partitions,
       if desired; that is, the children can disallow nulls even if the parent
       allows them, but not the other way around.
-     </p></dd><dt><span class="term"><code class="literal">ADD GENERATED { ALWAYS | BY DEFAULT } AS IDENTITY</code><br /></span><span class="term"><code class="literal">SET GENERATED { ALWAYS | BY DEFAULT }</code><br /></span><span class="term"><code class="literal">DROP IDENTITY [ IF EXISTS ]</code></span></dt><dd><p>      These forms change whether a column is an identity column or change the
+</span>このテーブルがパーティションの場合、親テーブルで<code class="literal">NOT NULL</code>の印がつけられている列について<code class="literal">DROP NOT NULL</code>を実行することはできません。
+すべてのパーティションから<code class="literal">NOT NULL</code>制約を削除するには、親テーブルで<code class="literal">DROP NOT NULL</code>を実行してください。
+親テーブルに<code class="literal">NOT NULL</code>制約がない場合でも、望むなら各パーティションにそのような制約を追加することができます。
+つまり、親テーブルがNULLを許していても子テーブルでNULLを禁止することができますが、その逆はできません。
+     </p></dd><dt><span class="term"><code class="literal">ADD GENERATED { ALWAYS | BY DEFAULT } AS IDENTITY</code><br /></span><span class="term"><code class="literal">SET GENERATED { ALWAYS | BY DEFAULT }</code><br /></span><span class="term"><code class="literal">DROP IDENTITY [ IF EXISTS ]</code></span></dt><dd><p><span class="original">
+      These forms change whether a column is an identity column or change the
       generation attribute of an existing identity column.
-      See <a class="xref" href="sql-createtable.html" title="CREATE TABLE"><span class="refentrytitle">CREATE TABLE</span></a> for details.
-     </p><p>      If <code class="literal">DROP IDENTITY IF EXISTS</code> is specified and the
+      See &lt;xref linkend="sql-createtable"&gt; for details.
+</span>この構文では、列がIDENTITY列であるかどうか、または既存のIDENTITY列の生成属性を変更することができます。
+詳細は<a class="xref" href="sql-createtable.html" title="CREATE TABLE"><span class="refentrytitle">CREATE TABLE</span></a>を参照してください。
+     </p><p><span class="original">
+      If &lt;literal&gt;DROP IDENTITY IF EXISTS&lt;/literal&gt; is specified and the
       column is not an identity column, no error is thrown.  In this case a
       notice is issued instead.
-     </p></dd><dt><span class="term"><code class="literal">SET <em class="replaceable"><code>sequence_option</code></em></code><br /></span><span class="term"><code class="literal">RESTART</code></span></dt><dd><p>      These forms alter the sequence that underlies an existing identity
-      column.  <em class="replaceable"><code>sequence_option</code></em> is an option
-      supported by <a class="xref" href="sql-altersequence.html" title="ALTER SEQUENCE"><span class="refentrytitle">ALTER SEQUENCE</span></a> such
-      as <code class="literal">INCREMENT BY</code>.
+</span><code class="literal">DROP IDENTITY IF EXISTS</code>が指定され、その列がIDENTITY列でない場合は、エラーを発生させません。
+この場合、注意メッセージが発行されます。
+     </p></dd><dt><span class="term"><code class="literal">SET <em class="replaceable"><code>sequence_option</code></em></code><br /></span><span class="term"><code class="literal">RESTART</code></span></dt><dd><p><span class="original">
+      These forms alter the sequence that underlies an existing identity
+      column.  &lt;replaceable&gt;sequence_option&lt;/replaceable&gt; is an option
+      supported by &lt;xref linkend="sql-altersequence"&gt; such
+      as &lt;literal&gt;INCREMENT BY&lt;/literal&gt;.
+</span>この構文では、既存のIDENTITY列に紐付けられているシーケンスを変更します。
+<em class="replaceable"><code>sequence_option</code></em>は<code class="literal">INCREMENT BY</code>など<a class="xref" href="sql-altersequence.html" title="ALTER SEQUENCE"><span class="refentrytitle">ALTER SEQUENCE</span></a>がサポートするオプションです。
      </p></dd><dt><span class="term"><code class="literal">SET STATISTICS</code></span></dt><dd><p><span class="original">
       This form
       sets the per-column statistics-gathering target for subsequent
@@ -222,7 +238,7 @@ ALTER TABLE [ IF EXISTS ] <em class="replaceable"><code>name</code></em>
       &lt;literal&gt;SHARE UPDATE EXCLUSIVE&lt;/literal&gt; lock.
 </span>属性単位のオプションの変更は<code class="literal">SHARE UPDATE EXCLUSIVE</code>ロックを取得します。
      </p></dd><dt><span class="term">     <code class="literal">SET STORAGE</code>
-     <a id="idm45388778841408" class="indexterm"></a>
+     <a id="idm45803918586336" class="indexterm"></a>
     </span></dt><dd><p><span class="original">
       This form sets the storage mode for a column. This controls whether this
       column is held inline or in a secondary &lt;acronym&gt;TOAST&lt;/&gt; table, and
@@ -512,15 +528,18 @@ ALTER TABLE [ IF EXISTS ] <em class="replaceable"><code>name</code></em>
       time the table is locked so currently executing queries will not be
       affected.
 </span>この構文は、1つ以上のテーブルの格納パラメータを変更します。
-設定可能なパラメータに関しては<a class="xref" href="sql-createtable.html#sql-createtable-storage-parameters" title="格納パラメータ">格納パラメータ</a>を参照してください。
+設定可能なパラメータの詳細に関しては<a class="xref" href="sql-createtable.html#sql-createtable-storage-parameters" title="格納パラメータ">格納パラメータ</a>を参照してください。
 このコマンドによってテーブルの内容が即座に変更されない点に注意してください。
 パラメータによりますが、期待する効果を得るためにテーブルを書き換える必要がある場合があります。
 このためには、<a class="link" href="sql-vacuum.html" title="VACUUM">VACUUM FULL</a>、<a class="xref" href="sql-cluster.html" title="CLUSTER"><span class="refentrytitle">CLUSTER</span></a>またはテーブルを強制的に書き換える<code class="command">ALTER TABLE</code>の構文のいずれかを使用してください。
-     </p><p>      <code class="literal">SHARE UPDATE EXCLUSIVE</code> lock will be taken for
+プランナに関連するパラメータについては、次にテーブルがロックされた時に変更が有効になるため、現在実行中の問い合わせは影響を受けません。
+     </p><p><span class="original">
+      &lt;literal&gt;SHARE UPDATE EXCLUSIVE&lt;/literal&gt; lock will be taken for
       fillfactor and autovacuum storage parameters, as well as the
       following planner related parameters:
-      <code class="varname">effective_io_concurrency</code>, <code class="varname">parallel_workers</code>, <code class="varname">seq_page_cost</code>,
-      <code class="varname">random_page_cost</code>, <code class="varname">n_distinct</code> and <code class="varname">n_distinct_inherited</code>.
+      &lt;varname&gt;effective_io_concurrency&lt;/&gt;, &lt;varname&gt;parallel_workers&lt;/&gt;, &lt;varname&gt;seq_page_cost&lt;/&gt;,
+      &lt;varname&gt;random_page_cost&lt;/&gt;, &lt;varname&gt;n_distinct&lt;/&gt; and &lt;varname&gt;n_distinct_inherited&lt;/&gt;.
+</span>fillfactorおよびautovacuumのストレージパラメータおよびプランナに関連するパラメータ<code class="varname">effective_io_concurrency</code>、<code class="varname">parallel_workers</code>、<code class="varname">seq_page_cost</code>、<code class="varname">random_page_cost</code>、<code class="varname">n_distinct</code>、<code class="varname">n_distinct_inherited</code>については<code class="literal">SHARE UPDATE EXCLUSIVE</code>ロックが獲得されます。
      </p><div class="note"><h3 class="title">注記</h3><p><span class="original">
        While &lt;command&gt;CREATE TABLE&lt;/&gt; allows &lt;literal&gt;OIDS&lt;/&gt; to be specified
        in the &lt;literal&gt;WITH (&lt;replaceable
@@ -624,40 +643,60 @@ OIDの状態を変更するためには代わりに<code class="literal">SET WIT
       constraints, and sequences owned by table columns are moved as well.
 </span>この構文を使用して、テーブルを別のスキーマに移動することができます。
 関連するインデックスや制約、テーブル列により所有されるシーケンスも同様に移動されます。
-     </p></dd><dt><span class="term"><code class="literal">ATTACH PARTITION <em class="replaceable"><code>partition_name</code></em> FOR VALUES <em class="replaceable"><code>partition_bound_spec</code></em></code></span></dt><dd><p>      This form attaches an existing table (which might itself be partitioned)
+     </p></dd><dt><span class="term"><code class="literal">ATTACH PARTITION <em class="replaceable"><code>partition_name</code></em> FOR VALUES <em class="replaceable"><code>partition_bound_spec</code></em></code></span></dt><dd><p><span class="original">
+      This form attaches an existing table (which might itself be partitioned)
       as a partition of the target table using the same syntax for
-      <em class="replaceable"><code>partition_bound_spec</code></em> as
-      <a class="xref" href="sql-createtable.html" title="CREATE TABLE"><span class="refentrytitle">CREATE TABLE</span></a>.  The partition bound specification
+      &lt;replaceable class="PARAMETER"&gt;partition_bound_spec&lt;/replaceable&gt; as
+      &lt;xref linkend="sql-createtable"&gt;.  The partition bound specification
       must correspond to the partitioning strategy and partition key of the
       target table.  The table to be attached must have all the same columns
       as the target table and no more; moreover, the column types must also
-      match.  Also, it must have all the <code class="literal">NOT NULL</code> and
-      <code class="literal">CHECK</code> constraints of the target table.  Currently
-      <code class="literal">UNIQUE</code>, <code class="literal">PRIMARY KEY</code>, and
-      <code class="literal">FOREIGN KEY</code> constraints are not considered.
-      If any of the <code class="literal">CHECK</code> constraints of the table being
-      attached is marked <code class="literal">NO INHERIT</code>, the command will fail;
-      such a constraint must be recreated without the <code class="literal">NO INHERIT</code>
+      match.  Also, it must have all the &lt;literal&gt;NOT NULL&lt;/literal&gt; and
+      &lt;literal&gt;CHECK&lt;/literal&gt; constraints of the target table.  Currently
+      &lt;literal&gt;UNIQUE&lt;/literal&gt;, &lt;literal&gt;PRIMARY KEY&lt;/literal&gt;, and
+      &lt;literal&gt;FOREIGN KEY&lt;/literal&gt; constraints are not considered.
+      If any of the &lt;literal&gt;CHECK&lt;/literal&gt; constraints of the table being
+      attached is marked &lt;literal&gt;NO INHERIT&lt;/literal&gt;, the command will fail;
+      such a constraint must be recreated without the &lt;literal&gt;NO INHERIT&lt;/literal&gt;
       clause.
-     </p><p>      If the new partition is a regular table, a full table scan is performed
+</span>この構文では、既存のテーブル（それ自体がパーティションテーブルのこともあります）を対象テーブルのパーティションとして、<a class="xref" href="sql-createtable.html" title="CREATE TABLE"><span class="refentrytitle">CREATE TABLE</span></a>の<em class="replaceable"><code>partition_bound_spec</code></em>と同じ形式を使って追加します。
+パーティション境界の指定は、対象テーブルのパーティション戦略とパーティションキーに対応していなければなりません。
+パーティションとして追加されるテーブルは、対象テーブルと同じ列を持っており、余分な列があってはならず、さらに列の型も一致しなければなりません。
+また、対象テーブルの<code class="literal">NOT NULL</code>制約と<code class="literal">CHECK</code>をすべて持っていなければなりません。
+現在のところ、<code class="literal">UNIQUE</code>、<code class="literal">PRIMARY KEY</code>、<code class="literal">FOREIGN KEY</code>の制約については考慮されていません。
+追加されるテーブルの<code class="literal">CHECK</code>制約に<code class="literal">NO INHERIT</code>の印がつけられているものがあれば、コマンドは失敗します。
+そのような制約は<code class="literal">NO INHERIT</code>句なしに再作成しなければなりません。
+     </p><p><span class="original">
+      If the new partition is a regular table, a full table scan is performed
       to check that no existing row in the table violates the partition
       constraint.  It is possible to avoid this scan by adding a valid
-      <code class="literal">CHECK</code> constraint to the table that would allow only
+      &lt;literal&gt;CHECK&lt;/literal&gt; constraint to the table that would allow only
       the rows satisfying the desired partition constraint before running this
       command.  It will be determined using such a constraint that the table
       need not be scanned to validate the partition constraint.  This does not
       work, however, if any of the partition keys is an expression and the
-      partition does not accept <code class="literal">NULL</code> values.  If attaching
-      a list partition that will not accept <code class="literal">NULL</code> values,
-      also add <code class="literal">NOT NULL</code> constraint to the partition key
+      partition does not accept &lt;literal&gt;NULL&lt;/literal&gt; values.  If attaching
+      a list partition that will not accept &lt;literal&gt;NULL&lt;/literal&gt; values,
+      also add &lt;literal&gt;NOT NULL&lt;/literal&gt; constraint to the partition key
       column, unless it's an expression.
-     </p><p>      If the new partition is a foreign table, nothing is done to verify
+</span>新しいパーティションが通常のテーブルの場合、パーティションの制約に違反する行がテーブルに存在しないことを確認するため、テーブルの全件走査が行われます。
+このコマンドを実行するより前に、望まれるパーティションの制約を満たす行だけしか許さないような有効な<code class="literal">CHECK</code>制約をテーブルに追加すれば、この全件走査を避けることができます。
+パーティションの制約を確認するためにテーブルをスキャンしなくても良いことは、そのような制約を使って決定されます。
+しかし、パーティションキーに式が一つでもあり、それが<code class="literal">NULL</code>値を受け付けないときは、この仕組みは機能しません。
+<code class="literal">NULL</code>値を受け付けないリストパーティションに追加するときも、それが式でないなら、パーティションキーの列に<code class="literal">NOT NULL</code>制約を追加してください。
+     </p><p><span class="original">
+      If the new partition is a foreign table, nothing is done to verify
       that all the rows in the foreign table obey the partition constraint.
-      (See the discussion in <a class="xref" href="sql-createforeigntable.html" title="CREATE FOREIGN TABLE"><span class="refentrytitle">CREATE FOREIGN TABLE</span></a> about
+      (See the discussion in &lt;xref linkend="SQL-CREATEFOREIGNTABLE"&gt; about
       constraints on the foreign table.)
-     </p></dd><dt><span class="term"><code class="literal">DETACH PARTITION</code> <em class="replaceable"><code>partition_name</code></em></span></dt><dd><p>      This form detaches specified partition of the target table.  The detached
+</span>新しいパーティションが外部テーブルの場合、外部テーブルのすべての行がパーティションの制約に従うかどうかの確認は何も行われません。
+（外部テーブルの制約については<a class="xref" href="sql-createforeigntable.html" title="CREATE FOREIGN TABLE"><span class="refentrytitle">CREATE FOREIGN TABLE</span></a>の議論を参照してください。）
+     </p></dd><dt><span class="term"><code class="literal">DETACH PARTITION</code> <em class="replaceable"><code>partition_name</code></em></span></dt><dd><p><span class="original">
+      This form detaches specified partition of the target table.  The detached
       partition continues to exist as a standalone table, but no longer has any
       ties to the table from which it was detached.
+</span>この構文は、指定したパーティションを対象のテーブルから切り離します。
+切り離されたパーティションは単独のテーブルとして存在し続けますが、切り離される前のテーブルとの紐付けはなくなります。
      </p></dd></dl></div><p>
   </p><p><span class="original">
    All the forms of ALTER TABLE that act on a single table, except
@@ -668,7 +707,7 @@ OIDの状態を変更するためには代わりに<code class="literal">SET WIT
    is possible to add several columns and/or alter the type of several
    columns in a single command.  This is particularly useful with large
    tables, since only one pass over the table need be made.
-</span><code class="literal">RENAME</code>および<code class="literal">SET SCHEMA</code>は、複数の変更リストに結合して、まとめて処理することができますが、それらを除き、ALTER TABLEのすべての構文は１つだけのテーブルに対して作用します。
+</span><code class="literal">RENAME</code>、<code class="literal">SET SCHEMA</code>、<code class="literal">ATTACH PARTITION</code>、<code class="literal">DETACH PARTITION</code>は、複数の変更リストに結合して、まとめて処理することができますが、それらを除き、ALTER TABLEのすべての構文は１つだけのテーブルに対して作用します。
 例えば、複数の列の追加、型の変更を単一のコマンドで実行することができます。
 これは特に巨大なテーブルでは便利です。変更のために必要なテーブル全体の走査が1回で済むからです。
   </p><p><span class="original">
@@ -689,11 +728,12 @@ OIDの状態を変更するためには代わりに<code class="literal">SET WIT
 </span><code class="command">ALTER TABLE</code>コマンドを使用するには、変更するテーブルを所有している必要があります。
 テーブルのスキーマあるいはテーブル空間を変更するには、新しいスキーマあるいはテーブル空間における<code class="literal">CREATE</code>権限も持っていなければなりません。
 テーブルを親テーブルの新しい子テーブルとして追加するには、親テーブルも所有している必要があります。
+またテーブルをテーブルのパーティションとして追加する場合、追加されるテーブルを所有している必要があります。
 また、所有者を変更するには、新しい所有ロールの直接あるいは間接的なメンバでなければならず、かつ、そのロールがテーブルのスキーマにおける<code class="literal">CREATE</code>権限を持たなければなりません
 （この制限により、テーブルの削除と再作成を行ってもできないことが、所有者の変更によってもできないようにしています。
 ただし、スーパーユーザはすべてのテーブルの所有者を変更することができます）。
 列の追加、列の型の変更、<code class="literal">OF</code>句の使用を行うためには、データ型に対する<code class="literal">USAGE</code>権限を持たなければなりません。
-  </p></div><div class="refsect1" id="idm45388778662368"><h2>パラメータ</h2><span class="original">
+  </p></div><div class="refsect1" id="idm45803918399696"><h2>パラメータ</h2><span class="original">
   &lt;title&gt;Parameters&lt;/title&gt;
 </span><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="literal">IF EXISTS</code></span></dt><dd><p><span class="original">
         Do not throw an error if the table does not exist. A notice is issued
@@ -782,10 +822,15 @@ OIDの状態を変更するためには代わりに<code class="literal">SET WIT
         The name of the schema to which the table will be moved.
 </span>テーブルを移動する先のスキーマの名前です。
 
-       </p></dd><dt><span class="term"><em class="replaceable"><code>partition_name</code></em></span></dt><dd><p>        The name of the table to attach as a new partition or to detach from this table.
-       </p></dd><dt><span class="term"><em class="replaceable"><code>partition_bound_spec</code></em></span></dt><dd><p>        The partition bound specification for a new partition.  Refer to
-        <a class="xref" href="sql-createtable.html" title="CREATE TABLE"><span class="refentrytitle">CREATE TABLE</span></a> for more details on the syntax of the same.
-       </p></dd></dl></div></div><div class="refsect1" id="idm45388778622816"><h2>注釈</h2><span class="original">
+       </p></dd><dt><span class="term"><em class="replaceable"><code>partition_name</code></em></span></dt><dd><p><span class="original">
+        The name of the table to attach as a new partition or to detach from this table.
+</span>新しいパーティションとして追加する、またはテーブルから切り離すテーブルの名前です。
+       </p></dd><dt><span class="term"><em class="replaceable"><code>partition_bound_spec</code></em></span></dt><dd><p><span class="original">
+        The partition bound specification for a new partition.  Refer to
+        &lt;xref linkend="sql-createtable"&gt; for more details on the syntax of the same.
+</span>新しいパーティションのパーティション境界の指定です。
+その構文の詳細については<a class="xref" href="sql-createtable.html" title="CREATE TABLE"><span class="refentrytitle">CREATE TABLE</span></a>を参照してください。
+       </p></dd></dl></div></div><div class="refsect1" id="idm45803918359520"><h2>注釈</h2><span class="original">
   &lt;title&gt;Notes&lt;/title&gt;
 </span><p><span class="original">
     The key word &lt;literal&gt;COLUMN&lt;/literal&gt; is noise and can be omitted.
@@ -825,6 +870,8 @@ OIDの状態を変更するためには代わりに<code class="literal">SET WIT
 </span><code class="literal">CHECK</code>あるいは<code class="literal">NOT NULL</code>制約を追加する時は、既存の行が制約に従うかどうかを検証するためにテーブルの走査が必要になりますが、テーブルの書き換えは必要ありません。
    </p><p>    Similarly, when attaching a new partition it may be scanned to verify that
     existing rows meet the partition constraint.
+--&gt;
+同様に、新しいパーティションを追加するときは、既存の行がパーティションの制約を満たすかどうかを確認するため、テーブルが走査されるかもしれません。
    </p><p><span class="original">
     The main reason for providing the option to specify multiple changes
     in a single &lt;command&gt;ALTER TABLE&lt;/&gt; is that multiple table scans or
@@ -896,9 +943,11 @@ OIDの状態を変更するためには代わりに<code class="literal">SET WIT
     a constraint on the parent cannot be marked valid unless it is also marked
     valid for those descendants.  In all of these cases, &lt;command&gt;ALTER TABLE
     ONLY&lt;/command&gt; will be rejected.
-</span>そのテーブルを継承するテーブルがある場合、子テーブルに同じ処理を実行しなければ、親テーブルに対する列の追加、列の名前、列の型、継承された制約の名前の変更を実行することはできません。
-つまり、<code class="command">ALTER TABLE ONLY</code>コマンドは受け付けられません。
+</span>そのテーブルを継承するテーブルがある場合、子テーブルに同じ処理を実行しなければ、親テーブルに対する列の追加、列の名前、列の型の変更を実行することはできません。
 この制限により、子テーブルの列が常に親テーブルと一致していることが保証されます。
+同様に、すべての子テーブルで制約の名前を変更し、それが親と子の間で一致するようにしなければ、親テーブルの制約の名前を変更することはできません。
+また、親テーブルからSELECTすると、その子テーブルからもSELECTすることになるため、親テーブルの制約は、それが子テーブルでも有効であると印を付けられるまで、有効であると印を付けられません
+これらのすべての場合において、<code class="command">ALTER TABLE ONLY</code>は受け付けられません。
    </p><p><span class="original">
     A recursive &lt;literal&gt;DROP COLUMN&lt;/literal&gt; operation will remove a
     descendant table's column only if the descendant does not inherit
@@ -913,18 +962,20 @@ OIDの状態を変更するためには代わりに<code class="literal">SET WIT
 </span>再帰的な<code class="literal">DROP COLUMN</code>操作では、子テーブルが他の親テーブルからその列を継承しておらず、かつ、その列について独立した定義を持っていない場合のみ、その子テーブルの列を削除します。
 再帰的でない<code class="literal">DROP COLUMN</code>（つまり、<code class="command">ALTER TABLE ONLY ... DROP COLUMN</code>）操作では、継承された列は削除されません。
 削除する代わりに、その列は継承されておらず独立して定義されているという印を付けます。
+再帰的でない<code class="literal">DROP COLUMN</code>コマンドは、パーティションテーブルでは失敗します。
+テーブルのすべてのパーティションは、パーティションの最上位と同じ列を持っていなければならないからです。
    </p><p><span class="original">
     The actions for identity columns (&lt;literal&gt;ADD
     GENERATED&lt;/literal&gt;, &lt;literal&gt;SET&lt;/literal&gt; etc., &lt;literal&gt;DROP
     IDENTITY&lt;/literal&gt;), as well as the actions
     &lt;literal&gt;TRIGGER&lt;/&gt;, &lt;literal&gt;CLUSTER&lt;/&gt;, &lt;literal&gt;OWNER&lt;/&gt;,
     and &lt;literal&gt;TABLESPACE&lt;/&gt; never recurse to descendant tables;
-</span><code class="literal">TRIGGER</code>、<code class="literal">CLUSTER</code>、<code class="literal">OWNER</code>および<code class="literal">TABLESPACE</code>は子テーブルに再帰的に伝わりません。
+    that is, they always act as though &lt;literal&gt;ONLY&lt;/&gt; were specified.
+    Adding a constraint recurses only for &lt;literal&gt;CHECK&lt;/&gt; constraints
+    that are not marked &lt;literal&gt;NO INHERIT&lt;/&gt;.
+</span>IDENTITY列についての操作（<code class="literal">ADD GENERATED</code>、<code class="literal">SET</code>、<code class="literal">DROP IDENTITY</code>など）および<code class="literal">TRIGGER</code>、<code class="literal">CLUSTER</code>、<code class="literal">OWNER</code>および<code class="literal">TABLESPACE</code>の操作は子テーブルに再帰的に伝わりません。
 つまり、常に<code class="literal">ONLY</code>が指定されているかのように動作します。
 制約の追加は、<code class="literal">NO INHERIT</code>印がない<code class="literal">CHECK</code>制約に関してのみ再帰的に伝わります。
-   </p><p>    that is, they always act as though <code class="literal">ONLY</code> were specified.
-    Adding a constraint recurses only for <code class="literal">CHECK</code> constraints
-    that are not marked <code class="literal">NO INHERIT</code>.
    </p><p><span class="original">
     Changing any part of a system catalog table is not permitted.
 </span>システムカタログテーブルについては、いかなる部分の変更も許可されていません。
@@ -934,7 +985,7 @@ OIDの状態を変更するためには代わりに<code class="literal">SET WIT
     inheritance.
 </span>有効なパラメータの詳しい説明は<a class="xref" href="sql-createtable.html" title="CREATE TABLE"><span class="refentrytitle">CREATE TABLE</span></a>を参照してください。
 <a class="xref" href="ddl.html" title="第5章 データ定義">第5章</a>に、継承に関するさらに詳しい情報があります。
-   </p></div><div class="refsect1" id="idm45388778575088"><h2>例</h2><span class="original">
+   </p></div><div class="refsect1" id="idm45803918309280"><h2>例</h2><span class="original">
   &lt;title&gt;Examples&lt;/title&gt;
 </span><p><span class="original">
    To add a column of type &lt;type&gt;varchar&lt;/type&gt; to a table:
@@ -1045,13 +1096,19 @@ ALTER TABLE distributors VALIDATE CONSTRAINT distfk;</pre><p>
 </span>インデックスを再構築している間の更新をブロックすることなく、主キー制約を再作成します。
 </p><pre class="programlisting">CREATE UNIQUE INDEX CONCURRENTLY dist_id_temp_idx ON distributors (dist_id);
 ALTER TABLE distributors DROP CONSTRAINT distributors_pkey,
-    ADD CONSTRAINT distributors_pkey PRIMARY KEY USING INDEX dist_id_temp_idx;</pre><p>   Attach a partition to range partitioned table:
+    ADD CONSTRAINT distributors_pkey PRIMARY KEY USING INDEX dist_id_temp_idx;</pre><p><span class="original">
+   Attach a partition to range partitioned table:
+</span>範囲パーティションテーブルにパーティションを追加します。
 </p><pre class="programlisting">ALTER TABLE measurement
-    ATTACH PARTITION measurement_y2016m07 FOR VALUES FROM ('2016-07-01') TO ('2016-08-01');</pre><p>   Attach a partition to list partitioned table:
+    ATTACH PARTITION measurement_y2016m07 FOR VALUES FROM ('2016-07-01') TO ('2016-08-01');</pre><p><span class="original">
+   Attach a partition to list partitioned table:
+</span>リストパーティションテーブルにパーティションを追加します。
 </p><pre class="programlisting">ALTER TABLE cities
-    ATTACH PARTITION cities_ab FOR VALUES IN ('a', 'b');</pre><p>   Detach a partition from partitioned table:
+    ATTACH PARTITION cities_ab FOR VALUES IN ('a', 'b');</pre><p><span class="original">
+   Detach a partition from partitioned table:
+</span>パーティションテーブルからパーティションを切り離します。
 </p><pre class="programlisting">ALTER TABLE measurement
-    DETACH PARTITION measurement_y2015m12;</pre></div><div class="refsect1" id="idm45388778541824"><h2>互換性</h2><span class="original">
+    DETACH PARTITION measurement_y2015m12;</pre></div><div class="refsect1" id="idm45803918275264"><h2>互換性</h2><span class="original">
   &lt;title&gt;Compatibility&lt;/title&gt;
 </span><p><span class="original">
    The forms &lt;literal&gt;ADD&lt;/literal&gt; (without &lt;literal&gt;USING INDEX&lt;/literal&gt;),
@@ -1062,7 +1119,7 @@ ALTER TABLE distributors DROP CONSTRAINT distributors_pkey,
    &lt;productname&gt;PostgreSQL&lt;/productname&gt; extensions of the SQL standard.
    Also, the ability to specify more than one manipulation in a single
    &lt;command&gt;ALTER TABLE&lt;/&gt; command is an extension.
-</span>（<code class="literal">USING INDEX</code>がない）<code class="literal">ADD</code>、<code class="literal">DROP</code>、<code class="literal">SET DEFAULT</code>、（<code class="literal">USING</code>がない）<code class="literal">SET DATA TYPE</code>構文は標準SQLに従います。
+</span>（<code class="literal">USING INDEX</code>がない）<code class="literal">ADD</code>、<code class="literal">DROP [COLUMN]</code>、<code class="literal">DROP IDENTITY</code>、<code class="literal">RESTART</code>、<code class="literal">SET DEFAULT</code>、（<code class="literal">USING</code>のない）<code class="literal">SET DATA TYPE</code>、<code class="literal">SET GENERATED</code>、<code class="literal">SET <em class="replaceable"><code>sequence_option</code></em></code>構文は標準SQLに従います。
 他の構文は標準SQLに対する<span class="productname">PostgreSQL</span>の拡張です。
 また、単一の<code class="command">ALTER TABLE</code>コマンド内に複数の操作を指定する機能も<span class="productname">PostgreSQL</span>の拡張です。
   </p><p><span class="original">
@@ -1071,6 +1128,6 @@ ALTER TABLE distributors DROP CONSTRAINT distributors_pkey,
    extension of SQL, which disallows zero-column tables.
 </span><code class="command">ALTER TABLE DROP COLUMN</code>を使って、1つしか列がないテーブルから列を削除して、列がないテーブルを作成することができます。
 これは<span class="productname">PostgreSQL</span>の拡張です。SQLでは、列を持たないテーブルは認められていません。
-  </p></div><div class="refsect1" id="idm45388778531520"><h2>関連項目</h2><span class="original">
+  </p></div><div class="refsect1" id="idm45803918261792"><h2>関連項目</h2><span class="original">
   &lt;title&gt;See Also&lt;/title&gt;
 </span><span class="simplelist"><a class="xref" href="sql-createtable.html" title="CREATE TABLE"><span class="refentrytitle">CREATE TABLE</span></a></span></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="sql-altersystem.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="sql-commands.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="sql-altertablespace.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">ALTER SYSTEM </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> ALTER TABLESPACE</td></tr></table></div></body></html>
