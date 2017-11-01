@@ -134,7 +134,7 @@
 </span>前処理した文書を格納するために、データ型<code class="type">tsvector</code>が提供されています。また、処理済問い合わせを表現するために<code class="type">tsquery</code>型も提供されています(<a class="xref" href="datatype-textsearch.html" title="8.11. テキスト検索に関する型">8.11</a>)。これらのデータ型のために、多数の関数と演算子が利用できますが(<a class="xref" href="functions-textsearch.html" title="9.13. テキスト検索関数と演算子">9.13</a>)、もっとも重要なのは、<a class="xref" href="textsearch-intro.html#textsearch-matching" title="12.1.2. 基本的なテキスト照合">12.1.2</a>で紹介している<code class="literal">@@</code>演算子です。全文検索はインデックス(<a class="xref" href="textsearch-indexes.html" title="12.9. GINおよびGiSTインデックス種類">12.9</a>)を使って高速化できます。
   </p><div class="sect2" id="textsearch-document"><div class="titlepage"><div><div><h3 class="title">12.1.1. 文書とは何か?</h3></div></div></div><span class="original">
    &lt;title&gt;What Is a Document?&lt;/title&gt;
-</span><a id="idm45803947598784" class="indexterm"></a><p><span class="original">
+</span><a id="idm45355166556432" class="indexterm"></a><p><span class="original">
     A &lt;firstterm&gt;document&lt;/&gt; is the unit of searching in a full text search
     system; for example, a magazine article or email message.  The text search
     engine must be able to parse documents and store associations of lexemes
@@ -333,44 +333,32 @@ SELECT phraseto_tsquery('the cats ate the rats');
     and &lt;literal&gt;!&lt;/literal&gt; most tightly.
 </span><code class="type">tsquery</code>演算子を入れ子にして管理するために括弧を使うことができます。
 括弧がない場合、<code class="literal">|</code>の結合が最も弱く、次が<code class="literal">&amp;</code>、その次が<code class="literal">&lt;-&gt;</code>で、<code class="literal">!</code>が最も強く結合します。
-   </p><p>    It's worth noticing that the AND/OR/NOT operators mean something subtly
+   </p><p><span class="original">
+    It's worth noticing that the AND/OR/NOT operators mean something subtly
     different when they are within the arguments of a FOLLOWED BY operator
     than when they are not, because within FOLLOWED BY the exact position of
-    the match is significant.  For example, normally <code class="literal">!x</code> matches
-    only documents that do not contain <code class="literal">x</code> anywhere.
-    But <code class="literal">!x &lt;-&gt; y</code> matches <code class="literal">y</code> if it is not
-    immediately after an <code class="literal">x</code>; an occurrence of <code class="literal">x</code>
+    the match is significant.  For example, normally &lt;literal&gt;!x&lt;/&gt; matches
+    only documents that do not contain &lt;literal&gt;x&lt;/&gt; anywhere.
+    But &lt;literal&gt;!x &amp;lt;-&amp;gt; y&lt;/&gt; matches &lt;literal&gt;y&lt;/&gt; if it is not
+    immediately after an &lt;literal&gt;x&lt;/&gt;; an occurrence of &lt;literal&gt;x&lt;/&gt;
     elsewhere in the document does not prevent a match.  Another example is
-    that <code class="literal">x &amp; y</code> normally only requires that <code class="literal">x</code>
-    and <code class="literal">y</code> both appear somewhere in the document, but
-    <code class="literal">(x &amp; y) &lt;-&gt; z</code> requires <code class="literal">x</code>
-    and <code class="literal">y</code> to match at the same place, immediately before
-    a <code class="literal">z</code>.  Thus this query behaves differently from
-    <code class="literal">x &lt;-&gt; z &amp; y &lt;-&gt; z</code>, which will match a
-    document containing two separate sequences <code class="literal">x z</code> and
-    <code class="literal">y z</code>.  (This specific query is useless as written,
-    since <code class="literal">x</code> and <code class="literal">y</code> could not match at the same place;
+    that &lt;literal&gt;x &amp;amp; y&lt;/&gt; normally only requires that &lt;literal&gt;x&lt;/&gt;
+    and &lt;literal&gt;y&lt;/&gt; both appear somewhere in the document, but
+    &lt;literal&gt;(x &amp;amp; y) &amp;lt;-&amp;gt; z&lt;/&gt; requires &lt;literal&gt;x&lt;/&gt;
+    and &lt;literal&gt;y&lt;/&gt; to match at the same place, immediately before
+    a &lt;literal&gt;z&lt;/&gt;.  Thus this query behaves differently from
+    &lt;literal&gt;x &amp;lt;-&amp;gt; z &amp;amp; y &amp;lt;-&amp;gt; z&lt;/&gt;, which will match a
+    document containing two separate sequences &lt;literal&gt;x z&lt;/&gt; and
+    &lt;literal&gt;y z&lt;/&gt;.  (This specific query is useless as written,
+    since &lt;literal&gt;x&lt;/&gt; and &lt;literal&gt;y&lt;/&gt; could not match at the same place;
     but with more complex situations such as prefix-match patterns, a query
     of this form could be useful.)
-   </p><p>    It's worth noticing that the AND/OR/NOT operators mean something subtly
-    different when they are within the arguments of a FOLLOWED BY operator
-    than when they are not, because within FOLLOWED BY the exact position of
-    the match is significant.  For example, normally <code class="literal">!x</code> matches
-    only documents that do not contain <code class="literal">x</code> anywhere.
-    But <code class="literal">!x &lt;-&gt; y</code> matches <code class="literal">y</code> if it is not
-    immediately after an <code class="literal">x</code>; an occurrence of <code class="literal">x</code>
-    elsewhere in the document does not prevent a match.  Another example is
-    that <code class="literal">x &amp; y</code> normally only requires that <code class="literal">x</code>
-    and <code class="literal">y</code> both appear somewhere in the document, but
-    <code class="literal">(x &amp; y) &lt;-&gt; z</code> requires <code class="literal">x</code>
-    and <code class="literal">y</code> to match at the same place, immediately before
-    a <code class="literal">z</code>.  Thus this query behaves differently from
-    <code class="literal">x &lt;-&gt; z &amp; y &lt;-&gt; z</code>, which will match a
-    document containing two separate sequences <code class="literal">x z</code> and
-    <code class="literal">y z</code>.  (This specific query is useless as written,
-    since <code class="literal">x</code> and <code class="literal">y</code> could not match at the same place;
-    but with more complex situations such as prefix-match patterns, a query
-    of this form could be useful.)
+</span>FOLLOWED BYの中ではマッチの正確な位置が重要ですので、AND/OR/NOT演算子は、FOLLOWED BY演算子の引数の中で使われる場合にはそうでない場合と微妙に異なる意味になることに言及しておく価値はあります。
+例えば、通常<code class="literal">!x</code>は<code class="literal">x</code>をどこにも含まない文書とのみマッチします。
+しかし、<code class="literal">!x &lt;-&gt; y</code>は、<code class="literal">x</code>の直後にあるのでなければ<code class="literal">y</code>とマッチします。文書の他のところでの<code class="literal">x</code>の出現は、マッチを邪魔しません。
+もう一つの例は、<code class="literal">x &amp; y</code>は通常<code class="literal">x</code>と<code class="literal">y</code>の両方が文書のどこかに現れることだけを要求しますが、<code class="literal">(x &amp; y) &lt;-&gt; z</code>は、<code class="literal">x</code>と<code class="literal">y</code>が同じ場所、<code class="literal">z</code>の直前でマッチすることを要求します。
+そのため、この問い合わせは<code class="literal">x &lt;-&gt; z &amp; y &lt;-&gt; z</code>とは異なった振る舞いをします。後者は2つの別の文字列、<code class="literal">x z</code>と<code class="literal">y z</code>を含む文書にマッチします。
+(<code class="literal">x</code>と<code class="literal">y</code>が同じ場所でマッチすることはあり得ませんので、上に書いたこの特別な問い合わせは、役に立ちません。しかし、接頭辞マッチパターンのようにより複雑な状況では、この形の問い合わせは役に立つかもしれません。)
    </p></div><div class="sect2" id="textsearch-intro-configurations"><div class="titlepage"><div><div><h3 class="title">12.1.3. 設定</h3></div></div></div><span class="original">
    &lt;title&gt;Configurations&lt;/title&gt;
 </span><p><span class="original">
