@@ -2,7 +2,7 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>68.2. 多変量統計の例</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="row-estimation-examples.html" title="68.1. 行数推定の例" /><link rel="next" href="planner-stats-security.html" title="68.3. プランナの統計情報とセキュリティ" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 10.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="planner-stats-details.html" title="第68章 プランナは統計情報をどのように使用するか">第68章 プランナは統計情報をどのように使用するか</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 10.0 &#10;                      multivariate-statistics-examples.html">誤訳等の報告
                     </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="row-estimation-examples.html" title="68.1. 行数推定の例">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="planner-stats-details.html" title="第68章 プランナは統計情報をどのように使用するか">上へ</a></td><td width="60%" align="center">68.2. 多変量統計の例</td><td width="20%" align="right"> <a accesskey="n" href="planner-stats-security.html" title="68.3. プランナの統計情報とセキュリティ">次へ</a></td></tr></table><hr /></div><div class="sect1" id="multivariate-statistics-examples"><div class="titlepage"><div><div><h2 class="title" style="clear: both">68.2. 多変量統計の例</h2></div></div></div><span class="original">
   &lt;title&gt;Multivariate Statistics Examples&lt;/title&gt;
-</span><a id="idm45355114242928" class="indexterm"></a><div class="sect2" id="idm45355114241952"><div class="titlepage"><div><div><h3 class="title">68.2.1. 関数従属性</h3></div></div></div><span class="original">
+</span><a id="idm46108197862176" class="indexterm"></a><div class="sect2" id="idm46108197861200"><div class="titlepage"><div><div><h3 class="title">68.2.1. 関数従属性</h3></div></div></div><span class="original">
    &lt;title&gt;Functional Dependencies&lt;/title&gt;
 </span><p><span class="original">
     Multivariate correlation can be demonstrated with a very simple data set
@@ -17,7 +17,7 @@ ANALYZE t;</pre><p>
     cardinality of &lt;structname&gt;t&lt;/structname&gt; using the number of pages and
     rows obtained from &lt;structname&gt;pg_class&lt;/structname&gt;:
 </span>
-<a class="xref" href="planner-stats.html" title="14.2. プランナで使用される統計情報">14.2</a>で説明するように、<code class="structname">pg_class</code>から得られるページ数と行数を使って、<code class="structname">t</code>の濃度を決定できます。
+<a class="xref" href="planner-stats.html" title="14.2. プランナで使用される統計情報">14.2</a>で説明されているように、<code class="structname">pg_class</code>から得られるページ数と行数を使って、<code class="structname">t</code>の濃度を決定できます。
 
 </p><pre class="programlisting">SELECT relpages, reltuples FROM pg_class WHERE relname = 't';
 
@@ -69,9 +69,9 @@ ANALYZE t;</pre><p>
     This is a significant underestimate, as the actual number of rows
     matching the conditions (100) is two orders of magnitude higher.
 </span>
-上記と同じ1%の見積もりで、プランナは、個々の条件について個別に選択度を見積もります。
+個別に選択度を見積もった結果、上記と同じ1%の見積もりとなります
 次に、その条件が独立であると見なし、それらの選択度を掛けあわせ、最終的な選択度の見積もりをわずか0.01%であるとします
-その条件に一致する実際の行数はふた桁多いので(100)、これはかなり過小見積もりです。
+その条件に一致する実際の行数は2桁多いので(100)、これはかなり過小見積もりです。
    </p><p><span class="original">
     This problem can be fixed by creating a statistics object that
     directs &lt;command&gt;ANALYZE&lt;/&gt; to calculate functional-dependency
@@ -86,7 +86,7 @@ EXPLAIN (ANALYZE, TIMING OFF) SELECT * FROM t WHERE a = 1 AND b = 1;
  Seq Scan on t  (cost=0.00..195.00 rows=100 width=8) (actual rows=100 loops=1)
    Filter: ((a = 1) AND (b = 1))
    Rows Removed by Filter: 9900</pre><p>
-   </p></div><div class="sect2" id="idm45355114225072"><div class="titlepage"><div><div><h3 class="title">68.2.2. 多変量N個別値計数</h3></div></div></div><span class="original">
+   </p></div><div class="sect2" id="idm46108197844320"><div class="titlepage"><div><div><h3 class="title">68.2.2. 多変量N個別値計数</h3></div></div></div><span class="original">
    &lt;title&gt;Multivariate N-Distinct Counts&lt;/title&gt;
 </span><p><span class="original">
     A similar problem occurs with estimation of the cardinality of sets of
@@ -117,7 +117,7 @@ EXPLAIN (ANALYZE, TIMING OFF) SELECT * FROM t WHERE a = 1 AND b = 1;
     By redefining the statistics object to include n-distinct counts for the
     two columns, the estimate is much improved:
 </span>
-二つの列についてのN個別値計数を含むように統計オブジェクトを再定義することにより、見積もりはずっと改善されます。
+二つの列についてのN個別値計数を含むように統計オブジェクトを再定義することにより、見積もりは大きく改善されます。
 </p><pre class="programlisting">DROP STATISTICS stts;
 CREATE STATISTICS stts (dependencies, ndistinct) ON a, b FROM t;
 ANALYZE t;

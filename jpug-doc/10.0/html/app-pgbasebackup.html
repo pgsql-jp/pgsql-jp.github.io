@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>pg_basebackup</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="app-ecpg.html" title="ecpg" /><link rel="next" href="pgbench.html" title="pgbench" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 10.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="reference-client.html" title="PostgreSQLクライアントアプリケーション">PostgreSQLクライアントアプリケーション</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 10.0 &#10;                      app-pgbasebackup.html">誤訳等の報告
-                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="app-ecpg.html" title="ecpg">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="reference-client.html" title="PostgreSQLクライアントアプリケーション">上へ</a></td><td width="60%" align="center">pg_basebackup</td><td width="20%" align="right"> <a accesskey="n" href="pgbench.html" title="pgbench">次へ</a></td></tr></table><hr /></div><div class="refentry" id="app-pgbasebackup"><div class="titlepage"></div><a id="idm45355126848976" class="indexterm"></a><div class="refnamediv"><h2><span class="refentrytitle">pg_basebackup</span></h2><p>pg_basebackup<span class="original">
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="app-ecpg.html" title="ecpg">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="reference-client.html" title="PostgreSQLクライアントアプリケーション">上へ</a></td><td width="60%" align="center">pg_basebackup</td><td width="20%" align="right"> <a accesskey="n" href="pgbench.html" title="pgbench">次へ</a></td></tr></table><hr /></div><div class="refentry" id="app-pgbasebackup"><div class="titlepage"></div><a id="idm46108210486576" class="indexterm"></a><div class="refnamediv"><h2><span class="refentrytitle">pg_basebackup</span></h2><p>pg_basebackup<span class="original">
   &lt;refpurpose&gt;take a base backup of a &lt;productname&gt;PostgreSQL&lt;/productname&gt; cluster&lt;/refpurpose&gt;
-</span> — <span class="productname">PostgreSQL</span>クラスタのベースバックアップを取得する</p></div><div class="refsynopsisdiv"><h2>概要</h2><div class="cmdsynopsis"><p id="idm45355126845104"><code class="command">pg_basebackup</code> [<em class="replaceable"><code>option</code></em>...]</p></div></div><div class="refsect1" id="idm45355126843248"><h2><span class="original">
+</span> — <span class="productname">PostgreSQL</span>クラスタのベースバックアップを取得する</p></div><div class="refsynopsisdiv"><h2>概要</h2><div class="cmdsynopsis"><p id="idm46108210482704"><code class="command">pg_basebackup</code> [<em class="replaceable"><code>option</code></em>...]</p></div></div><div class="refsect1" id="idm46108210480848"><h2><span class="original">
    Description
 </span>説明
   </h2><p><span class="original">
@@ -38,7 +38,7 @@
 </span>バックアップは通常の<span class="productname">PostgreSQL</span>接続を経由して、レプリケーションプロトコルを用いて、作成されます。
 この接続はスーパーユーザまたは<code class="literal">REPLICATION</code>権限（<a class="xref" href="role-attributes.html" title="21.2. ロールの属性">21.2</a>参照）を持つユーザが確立しなければなりません。
 さらにレプリケーション用の接続には<code class="filename">pg_hba.conf</code>における明示的な権限が許されていなければなりません。
-またサーバで<a class="xref" href="runtime-config-replication.html#guc-max-wal-senders">max_wal_senders</a>を、バックアップ用に少なくとも１つのセッションを残すように十分大きく設定する必要があります。
+またサーバで<a class="xref" href="runtime-config-replication.html#guc-max-wal-senders">max_wal_senders</a>を、バックアップ用に少なくとも１つのセッションとWALストリーミング用にもう一つ（使用する場合）を残すように十分大きく設定する必要があります。
   </p><p><span class="original">
    There can be multiple &lt;command&gt;pg_basebackup&lt;/command&gt;s running at the same time, but it is
    better from a performance point of view to take only one backup, and copy
@@ -62,8 +62,10 @@
    </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p><span class="original">
       The backup history file is not created in the database cluster backed up.
 </span>バックアップ履歴ファイルはバックアップされるデータベースクラスタ内に作成されません。
-     </p></li><li class="listitem"><p>      If you are using <code class="literal">-X none</code>, there is no guarantee that all
+     </p></li><li class="listitem"><p><span class="original">
+      If you are using &lt;literal&gt;-X none&lt;/&gt;, there is no guarantee that all
       WAL files required for the backup are archived at the end of backup.
+</span><code class="literal">-X none</code>を使用している場合、バックアップ終了時にバックアップに必要なすべてのWALファイルがアーカイブされているという保証はありません。
      </p></li><li class="listitem"><p><span class="original">
       If the standby is promoted to the master during online backup, the backup fails.
 </span>オンラインバックアップ中にスタンバイがマスタに昇格した場合、バックアップは失敗します。
@@ -75,7 +77,7 @@
 </span>バックアップに必要なすべてのWALレコードは、必要なだけの完全ページ書き出しを含んでいなければなりません。
 つまりこれは、マスタで<code class="varname">full_page_writes</code>を有効にし、<code class="varname">archive_command</code>としてWALファイルから完全ページ書き出しを取り除く<span class="application">pg_compresslog</span>のようなツールを使用しないことが要求されます。
      </p></li></ul></div><p>
-  </p></div><div class="refsect1" id="idm45355126818016"><h2>オプション</h2><span class="original">
+  </p></div><div class="refsect1" id="idm46108210455344"><h2>オプション</h2><span class="original">
   &lt;title&gt;Options&lt;/title&gt;
 </span><p><span class="original">
     The following command-line options control the location and format of the
@@ -134,7 +136,7 @@
             streaming is not used.
 </span>対象ディレクトリとして<code class="literal">-</code>（ダッシュ）という値が指定された場合、tarの内容は標準出力に書き出されます。
 これは例えば<span class="productname">gzip</span>へのパイプ処理に適しています。
-これはクラスタが追加テーブル空間を持たない場合のみ行うことができます。
+これはクラスタが追加テーブル空間を持たず、WALストリーミングを使用していない場合のみ行うことができます。
            </p></dd></dl></div></dd><dt><span class="term"><code class="option">-r <em class="replaceable"><code>rate</code></em></code><br /></span><span class="term"><code class="option">--max-rate=<em class="replaceable"><code>rate</code></em></code></span></dt><dd><p><span class="original">
         The maximum transfer rate of data transferred from the server.  Values are
         in kilobytes per second.  Use a suffix of &lt;literal&gt;M&lt;/&gt; to indicate megabytes
@@ -177,17 +179,27 @@ WALファイルの転送については、収集方法が<code class="literal">f
 これによりWALストリーミングが指定したレプリケーションスロットを使用することになります。
 ベースバックアップがレプリケーションスロットを利用したストリーミングレプリケーションのスタンバイとしての使用を意図したものであるなら、<code class="filename">recovery.conf</code>内で同じレプリケーションスロット名を使用すべきです。
 そうすることで、ベースバックアップの終了とストリーミングレプリケーションの開始の間の時間に、サーバが必要なWALデータを一切削除しないことが保証されます。
-       </p><p>        If this option is not specified and the server supports temporary
+       </p><p><span class="original">
+        If this option is not specified and the server supports temporary
         replication slots (version 10 and later), then a temporary replication
         slot is automatically used for WAL streaming.
-       </p></dd><dt><span class="term"><code class="option">--no-slot</code></span></dt><dd><p>        This option prevents the creation of a temporary replication slot
+</span>このオプションが指定されず、サーバが一時レプリケーションスロットをサポートしている場合（バージョン10以上）、WALストリーミングには一時レプリケーションスロットが自動的に使用されます。
+       </p></dd><dt><span class="term"><code class="option">--no-slot</code></span></dt><dd><p><span class="original">
+        This option prevents the creation of a temporary replication slot
         during the backup even if it's supported by the server.
-       </p><p>        Temporary replication slots are created by default if no slot name
-        is given with the option <code class="option">-S</code> when using log streaming.
-       </p><p>        The main purpose of this option is to allow taking a base backup when
+</span>このオプションは、サーバが一時レプリケーションスロットをサポートしていたとしても、バックアップ時にそれを作らないようにします。
+       </p><p><span class="original">
+        Temporary replication slots are created by default if no slot name
+        is given with the option &lt;option&gt;-S&lt;/option&gt; when using log streaming.
+</span>ログストリームを使う場合、オプション<code class="option">-S</code>でスロット名を指定しなければ、デフォルトで一時レプリケーションスロットが作られます。
+       </p><p><span class="original">
+        The main purpose of this option is to allow taking a base backup when
         the server is out of free replication slots.  Using replication slots
         is almost always preferred, because it prevents needed WAL from being
         removed by the server during the backup.
+</span>このオプションの主要な目的は、サーバに空いているレプリケーションスロットがない時にベースバックアップの取得を可能にすることです。
+ほぼすべての場合において、レプリケーションスロットの使用が望ましいです。
+なぜなら、必要なWALがバックアップ中にサーバによって削除されることを防止できるからです。
        </p></dd><dt><span class="term"><code class="option">-T <em class="replaceable"><code>olddir</code></em>=<em class="replaceable"><code>newdir</code></em></code><br /></span><span class="term"><code class="option">--tablespace-mapping=<em class="replaceable"><code>olddir</code></em>=<em class="replaceable"><code>newdir</code></em></code></span></dt><dd><p><span class="original">
         Relocate the tablespace in directory &lt;replaceable&gt;olddir&lt;/replaceable&gt;
         to &lt;replaceable&gt;newdir&lt;/replaceable&gt; during the backup.  To be
@@ -220,9 +232,9 @@ WALファイルの転送については、収集方法が<code class="literal">f
         &lt;replaceable&gt;waldir&lt;/replaceable&gt; must be an absolute path.
         The write-ahead log directory can only be specified when
         the backup is in plain mode.
-</span>トランザクションログのディレクトリの場所を指定します。
-<em class="replaceable"><code>xlogdir</code></em>は絶対パスでなければなりません。
-トランザクションログのディレクトリは、バックアップがplainモードの場合にのみ指定できます。
+</span>先行書き込みログのディレクトリの場所を指定します。
+<em class="replaceable"><code>waldir</code></em>は絶対パスでなければなりません。
+先行書き込みログのディレクトリは、バックアップがplainモードの場合にのみ指定できます。
        </p></dd><dt><span class="term"><code class="option">-X <em class="replaceable"><code>method</code></em></code><br /></span><span class="term"><code class="option">--wal-method=<em class="replaceable"><code>method</code></em></code></span></dt><dd><p><span class="original">
         Includes the required write-ahead log files (WAL files) in the
         backup. This will include all write-ahead logs generated during
@@ -230,16 +242,18 @@ WALファイルの転送については、収集方法が<code class="literal">f
         it is possible to start a postmaster directly in the extracted
         directory without the need to consult the log archive, thus
         making this a completely standalone backup.
-  </span>必要なトランザクションログファイル（WALファイル）をバックアップに含めます。
-これはバックアップ中に生成されたトランザクションログをすべて含みます。
-このオプションが指定された場合、ログアーカイブを考慮することなく展開したディレクトリ内でそのままpostmasterを起動することができます。
+  </span>必要な先行書き込みログファイル（WALファイル）をバックアップに含めます。
+これはバックアップ中に生成された先行書き込みログをすべて含みます。
+方法<code class="literal">none</code>を指定しない場合、ログアーカイブを考慮することなく展開したディレクトリ内でそのままpostmasterを起動することができます。
 つまりこれは完全なスタンドアローンバックアップを作成します。
        </p><p><span class="original">
         The following methods for collecting the write-ahead logs are
         supported:
-</span>以下のトランザクションログを収集するための方法がサポートされます。
+</span>以下の先行書き込みログを収集するための方法がサポートされます。
 
-        </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="literal">n</code><br /></span><span class="term"><code class="literal">none</code></span></dt><dd><p>            Don't include write-ahead log in the backup.
+        </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="literal">n</code><br /></span><span class="term"><code class="literal">none</code></span></dt><dd><p><span class="original">
+            Don't include write-ahead log in the backup.
+</span>先行書き込みログをバックアップに含めません。
            </p></dd><dt><span class="term"><code class="literal">f</code><br /></span><span class="term"><code class="literal">fetch</code></span></dt><dd><p><span class="original">
             The write-ahead log files are collected at the end of the backup.
             Therefore, it is necessary for the
@@ -247,11 +261,13 @@ WALファイルの転送については、収集方法が<code class="literal">f
              enough that the log is not removed before the end of the backup.
              If the log has been rotated when it's time to transfer it, the
              backup will fail and be unusable.
-</span>トランザクションログファイルはバックアップの最後に収集されます。
+</span>先行書き込みログファイルはバックアップの最後に収集されます。
 したがって、<a class="xref" href="runtime-config-replication.html#guc-wal-keep-segments">wal_keep_segments</a>パラメータを、バックアップの最後までログが削除されない程度に十分大きくする必要があります。
 ログの転送時点でそのログがローテートされていた場合、バックアップは失敗し、使用することができません。
-           </p><p>            The write-ahead log files will be written to
-            the <code class="filename">base.tar</code> file.
+           </p><p><span class="original">
+            The write-ahead log files will be written to
+            the &lt;filename&gt;base.tar&lt;/filename&gt; file.
+</span>先行書き込みログファイルは<code class="filename">base.tar</code>ファイルに書き込まれます。
            </p></dd><dt><span class="term"><code class="literal">s</code><br /></span><span class="term"><code class="literal">stream</code></span></dt><dd><p><span class="original">
             Stream the write-ahead log while the backup is created. This will
             open a second connection to the server and start streaming the
@@ -260,14 +276,18 @@ WALファイルの転送については、収集方法が<code class="literal">f
             &lt;xref linkend="guc-max-wal-senders"&gt; parameter. As long as the
              client can keep up with write-ahead log received, using this mode
              requires no extra write-ahead logs to be saved on the master.
-</span>バックアップを作成する時にトランザクションログをストリームします。
-これは第二のサーバ接続を開き、バックアップを実行している間、並行してトランザクションログのストリーミングを始めます。
+</span>バックアップを作成する時に先行書き込みログをストリームします。
+これは第二のサーバ接続を開き、バックアップを実行している間、並行して先行書き込みログのストリーミングを始めます。
 したがって、これは<a class="xref" href="runtime-config-replication.html#guc-max-wal-senders">max_wal_senders</a>で設定される接続を２つ使用します。
-クライアントが受け取ったトランザクションログに追従している限り、このモードを使用すれば、マスタ上に余分に保管されるトランザクションログは必要ありません。
-           </p><p>            The write-ahead log files are written to a separate file
-            named <code class="filename">pg_wal.tar</code> (if the server is a version
-            earlier than 10, the file will be named <code class="filename">pg_xlog.tar</code>).
-           </p><p>            This value is the default.
+クライアントが受け取った先行書き込みログに追従している限り、このモードを使用すれば、マスタ上に余分に保管される先行書き込みログは必要ありません。
+           </p><p><span class="original">
+            The write-ahead log files are written to a separate file
+            named &lt;filename&gt;pg_wal.tar&lt;/filename&gt; (if the server is a version
+            earlier than 10, the file will be named &lt;filename&gt;pg_xlog.tar&lt;/filename&gt;).
+</span>先行書き込みログファイルは<code class="filename">pg_wal.tar</code>という名前の別のファイルに書き込まれます（サーバのバージョンが10よりも古い場合は、ファイルの名前は<code class="filename">pg_xlog.tar</code>になります）。
+           </p><p><span class="original">
+            This value is the default.
+</span>この値がデフォルトです。
            </p></dd></dl></div><p>
        </p></dd><dt><span class="term"><code class="option">-z</code><br /></span><span class="term"><code class="option">--gzip</code></span></dt><dd><p><span class="original">
         Enables gzip compression of tar file output, with the default
@@ -275,7 +295,7 @@ WALファイルの転送については、収集方法が<code class="literal">f
         the tar format, and the suffix &lt;filename&gt;.gz&lt;/filename&gt; will
         automatically be added to all tar filenames.
 </span>tarファイル出力のデフォルトの圧縮レベルによるgzip圧縮を有効にします。
-tarファイルを生成する場合のみ圧縮を利用することができます。
+tarファイルを生成する場合のみ圧縮を利用することができ、すべてのtarファイルの名前に拡張子<code class="filename">.gz</code>が自動的に付加されます。
        </p></dd><dt><span class="term"><code class="option">-Z <em class="replaceable"><code>level</code></em></code><br /></span><span class="term"><code class="option">--compress=<em class="replaceable"><code>level</code></em></code></span></dt><dd><p><span class="original">
         Enables gzip compression of tar file output, and specifies the
         compression level (0 through 9, 0 being no compression and 9 being best
@@ -284,7 +304,7 @@ tarファイルを生成する場合のみ圧縮を利用することができ�
         automatically be added to all tar filenames.
 </span>tarファイル出力のgzip圧縮を有効にします。
 また圧縮レベル（0から9まで、0は圧縮なし、9が最高の圧縮レベル）を指定します。
-tarファイルを生成する場合のみ圧縮を利用することができます。
+tarファイルを生成する場合のみ圧縮を利用することができ、すべてのtarファイルの名前に拡張子<code class="filename">.gz</code>が自動的に付加されます。
        </p></dd></dl></div><p>
    </p><p><span class="original">
     The following command-line options control the generation of the
@@ -299,12 +319,17 @@ tarファイルを生成する場合のみ圧縮を利用することができ�
         &lt;quote&gt;&lt;literal&gt;pg_basebackup base backup&lt;/literal&gt;&lt;/quote&gt; will be used.
 </span>バックアップのラベルを設定します。
 何も指定がない場合、<span class="quote">「<span class="quote"><code class="literal">pg_basebackup base backup</code></span>」</span>というデフォルト値が使用されます。
-       </p></dd><dt><span class="term"><code class="option">-n</code><br /></span><span class="term"><code class="option">--no-clean</code></span></dt><dd><p>        By default, when <code class="command">pg_basebackup</code> aborts with an
+       </p></dd><dt><span class="term"><code class="option">-n</code><br /></span><span class="term"><code class="option">--no-clean</code></span></dt><dd><p><span class="original">
+        By default, when &lt;command&gt;pg_basebackup&lt;/command&gt; aborts with an
         error, it removes any directories it might have created before
         discovering that it cannot finish the job (for example, data directory
         and write-ahead log directory). This option inhibits tidying-up and is
         thus useful for debugging.
-       </p><p>        Note that tablespace directories are not cleaned up either way.
+</span>デフォルトでは、<code class="command">pg_basebackup</code>がエラーでアボートするとき、ジョブを完了できないことがわかるより前に作成したすべてのディレクトリ（例えば、データディレクトリと先行書き込みログのディレクトリ）を削除します。
+このオプションはきれいに片付けることを禁止するので、デバッグのために有用です。
+       </p><p><span class="original">
+        Note that tablespace directories are not cleaned up either way.
+</span>テーブル空間のディレクトリはいずれにせよ削除されないことに注意してください。
        </p></dd><dt><span class="term"><code class="option">-P</code><br /></span><span class="term"><code class="option">--progress</code></span></dt><dd><p><span class="original">
         Enables progress reporting. Turning this on will deliver an approximate
         progress report during the backup. Since the database may change during
@@ -325,12 +350,16 @@ tarファイルを生成する場合のみ圧縮を利用することができ�
         will take longer before the first data is sent.
 </span>これが有効な場合、バックアップはまずデータベース全体容量を計算し、その後バックアップに戻り、実際の内容を送信します。
 バックアップに要する時間は少し長くなるかもしれません。特に最初のデータが送られるようになるまでの時間がより長くなります。
-       </p></dd><dt><span class="term"><code class="option">-N</code><br /></span><span class="term"><code class="option">--no-sync</code></span></dt><dd><p>        By default, <code class="command">pg_basebackup</code> will wait for all files
+       </p></dd><dt><span class="term"><code class="option">-N</code><br /></span><span class="term"><code class="option">--no-sync</code></span></dt><dd><p><span class="original">
+        By default, &lt;command&gt;pg_basebackup&lt;/command&gt; will wait for all files
         to be written safely to disk.  This option causes
-        <code class="command">pg_basebackup</code> to return without waiting, which is
+        &lt;command&gt;pg_basebackup&lt;/command&gt; to return without waiting, which is
         faster, but means that a subsequent operating system crash can leave
         the base backup corrupt.  Generally, this option is useful for testing
         but should not be used when creating a production installation.
+</span>デフォルトでは、<code class="command">pg_basebackup</code>は全てのファイルがディスクに安全に書き込まれるまで待機します。
+このオプションは、<code class="command">pg_basebackup</code>が待機せずに戻るようにするため、より高速になりますが、その後でOSがクラッシュするとベースバックアップの破損に繋がるかもしれません。
+一般的に言って、このオプションはテスト用には有用ですが、実運用の環境を作成するときには使わない方が良いでしょう。
        </p></dd><dt><span class="term"><code class="option">-v</code><br /></span><span class="term"><code class="option">--verbose</code></span></dt><dd><p><span class="original">
         Enables verbose mode. Will output some extra steps during startup and
         shutdown, as well as show the exact file name that is currently being
@@ -424,14 +453,14 @@ tarファイルを生成する場合のみ圧縮を利用することができ�
        arguments, and exit.
 </span><span class="application">pg_basebackup</span>コマンドライン引数の使用方法を表示し、終了します。
        </p></dd></dl></div><p>
-   </p></div><div class="refsect1" id="idm45355126685504"><h2>環境</h2><span class="original">
+   </p></div><div class="refsect1" id="idm46108210315392"><h2>環境</h2><span class="original">
   &lt;title&gt;Environment&lt;/title&gt;
 </span><p><span class="original">
    This utility, like most other &lt;productname&gt;PostgreSQL&lt;/&gt; utilities,
    uses the environment variables supported by &lt;application&gt;libpq&lt;/&gt;
    (see &lt;xref linkend="libpq-envars"&gt;).
 </span>他のほとんどの<span class="productname">PostgreSQL</span>ユーティリティと同様このユーティリティは<span class="application">libpq</span>でサポートされる環境変数（<a class="xref" href="libpq-envars.html" title="33.14. 環境変数">33.14</a>参照）を使用します。
-  </p></div><div class="refsect1" id="idm45355126682128"><h2>注意</h2><span class="original">
+  </p></div><div class="refsect1" id="idm46108210312016"><h2>注意</h2><span class="original">
   &lt;title&gt;Notes&lt;/title&gt;
 </span><p><span class="original">
    At the beginning of the backup, a checkpoint needs to be written on the
@@ -450,9 +479,10 @@ tarファイルを生成する場合のみ圧縮を利用することができ�
    to certain directories known to PostgreSQL are copied as empty directories.
    Other symbolic links and special device files are skipped.
    See &lt;xref linkend="protocol-replication"&gt; for the precise details.
-</span>このバックアップには、設定ファイルやサードパーティによりディレクトリに格納された追加ファイルを含め、データディレクトリとテーブル空間内のすべてのファイルが含まれます。
-しかし、通常ファイルとディレクトリのみがコピーされます。
-シンボリックリンク(テーブル空間で利用されているものを除く)および特殊デバイスファイルはスキップされます。
+</span>このバックアップには、設定ファイルやサードパーティによりディレクトリに格納された追加ファイルを含め、データディレクトリとテーブル空間内のすべてのファイルが含まれますが、PostgreSQLによって管理される一部の一時ファイルは含まれません。
+ただし、テーブル空間に使われるシンボリックリンクが保存されることを除くと、通常のファイルとディレクトリのみがコピーされます。
+PostgreSQLが認識している一部のディレクトリを指すシンボリックリンクは空のディレクトリとしてコピーされます。
+その他のシンボリックリンクおよび特殊デバイスファイルはスキップされます。
 (正確な詳細については<a class="xref" href="protocol-replication.html" title="52.4. ストリーミングレプリケーションプロトコル">52.4</a>を参照してください。)
   </p><p><span class="original">
    Tablespaces will in plain format by default be backed up to the same path
@@ -483,7 +513,7 @@ tarファイルを生成する場合のみ圧縮を利用することができ�
 </span><span class="application">pg_basebackup</span>は同じまたは9.1以降のより古いメジャーバージョンのサーバで動作します。
 しかしWALストリーミングモード（<code class="literal">-X stream</code>）はバージョン9.3およびそれ以降のサーバでのみ動作します。
 また、現在のバージョンのtar形式モード（<code class="literal">--format=tar</code>はバージョン9.5およびそれ以降のサーバでのみ動作します。
-  </p></div><div class="refsect1" id="idm45355126667584"><h2>例</h2><span class="original">
+  </p></div><div class="refsect1" id="idm46108210297328"><h2>例</h2><span class="original">
   &lt;title&gt;Examples&lt;/title&gt;
 </span><p><span class="original">
    To create a base backup of the server at &lt;literal&gt;mydbserver&lt;/literal&gt;
@@ -513,6 +543,6 @@ tarファイルを生成する場合のみ圧縮を利用することができ�
    to &lt;filename&gt;./backup/ts&lt;/filename&gt;:
 </span><code class="filename">/opt/ts</code>にあるテーブル空間を<code class="filename">./backup/ts</code>に再配置してローカルデータベースのバックアップを作成します。
 </p><pre class="screen"><code class="prompt">$</code> <strong class="userinput"><code>pg_basebackup -D backup/data -T /opt/ts=$(pwd)/backup/ts</code></strong></pre><p>
-  </p></div><div class="refsect1" id="idm45355126652368"><h2>関連項目</h2><span class="original">
+  </p></div><div class="refsect1" id="idm46108210282128"><h2>関連項目</h2><span class="original">
   &lt;title&gt;See Also&lt;/title&gt;
 </span><span class="simplelist"><a class="xref" href="app-pgdump.html" title="pg_dump"><span class="refentrytitle">pg_dump</span></a></span></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="app-ecpg.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="reference-client.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="pgbench.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top"><span class="application">ecpg</span> </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> <span class="application">pgbench</span></td></tr></table></div></body></html>
