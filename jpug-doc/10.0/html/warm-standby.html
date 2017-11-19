@@ -77,7 +77,7 @@ WALファイル(16MB)は隣り合うシステム、同じサイトの別シス�
 スタンバイサーバは読み取り専用の問い合わせに使用することもできます。
 この場合ホットスタンバイサーバと呼ばれます。
 詳細については<a class="xref" href="hot-standby.html" title="26.5. ホットスタンバイ">26.5</a>を参照してください。
-  </p><a id="idm46710103366288" class="indexterm"></a><a id="idm46710103362928" class="indexterm"></a><a id="idm46710103361664" class="indexterm"></a><a id="idm46710103360400" class="indexterm"></a><a id="idm46710103359136" class="indexterm"></a><a id="idm46710103357888" class="indexterm"></a><div class="sect2" id="standby-planning"><div class="titlepage"><div><div><h3 class="title">26.2.1. 計画</h3></div></div></div><span class="original">
+  </p><a id="idm45692538382080" class="indexterm"></a><a id="idm45692538378720" class="indexterm"></a><a id="idm45692538377456" class="indexterm"></a><a id="idm45692538376192" class="indexterm"></a><a id="idm45692538374928" class="indexterm"></a><a id="idm45692538373680" class="indexterm"></a><div class="sect2" id="standby-planning"><div class="titlepage"><div><div><h3 class="title">26.2.1. 計画</h3></div></div></div><span class="original">
    &lt;title&gt;Planning&lt;/title&gt;
 </span><p><span class="original">
     It is usually wise to create the primary and standby servers
@@ -132,9 +132,9 @@ WALファイル(16MB)は隣り合うシステム、同じサイトの別シス�
     &lt;filename&gt;pg_wal&lt;/&gt; at any time to have them replayed.
 </span>スタンバイモードでは、サーバは継続的にマスタサーバから受け取ったWALを適用します。
 スタンバイサーバはWALアーカイブ(<a class="xref" href="archive-recovery-settings.html#restore-command">restore_command</a>参照)から、または直接TCP接続(ストリーミングレプリケーション)を介してマスタサーバから、WALを読み取ることができます。
-またスタンバイサーバはスタンバイクラスタの<code class="filename">pg_xlog</code>ディレクトリにあるすべてのWALをリストアしようと試みます。
+またスタンバイサーバはスタンバイクラスタの<code class="filename">pg_wal</code>ディレクトリにあるすべてのWALをリストアしようと試みます。
 これはよくサーバの再起動後、スタンバイが再起動前にマスタから流れ込んだWALを再生する時に発生します。
-しかしまたファイルを再生する任意の時点で、手作業で<code class="filename">pg_xlog</code>にコピーすることもできます。
+しかしまたファイルを再生する任意の時点で、手作業で<code class="filename">pg_wal</code>にコピーすることもできます。
    </p><p><span class="original">
     At startup, the standby begins by restoring all WAL available in the
     archive location, calling &lt;varname&gt;restore_command&lt;/&gt;. Once it
@@ -149,10 +149,10 @@ WALファイル(16MB)は隣り合うシステム、同じサイトの別シス�
     archive, &lt;filename&gt;pg_wal&lt;/&gt;, and via streaming replication goes on until the server
     is stopped or failover is triggered by a trigger file.
 </span>起動時、スタンバイサーバは<code class="varname">restore_command</code>を呼び出して、アーカイブ場所にある利用可能なすべてのWALをリストアすることから始めます。
-そこで利用可能なWALの終端に達し、<code class="varname">restore_command</code>が失敗すると、<code class="filename">pg_xlog</code>ディレクトリにある利用可能な任意のWALのリストアを試みます。
-ストリーミングレプリケーションが設定されている場合、これに失敗すると、スタンバイはプライマリサーバへの接続を試み、アーカイブまたは<code class="filename">pg_xlog</code>内に存在した最終の有効レコードからWALのストリーミングを開始します。
+そこで利用可能なWALの終端に達し、<code class="varname">restore_command</code>が失敗すると、<code class="filename">pg_wal</code>ディレクトリにある利用可能な任意のWALのリストアを試みます。
+ストリーミングレプリケーションが設定されている場合、これに失敗すると、スタンバイはプライマリサーバへの接続を試み、アーカイブまたは<code class="filename">pg_wal</code>内に存在した最終の有効レコードからWALのストリーミングを開始します。
 ストリーミングレプリケーションが未設定時にこれに失敗する場合、または、接続が後で切断される場合、スタンバイは最初に戻り、アーカイブからのファイルのリストアを繰り返し行います。
-このアーカイブ、<code class="filename">pg_xlog</code>、ストリーミングレプリケーションからという再試行の繰り返しはサーバが停止する、あるいはトリガファイルによるフェールオーバが発行されるまで続きます。
+このアーカイブ、<code class="filename">pg_wal</code>、ストリーミングレプリケーションからという再試行の繰り返しはサーバが停止する、あるいはトリガファイルによるフェールオーバが発行されるまで続きます。
    </p><p><span class="original">
     Standby mode is exited and the server switches to normal operation
     when &lt;command&gt;pg_ctl promote&lt;/&gt; is run or a trigger file is found
@@ -160,7 +160,7 @@ WALファイル(16MB)は隣り合うシステム、同じサイトの別シス�
     any WAL immediately available in the archive or in &lt;filename&gt;pg_wal&lt;/&gt; will be
     restored, but no attempt is made to connect to the master.
 </span><code class="command">pg_ctl promote</code>が実行された時またはトリガファイル(<code class="varname">trigger_file</code>)が存在する時、スタンバイモードは終了し、サーバは通常の動作に切り替わります。
-フェールオーバの前に、アーカイブまたは<code class="filename">pg_xlog</code>内の即座に利用可能なWALをすべてリストアします。
+フェールオーバの前に、アーカイブまたは<code class="filename">pg_wal</code>内の即座に利用可能なWALをすべてリストアします。
 しかし、マスタへの接続を行おうとはしません。
    </p></div><div class="sect2" id="preparing-master-for-standby"><div class="titlepage"><div><div><h3 class="title">26.2.3. スタンバイサーバのためのマスタの準備</h3></div></div></div><span class="original">
    &lt;title&gt;Preparing the Master for Standby Servers&lt;/title&gt;
@@ -260,7 +260,7 @@ archive_cleanup_command = 'pg_archivecleanup /path/to/archive %r'</pre><p>
 </span>スタンバイサーバの台数に制限はありませんが、ストリーミングレプリケーションを使用するなら、プライマリサーバに同時に接続できるように<code class="varname">max_wal_senders</code>を十分な数に設定してください。
    </p></div><div class="sect2" id="streaming-replication"><div class="titlepage"><div><div><h3 class="title">26.2.5. ストリーミングレプリケーション</h3></div></div></div><span class="original">
    &lt;title&gt;Streaming Replication&lt;/title&gt;
-</span><a id="idm46710103304352" class="indexterm"></a><p><span class="original">
+</span><a id="idm45692538320096" class="indexterm"></a><p><span class="original">
     Streaming replication allows a standby server to stay more up-to-date
     than is possible with file-based log shipping. The standby connects
     to the primary, which streams WAL records to the standby as they're
@@ -398,7 +398,7 @@ primary_conninfo = 'host=192.168.1.50 port=5432 user=foo password=foopass'</pre>
      &lt;command&gt;ps&lt;/&gt; command (see &lt;xref linkend="monitoring-ps"&gt; for details).
 </span>ストリーミングレプリケーションの重要な健全性尺度は、プライマリサーバで生成されたがスタンバイサーバではまだ適用されていないWALレコードの量です。
 プライマリサーバの現在のWAL書き込み位置とスタンバイサーバの受理したWALの最終位置を比較すれば、この遅延を計算できます。
-これらの位置は、プライマリサーバでは<code class="function">pg_current_xlog_location</code>を、スタンバイサーバでは<code class="function">pg_last_xlog_receive_location</code>を使用すれば検索できます（詳細は<a class="xref" href="functions-admin.html#functions-admin-backup-table" title="表9.79 バックアップ制御関数">表 9.79</a>および<a class="xref" href="functions-admin.html#functions-recovery-info-table" title="表9.80 リカバリ情報関数">表 9.80</a>を参照）。
+これらの位置は、プライマリサーバでは<code class="function">pg_current_wal_lsn</code>を、スタンバイサーバでは<code class="function">pg_last_wal_receive_lsn</code>を使用すれば検索できます（詳細は<a class="xref" href="functions-admin.html#functions-admin-backup-table" title="表9.79 バックアップ制御関数">表 9.79</a>および<a class="xref" href="functions-admin.html#functions-recovery-info-table" title="表9.80 リカバリ情報関数">表 9.80</a>を参照）。
 スタンバイサーバの最終位置は、<code class="command">ps</code>コマンドを使用して WAL受信プロセスの状態としても表示できます（詳細は<a class="xref" href="monitoring-ps.html" title="28.1. 標準的なUnixツール">28.1</a>を参照）。
     </p><p><span class="original">
      You can retrieve a list of WAL sender processes via the
@@ -410,11 +410,11 @@ primary_conninfo = 'host=192.168.1.50 port=5432 user=foo password=foopass'</pre>
      &lt;function&gt;pg_last_wal_receive_lsn&lt;/&gt; on the standby might indicate
      network delay, or that the standby is under heavy load.
 </span><a class="link" href="monitoring-stats.html#monitoring-stats-views-table" title="表28.2 収集済み統計情報ビュー"><code class="literal">pg_stat_replication</code></a>ビューを介してWAL送信処理プロセスのリストを入手することができます。
-<code class="function">pg_current_xlog_location</code>と<code class="literal">sent_location</code>フィールドとの違いが大きい場合、マスタサーバが高負荷状態であることを示している可能性があります。
-一方でスタンバイサーバ上の<code class="literal">sent_location</code>と<code class="function">pg_last_xlog_receive_location</code>の値の差異は、ネットワーク遅延、またはスタンバイが高負荷状態であることを示す可能性があります。
+<code class="function">pg_current_wal_lsn</code>と<code class="literal">sent_lsn</code>フィールドとの違いが大きい場合、マスタサーバが高負荷状態であることを示している可能性があります。
+一方でスタンバイサーバ上の<code class="literal">sent_lsn</code>と<code class="function">pg_last_wal_receive_lsn</code>の値の差異は、ネットワーク遅延、またはスタンバイが高負荷状態であることを示す可能性があります。
     </p></div></div><div class="sect2" id="streaming-replication-slots"><div class="titlepage"><div><div><h3 class="title">26.2.6. レプリケーションスロット</h3></div></div></div><span class="original">
    &lt;title&gt;Replication Slots&lt;/title&gt;
-</span><a id="idm46710103245584" class="indexterm"></a><p><span class="original">
+</span><a id="idm45692538261296" class="indexterm"></a><p><span class="original">
     Replication slots provide an automated way to ensure that the master does
     not remove WAL segments until they have been received by all standbys,
     and that the master does not remove rows which could cause a
@@ -485,7 +485,7 @@ primary_conninfo = 'host=192.168.1.50 port=5432 user=foo password=foopass'
 primary_slot_name = 'node_a_slot'</pre><p>
     </p></div></div><div class="sect2" id="cascading-replication"><div class="titlepage"><div><div><h3 class="title">26.2.7. カスケードレプリケーション</h3></div></div></div><span class="original">
    &lt;title&gt;Cascading Replication&lt;/title&gt;
-</span><a id="idm46710103223040" class="indexterm"></a><p><span class="original">
+</span><a id="idm45692538238832" class="indexterm"></a><p><span class="original">
     The cascading replication feature allows a standby server to accept replication
     connections and stream WAL records to other standbys, acting as a relay.
     This can be used to reduce the number of direct connections to the master
@@ -536,7 +536,7 @@ primary_slot_name = 'node_a_slot'</pre><p>
 また、下流スタンバイがカスケードスタンバイに接続できるために、下流スタンバイでは<code class="varname">primary_conninfo</code>を設定する必要があります。
    </p></div><div class="sect2" id="synchronous-replication"><div class="titlepage"><div><div><h3 class="title">26.2.8. 同期レプリケーション</h3></div></div></div><span class="original">
    &lt;title&gt;Synchronous Replication&lt;/title&gt;
-</span><a id="idm46710103207344" class="indexterm"></a><p><span class="original">
+</span><a id="idm45692538223136" class="indexterm"></a><p><span class="original">
     &lt;productname&gt;PostgreSQL&lt;/&gt; streaming replication is asynchronous by
     default. If the primary server
     crashes then some transactions that were committed may not have been
@@ -569,7 +569,7 @@ primary_slot_name = 'node_a_slot'</pre><p>
     changes will not be lost in the event of server crashes but it also
     necessarily increases the response time for the requesting transaction.
     The minimum wait time is the round-trip time between primary to standby.
-</span>同期レプリケーションを要求する時、書き込みトランザクションのコミットはそれぞれ、そのコミットがプライマリサーバおよびスタンバイサーバの両方で、ディスク上のトランザクションログに書き込まれたという確認を受けとるまで待機します。
+</span>同期レプリケーションを要求する時、書き込みトランザクションのコミットはそれぞれ、そのコミットがプライマリサーバおよびスタンバイサーバの両方で、ディスク上の書き込み先行ログに書き込まれたという確認を受けとるまで待機します。
 データ損失が起こる可能性は、プライマリサーバとスタンバイサーバが同時にクラッシュしてしまった場合のみです。
 これは非常に高い永続性を提供することができますが、それはシステム管理者が２つのサーバの設置と管理に関して注意を払っている場合のみです。
 確認のための待機は、サーバがクラッシュした場合でも変更が失われないということでユーザからの信頼性が大きくなりますが、同時に要求するトランザクションの応答時間も必ず大きくなります。
@@ -585,15 +585,20 @@ primary_slot_name = 'node_a_slot'</pre><p>
 副トランザクションのコミットもスタンバイサーバからの応答を待つことはなく、最上位レベルのコミットのみ待機します。
 データロード処理やインデックス構築など長時間実行される操作は、最終コミットメッセージまで待機しません。
 準備およびコミットの両方を含め、二相コミット動作はすべてコミット待機を必要とします。
-   </p><p>    A synchronous standby can be a physical replication standby or a logical
+   </p><p><span class="original">
+    A synchronous standby can be a physical replication standby or a logical
     replication subscriber.  It can also be any other physical or logical WAL
     replication stream consumer that knows how to send the appropriate
     feedback messages.  Besides the built-in physical and logical replication
     systems, this includes special programs such
-    as <code class="command">pg_receivewal</code> and <code class="command">pg_recvlogical</code>
+    as &lt;command&gt;pg_receivewal&lt;/command&gt; and &lt;command&gt;pg_recvlogical&lt;/command&gt;
     as well as some third-party replication systems and custom programs.
     Check the respective documentation for details on synchronous replication
     support.
+</span>同期スタンバイは、物理レプリケーションのスタンバイでも、論理レプリケーションのサブスクライバーのどちらでも構いません。
+また同期スタンバイは、適切なフィードバックメッセージを送信する方法を知っている、物理あるいは論理WALレプリケーションストリームの消費者であっても構いません。
+組み込みの物理あるいは論理レプリケーションシステムを別にすると、<code class="command">pg_receivewal</code>と<code class="command">pg_recvlogical</code>、それにサードパーティーのレプリケーションシステムとカスタムプログラムが該当します。
+対応する同期レプリケーションのサポートの詳細に関するドキュメントを参照してください。
    </p><div class="sect3" id="synchronous-replication-config"><div class="titlepage"><div><div><h4 class="title">26.2.8.1. 基本設定</h4></div></div></div><span class="original">
     &lt;title&gt;Basic Configuration&lt;/title&gt;
 </span><p><span class="original">
@@ -637,7 +642,7 @@ primary_slot_name = 'node_a_slot'</pre><p>
 </span>コミットレコードがプライマリ上のディスクに書き出された後、WALレコードがスタンバイに送信されます。
 スタンバイにて<code class="varname">wal_receiver_status_interval</code>がゼロに設定されていない限り、スタンバイは新しいWALデータの塊がディスクに書き出される度に応答メッセージを返します。
 <code class="varname">synchronous_commit</code>が<code class="literal">remote_apply</code>に設定されている場合には、コミットレコードが再生され、そのトランザクションが可視化されたときに応答メッセージを返します。
-スタンバイが、プライマリ上の優先順リストである<code class="varname">synchronous_standby_names</code>から同期スタンバイとして選ばれた時は、いつコミットレコードの受領を確認ために待機しているトランザクションを解放すべきかを決めるために、他の同期スタンバイとともにそれらスタンバイからの応答メッセージが考慮されます。
+スタンバイが、プライマリ上の<code class="varname">synchronous_standby_names</code>にしたがって、同期スタンバイとして選ばれた時は、いつコミットレコードの受領を確認ために待機しているトランザクションを解放すべきかを決めるために、他の同期スタンバイとともにそれらスタンバイからの応答メッセージが考慮されます。
 これらのパラメータにより、管理者はどのスタンバイサーバを同期スタンバイとすべきかを指定することができます。
 同期レプリケーションの設定は主にマスタでなされることに注意してください。
 指名されたスタンバイは直接マスターサーバに接続される必要があります。
@@ -687,12 +692,9 @@ primary_slot_name = 'node_a_slot'</pre><p>
 </span>同期レプリケーションは、一つ以上の同期スタンバイサーバをサポートします。
 同期と見なされるすべてのスタンバイサーバがデータの受領を確認するまで、トランザクションは待機します。
 トランザクションが応答を待たなければならない同期スタンバイの数は、<code class="varname">synchronous_standby_names</code>で指定されます。
-また、このパラメータには、スタンバイの名前のリストを指定します。
-このリストは、同期スタンバイとして選ばれる個々のスタンバイの優先順位を決定します。
-リストの最初の方に名前が現れるスタンバイには高い優先順位が与えられ、同期と見なされます。
-リストの後の方に現れる他のスタンバイサーバは、潜在的な同期スタンバイであることを表します。
-何かの理由で現在の同期スタンバイのどれかが切断されると、直ちに次に優先順位の高いスタンバイが取って代わります。
-   </p><p>    The method <code class="literal">FIRST</code> specifies a priority-based synchronous
+また、このパラメータには、スタンバイの名前のリストと、リストされたものから同期スタンバイを選ぶ方法（<code class="literal">FIRST</code>と<code class="literal">ANY</code>）を指定します。
+   </p><p><span class="original">
+    The method &lt;literal&gt;FIRST&lt;/&gt; specifies a priority-based synchronous
     replication and makes transaction commits wait until their WAL records are
     replicated to the requested number of synchronous standbys chosen based on
     their priorities. The standbys whose names appear earlier in the list are
@@ -701,8 +703,14 @@ primary_slot_name = 'node_a_slot'</pre><p>
     standbys. If any of the current synchronous standbys disconnects for
     whatever reason, it will be replaced immediately with the
     next-highest-priority standby.
-   </p><p>    An example of <code class="varname">synchronous_standby_names</code> for
+</span>方法<code class="literal">FIRST</code>は優先度に基づく同期レプリケーションを指定し、優先度に応じて選択された同期スタンバイにWALレコードがレプリケーションされるまで、トランザクションのコミットは待機します。
+リストの前の方に名前が書いてあるスタンバイにはより高い優先度が与えられ、同期とみなされます。
+リストの後ろの方に書いてあるスタンバイは、潜在的な同期スタンバイであることを示します。
+どんな理由であれ、現在のスタンバイのどれかの接続が切断されると、次に優先度が高いスタンバイがとって代わります。
+   </p><p><span class="original">
+    An example of &lt;varname&gt;synchronous_standby_names&lt;/&gt; for
     a priority-based multiple synchronous standbys is:
+</span>優先度に基づく複数同期スタンバイのための<code class="varname">synchronous_standby_names</code>の例を示します。
    </p><pre class="programlisting">synchronous_standby_names = 'FIRST 2 (s1, s2, s3)'</pre><p><span class="original">
     In this example, if four standby servers &lt;literal&gt;s1&lt;/&gt;, &lt;literal&gt;s2&lt;/&gt;,
     &lt;literal&gt;s3&lt;/&gt; and &lt;literal&gt;s4&lt;/&gt; are running, the two standbys
@@ -716,20 +724,29 @@ primary_slot_name = 'node_a_slot'</pre><p>
 それらの名前がスタンバイ名のリストの最初の方にあるからです。
 <code class="literal">s3</code>は潜在的な同期スタンバイで、<code class="literal">s1</code>あるいは<code class="literal">s2</code>が故障した時に同期スタンバイの役割を取って代わります。
 このリストに名前が載っていないので、<code class="literal">s4</code>は非同期スタンバイです。
-   </p><p>    The method <code class="literal">ANY</code> specifies a quorum-based synchronous
+   </p><p><span class="original">
+    The method &lt;literal&gt;ANY&lt;/&gt; specifies a quorum-based synchronous
     replication and makes transaction commits wait until their WAL records
-    are replicated to <span class="emphasis"><em>at least</em></span> the requested number of
+    are replicated to &lt;emphasis&gt;at least&lt;/&gt; the requested number of
     synchronous standbys in the list.
-   </p><p>    An example of <code class="varname">synchronous_standby_names</code> for
+</span>方法<code class="literal">ANY</code>はクォーラムに基づく同期レプリケーションを指定し、<span class="emphasis"><em>少なくとも</em></span>リスト中で指定された数の同期スタンバイにWALレコードがレプリケーションされるまで、トランザクションのコミットを待たせます
+   </p><p><span class="original">
+    An example of &lt;varname&gt;synchronous_standby_names&lt;/&gt; for
     a quorum-based multiple synchronous standbys is:
-</p><pre class="programlisting">synchronous_standby_names = 'ANY 2 (s1, s2, s3)'</pre><p>
-    In this example, if four standby servers <code class="literal">s1</code>, <code class="literal">s2</code>,
-    <code class="literal">s3</code> and <code class="literal">s4</code> are running, transaction commits will
-    wait for replies from at least any two standbys of <code class="literal">s1</code>,
-    <code class="literal">s2</code> and <code class="literal">s3</code>. <code class="literal">s4</code> is an asynchronous
+</span>クォーラムに基づく同期スタンバイのための<code class="varname">synchronous_standby_names</code>の例を示します。
+</p><pre class="programlisting">synchronous_standby_names = 'ANY 2 (s1, s2, s3)'</pre><p><span class="original">
+    In this example, if four standby servers &lt;literal&gt;s1&lt;/&gt;, &lt;literal&gt;s2&lt;/&gt;,
+    &lt;literal&gt;s3&lt;/&gt; and &lt;literal&gt;s4&lt;/&gt; are running, transaction commits will
+    wait for replies from at least any two standbys of &lt;literal&gt;s1&lt;/&gt;,
+    &lt;literal&gt;s2&lt;/&gt; and &lt;literal&gt;s3&lt;/&gt;. &lt;literal&gt;s4&lt;/&gt; is an asynchronous
     standby since its name is not in the list.
-   </p><p>    The synchronous states of standby servers can be viewed using
-    the <code class="structname">pg_stat_replication</code> view.
+</span>
+この例では、もし4つのスタンバイサーバ<code class="literal">s1</code>、<code class="literal">s2</code>、<code class="literal">s3</code>、<code class="literal">s4</code>が稼働中なら、トランザクションのコミットは、<code class="literal">s1</code>、<code class="literal">s2</code>、<code class="literal">s3</code>のどれか二つのスタンバイから応答があるまで待たされます。
+このリストに名前が載っていないので、<code class="literal">s4</code>は非同期スタンバイです。
+   </p><p><span class="original">
+    The synchronous states of standby servers can be viewed using
+    the &lt;structname&gt;pg_stat_replication&lt;/structname&gt; view.
+</span><code class="structname">pg_stat_replication</code>ビューを使って、スタンバイサーバの同期状態を見ることができます。
    </p></div><div class="sect3" id="synchronous-replication-performance"><div class="titlepage"><div><div><h4 class="title">26.2.8.3. 性能に関する考慮</h4></div></div></div><span class="original">
     &lt;title&gt;Planning for Performance&lt;/title&gt;
 </span><p><span class="original">
@@ -786,14 +803,20 @@ primary_slot_name = 'node_a_slot'</pre><p>
 これは、<code class="varname">synchronous_standby_names</code>を使って同期スタンバイ候補を複数指定することによって実現できます。
 そのリストの最初の方に名前が上がっているスタンバイは、同期スタンバイとして使用されます。
 その後の方に名前が上がっているスタンバイは、同期スタンバイのどれかが故障した時に、その役割を取って代わります。
-   </p><p>    In a priority-based synchronous replication, the standbys whose names
+   </p><p><span class="original">
+    In a priority-based synchronous replication, the standbys whose names
     appear earlier in the list will be used as synchronous standbys.
     Standbys listed after these will take over the role of synchronous standby
     if one of current ones should fail.
-   </p><p>    In a quorum-based synchronous replication, all the standbys appearing
+</span>優先度に基づく同期レプリケーションでは、リストの前の方に名前が現れるスタンバイが同期スタンバイになります。
+現在の同期スタンバイのどれかが故障した際には、リストの後の方にあるスタンバイが同期スタンバイの役割を引き継ぎます。
+   </p><p><span class="original">
+    In a quorum-based synchronous replication, all the standbys appearing
     in the list will be used as candidates for synchronous standbys.
     Even if one of them should fail, the other standbys will keep performing
     the role of candidates of synchronous standby.
+</span>クォーラムに基づく同期レプリケーションでは、リストに現れたすべてのスタンバイが同期スタンバイの候補となります。
+そのどれかが故障した場合でも、他のスタンバイは引き続き同期スタンバイの候補としての役割を担い続けます。
    </p><p><span class="original">
     When a standby first attaches to the primary, it will not yet be properly
     synchronized. This is described as &lt;literal&gt;catchup&lt;/&gt; mode. Once
@@ -812,6 +835,7 @@ primary_slot_name = 'node_a_slot'</pre><p>
 追従（catchup）期間はスタンバイが作成された直後は長くなるかもしれません。
 スタンバイが停止している場合、追従期間はスタンバイの停止期間にしたがって長くなります。
 スタンバイは、<code class="literal">streaming</code>状態に達した後でのみ、同期スタンバイになることができます。
+この状態は、<code class="structname">pg_stat_replication</code>ビューで見ることができます。
    </p><p><span class="original">
     If primary restarts while commits are waiting for acknowledgement, those
     waiting transactions will be marked fully committed once the primary
@@ -849,7 +873,7 @@ PostgreSQLは、WALデータをすべてのスタンバイが安全に受信し�
 さもないとこれらの要求はスタンバイに現れるまで永遠に待機します。
    </p></div></div><div class="sect2" id="continuous-archiving-in-standby"><div class="titlepage"><div><div><h3 class="title">26.2.9. スタンバイにおける継続的アーカイビング</h3></div></div></div><span class="original">
    &lt;title&gt;Continuous archiving in standby&lt;/title&gt;
-</span><a id="idm46710103117888" class="indexterm"></a><p><span class="original">
+</span><a id="idm45692538126496" class="indexterm"></a><p><span class="original">
      When continuous WAL archiving is used in a standby, there are two
      different scenarios: the WAL archive can be shared between the primary
      and the standby, or the standby can have its own WAL archive. When

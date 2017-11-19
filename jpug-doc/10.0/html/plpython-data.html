@@ -9,7 +9,7 @@
    below.
 </span>一般的にいって、PL/Pythonの目標はPostgreSQLとPythonの世界の間で<span class="quote">「<span class="quote">自然な</span>」</span>対応付けを提供することです。
 これは以下のようなデータの対応付けを形成します。
-  </p><div class="sect2" id="idm46710087448192"><div class="titlepage"><div><div><h3 class="title">45.3.1. データ型の対応付け</h3></div></div></div><span class="original">
+  </p><div class="sect2" id="idm45692522506272"><div class="titlepage"><div><div><h3 class="title">45.3.1. データ型の対応付け</h3></div></div></div><span class="original">
    &lt;title&gt;Data Type Mapping&lt;/title&gt;
 </span><p><span class="original">
     When a PL/Python function is called, its arguments are converted from
@@ -120,7 +120,7 @@ Python 3における文字列はすべてUnicode文字列です。
 </span>
 宣言されたPostgreSQLの戻り値型と実際に返されるオブジェクトのPythonデータ型との間の論理的な不整合が伝わらないことに注意してください。
 値はいかなる場合でも変換されます。
-   </p></div><div class="sect2" id="idm46710087414160"><div class="titlepage"><div><div><h3 class="title">45.3.2. NullとNone</h3></div></div></div><span class="original">
+   </p></div><div class="sect2" id="idm45692522472240"><div class="titlepage"><div><div><h3 class="title">45.3.2. NullとNone</h3></div></div></div><span class="original">
    &lt;title&gt;Null, None&lt;/title&gt;
 </span><p><span class="original">
    If an SQL null value&lt;indexterm&gt;&lt;primary&gt;null value&lt;/primary&gt;&lt;secondary
@@ -134,7 +134,7 @@ Python 3における文字列はすべてUnicode文字列です。
    but will just return a null result automatically. Alternatively,
    we could check for null inputs in the function body:
 </span>SQLのNULL値が関数に渡されると、その引数値はPythonでは<code class="symbol">None</code>となります。
-<a id="idm46710087412736" class="indexterm"></a>
+<a id="idm45692522470816" class="indexterm"></a>
 例えば、<a class="xref" href="plpython-funcs.html" title="45.2. PL/Python関数">45.2</a>に示された<code class="function">pymax</code>関数の定義では、NULL入力に対して間違った結果が返されます。
 関数定義に<code class="literal">STRICT</code>を付与して<span class="productname">PostgreSQL</span>を、NULL値が渡された場合にその関数を呼び出さず、自動的に単にNULL結果を返すという、より理想的に動作させることができます。
 他に、関数本体でNULL入力を検査することもできます。
@@ -162,7 +162,7 @@ $$ LANGUAGE plpythonu;</pre><p>
    return an SQL array value out of a PL/Python function, return a
    Python list:
 </span>SQL配列値はPythonのリストとしてPL/Pythonに渡されます。
-PL/Python関数の外部にSQL配列値を返すためには、Pythonのシーケンス、例えばリストかタプルを返します。
+PL/Python関数の外部にSQL配列値を返すためには、Pythonのリストを返します。
 
 </p><pre class="programlisting">CREATE FUNCTION return_arr()
   RETURNS int[]
@@ -175,11 +175,16 @@ SELECT return_arr();
 -------------
  {1,2,3,4,5}
 (1 row)</pre><p>
-
+<span class="original">
    Multidimensional arrays are passed into PL/Python as nested Python lists.
    A 2-dimensional array is a list of lists, for example. When returning
    a multi-dimensional SQL array out of a PL/Python function, the inner
    lists at each level must all be of the same size. For example:
+</span>
+多次元配列はPL/Pythonに入れ子のPythonのリストとして渡されます。
+例えば、2次元配列はリストのリストです。
+PL/Pythonから多次元のSQLの配列を返す場合には、各レベルの内側のリストはすべて同じ大きさでなければなりません。
+例えば、
 
 </p><pre class="programlisting">CREATE FUNCTION test_type_conversion_array_int4(x int4[]) RETURNS int4[] AS $$
 plpy.info(x, type(x))
@@ -192,7 +197,7 @@ INFO:  ([[1, 2, 3], [4, 5, 6]], &lt;type 'list'&gt;)
 ---------------------------------
  {{1,2,3},{4,5,6}}
 (1 row)</pre><p>
-
+<span class="original">
    Other Python sequences, like tuples, are also accepted for
    backwards-compatibility with PostgreSQL versions 9.6 and below, when
    multi-dimensional arrays were not supported. However, they are always
@@ -200,6 +205,10 @@ INFO:  ([[1, 2, 3], [4, 5, 6]], &lt;type 'list'&gt;)
    composite types. For the same reason, when a composite type is used in a
    multi-dimensional array, it must be represented by a tuple, rather than a
    list.
+</span>
+タプル等のその他のPythonのシーケンスも、PostgreSQLバージョン9.6以下との後方互換性のために受け入れられます。当時は、多次元配列はサポートされていませんでした。
+しかしながら、複合型としてあいまいなため、常に1次元配列として扱われます。
+同じ理由で、複合型を多次元配列内で使う場合、リストではなくタプルとして表現しなければなりません。
   </p><p><span class="original">
    Note that in Python, strings are sequences, which can have
    undesirable effects that might be familiar to Python programmers:
@@ -217,7 +226,7 @@ SELECT return_str_arr();
 ----------------
  {h,e,l,l,o}
 (1 row)</pre><p>
-  </p></div><div class="sect2" id="idm46710087397856"><div class="titlepage"><div><div><h3 class="title">45.3.4. 複合型</h3></div></div></div><span class="original">
+  </p></div><div class="sect2" id="idm45692522454640"><div class="titlepage"><div><div><h3 class="title">45.3.4. 複合型</h3></div></div></div><span class="original">
    &lt;title&gt;Composite Types&lt;/title&gt;
 </span><p><span class="original">
    Composite-type arguments are passed to the function as Python mappings. The
@@ -272,17 +281,21 @@ $$ LANGUAGE plpythonu;</pre><p>
 </p><pre class="programlisting">CREATE FUNCTION make_pair (name text, value integer)
   RETURNS named_value
 AS $$
-  return ( name, value )
+  return ( name, value )<span class="original">
   # or alternatively, as tuple: return [ name, value ]
+</span>
+  # もしくは代わりに、タプルとして: return [ name, value ]
 $$ LANGUAGE plpythonu;</pre><p>
 <span class="original">
        To return a SQL null for any column, insert &lt;symbol&gt;None&lt;/symbol&gt; at
        the corresponding position.
 </span>
 任意の列でSQL NULL値を返すには、対応する位置に<code class="symbol">None</code>を挿入します。
-      </p><p>       When an array of composite types is returned, it cannot be returned as a list,
+      </p><p><span class="original">
+       When an array of composite types is returned, it cannot be returned as a list,
        because it is ambiguous whether the Python list represents a composite type,
        or another array dimension.
+</span>複合型の配列を返す場合、Pythonのリストが複合型を表しているのか、また別の配列の次元を表しているのかあいまいですので、リストとして返すことはできません。
       </p></dd><dt><span class="term">マップ（辞書）</span></dt><dd><p><span class="original">
        The value for each result type column is retrieved from the mapping
        with the column name as key. Example:
@@ -334,7 +347,7 @@ return (1, 2)
 $$ LANGUAGE plpythonu;
 
 SELECT * FROM multiout_simple();</pre><p>
-   </p></div><div class="sect2" id="idm46710087378800"><div class="titlepage"><div><div><h3 class="title">45.3.5. 集合を返す関数</h3></div></div></div><span class="original">
+   </p></div><div class="sect2" id="idm45692522434720"><div class="titlepage"><div><div><h3 class="title">45.3.5. 集合を返す関数</h3></div></div></div><span class="original">
    &lt;title&gt;Set-returning Functions&lt;/title&gt;
 </span><p><span class="original">
    A &lt;application&gt;PL/Python&lt;/application&gt; function can also return sets of
