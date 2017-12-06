@@ -9,7 +9,7 @@ layout: default
 
 | HTML （オンライン）           | PDF                                           | EPUB                                         | 更新日     |
 |:------------------------------|:---------------------------------------------:|:--------------------------------------------:|:----------:|
-| [10.0](jpug-doc/10.0/html/) | [PDF](jpug-doc/10.0/postgresql-10.0-A4.pdf) | [EPUB](jpug-doc/10.0/postgresql-10.0.epub) | 2017-11-27 |
+| [10.0](jpug-doc/10.0/html/) | [PDF](jpug-doc/10.0/postgresql-10.0-A4.pdf) | [EPUB](jpug-doc/10.0/postgresql-10.0.epub) | 2017-12-07 |
 
 ### PostgreSQL 9.6
 

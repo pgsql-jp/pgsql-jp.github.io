@@ -30,7 +30,7 @@
       </span>
       これらのパラメータはレプリケーションデータを１つ、またはそれ以上複数のスタンバイサーバに送るいかなるサーバ上で設定することができます。マスターは常に送出サーバであるため、パラメータは常にマスター上に設定されなければなりません。これらのパラメータの役割と意味はスタンバイが後にマスターに昇格しても変わりません。
      </p><div class="variablelist"><dl class="variablelist"><dt id="guc-max-wal-senders"><span class="term"><code class="varname">max_wal_senders</code> (<code class="type">integer</code>)
-       <a id="idm45990192844288" class="indexterm"></a>
+       <a id="idm45222252216832" class="indexterm"></a>
        </span></dt><dd><p>       <span class="original">
         Specifies the maximum number of concurrent connections from
         standby servers or streaming base backup clients (i.e., the
@@ -47,16 +47,15 @@
         &lt;literal&gt;replica&lt;/&gt; or higher to allow connections from standby
         servers.
        </span>
-複数のスタンバイサーバ、またはストリーミングを基盤とする予備（バックアップ）クライアントからの同時接続を受ける接続最大値を設定します（つまり、同時に稼動するWAL送信プロセスの最大値です）。
-デフォルトは10です。
-0ならば、レプリケーションは無効であるという意味になります。
-WAL送出プロセスは接続の総数カウントに考慮されるため、<a class="xref" href="runtime-config-connection.html#guc-max-connections">max_connections</a>を越えたパラメータの設定できません。
-クライアント接続が突然切断されると、タイムアウトするまで孤児接続スロットが残ってしまうかもしれません。
+       複数のスタンバイサーバ、またはストリーミングを基盤とする予備（バックアップ）クライアントからの同時接続を受ける接続最大値を設定します（つまり、同時に稼動するWAL送信プロセスの最大値です）。
+       デフォルトはゼロです。その意味するところはレプリケーションは無効です。
+       WAL送出プロセスは接続の総数カウントに考慮されるため、<a class="xref" href="runtime-config-connection.html#guc-max-connections">max_connections</a>を越えたパラメータの設定できません。
+        クライアント接続が突然切断されると、タイムアウトするまで孤児接続スロットが残ってしまうかもしれません。
 ですから、このパラメータは想定されるクライアント数の最大値よりも少し大きめにして、切断されたクライアントが直ちに再接続できるようにした方が良いでしょう。
-このパラメータはサーバ起動時のみ設定可能です。
+       このパラメータはサーバ起動時のみ設定可能です。
 スタンバイサーバからの接続を許可するには、<code class="varname">wal_level</code>を<code class="literal">replica</code>以上に設定しておかなければなりません。
        </p></dd><dt id="guc-max-replication-slots"><span class="term"><code class="varname">max_replication_slots</code> (<code class="type">integer</code>)
-       <a id="idm45990192835712" class="indexterm"></a>
+       <a id="idm45222252208192" class="indexterm"></a>
        </span></dt><dd><p><span class="original">
          Specifies the maximum number of replication slots
          (see &lt;xref linkend="streaming-replication-slots"&gt;) that the server
@@ -66,13 +65,12 @@ WAL送出プロセスは接続の総数カウントに考慮されるため、<a
          to &lt;literal&gt;replica&lt;/literal&gt; or higher to allow replication slots to
          be used. Setting it to a lower value than the number of currently
          existing replication slots will prevent the server from starting.
-</span>サーバが使用できるレプリケーションスロット(<a class="xref" href="warm-standby.html#streaming-replication-slots" title="26.2.6. レプリケーションスロット">26.2.6</a>参照)の最大数を指定します。
-デフォルトは10です。
-このパラメータはサーバ起動時のみ設定可能です。
+</span>        サーバが使用できるレプリケーションスロット(<a class="xref" href="warm-standby.html#streaming-replication-slots" title="26.2.6. レプリケーションスロット">26.2.6</a>参照)の最大数を指定します。デフォルトは0です。
+       このパラメータはサーバ起動時のみ設定可能です。
 レプリケーションスロットが使用できるためには、<code class="varname">wal_level</code>を<code class="literal">replica</code>以上に設定しなければなりません。
-現在存在しているレプリケーションスロットの数よりも少ない値を設定すると、サーバは起動しません。
+         現在存在しているレプリケーションスロットの数よりも少ない値を設定すると、サーバは起動しません。
         </p></dd><dt id="guc-wal-keep-segments"><span class="term"><code class="varname">wal_keep_segments</code> (<code class="type">integer</code>)
-       <a id="idm45990192829184" class="indexterm"></a>
+       <a id="idm45222252201584" class="indexterm"></a>
        </span></dt><dd><p>       <span class="original">
         Specifies the minimum number of past log file segments kept in the
         &lt;filename&gt;pg_wal&lt;/&gt;
@@ -86,10 +84,10 @@ WAL送出プロセスは接続の総数カウントに考慮されるため、<a
         server can recover by fetching the segment from archive, if WAL
         archiving is in use.)
        </span>
-ストリーミングレプリケーションにおいて、スタンバイサーバが過去のファイルセグメントを取得する必要がある場合に備え、<code class="filename">pg_wal</code>ディレクトリに保持しておくファイルセグメント数の最小値を指定します。
-それぞれのセグメントは通常16メガバイトです。
-もし送出サーバに接続しているスタンバイサーバが<code class="varname">wal_keep_segments</code>セグメントを越えて遅延した場合、送出サーバはスタンバイサーバが今後とも必要とするWALセグメントを削除する可能性があります。
-この場合、レプリケーション接続は終了させられます。結果として下流に対する接続も結局は終了されることがあります。（しかし、WALアーカイブが使用されていれば、スタンバイサーバはアーカイブからセグメントを取り出し、復旧することができます。）
+        ストリーミングレプリケーションにおいて、スタンバイサーバが過去のファイルセグメントを取得する必要がある場合に備え、<code class="filename">pg_xlog</code>ディレクトリに保持しておくファイルセグメント数の最小値を指定します。
+       それぞれのセグメントは通常16メガバイトです。
+       もし送出サーバに接続しているスタンバイサーバが<code class="varname">wal_keep_segments</code>セグメントを越えて遅延した場合、送出サーバはスタンバイサーバが今後とも必要とするWALセグメントを削除する可能性があります。
+       この場合、レプリケーション接続は終了させられます。結果として下流に対する接続も結局は終了されることがあります。（しかし、WALアーカイブが使用されていれば、スタンバイサーバはアーカイブからセグメントを取り出し、復旧することができます。）
        </p><p>       <span class="original">
         This sets only the minimum number of segments retained in
         &lt;filename&gt;pg_wal&lt;/&gt;; the system might need to retain more segments
@@ -102,13 +100,12 @@ WAL送出プロセスは接続の総数カウントに考慮されるため、<a
         This parameter can only be set in the
         &lt;filename&gt;postgresql.conf&lt;/&gt; file or on the server command line.
        </span>
-<code class="filename">pg_wal</code>に保持され続けるセグメントの最小値のみを設定します。
-システムはWALアーカイブのため、またはチェックポイントからの復旧のため、より多くのセグメント保持が必要となることがあります。
-もし<code class="varname">wal_keep_segments</code>が（デフォルトの）ゼロの場合、システムはスタンバイサーバのために追加セグメントを保持することはしません。
-従って、スタンバイサーバが使用できる古いWALセグメントの数は、直前のチェックポイントの場所とWALアーカイブの状況によって算出されます。
-このパラメータは、<code class="filename">postgresql.conf</code>ファイル、もしくはサーバコマンドラインでのみ設定可能です。
+       <code class="filename">pg_xlog</code>に保持され続けるセグメントの最小値のみを設定します。
+       システムはWALアーカイブのため、またはチェックポイントからの復旧のため、より多くのセグメント保持が必要となることがあります。もし<code class="varname">wal_keep_segments</code>が（デフォルトの）ゼロの場合、システムはスタンバイサーバのために追加セグメントを保持することはしません。
+        従って、スタンバイサーバが使用できる古いWALセグメントの数は、直前のチェックポイントの場所とWALアーカイブの状況によって算出されます。
+       このパラメータは、<code class="filename">postgresql.conf</code>ファイル、もしくはサーバコマンドラインでのみ設定可能です。
        </p></dd><dt id="guc-wal-sender-timeout"><span class="term"><code class="varname">wal_sender_timeout</code> (<code class="type">integer</code>)
-      <a id="idm45990192817664" class="indexterm"></a>
+      <a id="idm45222252189904" class="indexterm"></a>
       </span></dt><dd><p>       <span class="original">
         Terminate replication connections that are inactive longer
         than the specified number of milliseconds. This is useful for
@@ -124,7 +121,7 @@ WAL送出プロセスは接続の総数カウントに考慮されるため、<a
        このパラメータは、<code class="filename">postgresql.conf</code>ファイル、もしくはサーバコマンドラインでのみ設定可能です。
        デフォルトの値は60秒です。
        </p></dd><dt id="guc-track-commit-timestamp"><span class="term"><code class="varname">track_commit_timestamp</code> (<code class="type">boolean</code>)
-      <a id="idm45990192811856" class="indexterm"></a>
+      <a id="idm45222252184048" class="indexterm"></a>
       </span></dt><dd><p><span class="original">
         Record commit time of transactions. This parameter
         can only be set in &lt;filename&gt;postgresql.conf&lt;/&gt; file or on the server
@@ -149,7 +146,7 @@ WAL送出プロセスは接続の総数カウントに考慮されるため、<a
       これらパラメータに加え、<a class="xref" href="runtime-config-wal.html#guc-wal-level">wal_level</a>はマスターサーバ上で適切に設定される必要があり、オプションとしてWALアーカイブを有効にしてもかまいません（<a class="xref" href="runtime-config-wal.html#runtime-config-wal-archiving" title="19.5.3. アーカイビング">19.5.3</a>を参照してください）。
       スタンバイサーバがマスターサーバになるかもしれない状況に備え、それらのパラメータをスタンバイサーバで設定したいと考えたとしても、スタンバイサーバ上でのパラメータの値は意味をなしません。
      </p><div class="variablelist"><dl class="variablelist"><dt id="guc-synchronous-standby-names"><span class="term"><code class="varname">synchronous_standby_names</code> (<code class="type">string</code>)
-      <a id="idm45990192801184" class="indexterm"></a>
+      <a id="idm45222252173376" class="indexterm"></a>
       </span></dt><dd><p><span class="original">
         Specifies a list of standby servers that can support
         &lt;firstterm&gt;synchronous replication&lt;/&gt;, as described in
@@ -166,13 +163,7 @@ WAL送出プロセスは接続の総数カウントに考慮されるため、<a
         Specifying more than one synchronous standby can allow for very high
         availability and protection against data loss.
        &lt;/para&gt;
-       </span><a class="xref" href="warm-standby.html#synchronous-replication" title="26.2.8. 同期レプリケーション">26.2.8</a>で説明されているように、<em class="firstterm">同期レプリケーション</em>をサポート可能なスタンバイサーバのリストを指定します。
-活動中の同期スタンバイサーバは1つまたはそれ以上です。
-コミットを待機しているトランザクションは、このスタンバイサーバがそのデータの受信を確認してから処理の継続が許可されます。
-同期スタンバイサーバはこのリストに名前が挙げられていており、現時点で接続され、そしてデータをリアルタイムでストリーミングしているものです（<a class="link" href="monitoring-stats.html#monitoring-stats-views-table" title="表28.2 収集済み統計情報ビュー"><code class="literal">pg_stat_replication</code></a> ビューにおいて<code class="literal">streaming</code>状態として示されています）。
-このリストの後の方に記載されているその他のスタンバイサーバは潜在的に同期スタンバイサーバになることを示しています。
-二つ以上の同期スタンバイサーバ名を指定することで、かなりの高可用性とデータ損失に対する保護が得られます。
-       </p><p><span class="original">
+       &lt;para&gt;
         The name of a standby server for this purpose is the
         &lt;varname&gt;application_name&lt;/&gt; setting of the standby, as set in the
         standby's connection information.  In case of a physical replication
@@ -182,11 +173,13 @@ WAL送出プロセスは接続の総数カウントに考慮されるため、<a
         be set in the connection information of the subscription, and it
         defaults to the subscription name.  For other replication stream
         consumers, consult their documentation.
-</span>この目的のためのスタンバイサーバ名は、スタンバイの接続情報で指定された、スタンバイの<code class="varname">application_name</code>設定です。
-物理レプリケーションスタンバイでは、<code class="filename">recovery.conf</code>中の<code class="varname">primary_conninfo</code>設定です。
-デフォルトは<code class="literal">walreceiver</code>です。
-論理レプリケーションでは、サブスクリプションの接続情報でで設定でき、デフォルトはサブスクリプション名です。
-それ以外のレプリケーションストリームコンシューマーについては、それぞれのドキュメントをご覧ください。
+       </span><a class="xref" href="warm-standby.html#synchronous-replication" title="26.2.8. 同期レプリケーション">26.2.8</a>で説明されているように、<em class="firstterm">同期レプリケーション</em>をサポート可能なスタンバイサーバの名前をコンマで区切られたリストで指定します。
+活動中の同期スタンバイサーバは1つまたはそれ以上です。
+コミットを待機しているトランザクションは、このスタンバイサーバがそのデータの受信を確認してから処理の継続が許可されます。
+同期スタンバイサーバはこのリストの最初の方に名前が挙げられていており、現時点で接続され、そしてデータをリアルタイムでストリーミングしているものです（<a class="link" href="monitoring-stats.html#monitoring-stats-views-table" title="表28.2 収集済み統計情報ビュー"><code class="literal">pg_stat_replication</code></a> ビューにおいて<code class="literal">streaming</code>状態として示されています）。
+このリストの後の方に記載されているその他のスタンバイサーバは潜在的に同期スタンバイサーバになることを示しています。
+もし現在の同期スタンバイサーバが理由にかかわらず切断された場合、次に順位の高いスタンバイサーバがすぐに取って代わります。
+二つ以上のスタンバイサーバ名を指定することでかなりの高可用性が得られます。
        </p><p><span class="original">
         This parameter specifies a list of standby servers using
         either of the following syntaxes:
@@ -204,69 +197,46 @@ ANY <em class="replaceable"><code>num_sync</code></em> ( <em class="replaceable"
 </span>
 ここで、<em class="replaceable"><code>num_sync</code></em>は、トランザクションが応答を待機する必要のある同期スタンバイの数です。
 <em class="replaceable"><code>standby_name</code></em>は、スタンバイサーバの名前です。
-<code class="literal">FIRST</code>と<code class="literal">ANY</code>は、リスト中のサーバーから同期スタンバイを選ぶ方法を指定します。
-       </p><p><span class="original">
-        The keyword &lt;literal&gt;FIRST&lt;/&gt;, coupled with
-        &lt;replaceable class="parameter"&gt;num_sync&lt;/replaceable&gt;, specifies a
+たとえば<code class="literal">3 (s1, s2, s3, s4)</code>とすると、<code class="literal">s1</code>、<code class="literal">s2</code>、<code class="literal">s3</code>、<code class="literal">s4</code>の中から選ばれた優先順位の高い3つのスタンバイサーバがWALレコードを受信するまでコミットは待機します。
+       </p><p>        The keyword <code class="literal">FIRST</code>, coupled with
+        <em class="replaceable"><code>num_sync</code></em>, specifies a
         priority-based synchronous replication and makes transaction commits
         wait until their WAL records are replicated to
-        &lt;replaceable class="parameter"&gt;num_sync&lt;/replaceable&gt; synchronous
+        <em class="replaceable"><code>num_sync</code></em> synchronous
         standbys chosen based on their priorities. For example, a setting of
-        &lt;literal&gt;FIRST 3 (s1, s2, s3, s4)&lt;/&gt; will cause each commit to wait for
+        <code class="literal">FIRST 3 (s1, s2, s3, s4)</code> will cause each commit to wait for
         replies from three higher-priority standbys chosen from standby servers
-        &lt;literal&gt;s1&lt;/&gt;, &lt;literal&gt;s2&lt;/&gt;, &lt;literal&gt;s3&lt;/&gt; and &lt;literal&gt;s4&lt;/&gt;.
+        <code class="literal">s1</code>, <code class="literal">s2</code>, <code class="literal">s3</code> and <code class="literal">s4</code>.
         The standbys whose names appear earlier in the list are given higher
         priority and will be considered as synchronous. Other standby servers
         appearing later in this list represent potential synchronous standbys.
         If any of the current synchronous standbys disconnects for whatever
         reason, it will be replaced immediately with the next-highest-priority
-        standby. The keyword &lt;literal&gt;FIRST&lt;/&gt; is optional.
-</span>キーワード<code class="literal">FIRST</code>を<em class="replaceable"><code>num_sync</code></em>と組み合わせると、優先度に基づく同期レプリケーションを指定し、優先度に基づいて選ばれた<em class="replaceable"><code>num_sync</code></em>個の同期スタンバイにWALレコードがレプリケーションされるまで、トランザクションのコミットは待機します。
-たとえば<code class="literal">FIRST 3 (s1, s2, s3, s4)</code>とすると、<code class="literal">s1</code>、<code class="literal">s2</code>、<code class="literal">s3</code>、<code class="literal">s4</code>の中から選ばれた優先順位の高い3つのスタンバイサーバが応答を返すまでコミットは待機します。
-リストの中で前の方に名前が出現するスタンバイには高い優先度が与えられ、同期と見なされます。
-それ以外のリストの中で後の方に名前が上がっているスタンバイサーバーは、潜在的な同期スタンバイであることを表しています。
-どんな理由であれ、現在の同期スタンバイが切断されると、次に高い優先度を持つスタンバイに直ちに取って代わられます。
-キーワード<code class="literal">FIRST</code>はオプションです。
-       </p><p><span class="original">
-        The keyword &lt;literal&gt;ANY&lt;/&gt;, coupled with
-        &lt;replaceable class="parameter"&gt;num_sync&lt;/replaceable&gt;, specifies a
+        standby. The keyword <code class="literal">FIRST</code> is optional.
+       </p><p>        The keyword <code class="literal">ANY</code>, coupled with
+        <em class="replaceable"><code>num_sync</code></em>, specifies a
         quorum-based synchronous replication and makes transaction commits
-        wait until their WAL records are replicated to &lt;emphasis&gt;at least&lt;/&gt;
-        &lt;replaceable class="parameter"&gt;num_sync&lt;/replaceable&gt; listed standbys.
-        For example, a setting of &lt;literal&gt;ANY 3 (s1, s2, s3, s4)&lt;/&gt; will cause
+        wait until their WAL records are replicated to <span class="emphasis"><em>at least</em></span>
+        <em class="replaceable"><code>num_sync</code></em> listed standbys.
+        For example, a setting of <code class="literal">ANY 3 (s1, s2, s3, s4)</code> will cause
         each commit to proceed as soon as at least any three standbys of
-        &lt;literal&gt;s1&lt;/&gt;, &lt;literal&gt;s2&lt;/&gt;, &lt;literal&gt;s3&lt;/&gt; and &lt;literal&gt;s4&lt;/&gt;
+        <code class="literal">s1</code>, <code class="literal">s2</code>, <code class="literal">s3</code> and <code class="literal">s4</code>
         reply.
-</span>キーワード<code class="literal">ANY</code>と組わせると、<em class="replaceable"><code>num_sync</code></em>はクォーラムに基づく同期レプリケーションを指定し、優先度に基づいて選ばれた<span class="emphasis"><em>少なくとも</em></span><em class="replaceable"><code>num_sync</code></em>個の同期スタンバイにWALレコードがレプリケーションされるまで、トランザクションのコミットを待たせます。
-たとえば<code class="literal">ANY 3 (s1, s2, s3, s4)</code>とすると、<code class="literal">s1</code>、<code class="literal">s2</code>、<code class="literal">s3</code>の3つのうちのどれかが応答を返した時点でコミットが進行します。
-       </p><p><span class="original">
-        &lt;literal&gt;FIRST&lt;/&gt; and &lt;literal&gt;ANY&lt;/&gt; are case-insensitive. If these
+       </p><p>        <code class="literal">FIRST</code> and <code class="literal">ANY</code> are case-insensitive. If these
         keywords are used as the name of a standby server,
-        its &lt;replaceable class="parameter"&gt;standby_name&lt;/replaceable&gt; must
+        its <em class="replaceable"><code>standby_name</code></em> must
         be double-quoted.
-</span><code class="literal">FIRST</code>と<code class="literal">ANY</code>は、大文字小文字を区別しません。
-もしこれらのキーワードをスタンバイサーバの名前に使う場合は、<em class="replaceable"><code>standby_name</code></em>は二重引用符で囲わなければなりません。
-       </p><p><span class="original">
-        The third syntax was used before &lt;productname&gt;PostgreSQL&lt;/&gt;
+       </p><p>        The third syntax was used before <span class="productname">PostgreSQL</span>
         version 9.6 and is still supported. It's the same as the first syntax
-        with &lt;literal&gt;FIRST&lt;/&gt; and
-        &lt;replaceable class="parameter"&gt;num_sync&lt;/replaceable&gt; equal to 1.
-        For example, &lt;literal&gt;FIRST 1 (s1, s2)&lt;/&gt; and &lt;literal&gt;s1, s2&lt;/&gt; have
-        the same meaning: either &lt;literal&gt;s1&lt;/&gt; or &lt;literal&gt;s2&lt;/&gt; is chosen
+        with <code class="literal">FIRST</code> and
+        <em class="replaceable"><code>num_sync</code></em> equal to 1.
+        For example, <code class="literal">FIRST 1 (s1, s2)</code> and <code class="literal">s1, s2</code> have
+        the same meaning: either <code class="literal">s1</code> or <code class="literal">s2</code> is chosen
         as a synchronous standby.
-</span>3番目の構文は、<span class="productname">PostgreSQL</span>9.6よりも前のバージョンで用いられていたもので、依然としてサポートされています。
-最初の構文で、<code class="literal">FIRST</code>、<em class="replaceable"><code>num_sync</code></em>を1とした時と同じです。
-たとえば、<code class="literal">FIRST 1 (s1, s2)</code>と<code class="literal">s1, s2</code>は同じ意味です。
-<code class="literal">s1</code>か<code class="literal">s2</code>が同期スタンバイとして選ばれます。
-       </p><p><span class="original">
-        The special entry &lt;literal&gt;*&lt;/&gt; matches any standby name.
-</span>特別なエントリ<code class="literal">*</code>は、すべてのスタンバイ名に一致します。
-       </p><p><span class="original">
-        There is no mechanism to enforce uniqueness of standby names.  In case
+       </p><p>        The special entry <code class="literal">*</code> matches any standby name.
+       </p><p>        There is no mechanism to enforce uniqueness of standby names.  In case
         of duplicates one of the matching standbys will be considered as
         higher priority, though exactly which one is indeterminate.
-</span>スタンバイの一意性を強要する仕組みはありません。
-重複があった場合、一致したスタンバイは優先順位が高いと見なされますが、どれが選ばれるかは非決定的です。
         </p><div class="note"><h3 class="title">注記</h3><p><span class="original">
          Each &lt;replaceable class="parameter"&gt;standby_name&lt;/replaceable&gt;
          should have the form of a valid SQL identifier, unless it
@@ -293,7 +263,7 @@ ANY <em class="replaceable"><code>num_sync</code></em> ( <em class="replaceable"
        </span>
        このパラメータは、<code class="filename">postgresql.conf</code>ファイル、もしくはサーバコマンドラインでのみ設定可能です。
        </p></dd><dt id="guc-vacuum-defer-cleanup-age"><span class="term"><code class="varname">vacuum_defer_cleanup_age</code> (<code class="type">integer</code>)
-      <a id="idm45990192742512" class="indexterm"></a>
+      <a id="idm45222252119552" class="indexterm"></a>
       </span></dt><dd><p>       <span class="original">
         Specifies the number of transactions by which &lt;command&gt;VACUUM&lt;/&gt; and
         &lt;acronym&gt;HOT&lt;/&gt; updates will defer cleanup of dead row versions. The
@@ -335,7 +305,7 @@ ANY <em class="replaceable"><code>num_sync</code></em> ( <em class="replaceable"
       これらの設定はレプリケーションデータを受け取るスタンバイサーバの動作を管理します。
       マスターサーバ上のこれらの値は無意味です。
      </p><div class="variablelist"><dl class="variablelist"><dt id="guc-hot-standby"><span class="term"><code class="varname">hot_standby</code> (<code class="type">boolean</code>)
-      <a id="idm45990192728384" class="indexterm"></a>
+      <a id="idm45222252105296" class="indexterm"></a>
       </span></dt><dd><p>       <span class="original">
         Specifies whether or not you can connect and run queries during
         recovery, as described in &lt;xref linkend="hot-standby"&gt;.
@@ -343,10 +313,10 @@ ANY <em class="replaceable"><code>num_sync</code></em> ( <em class="replaceable"
         This parameter can only be set at server start. It only has effect
         during archive recovery or in standby mode.
        </span>
-       <a class="xref" href="hot-standby.html" title="26.5. ホットスタンバイ">26.5</a>に記載されている通り、リカバリの最中に接続し、そして問い合わせを実行できるか否かを設定します。デフォルト値は<code class="literal">on</code>です。
+       <a class="xref" href="hot-standby.html" title="26.5. ホットスタンバイ">26.5</a>に記載されている通り、リカバリの最中に接続し、そして問い合わせを実行できるか否かを設定します。デフォルト値は<code class="literal">off</code>です。
        このパラメータはサーバ起動時のみ設定可能です。これは、アーカイブリカバリ期間、又はスタンバイモードにある場合にのみ効果をもたらします。
        </p></dd><dt id="guc-max-standby-archive-delay"><span class="term"><code class="varname">max_standby_archive_delay</code> (<code class="type">integer</code>)
-      <a id="idm45990192722288" class="indexterm"></a>
+      <a id="idm45222252099200" class="indexterm"></a>
       </span></dt><dd><p>       <span class="original">
         When Hot Standby is active, this parameter determines how long the
         standby server should wait before canceling standby queries that
@@ -378,7 +348,7 @@ ANY <em class="replaceable"><code>num_sync</code></em> ( <em class="replaceable"
 むしろ、任意の１つのWALセグメントのデータの適用のために許される最大合計時間です。
 従って、ある問い合わせによりWALセグメント内の前の部分で大幅な遅延となった場合、その後の衝突する問い合わせの猶予時間はずっと短くなります。
        </p></dd><dt id="guc-max-standby-streaming-delay"><span class="term"><code class="varname">max_standby_streaming_delay</code> (<code class="type">integer</code>)
-      <a id="idm45990192711952" class="indexterm"></a>
+      <a id="idm45222252088912" class="indexterm"></a>
       </span></dt><dd><p>       <span class="original">
         When Hot Standby is active, this parameter determines how long the
         standby server should wait before canceling standby queries that
@@ -411,7 +381,7 @@ ANY <em class="replaceable"><code>num_sync</code></em> ( <em class="replaceable"
 むしろ、プライマリサーバから一度受け取られたWALデータを適用するために許される最大合計時間です。
 従って、ある問い合わせが大幅な遅延を起こした場合、その後の衝突する問い合わせは、スタンバイサーバがふたたび遅れを取り戻すまでの間、猶予時間はずっと短くなります。
        </p></dd><dt id="guc-wal-receiver-status-interval"><span class="term"><code class="varname">wal_receiver_status_interval</code> (<code class="type">integer</code>)
-      <a id="idm45990192701648" class="indexterm"></a>
+      <a id="idm45222252078608" class="indexterm"></a>
       </span></dt><dd><p>      <span class="original">
        Specifies the minimum frequency for the WAL receiver
        process on the standby to send information about replication progress
@@ -431,7 +401,7 @@ ANY <em class="replaceable"><code>num_sync</code></em> ( <em class="replaceable"
        </span>
 スタンバイサーバ上のWAL受信プロセスがプライマリー、または上位サーバに対してレプリケーションの進捗情報を送信する最小頻度を指定します。
 送信された進捗情報は<a class="link" href="monitoring-stats.html#monitoring-stats-views-table" title="表28.2 収集済み統計情報ビュー"><code class="literal">pg_stat_replication</code></a>ビューにより確認することが可能です。
-スタンバイサーバは書き込みがされた直近の先行書き込みログ位置、ディスクにフラッシュされた直近のログ位置、およびリカバリ適用された直近のログ位置を報告します。
+スタンバイサーバは書き込みがされた直近のログ位置、ディスクにフラッシュされた直近のログ位置、およびリカバリ適用された直近のログ位置を報告します。
 このパラメータの値がそれぞれの報告間における秒単位の最大の時間間隔です。
 書き込み、またはフラッシュ位置が変更される毎、あるいは最低でもこのパラメータで設定された頻度で更新情報が送信されます。
 従って、適用位置は真の位置よりも少し後ろにずれることがあります。
@@ -439,7 +409,7 @@ ANY <em class="replaceable"><code>num_sync</code></em> ( <em class="replaceable"
 このパラメータは、<code class="filename">postgresql.conf</code>ファイル、もしくはサーバコマンドラインでのみ設定可能です。
 デフォルトの値は10秒です。
       </p></dd><dt id="guc-hot-standby-feedback"><span class="term"><code class="varname">hot_standby_feedback</code> (<code class="type">boolean</code>)
-      <a id="idm45990192692928" class="indexterm"></a>
+      <a id="idm45222252069936" class="indexterm"></a>
       </span></dt><dd><p>       <span class="original">
         Specifies whether or not a hot standby will send feedback to the primary
         or upstream standby
@@ -477,7 +447,7 @@ ANY <em class="replaceable"><code>num_sync</code></em> ( <em class="replaceable"
 これは、<code class="varname">old_snapshot_threshold</code>が、無効行によってデータ溢れが起こる時刻の絶対的な制限を提供することを意図しているからです。
 そうでなければ、スタンバイの設定によってこの目的は成立しなくなってしまいます。
        </p></dd><dt id="guc-wal-receiver-timeout"><span class="term"><code class="varname">wal_receiver_timeout</code> (<code class="type">integer</code>)
-      <a id="idm45990192681824" class="indexterm"></a>
+      <a id="idm45222252058832" class="indexterm"></a>
       </span></dt><dd><p>       <span class="original">
         Terminate replication connections that are inactive longer
         than the specified number of milliseconds. This is useful for
@@ -488,13 +458,12 @@ ANY <em class="replaceable"><code>num_sync</code></em> ( <em class="replaceable"
         the &lt;filename&gt;postgresql.conf&lt;/&gt; file or on the server command line.
         The default value is 60 seconds.
        </span>
-指定されたミリ秒より長い間、活動していないレプリケーション接続は停止します。
-このことは受信するスタンバイサーバがプライマリノードの機能停止、またはネットワーク停止を検出するのに便利です。
-値ゼロは時間切れメカニズムを無効にします。
-このパラメータは<code class="filename">postgresql.conf</code>ファイルまたはサーバのコマンドラインのみで設定可能です。
-デフォルト値は60秒です。
+       指定されたミリ秒より長い活動していないレプリケーション接続は停止します。
+       このことは受信するスタンバイサーバがプライマリノードの機能停止、またはネットワーク停止を検出するのに便利です。
+       値ゼロは時間切れメカニズムを無効にします。このパラメータは<code class="filename">postgresql.conf</code>またはサーバのコマンドラインのみで設定可能です。
+       デフォルト値は60秒です。
        </p></dd><dt id="guc-wal-retrieve-retry-interval"><span class="term"><code class="varname">wal_retrieve_retry_interval</code> (<code class="type">integer</code>)
-      <a id="idm45990192675952" class="indexterm"></a>
+      <a id="idm45222252052944" class="indexterm"></a>
       </span></dt><dd><p><span class="original">
         Specify how long the standby server should wait when WAL data is not
         available from any sources (streaming replication,
@@ -502,7 +471,7 @@ ANY <em class="replaceable"><code>num_sync</code></em> ( <em class="replaceable"
         retrieve WAL data.  This parameter can only be set in the
         &lt;filename&gt;postgresql.conf&lt;/&gt; file or on the server command line.
         The default value is 5 seconds. Units are milliseconds if not specified.
-</span>WALデータがソース(ストリーミングレプリケーション、ローカルの<code class="filename">pg_wal</code>、またはWALアーカイブ)から取得できない時に、スタンバイサーバがWALデータ受信をリトライするまでにどの位の時間待つべきかを指定します。
+</span>WALデータがソース(ストリーミングレプリケーション、ローカルの<code class="filename">pg_xlog</code>、またはWALアーカイブ)から取得できない時に、スタンバイサーバがWALデータ受信をリトライするまでにどの位の時間待つべきかを指定します。
 このパラメータは、<code class="filename">postgresql.conf</code>ファイル、もしくはサーバコマンドラインでのみ設定可能です。
 デフォルト値は5秒です。
 特に指定がなければ単位はミリ秒です。
@@ -520,48 +489,25 @@ ANY <em class="replaceable"><code>num_sync</code></em> ( <em class="replaceable"
 たとえば、アーカイブリカバリにおいては、このパラメータの値を小さくすることにより、新しいWALログファイルを検出する際にリカバリの応答を早くすることができます。
 WALの生成頻度が少ないシステムでは、この値を大きくすることにより、WALアーカイブへのアクセス頻度を減らすことができます。
 これは、たとえば基盤へのアクセス回数が課金対象になるクラウド環境において、有用です。
-       </p></dd></dl></div></div><div class="sect2" id="runtime-config-replication-subscriber"><div class="titlepage"><div><div><h3 class="title">19.6.4. サブスクライバー</h3></div></div></div><span class="original">
-     &lt;title&gt;Subscribers&lt;/title&gt;
-</span><p><span class="original">
-      These settings control the behavior of a logical replication subscriber.
+       </p></dd></dl></div></div><div class="sect2" id="runtime-config-replication-subscriber"><div class="titlepage"><div><div><h3 class="title">19.6.4. Subscribers</h3></div></div></div><p>      These settings control the behavior of a logical replication subscriber.
       Their values on the publisher are irrelevant.
-</span>これらの設定項目は、論理レプリケーションのサブスクライバーの挙動を制御します。
-パブリッシャーにおける設定値とは無関係です。
-     </p><p><span class="original">
-      Note that &lt;varname&gt;wal_receiver_timeout&lt;/varname&gt; and
-      &lt;varname&gt;wal_retrieve_retry_interval&lt;/varname&gt; configuration parameters
+     </p><p>      Note that <code class="varname">wal_receiver_timeout</code> and
+      <code class="varname">wal_retrieve_retry_interval</code> configuration parameters
       affect the logical replication workers as well.
-</span><code class="varname">wal_receiver_timeout</code>および<code class="varname">wal_retrieve_retry_interval</code>設定パラメータは、論理レプリケーションワーカーにも影響することに注意してください。
      </p><div class="variablelist"><dl class="variablelist"><dt id="guc-max-logical-replication-workers"><span class="term"><code class="varname">max_logical_replication_workers</code> (<code class="type">int</code>)
-      <a id="idm45990192663968" class="indexterm"></a>
-      </span></dt><dd><p><span class="original">
-        Specifies maximum number of logical replication workers. This includes
+      <a id="idm45222252041776" class="indexterm"></a>
+      </span></dt><dd><p>        Specifies maximum number of logical replication workers. This includes
         both apply workers and table synchronization workers.
-</span>論理レプリケーションワーカーの最大数を指定します。
-適用ワーカーと、テーブル同期ワーカーの両方が含まれます。
-       </p><p><span class="original">
-        Logical replication workers are taken from the pool defined by
-        &lt;varname&gt;max_worker_processes&lt;/varname&gt;.
-</span>論理レプリケーションワーカーは、<code class="varname">max_worker_processes</code>で定義されたプールから取得されます。
-       </p><p><span class="original">
-        The default value is 4.
-</span>デフォルト値は4です。
+       </p><p>        Logical replication workers are taken from the pool defined by
+        <code class="varname">max_worker_processes</code>.
+       </p><p>        The default value is 4.
        </p></dd><dt id="guc-max-sync-workers-per-subscription"><span class="term"><code class="varname">max_sync_workers_per_subscription</code> (<code class="type">integer</code>)
-      <a id="idm45990192658272" class="indexterm"></a>
-      </span></dt><dd><p><span class="original">
-        Maximum number of synchronization workers per subscription. This
+      <a id="idm45222252037056" class="indexterm"></a>
+      </span></dt><dd><p>        Maximum number of synchronization workers per subscription. This
         parameter controls the amount of parallelism of the initial data copy
         during the subscription initialization or when new tables are added.
-</span>サブスクリプションごとの同期ワーカーの最大数です。
-このパラメータは、サブスクリプションの初期化中、あるいは新しいテーブルが追加されたときの初期データコピーの並列度を制御します。
-       </p><p><span class="original">
-        Currently, there can be only one synchronization worker per table.
-</span>今のところ、一つのテーブルにつき、同期ワーカーは一つだけです。
-       </p><p><span class="original">
-        The synchronization workers are taken from the pool defined by
-        &lt;varname&gt;max_logical_replication_workers&lt;/varname&gt;.
-</span>同期ワーカーは、<code class="varname">max_logical_replication_workers</code>で定義されたプールから取得されます。
-       </p><p><span class="original">
-        The default value is 2.
-</span>デフォルト値は2です。
+       </p><p>        Currently, there can be only one synchronization worker per table.
+       </p><p>        The synchronization workers are taken from the pool defined by
+        <code class="varname">max_logical_replication_workers</code>.
+       </p><p>        The default value is 2.
        </p></dd></dl></div></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="runtime-config-wal.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="runtime-config.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="runtime-config-query.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">19.5. ログ先行書き込み（WAL） </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> 19.7. 問い合わせ計画</td></tr></table></div></body></html>
