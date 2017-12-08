@@ -2,7 +2,7 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>30.5. WALの内部</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="wal-configuration.html" title="30.4. WALの設定" /><link rel="next" href="logical-replication.html" title="第31章 論理レプリケーション" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 10.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="wal.html" title="第30章 信頼性とログ先行書き込み">第30章 信頼性とログ先行書き込み</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 10.0 &#10;                      wal-internals.html">誤訳等の報告
                     </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="wal-configuration.html" title="30.4. WALの設定">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="wal.html" title="第30章 信頼性とログ先行書き込み">上へ</a></td><td width="60%" align="center">30.5. WALの内部</td><td width="20%" align="right"> <a accesskey="n" href="logical-replication.html" title="第31章 論理レプリケーション">次へ</a></td></tr></table><hr /></div><div class="sect1" id="wal-internals"><div class="titlepage"><div><div><h2 class="title" style="clear: both">30.5. WALの内部</h2></div></div></div><span class="original">
   &lt;title&gt;WAL Internals&lt;/title&gt;
-</span><a id="idm45014411057920" class="indexterm"></a><p><span class="original">
+</span><a id="idm46661297691792" class="indexterm"></a><p><span class="original">
    &lt;acronym&gt;WAL&lt;/acronym&gt; is automatically enabled; no action is
    required from the administrator except ensuring that the
    disk-space requirements for the &lt;acronym&gt;WAL&lt;/acronym&gt; logs are met,
@@ -10,15 +10,20 @@
    linkend="wal-configuration"&gt;).
 </span><acronym class="acronym">WAL</acronym>は自動的に有効になります。
 <acronym class="acronym">WAL</acronym>ログが必要とするディスク容量を確保すること、そして必要ならばチューニングすることを除いては（<a class="xref" href="wal-configuration.html" title="30.4. WALの設定">30.4</a>を参照）、管理者は何もする必要はありません。
-  </p><p>   <acronym class="acronym">WAL</acronym> records are appended to the <acronym class="acronym">WAL</acronym>
+  </p><p><span class="original">
+   &lt;acronym&gt;WAL&lt;/acronym&gt; records are appended to the &lt;acronym&gt;WAL&lt;/acronym&gt;
    logs as each new record is written. The insert position is described by
-   a Log Sequence Number (<acronym class="acronym">LSN</acronym>) that is a byte offset into
+   a Log Sequence Number (&lt;acronym&gt;LSN&lt;/acronym&gt;) that is a byte offset into
    the logs, increasing monotonically with each new record.
-   <acronym class="acronym">LSN</acronym> values are returned as the datatype
-   <a class="link" href="datatype-pg-lsn.html" title="8.19. pg_lsn 型"><code class="type">pg_lsn</code></a>. Values can be
-   compared to calculate the volume of <acronym class="acronym">WAL</acronym> data that
+   &lt;acronym&gt;LSN&lt;/acronym&gt; values are returned as the datatype
+   &lt;link linkend="datatype-pg-lsn"&gt;&lt;type&gt;pg_lsn&lt;/&gt;&lt;/link&gt;. Values can be
+   compared to calculate the volume of &lt;acronym&gt;WAL&lt;/acronym&gt; data that
    separates them, so they are used to measure the progress of replication
    and recovery.
+</span>新しいレコードが作成されるごとに、<acronym class="acronym">WAL</acronym>レコードが<acronym class="acronym">WAL</acronym>ログに追加されます。
+挿入位置はログシーケンス番号(<acronym class="acronym">LSN</acronym>)によって記録されます。LSNはログのバイトオフセットで、単調増加します。
+<acronym class="acronym">LSN</acronym>値は、<a class="link" href="datatype-pg-lsn.html" title="8.19. pg_lsn 型"><code class="type">pg_lsn</code></a>データ型として返されます。
+2つの<acronym class="acronym">LSN</acronym>値を比較することで<acronym class="acronym">WAL</acronym>データの差分量を計算することができるので、レプリケーションやリカバリーの進捗状況を測定できます。
   </p><p><span class="original">
    &lt;acronym&gt;WAL&lt;/acronym&gt; logs are stored in the directory
    &lt;filename&gt;pg_wal&lt;/filename&gt; under the data directory, as a set of
@@ -33,7 +38,7 @@
    &lt;filename&gt;000000010000000000000000&lt;/filename&gt;.  The numbers do not wrap,
    but it will take a very, very long time to exhaust the
    available stock of numbers.
-</span><acronym class="acronym">WAL</acronym>ログは、データディレクトリ以下の<code class="filename">pg_xlog</code>ディレクトリに、通常16メガバイトのサイズを持つセグメントファイルの集合として格納されています(ただし、このサイズはサーバ構築時の<code class="option">--with-wal-segsize</code>というconfigureオプションで変更できます)。各セグメントは通常8キロバイトのページに分割されます(このサイズは<code class="option">--with-wal-blocksize</code>というconfigureオプションで変更できます)。
+</span><acronym class="acronym">WAL</acronym>ログは、データディレクトリ以下の<code class="filename">pg_wal</code>ディレクトリに、通常16メガバイトのサイズを持つセグメントファイルの集合として格納されています(ただし、このサイズはサーバ構築時の<code class="option">--with-wal-segsize</code>というconfigureオプションで変更できます)。各セグメントは通常8キロバイトのページに分割されます(このサイズは<code class="option">--with-wal-blocksize</code>というconfigureオプションで変更できます)。
 ログレコード用のヘッダは<code class="filename">access/xlogrcord.h</code>に記述されています。
 レコードの内容は、ログの対象となる事象の種類によって異なります。
 セグメントファイルは名前として<code class="filename">000000010000000000000000</code>から始まる、常に増加する数が与えられています。
@@ -45,7 +50,7 @@
    is shut down, of course) and creating a symbolic link from the
    original location in the main data directory to the new location.
 </span>主要なデータベースファイルが置いてあるディスクとは別のディスクにログを置くと利点があります。
-これは<code class="filename">pg_xlog</code>ディレクトリを別の場所に（もちろんサーバを終了しておいてから）移動し、主データディレクトリ以下の元々の場所から新しい場所へのシンボリックリンクを張ることによって可能となります。
+これは<code class="filename">pg_wal</code>ディレクトリを別の場所に（もちろんサーバを終了しておいてから）移動し、主データディレクトリ以下の元々の場所から新しい場所へのシンボリックリンクを張ることによって可能となります。
   </p><p><span class="original">
    The aim of &lt;acronym&gt;WAL&lt;/acronym&gt; is to ensure that the log is
    written before database records are altered, but this can be subverted by
@@ -57,7 +62,7 @@
    that disks holding &lt;productname&gt;PostgreSQL&lt;/productname&gt;'s
    &lt;acronym&gt;WAL&lt;/acronym&gt; log files do not make such false reports.
    (See &lt;xref linkend="wal-reliability"&gt;.)
-</span><acronym class="acronym">WAL</acronym>の目的である、確実にデータベースレコードが変更される前にログが書き出されることは、実際にはキャッシュにしかデータがなく、ディスクには格納されていない時にディスクドライブ<a id="idm45014411041936" class="indexterm"></a>が格納に成功したとカーネルに虚偽の報告を行うことによって失われる可能性があります。
+</span><acronym class="acronym">WAL</acronym>の目的である、確実にデータベースレコードが変更される前にログが書き出されることは、実際にはキャッシュにしかデータがなく、ディスクには格納されていない時にディスクドライブ<a id="idm46661297675552" class="indexterm"></a>が格納に成功したとカーネルに虚偽の報告を行うことによって失われる可能性があります。
 そのような状況では、電源が落ちた際に、復旧不可能なデータの破壊が起こることがあります。
 管理者は、<span class="productname">PostgreSQL</span>の<acronym class="acronym">WAL</acronym>ログを保持しているディスク装置がそのような嘘の報告をしないように保証するべきです。(<a class="xref" href="wal-reliability.html" title="30.1. 信頼性">30.1</a>を参照して下さい。)
   </p><p><span class="original">

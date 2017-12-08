@@ -2,7 +2,7 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>5.7. 行セキュリティポリシー</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="ddl-priv.html" title="5.6. 権限" /><link rel="next" href="ddl-schemas.html" title="5.8. スキーマ" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 10.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="ddl.html" title="第5章 データ定義">第5章 データ定義</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 10.0 &#10;                      ddl-rowsecurity.html">誤訳等の報告
                     </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="ddl-priv.html" title="5.6. 権限">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="ddl.html" title="第5章 データ定義">上へ</a></td><td width="60%" align="center">5.7. 行セキュリティポリシー</td><td width="20%" align="right"> <a accesskey="n" href="ddl-schemas.html" title="5.8. スキーマ">次へ</a></td></tr></table><hr /></div><div class="sect1" id="ddl-rowsecurity"><div class="titlepage"><div><div><h2 class="title" style="clear: both">5.7. 行セキュリティポリシー</h2></div></div></div><span class="original">
   &lt;title&gt;Row Security Policies&lt;/title&gt;
-</span><a id="idm45014434897360" class="indexterm"></a><a id="idm45014434896080" class="indexterm"></a><p><span class="original">
+</span><a id="idm46661321649680" class="indexterm"></a><a id="idm46661321648400" class="indexterm"></a><p><span class="original">
    In addition to the SQL-standard &lt;link linkend="ddl-priv"&gt;privilege
    system&lt;/link&gt; available through &lt;xref linkend="sql-grant"&gt;,
    tables can have &lt;firstterm&gt;row security policies&lt;/&gt; that restrict,
@@ -95,9 +95,9 @@
    This is similar to the rule that a given role has the privileges
    of all roles that they are a member of.  Permissive vs. restrictive
    policies are discussed further below.
-</span>ある問い合わせに複数のポリシーが適用される場合、それらは<code class="literal">OR</code>で結合されます。
-つまり、ポリシーのどれかがアクセスを許せば、その行はアクセス可能です。
+</span>ある問い合わせに複数のポリシーが適用される場合、（デフォルトの許容(permissive)ポリシーについては）<code class="literal">OR</code>または（制限(restrictive)ポリシーについては） <code class="literal">AND</code>を使って結合されます。
 これは、あるロールが、それが属するすべてのロールの権限を合わせ持つのと類似しています。
+許容ポリシーと制限ポリシーについては以下で更に説明します。
   </p><p><span class="original">
    As a simple example, here is how to create a policy on
    the &lt;literal&gt;account&lt;/&gt; relation to allow only members of
@@ -271,18 +271,24 @@ ERROR:  permission denied for relation passwd<span class="original">
 -- Aliceは自分のパスワードを変更できる。
 -- RLSにより他の行は更新されないが、何も報告されない。
 postgres=&gt; update passwd set pwhash = 'abc';
-UPDATE 1</pre><p>   All of the policies constructed thus far have been permissive policies,
+UPDATE 1</pre><p><span class="original">
+   All of the policies constructed thus far have been permissive policies,
    meaning that when multiple policies are applied they are combined using
-   the <span class="quote">「<span class="quote">OR</span>」</span> Boolean operator.  While permissive policies can be constructed
+   the &lt;quote&gt;OR&lt;/quote&gt; Boolean operator.  While permissive policies can be constructed
    to only allow access to rows in the intended cases, it can be simpler to
    combine permissive policies with restrictive policies (which the records
-   must pass and which are combined using the <span class="quote">「<span class="quote">AND</span>」</span> Boolean operator).
+   must pass and which are combined using the &lt;quote&gt;AND&lt;/quote&gt; Boolean operator).
    Building on the example above, we add a restrictive policy to require
    the administrator to be connected over a local Unix socket to access the
-   records of the <code class="literal">passwd</code> table:
+   records of the &lt;literal&gt;passwd&lt;/literal&gt; table:
+</span>ここまでで作成したポリシーはすべて許容ポリシーで、つまり複数のポリシーが適用される場合、それらは論理演算子<span class="quote">「<span class="quote">OR</span>」</span>を使って結合されるものでした。
+意図した場合にのみ行へのアクセスが許されるよう許容ポリシーを構築することは可能ですが、許容ポリシーを制限ポリシーと組み合わせることで、より単純にすることが可能です（制限ポリシーはレコードが満たさなければならないポリシーで、論理演算子<span class="quote">「<span class="quote">AND</span>」</span>を使って結合されます）。
+上記の例に重ねて、管理者がローカルのUnixソケットを通して接続して<code class="literal">passwd</code>テーブルのレコードにアクセスすることを要求する制限ポリシーを追加してみます。
   </p><pre class="programlisting">CREATE POLICY admin_local_only ON passwd AS RESTRICTIVE TO admin
-    USING (pg_catalog.inet_client_addr() IS NULL);</pre><p>   We can then see that an administrator connecting over a network will not
+    USING (pg_catalog.inet_client_addr() IS NULL);</pre><p><span class="original">
+   We can then see that an administrator connecting over a network will not
    see any records, due to the restrictive policy:
+</span>こうすると以下のように、制限ポリシーにより、ネットワーク経由で接続している管理者にはレコードが見えないことがわかります。
   </p><pre class="programlisting">=&gt; SELECT current_user;
  current_user 
 --------------
