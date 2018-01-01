@@ -2,7 +2,7 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>28.5. 動的追跡</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="progress-reporting.html" title="28.4. 進捗状況のレポート" /><link rel="next" href="diskusage.html" title="第29章 ディスク使用量の監視" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 10.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="monitoring.html" title="第28章 データベース活動状況の監視">第28章 データベース活動状況の監視</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 10.0 &#10;                      dynamic-trace.html">誤訳等の報告
                     </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="progress-reporting.html" title="28.4. 進捗状況のレポート">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="monitoring.html" title="第28章 データベース活動状況の監視">上へ</a></td><td width="60%" align="center">28.5. 動的追跡</td><td width="20%" align="right"> <a accesskey="n" href="diskusage.html" title="第29章 ディスク使用量の監視">次へ</a></td></tr></table><hr /></div><div class="sect1" id="dynamic-trace"><div class="titlepage"><div><div><h2 class="title" style="clear: both">28.5. 動的追跡</h2></div></div></div><span class="original">
   &lt;title&gt;Dynamic Tracing&lt;/title&gt;
-</span><a id="idm46661298139712" class="indexterm"></a><p><span class="original">
+</span><a id="idm46339191179056" class="indexterm"></a><p><span class="original">
    &lt;productname&gt;PostgreSQL&lt;/productname&gt; provides facilities to support
    dynamic tracing of the database server. This allows an external
    utility to be called at specific points in the code and thereby trace
@@ -25,7 +25,7 @@
    for Linux provides a DTrace equivalent and can also be used.  Supporting other dynamic
    tracing utilities is theoretically possible by changing the definitions for
    the macros in &lt;filename&gt;src/include/utils/probes.h&lt;/&gt;.
-</span>現在、これを書いている時点ではSolaris、OS X、FreeBSD、NetBSD、Oracle Linuxで利用可能な<a class="ulink" href="http://opensolaris.org/os/community/dtrace/" target="_top">DTrace</a>ユーティリティがサポートされています。
+</span>現在、これを書いている時点ではSolaris、macOS、FreeBSD、NetBSD、Oracle Linuxで利用可能な<a class="ulink" href="http://opensolaris.org/os/community/dtrace/" target="_top">DTrace</a>ユーティリティがサポートされています。
 <a class="ulink" href="http://sourceware.org/systemtap/" target="_top">SystemTap</a>プロジェクトではDTrace相当の機能をLinux向けに提供しており、それを使うこともできます。
 他の動的追跡ユーティリティのサポートは、<code class="filename">src/include/utils/probes.h</code>内の<code class="literal">PG_TRACE</code>マクロ定義を変更することで、理論上は可能です。
   </p><div class="sect2" id="compiling-for-trace"><div class="titlepage"><div><div><h3 class="title">28.5.1. 動的追跡のためのコンパイル</h3></div></div></div><span class="original">
@@ -127,23 +127,24 @@ arg4はtrueならばソート結果に対するランダムアクセスが要求
      </td></tr><tr><td><code class="literal">sort-done</code></td><td><code class="literal">(bool, long)</code></td><td>ソート処理の終了を捕捉するプローブ。
 arg0はtrueならば外部ソート、falseは内部ソートを示します。
 arg1は外部ソートで使用されたディスクブロック数、もしくは内部ソートで使用されたメモリーのキロバイト数を示します。
-     </td></tr><tr><td><code class="literal">lwlock-acquire</code></td><td><code class="literal">(char *, LWLockMode)</code></td><td>Probe that fires when an LWLock has been acquired.
-      arg0 is the LWLock's tranche.
-      arg1 is the requested lock mode, either exclusive or shared.</td></tr><tr><td><code class="literal">lwlock-release</code></td><td><code class="literal">(char *)</code></td><td>Probe that fires when an LWLock has been released (but note
-      that any released waiters have not yet been awakened).
-      arg0 is the LWLock's tranche.</td></tr><tr><td><code class="literal">lwlock-wait-start</code></td><td><code class="literal">(char *, LWLockMode)</code></td><td>Probe that fires when an LWLock was not immediately available and
-      a server process has begun to wait for the lock to become available.
-      arg0 is the LWLock's tranche.
-      arg1 is the requested lock mode, either exclusive or shared.</td></tr><tr><td><code class="literal">lwlock-wait-done</code></td><td><code class="literal">(char *, LWLockMode)</code></td><td>Probe that fires when a server process has been released from its
-      wait for an LWLock (it does not actually have the lock yet).
-      arg0 is the LWLock's tranche.
-      arg1 is the requested lock mode, either exclusive or shared.</td></tr><tr><td><code class="literal">lwlock-condacquire</code></td><td><code class="literal">(char *, LWLockMode)</code></td><td>Probe that fires when an LWLock was successfully acquired when the
-      caller specified no waiting.
-      arg0 is the LWLock's tranche.
-      arg1 is the requested lock mode, either exclusive or shared.</td></tr><tr><td><code class="literal">lwlock-condacquire-fail</code></td><td><code class="literal">(char *, LWLockMode)</code></td><td>Probe that fires when an LWLock was not successfully acquired when
-      the caller specified no waiting.
-      arg0 is the LWLock's tranche.
-      arg1 is the requested lock mode, either exclusive or shared.</td></tr><tr><td><code class="literal">lock-wait-start</code></td><td><code class="literal">(unsigned int, unsigned int, unsigned int, unsigned int, unsigned int, LOCKMODE)</code></td><td>通常のロック(lmgr lock)を即座に取得できなかったため、サーバプロセスがロックを利用できるまでロック待ち状態になった際の開始を捕捉するプローブ。
+     </td></tr><tr><td><code class="literal">lwlock-acquire</code></td><td><code class="literal">(char *, LWLockMode)</code></td><td>LWLockの獲得を捕捉するプローブ。
+arg0はLWLockのトランシェを示します。
+arg1は要求されたロックモード（排他または共有）を示します。
+     </td></tr><tr><td><code class="literal">lwlock-release</code></td><td><code class="literal">(char *)</code></td><td>LWLockの解放を捕捉するプローブ（ただし、解放された待機状態のものにはまだ通知されていないことに注意してください）。
+arg0はLWLockのトランシェを示します。
+     </td></tr><tr><td><code class="literal">lwlock-wait-start</code></td><td><code class="literal">(char *, LWLockMode)</code></td><td>LWLockが即座には獲得できず、ロックが利用可能になるまでサーバプロセスが待機を開始したことを捕捉するプローブ。
+arg0はLWLockのトランシェを示します。
+arg1は要求されたロックモード（排他または共有）を示します。
+     </td></tr><tr><td><code class="literal">lwlock-wait-done</code></td><td><code class="literal">(char *, LWLockMode)</code></td><td>サーバプロセスがLWLockの待機から解放されたことを捕捉するプローブ（まだ実際にはロックを取得していません）。
+arg0はLWLockのトランシェを示します。
+arg1は要求されたロックモード（排他または共有）を示します。
+     </td></tr><tr><td><code class="literal">lwlock-condacquire</code></td><td><code class="literal">(char *, LWLockMode)</code></td><td>呼び出し元が待機しないことを指定した際の、LWLockの獲得成功を捕捉するプローブ。
+arg0はLWLockのトランシェを示します。
+arg1は要求されたロックモード（排他または共有）を示します。
+     </td></tr><tr><td><code class="literal">lwlock-condacquire-fail</code></td><td><code class="literal">(char *, LWLockMode)</code></td><td>呼び出し元が待機しないことを指定した際の、LWLockの獲得失敗を捕捉するプローブ。
+arg0はLWLockのトランシェを示します。
+arg1は要求されたロックモード（排他または共有）を示します。
+     </td></tr><tr><td><code class="literal">lock-wait-start</code></td><td><code class="literal">(unsigned int, unsigned int, unsigned int, unsigned int, unsigned int, LOCKMODE)</code></td><td>通常のロック(lmgr lock)を即座に取得できなかったため、サーバプロセスがロックを利用できるまでロック待ち状態になった際の開始を捕捉するプローブ。
 arg0からarg3はロックされたオブジェクトの識別用タグ領域です。
 arg4はロックされたオブジェクトのタイプを示します。
 arg5は要求されたロックの種類を示します。

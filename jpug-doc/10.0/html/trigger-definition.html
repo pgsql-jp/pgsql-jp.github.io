@@ -8,7 +8,7 @@
     performed.  Triggers can be attached to tables (partitioned or not),
     views, and foreign tables.
 </span>トリガとは、データベースが、ある特定の操作が行われた時に常に自動的に実行しなければならない特定の機能に関する規定です。
-トリガはテーブル、ビュー、外部テーブルに付与することができます。
+トリガはテーブル（パーティション化されているかどうかにかかわらず）、ビュー、外部テーブルに付与することができます。
   </p><p><span class="original">
     On tables and foreign tables, triggers can be defined to execute either
     before or after any &lt;command&gt;INSERT&lt;/command&gt;, &lt;command&gt;UPDATE&lt;/command&gt;,
@@ -22,9 +22,9 @@
     event.
 </span>テーブルおよび外部テーブル上では、トリガを<code class="command">INSERT</code>、<code class="command">UPDATE</code>または<code class="command">DELETE</code>操作の前後に、行を変更する度、あるいは<acronym class="acronym">SQL</acronym>文ごとに実行するように定義することができます。
 <code class="command">INSERT</code>が<code class="literal">ON CONFLICT DO UPDATE</code>句を含む場合、<code class="varname">EXCLUDED</code>列への参照があるなら、BEFORE INSERTトリガとBEFORE UPDATEトリガの両方が適用されることもあります。
-UPDATEトリガについては、特定のカラムがUPDATE文のSET句の対象になった時のみ発動するよう設定することができます。また、トリガはTRUNCATE文についても実行できます。
+さらに、UPDATEトリガについては、特定のカラムがUPDATE文のSET句の対象になった時のみ発動するよう設定することができます。
+また、トリガはTRUNCATE文についても発動できます。
 トリガイベントが起こると、トリガ関数がそのイベントを扱う適切な時点で呼び出されます。
-外部テーブルはTRUNCATEを全くサポートしません。
    </p><p><span class="original">
     On views, triggers can be defined to execute instead of
     &lt;command&gt;INSERT&lt;/command&gt;, &lt;command&gt;UPDATE&lt;/command&gt;, or
@@ -74,8 +74,8 @@ UPDATEトリガについては、特定のカラムがUPDATE文のSET句の対�
 行単位のトリガでは、トリガを発行した文によって影響を受ける行ごとにトリガ関数が呼び出されます。
 反対に、文単位のトリガでは、適切な文が実行された時に、その文で何行が影響を受けたかどうかは関係なく、一度だけ呼び出されます。
 特に、行に影響を与えない文であっても、適切な文単位のトリガがあれば実行されます。
-この2種類のトリガはそれぞれ<em class="firstterm">行レベル</em>トリガと<em class="firstterm">文レベル</em>トリガと呼ばれることがあります。<code class="command">TRUNCATE</code>に対するトリガは文レベルトリガのみに定義することができます。
-ビューでは、文レベルでのみ、処理の前後での実行をするよう定義することができるでしょう。一方、<code class="command">INSERT</code>、<code class="command">UPDATE</code>または<code class="command">DELETE</code>の代わりに実行するトリガは行レベルでのみ定義できるでしょう。
+この2種類のトリガはそれぞれ<em class="firstterm">行レベル</em>トリガと<em class="firstterm">文レベル</em>トリガと呼ばれることがあります。
+<code class="command">TRUNCATE</code>に対するトリガは、行単位ではなく、文レベルにのみに定義することができます。
    </p><p><span class="original">
     Triggers are also classified according to whether they fire
     &lt;firstterm&gt;before&lt;/&gt;, &lt;firstterm&gt;after&lt;/&gt;, or
@@ -96,15 +96,20 @@ UPDATEトリガについては、特定のカラムがUPDATE文のSET句の対�
 </span>また、トリガはそれらが操作の<em class="firstterm">前</em>、<em class="firstterm">後</em>または<em class="firstterm">代わり</em>のどれで実行されるかに応じて分けられます。
 これらはそれぞれ<code class="literal">BEFORE</code>トリガ、<code class="literal">AFTER</code>トリガ、そして<code class="literal">INSTEAD OF</code>トリガと呼ばれます。
 文レベルの<code class="literal">BEFORE</code>トリガは、もちろん文が何かを始める前に発行され、文レベルの<code class="literal">AFTER</code>トリガは文の本当に最後に発行されます。
-これらのタイプのトリガはテーブルまたはビューで定義されるでしょう。
+これらのタイプのトリガはテーブル、ビュー、あるいは外部テーブルに定義できます。
 行レベルの<code class="literal">BEFORE</code>トリガは、特定の行が操作される直前に発行され、行レベルの<code class="literal">AFTER</code>トリガは文の終わり（ただし、全ての文レベルの<code class="literal">AFTER</code>トリガの前）に発行されます。
-これらのタイプのトリガはテーブルと外部テーブルにのみ定義されるでしょう。
-行レベルの<code class="literal">INSTEAD OF</code>トリガはビューにのみ定義され、ビュー上の行ごとに操作が必要と判断された場合に即座に発行されます。
-   </p><p>    A statement that targets a parent table in an inheritance or partitioning
+これらのタイプのトリガは、非パーティションテーブル、外部テーブルに定義できますが、ビューには定義できません。
+<code class="literal">INSTEAD OF</code>トリガはビューにのみ定義され、行レベルのみが許されます。
+つまり、ビュー上のそれぞれの行で処理が必要と判断された場合には、即座に発動します。
+   </p><p><span class="original">
+    A statement that targets a parent table in an inheritance or partitioning
     hierarchy does not cause the statement-level triggers of affected child
     tables to be fired; only the parent table's statement-level triggers are
     fired.  However, row-level triggers of any affected child tables will be
     fired.
+</span>継承あるいはパーティション階層において、親テーブルをターゲットとする文は、影響を受けた子テーブルの行レベルトリガを発動しません。
+すなわち、親テーブルの行レベルトリガのみが発動します。
+しかし、影響を受けた子テーブルの行レベルトリガは発動します。
    </p><p><span class="original">
     If an &lt;command&gt;INSERT&lt;/command&gt; contains an &lt;literal&gt;ON CONFLICT
     DO UPDATE&lt;/&gt; clause, it is possible that the effects of
@@ -133,7 +138,7 @@ UPDATEトリガについては、特定のカラムがUPDATE文のSET句の対�
     &lt;literal&gt;AFTER&lt;/&gt; &lt;command&gt;UPDATE&lt;/command&gt; triggers and finally
     statement-level &lt;literal&gt;AFTER&lt;/&gt; &lt;command&gt;INSERT&lt;/command&gt;
     triggers.
-</span><code class="command">INSERT</code>が<code class="literal">ON CONFLICT DO UPDATE</code>句を含む場合、<code class="varname">EXCLUDED</code>列が参照されていると、すべての行単位<code class="literal">BEFORE</code> <code class="command">INSERT</code>トリガおよびすべての行単位<code class="literal">BEFORE</code> <code class="command">UPDATE</code>トリガの両方が適用され、それが更新後の行の最後の状態から明らかな場合がありえます。
+</span><code class="command">INSERT</code>が<code class="literal">ON CONFLICT DO UPDATE</code>句を含む場合、<code class="varname">EXCLUDED</code>列が参照されていると、行単位<code class="literal">BEFORE</code> <code class="command">INSERT</code>トリガおよび行単位<code class="literal">BEFORE</code> <code class="command">UPDATE</code>トリガの両方の効果が適用され、それが更新後の行の最後の状態から明らかな場合がありえます。
 ただし、両方の行レベルの<code class="literal">BEFORE</code>トリガを実行するために<code class="varname">EXCLUDED</code>の参照が必要なわけではありません。
 驚くような結果の可能性について、<code class="literal">BEFORE</code> <code class="command">INSERT</code>と<code class="literal">BEFORE</code> <code class="command">UPDATE</code>の両方の文単位トリガーがあり、それらがいずれも挿入あるいは更新対象の行に影響を与える場合に考慮すべきです（これは更新が冪等ではないが、ほぼ同等であるときには、それでも問題になります）。
 文単位の<code class="command">UPDATE</code>トリガは<code class="literal">ON CONFLICT DO UPDATE</code>が指定されたとき、その<code class="command">UPDATE</code>によって行が影響を受けたかどうかに関わらず（そしてその代替である<code class="command">UPDATE</code>部分が実行されたかどうかに関わらず）実行されることに注意してください。
@@ -270,7 +275,7 @@ UPDATEトリガについては、特定のカラムがUPDATE文のSET句の対�
 カスケードの場合、同じトリガを再帰的に呼び出すことが可能です。
 例えば、<code class="command">INSERT</code>トリガで同じテーブルに追加の行を挿入する問い合わせが実行された場合、その結果として<code class="command">INSERT</code>トリガが再度発行されます。
 こうした状況で無限再帰を防ぐのは、トリガプログラマの責任です。
-   </p><p>    <a id="idm46661287947920" class="indexterm"></a><span class="original">
+   </p><p>    <a id="idm46339180849984" class="indexterm"></a><span class="original">
     When a trigger is being defined, arguments can be specified for
     it. The purpose of including arguments in the
     trigger definition is to allow different triggers with similar
@@ -305,16 +310,20 @@ UPDATEトリガについては、特定のカラムがUPDATE文のSET句の対�
 </span>トリガをサポートするプログラミング言語はそれぞれ独自の方法で、トリガ関数で利用できるトリガの入力データを作成します。
 この入力データにはトリガイベント種類（例えば<code class="command">INSERT</code>や<code class="command">UPDATE</code>など、<code class="command">CREATE TRIGGER</code>で指定された全ての引数）が含まれます。
 行レベルトリガの入力データには、<code class="command">INSERT</code>および<code class="command">UPDATE</code>トリガの場合は<code class="varname">NEW</code>行が、<code class="command">UPDATE</code>および<code class="command">DELETE</code>トリガの場合は<code class="varname">OLD</code>行が含まれます。
-文レベルトリガには現在、文によって変更される個々の行を検査するための手段がありません。
-   </p><p>    By default, statement-level triggers do not have any way to examine the
-    individual row(s) modified by the statement.  But an <code class="literal">AFTER
-    STATEMENT</code> trigger can request that <em class="firstterm">transition tables</em>
+   </p><p><span class="original">
+    By default, statement-level triggers do not have any way to examine the
+    individual row(s) modified by the statement.  But an &lt;literal&gt;AFTER
+    STATEMENT&lt;/&gt; trigger can request that &lt;firstterm&gt;transition tables&lt;/&gt;
     be created to make the sets of affected rows available to the trigger.
-    <code class="literal">AFTER ROW</code> triggers can also request transition tables, so
+    &lt;literal&gt;AFTER ROW&lt;/&gt; triggers can also request transition tables, so
     that they can see the total changes in the table as well as the change in
     the individual row they are currently being fired for.  The method for
     examining the transition tables again depends on the programming language
     that is being used, but the typical approach is to make the transition
     tables act like read-only temporary tables that can be accessed by SQL
     commands issued within the trigger function.
+</span>デフォルトでは、文レベルトリガには文によって変更された個々の行を検査するための手段がありません。
+しかし、トリガがアクセスできる影響を受けた行の集合を作成するために、<code class="literal">AFTER STATEMENT</code>トリガは、<em class="firstterm">遷移テーブル(transition tables)</em>の作成を依頼することができます。
+<code class="literal">AFTER ROW</code>トリガも遷移テーブルを依頼できるので、発動中の個々の行における変更だけでなく、テーブル全体におけるすべての変更を見ることができます。
+遷移テーブルを検査する方法も使用中のプログラミング言語に依存しますが、典型的な方法は、トリガ関数の中で発行するSQLコマンドでアクセスできる、読み込み専用の一時テーブルのように振る舞う遷移テーブルを作成することです。
    </p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="triggers.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="triggers.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="trigger-datachanges.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">第38章 トリガ </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> 38.2. データ変更の可視性</td></tr></table></div></body></html>

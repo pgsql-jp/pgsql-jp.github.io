@@ -3,7 +3,7 @@
                     </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="recovery-config.html" title="第27章 リカバリの設定">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="recovery-config.html" title="第27章 リカバリの設定">上へ</a></td><td width="60%" align="center">27.1. アーカイブリカバリの設定</td><td width="20%" align="right"> <a accesskey="n" href="recovery-target-settings.html" title="27.2. リカバリ対象の設定">次へ</a></td></tr></table><hr /></div><div class="sect1" id="archive-recovery-settings"><div class="titlepage"><div><div><h2 class="title" style="clear: both">27.1. アーカイブリカバリの設定</h2></div></div></div><span class="original">
     &lt;title&gt;Archive Recovery Settings&lt;/title&gt;
 </span><div class="variablelist"><dl class="variablelist"><dt id="restore-command"><span class="term"><code class="varname">restore_command</code> (<code class="type">string</code>)
-      <a id="idm46661299380576" class="indexterm"></a>
+      <a id="idm46339192403504" class="indexterm"></a>
       </span></dt><dd><p><span class="original">
         The local shell command to execute to retrieve an archived segment of
         the WAL file series. This parameter is required for archive recovery,
@@ -49,9 +49,9 @@ restore_command = 'copy "C:\\server\\archivedir\\%f" "%p"'  # Windows
 その場合には、非ゼロの値を返却しなければなりません。以下に例を示します。
 </p><pre class="programlisting">restore_command = 'cp /mnt/server/archivedir/%f "%p"'
 restore_command = 'copy "C:\\server\\archivedir\\%f" "%p"'  # Windows</pre><p>
-例外は、データベースサーバのシャットダウンの一部として、<span class="systemitem">SIGTERM</span>以外のシグナルでコマンドが終了させられたり、シェルによってエラーが発生した（コマンドが見つからない場合など）場合で、その場合はリカバリーは中断され、サーバはスタートアップしなくなります。
+例外は、データベースサーバのシャットダウンの一部として、<span class="systemitem">SIGTERM</span>以外のシグナルでコマンドが終了させられたり、シェルによってエラーが発生した（コマンドが見つからない場合など）場合で、その場合はリカバリは中断され、サーバはスタートアップしなくなります。
        </p></dd><dt id="archive-cleanup-command"><span class="term"><code class="varname">archive_cleanup_command</code> (<code class="type">string</code>)
-      <a id="idm46661299364992" class="indexterm"></a>
+      <a id="idm46339216357616" class="indexterm"></a>
       </span></dt><dd><p><span class="original">
         This optional parameter specifies a shell command that will be executed
         at every restartpoint.  The purpose of
@@ -77,26 +77,25 @@ restore_command = 'copy "C:\\server\\archivedir\\%f" "%p"'  # Windows</pre><p>
         Write &lt;literal&gt;%%&lt;/&gt; to embed an actual &lt;literal&gt;%&lt;/&gt; character in the
         command.
 </span>このオプションのパラメータは、すべてのリスタートポイントで実行されるシェルコマンドを指定します。
-<code class="varname">archive_cleanup_command</code> の目的は、スタンバイサーバにとって必要とされない古いアーカイブWALファイルをクリーンアップする仕組みを提供することです。
-<code class="literal">%r</code> は、最後の有効なリスタートポイントを含んでいるWALファイルのファイル名に置換されます。
+<code class="varname">archive_cleanup_command</code>の目的は、スタンバイサーバにとって必要とされない古いアーカイブWALファイルをクリーンアップする仕組みを提供することです。
+<code class="literal">%r</code>は、最後の有効なリスタートポイントを含んでいるWALファイルのファイル名に置換されます。
 これはリスタートを可能にするためのリストア時に必要とされる、保持されているべきもっとも古いファイルとなり、これによって<code class="literal">%r</code>より前のすべてのファイルは安全に削除されます。
 この情報は、現在のリストアからリスタートするために必要となるように、アーカイブを最小化するために利用することができます。
 <a class="xref" href="pgarchivecleanup.html" title="pg_archivecleanup"><span class="refentrytitle"><span class="application">pg_archivecleanup</span></span></a>モジュールは、単独のスタンバイ構成で<code class="varname">archive_cleanup_command</code>によく使用されます。
 例：
 </p><pre class="programlisting">archive_cleanup_command = 'pg_archivecleanup /mnt/server/archivedir %r'</pre><p>
 但し、複数のスタンバイサーバが同一のアーカイブディレクトリからリストアしている場合には、どのサーバからも必要とされなくなるまで削除しないことを担保しなければなりません。
-通常、<code class="literal">archive_cleanup_command</code> はウォームスタンバイの設定でのみ使用されます (<a class="xref" href="warm-standby.html" title="26.2. ログシッピングスタンバイサーバ">26.2</a>を参照) 。
-<code class="literal">%</code> 文字を埋め込むためには、<code class="literal">%%</code> と記述してください。
+通常、<code class="literal">archive_cleanup_command</code> はウォームスタンバイの設定でのみ使用されます(<a class="xref" href="warm-standby.html" title="26.2. ログシッピングスタンバイサーバ">26.2</a>を参照)。
+<code class="literal">%</code>文字を埋め込むためには、<code class="literal">%%</code>と記述してください。
        </p><p><span class="original">
         If the command returns a nonzero exit status then a warning log
         message will be written.  An exception is that if the command was
         terminated by a signal or an error by the shell (such as command not
         found), a fatal error will be raised.
-</span>コマンドが非ゼロの終了ステータスを返した場合、WARNINGログメッセージが出力されます。
-例外は、コマンドがシグナルによって終了させられたか、シェルによってエラーが発生した（そのようなコマンドは見つからない）場合で、
-その場合はフェイタルエラーが発生します。
+</span>コマンドが非ゼロの終了ステータスを返した場合、警告ログメッセージが出力されます。
+例外は、コマンドがシグナルによって終了させられたか、シェルによってエラーが発生した（そのようなコマンドは見つからない）場合で、その場合は致命的エラーが発生します。
        </p></dd><dt id="recovery-end-command"><span class="term"><code class="varname">recovery_end_command</code> (<code class="type">string</code>)
-      <a id="idm46661299349680" class="indexterm"></a>
+      <a id="idm46339192356528" class="indexterm"></a>
       </span></dt><dd><p><span class="original">
         This parameter specifies a shell command that will be executed once only
         at the end of recovery. This parameter is optional. The purpose of the
@@ -114,7 +113,6 @@ restore_command = 'copy "C:\\server\\archivedir\\%f" "%p"'  # Windows</pre><p>
         anyway.  An exception is that if the command was terminated by a
         signal or an error by the shell (such as command not found), the
         database will not proceed with startup.
-</span>コマンドが非ゼロの終了ステータスを返した場合、WARNINGログメッセージが出力されますが、データベースはスタートアップ処理を続けます。
-例外は、コマンドがシグナルによって終了させられたか、シェルによってエラーが発生した（そのようなコマンドは見つからない）場合で、
-その場合はデータベースはスタートアップ処理を継続させません。
+</span>コマンドが非ゼロの終了ステータスを返した場合、警告ログメッセージが出力されますが、データベースはスタートアップ処理を続けます。
+例外は、コマンドがシグナルによって終了させられたか、シェルによってエラーが発生した（そのようなコマンドは見つからない）場合で、その場合はデータベースはスタートアップ処理を継続させません。
        </p></dd></dl></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="recovery-config.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="recovery-config.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="recovery-target-settings.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">第27章 リカバリの設定 </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> 27.2. リカバリ対象の設定</td></tr></table></div></body></html>
