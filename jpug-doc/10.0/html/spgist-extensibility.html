@@ -110,16 +110,23 @@
 1番目の引数はCの<code class="structname">spgConfigIn</code>構造体へのポインタで、関数の入力データを含みます。
 2番目の引数はCの<code class="structname">spgConfigOut</code>構造体へのポインタで、関数が結果のデータを入れます。
 </p><pre class="programlisting">typedef struct spgConfigIn
-{
+{<span class="original">
     Oid         attType;        /* Data type to be indexed */
+</span>
+    Oid         attType;        /* インデックス付けされるデータ型 */
 } spgConfigIn;
 
 typedef struct spgConfigOut
-{
+{<span class="original">
     Oid         prefixType;     /* Data type of inner-tuple prefixes */
     Oid         labelType;      /* Data type of inner-tuple node labels */
     bool        canReturnData;  /* Opclass can reconstruct original data */
-    bool        longValuesOK;   /* Opclass can cope with values &gt; 1 page */
+    bool        longValuesOK;   /* Opclass can cope with values &amp;gt; 1 page */
+</span>
+    Oid         prefixType;     /* 内部タプルの接頭辞のデータ型 */
+    Oid         labelType;      /* 内部タプルのノードのラベルのデータ型 */
+    bool        canReturnData;  /* 演算子クラスは元のデータを再構築できる */
+    bool        longValuesOK;   /* 演算子クラスは1ページより大きな値を扱える */
 } spgConfigOut;</pre><p>
 <span class="original">
       &lt;structfield&gt;attType&lt;/&gt; is passed in order to support polymorphic
@@ -158,44 +165,74 @@ typedef struct spgConfigOut
 1番目の引数はCの<code class="structname">spgChooseIn</code>構造体へのポインタで、関数の入力データを含みます。
 2番目の引数はCの<code class="structname">spgChooseOut</code>構造体へのポインタで、関数が結果のデータを入れます。
 </p><pre class="programlisting">typedef struct spgChooseIn
-{
+{<span class="original">
     Datum       datum;          /* original datum to be indexed */
     Datum       leafDatum;      /* current datum to be stored at leaf */
     int         level;          /* current level (counting from zero) */
-
+</span>
+    Datum       datum;          /* インデックス付けされる元のデータ */
+    Datum       leafDatum;      /* リーフに保存されている現在のデータ */
+    int         level;          /* (0から数えた)現在のレベル */
+<span class="original">
     /* Data from current inner tuple */
     bool        allTheSame;     /* tuple is marked all-the-same? */
     bool        hasPrefix;      /* tuple has a prefix? */
     Datum       prefixDatum;    /* if so, the prefix value */
     int         nNodes;         /* number of nodes in the inner tuple */
     Datum      *nodeLabels;     /* node label values (NULL if none) */
+</span>
+    /* 現在の内部タプルからのデータ */
+    bool        allTheSame;     /* タプルはall-the-sameの印を付けられているか */
+    bool        hasPrefix;      /* タプルは接頭辞を持っているか */
+    Datum       prefixDatum;    /* そうであれば、接頭辞の値 */
+    int         nNodes;         /* 内部タプル内のノード数 */
+    Datum      *nodeLabels;     /* ノードのラベルの値(なければNULL) */
 } spgChooseIn;
 
 typedef enum spgChooseResultType
-{
+{<span class="original">
     spgMatchNode = 1,           /* descend into existing node */
     spgAddNode,                 /* add a node to the inner tuple */
     spgSplitTuple               /* split inner tuple (change its prefix) */
+</span>
+    spgMatchNode = 1,           /* 既存のノードに下がる */
+    spgAddNode,                 /* ノードに内部タプルを追加する */
+    spgSplitTuple               /* 内部タプルを分割する(その接頭辞を変更する) */
 } spgChooseResultType;
 
 typedef struct spgChooseOut
-{
+{<span class="original">
     spgChooseResultType resultType;     /* action code, see above */
+</span>
+    spgChooseResultType resultType;     /* アクションコード、上記参照 */
     union
-    {
+    {<span class="original">
         struct                  /* results for spgMatchNode */
-        {
+</span>
+        struct                  /* spgMatchNodeの結果 */
+        {<span class="original">
             int         nodeN;      /* descend to this node (index from 0) */
             int         levelAdd;   /* increment level by this much */
             Datum       restDatum;  /* new leaf datum */
-        }           matchNode;
+</span>
+            int         nodeN;      /* このノードに下がる(0からのインデックス) */
+            int         levelAdd;   /* この分だけレベルを増やす */
+            Datum       restDatum;  /* 新しいリーフデータ */
+        }           matchNode;<span class="original">
         struct                  /* results for spgAddNode */
-        {
+</span>
+        struct                  /* spgAddNodeの結果 */
+        {<span class="original">
             Datum       nodeLabel;  /* new node's label */
             int         nodeN;      /* where to insert it (index from 0) */
-        }           addNode;
+</span>
+            Datum       nodeLabel;  /* 新しいノードのラベル */
+            int         nodeN;      /* 挿入する場所(0からのインデックス) */
+        }           addNode;<span class="original">
         struct                  /* results for spgSplitTuple */
-        {
+</span>
+        struct                  /* spgSplitTupleの結果 */
+        {<span class="original">
             /* Info to form new upper-level inner tuple with one child tuple */
             bool        prefixHasPrefix;    /* tuple should have a prefix? */
             Datum       prefixPrefixDatum;  /* if so, its value */
@@ -203,10 +240,21 @@ typedef struct spgChooseOut
             Datum      *prefixNodeLabels;   /* their labels (or NULL for
                                              * no labels) */
             int         childNodeN;         /* which node gets child tuple */
-
+</span>
+            /* 子タプルを1つ持つ新しい上位のレベルの内部タプルを生成するための情報 */
+            bool        prefixHasPrefix;    /* タプルは接頭辞を持つか */
+            Datum       prefixPrefixDatum;  /* そうならば、その値 */
+            int         prefixNNodes;       /* ノード数 */
+            Datum      *prefixNodeLabels;   /* そのラベル(ラベルがなければNULL) */
+            int         childNodeN;         /* どのタプルが子タプルを得るか */
+<span class="original">
             /* Info to form new lower-level inner tuple with all old nodes */
             bool        postfixHasPrefix;   /* tuple should have a prefix? */
             Datum       postfixPrefixDatum; /* if so, its value */
+</span>
+            /* 古いノードをすべて持つ新しい低位の内部タプルを生成するための情報 */
+            bool        postfixHasPrefix;   /* タプルは接頭辞を持つか */
+            Datum       postfixPrefixDatum; /* そうならば、その値 */
         }           splitTuple;
     }           result;
 } spgChooseOut;</pre><p>
@@ -260,7 +308,7 @@ typedef struct spgChooseOut
        next, or otherwise set it to the modified value to be used as
        &lt;structfield&gt;leafDatum&lt;/&gt; at the next level.
 </span>新しい値が既存の子ノードの1つにマッチしたときは、<code class="structfield">resultType</code>を<code class="literal">spgMatchNode</code>にセットします。
-<code class="structfield">nodeN</code>はノードの配列中のそのノードの番号(0から)にセットします。
+<code class="structfield">nodeN</code>はノードの配列中のそのノードの(0からの)番号にセットします。
 <code class="structfield">levelAdd</code>は、そのノードをたどって下がるときに生じた<code class="structfield">level</code>の増分にセットします。あるいは演算子クラスがレベルを使っていなければ0のままにします。
 <code class="structfield">restDatum</code>は、演算子クラスがデータをあるレベルから次のレベルに変更しないのであれば、<code class="structfield">datum</code>に等しくセットします。そうでなければ、次のレベルで<code class="structfield">leafDatum</code>として使われる修正された値にセットします。
       </p><p><span class="original">
@@ -273,7 +321,7 @@ typedef struct spgChooseOut
        function will be called again with the modified inner tuple;
        that call should result in an &lt;literal&gt;spgMatchNode&lt;/&gt; result.
 </span>新しい子ノードを追加しなければならないときは、<code class="structfield">resultType</code>を<code class="literal">spgAddNode</code>にセットします。
-<code class="structfield">nodeLabel</code>は、新しいノードで使われるラベルにセットし、<code class="structfield">nodeN</code>はノードの配列中の挿入される場所のノードの番号(0から)にセットします。
+<code class="structfield">nodeLabel</code>は、新しいノードで使われるラベルにセットし、<code class="structfield">nodeN</code>はノードの配列中の挿入される場所のノードの(0からの)番号にセットします。
 ノードを追加した後で、<code class="function">choose</code>関数を修正された内部タプルを使って再び呼び出しますが、このときは、<code class="literal">spgMatchNode</code>という結果になるはずです。
       </p><p><span class="original">
        If the new value is inconsistent with the tuple prefix,
@@ -308,15 +356,17 @@ typedef struct spgChooseOut
        &lt;function&gt;choose&lt;/function&gt; must return &lt;literal&gt;spgMatchNode&lt;/&gt; to
        allow the insertion to descend to the next level.
 </span>新しい値がタプルの接頭辞と適合しないときは、<code class="structfield">resultType</code>を<code class="literal">spgSplitTuple</code>にセットします。
-このアクションは、すべての既存のノードを新しい低位の内部タプルに移動し、新しい低位の内部タプルにリンクする単一のノードを持つ新しいタプルで既存のタプルを置換します。
+このアクションは、すべての既存のノードを新しい低位の内部タプルに移動し、新しい低位の内部タプルを指す単一の下向きのリンクを持つ新しいタプルで既存のタプルを置換します。
 <code class="structfield">prefixHasPrefix</code>は新しい上位のタプルが接頭辞を持つかどうかを示し、持つ場合には<code class="structfield">prefixPrefixDatum</code>をその接頭辞の値にセットします。
-インデックスに追加される新しい値を受け入れるため、新しい接頭辞の値は元のものよりも制限の緩いものになっている必要があり、また元の接頭辞より長くはなりません。
-<code class="structfield">nodeLabel</code>は、新しい低位の内部タプルを指し示すノードで使われるラベルにセットします。
+インデックスに追加される新しい値を受け入れるため、新しい接頭辞の値は元のものよりも十分に制限の緩いものになっていなければなりません。
+<code class="structfield">prefixNNodes</code>は新しいタプルで必要なノード数にセットし、<code class="structfield">prefixNodeLabels</code>はラベルを保持するためにpallocされた配列に、ノードのラベルが必要でないときはNULLにセットします。
+新しい上位のタプルの全サイズは置き換えるタプルの全サイズよりも大きくはないことに注意してください。これは新しい接頭辞と新しいラベルの長さを制約します。
+<code class="structfield">childNodeN</code>は、新しい低位の内部タプルへ下向きにリンクするノードの(0からの)番号にセットします。
 <code class="structfield">postfixHasPrefix</code>は、新しい低位のタプルが接頭辞を持つかどうかを示し、持つときには<code class="structfield">postfixPrefixDatum</code>を接頭辞の値にセットします。
-新しい低位に移動したタプルのノードのラベルを変更する機会も、子のインデックスのエントリを変更する機会もありませんから、これら2つの接頭辞と追加のラベルの組み合わせは、元の接頭辞と同じ意味を持つ必要があります。
-ノードが分割された後で、<code class="function">choose</code>を置換した内部タプルを使って再び呼び出します。
-この呼び出しは、通常は<code class="literal">spgAddNode</code>という結果になります。というのは、分割のステップで追加されたノードのラベルは恐らく新しい値とマッチしないからです。
-従って、その後、3回目の呼び出しでやっと<code class="literal">spgMatchNode</code>が返り、リーフレベルに下がる挿入が可能となります。
+新しい低位に移動したタプルのノードのラベルを変更する機会も、子のインデックスのエントリを変更する機会もありませんから、これら2つの接頭辞と(もしあれば)下向きのリンクのノードのラベルの組み合わせは、元の接頭辞と同じ意味を持つ必要があります。
+ノードが分割された後で、置換した内部タプルを使って<code class="function">choose</code>関数を再び呼び出します。
+この呼び出しは、<code class="literal">spgSplitTuple</code>アクションにより適切なノードが作られなければ、<code class="literal">spgAddNode</code>という結果になります。
+そのうち、<code class="function">choose</code>が<code class="literal">spgMatchNode</code>を返し、次のレベルに下がる挿入が可能となります。
       </p></dd><dt><span class="term"><code class="function">picksplit</code></span></dt><dd><p><span class="original">
        Decides how to create a new inner tuple over a set of leaf tuples.
 </span>リーフタプルの集合に対し、新しい内部タプルをどうやって作るかを決定します。
@@ -332,22 +382,35 @@ typedef struct spgChooseOut
 1番目の引数はCの<code class="structname">spgPickSplitIn</code>構造体へのポインタで、関数の入力データを含みます。
 2番目の引数はCの<code class="structname">spgPickSplitOut</code>構造体へのポインタで、関数が結果のデータを入れます。
 </p><pre class="programlisting">typedef struct spgPickSplitIn
-{
+{<span class="original">
     int         nTuples;        /* number of leaf tuples */
     Datum      *datums;         /* their datums (array of length nTuples) */
     int         level;          /* current level (counting from zero) */
+</span>
+    int         nTuples;        /* リーフタプルの数 */
+    Datum      *datums;         /* そのデータ(長さnTuplesの配列) */
+    int         level;          /* (0から数えた)現在のレベル */
 } spgPickSplitIn;
 
 typedef struct spgPickSplitOut
-{
+{<span class="original">
     bool        hasPrefix;      /* new inner tuple should have a prefix? */
     Datum       prefixDatum;    /* if so, its value */
-
+</span>
+    bool        hasPrefix;      /* 新しい内部タプルは接頭辞を持つか */
+    Datum       prefixDatum;    /* もしそうなら、その値 */
+<span class="original">
     int         nNodes;         /* number of nodes for new inner tuple */
     Datum      *nodeLabels;     /* their labels (or NULL for no labels) */
-
+</span>
+    int         nNodes;         /* 新しい内部タプルのノード数 */
+    Datum      *nodeLabels;     /* そのラベル(ラベルがなければNULL) */
+<span class="original">
     int        *mapTuplesToNodes;   /* node index for each leaf tuple */
     Datum      *leafTupleDatums;    /* datum to store in each new leaf tuple */
+</span>
+    int        *mapTuplesToNodes;   /* 各リーフタプルへのノードのインデックス */
+    Datum      *leafTupleDatums;    /* 新しい各リーフタプルに保存されているデータ */
 } spgPickSplitOut;</pre><p>
 <span class="original">
        &lt;structfield&gt;nTuples&lt;/&gt; is the number of leaf tuples provided.
@@ -378,7 +441,7 @@ typedef struct spgPickSplitOut
        &lt;structfield&gt;leafTupleDatums&lt;/&gt; arrays.
 </span><code class="structfield">hasPrefix</code>は新しい内部タプルが接頭辞を持つかどうかを示し、持つ場合は<code class="structfield">prefixDatum</code>を接頭辞の値にセットします。
 <code class="structfield">nNodes</code>は新しい内部タプルが含むノードの数を示し、<code class="structfield">nodeLabels</code>はそのラベル値の配列に、ノードのラベルが必要でないときはNULLにセットします。
-<code class="structfield">mapTuplesToNodes</code>は、それぞれのリーフタプルが割り当てられるノードの番号(0から)の配列にセットします。
+<code class="structfield">mapTuplesToNodes</code>は、それぞれのリーフタプルが割り当てられるノードの(0からの)番号の配列にセットします。
 <code class="structfield">leafTupleDatums</code>は新しいリーフタプルに格納される値の配列にセットします(演算子クラスがデータをあるレベルから次のレベルに変更しなければこれらは入力の<code class="structfield">datums</code>と同じになります)。
 <code class="function">picksplit</code>関数は、<code class="structfield">nodeLabels</code>、<code class="structfield">mapTuplesToNodes</code>、<code class="structfield">leafTupleDatums</code>の配列についてpallocしなければならないことに注意してください。
       </p><p><span class="original">
@@ -429,31 +492,53 @@ typedef struct spgPickSplitOut
 2番目の引数はCの<code class="structname">spgInnerConsistentOut</code>構造体へのポインタで、関数が結果のデータを入れます。
 
 </p><pre class="programlisting">typedef struct spgInnerConsistentIn
-{
+{<span class="original">
     ScanKey     scankeys;       /* array of operators and comparison values */
     int         nkeys;          /* length of array */
-
+</span>
+    ScanKey     scankeys;       /* 演算子と比較する値の配列 */
+    int         nkeys;          /* 配列の長さ */
+<span class="original">
     Datum       reconstructedValue;     /* value reconstructed at parent */
     void       *traversalValue; /* opclass-specific traverse value */
     MemoryContext traversalMemoryContext;   /* put new traverse values here */
     int         level;          /* current level (counting from zero) */
     bool        returnData;     /* original data must be returned? */
-
+</span>
+    Datum       reconstructedValue;     /* 親で再構築された値 */
+    void       *traversalValue; /* 演算子クラスに固有の探索値 */
+    MemoryContext traversalMemoryContext;   /* 新しい探索値をここに入れる */
+    int         level;          /* (0から数えた)現在のレベル */
+    bool        returnData;     /* 元のデータを返さなければならないか */
+<span class="original">
     /* Data from current inner tuple */
     bool        allTheSame;     /* tuple is marked all-the-same? */
     bool        hasPrefix;      /* tuple has a prefix? */
     Datum       prefixDatum;    /* if so, the prefix value */
     int         nNodes;         /* number of nodes in the inner tuple */
     Datum      *nodeLabels;     /* node label values (NULL if none) */
+</span>
+    /* 現在の内部タプルからのデータ */
+    bool        allTheSame;     /* タプルはall-the-sameと印が付けられているか */
+    bool        hasPrefix;      /* タプルは接頭辞を持つか */
+    Datum       prefixDatum;    /* もしそうなら、接頭辞の値 */
+    int         nNodes;         /* 内部タプルの中のノード数 */
+    Datum      *nodeLabels;     /* ノードのラベルの値(なければNULL) */
 } spgInnerConsistentIn;
 
 typedef struct spgInnerConsistentOut
-{
+{<span class="original">
     int         nNodes;         /* number of child nodes to be visited */
     int        *nodeNumbers;    /* their indexes in the node array */
     int        *levelAdds;      /* increment level by this much for each */
     Datum      *reconstructedValues;    /* associated reconstructed values */
     void      **traversalValues;        /* opclass-specific traverse values */
+</span>
+    int         nNodes;         /* 訪れるべき子ノードの数 */
+    int        *nodeNumbers;    /* ノードの配列でのそのインデックス */
+    int        *levelAdds;      /* この分だけそれぞれレベルを挙げる */
+    Datum      *reconstructedValues;    /* 関連する再構築された値 */
+    void      **traversalValues;        /* 演算子クラスに固有の探索値 */
 } spgInnerConsistentOut;</pre><p>
 <span class="original">
        The array &lt;structfield&gt;scankeys&lt;/&gt;, of length &lt;structfield&gt;nkeys&lt;/&gt;,
@@ -557,22 +642,35 @@ typedef struct spgInnerConsistentOut
 1番目の引数はCの<code class="structname">spgLeafConsistentIn</code>構造体へのポインタで、関数の入力データを含みます。
 2番目の引数はCの<code class="structname">spgLeafConsistentOut</code>構造体へのポインタで、関数が結果のデータを入れます。
 </p><pre class="programlisting">typedef struct spgLeafConsistentIn
-{
+{<span class="original">
     ScanKey     scankeys;       /* array of operators and comparison values */
     int         nkeys;          /* length of array */
-
+</span>
+    ScanKey     scankeys;       /* 演算子と比較する値の配列 */
+    int         nkeys;          /* 配列の長さ */
+<span class="original">
     Datum       reconstructedValue;     /* value reconstructed at parent */
     void       *traversalValue; /* opclass-specific traverse value */
     int         level;          /* current level (counting from zero) */
     bool        returnData;     /* original data must be returned? */
-
+</span>
+    Datum       reconstructedValue;     /* 親で再構築された値 */
+    void       *traversalValue; /* 演算子クラスに固有の探索値 */
+    int         level;          /* (0から数えた)現在のレベル */
+    bool        returnData;     /* 元のデータを返さなければならないか */
+<span class="original">
     Datum       leafDatum;      /* datum in leaf tuple */
+</span>
+    Datum       leafDatum;      /* リーフタプルのデータ */
 } spgLeafConsistentIn;
 
 typedef struct spgLeafConsistentOut
-{
+{<span class="original">
     Datum       leafValue;      /* reconstructed original data, if any */
     bool        recheck;        /* set true if operator must be rechecked */
+</span>
+    Datum       leafValue;      /* もしあれば、再構築された元のデータ */
+    bool        recheck;        /* 演算子を再チェックする必要があればtrue */
 } spgLeafConsistentOut;</pre><p>
 <span class="original">
        The array &lt;structfield&gt;scankeys&lt;/&gt;, of length &lt;structfield&gt;nkeys&lt;/&gt;,
