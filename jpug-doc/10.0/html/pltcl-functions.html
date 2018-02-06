@@ -25,7 +25,7 @@ $$ LANGUAGE pltcl;</pre><p>
      returned from the Tcl code in the usual way, with
      a &lt;literal&gt;return&lt;/literal&gt; statement.
 </span>関数本体は、単なる小さなTclスクリプトです。
-関数が呼び出された時、引数の値はTclスクリプトに<code class="literal">$1</code> ... <code class="literal">$<em class="replaceable"><code>n</code></em></code>という変数として渡されます。
+関数が呼び出された時、引数の値はTclスクリプトに<code class="literal">1</code> ... <code class="literal"><em class="replaceable"><code>n</code></em></code>という名前の変数として渡されます。
 結果は通常通り<code class="literal">return</code>文を使用してTclのコードから返されます。
     </p><p><span class="original">
      For example, a function
@@ -98,35 +98,49 @@ CREATE FUNCTION overpaid(employee) RETURNS boolean AS $$
     }
     return "f"
 $$ LANGUAGE pltcl;</pre><p>
-    </p><p>     PL/Tcl functions can return composite-type results, too.  To do this,
+    </p><p><span class="original">
+     PL/Tcl functions can return composite-type results, too.  To do this,
      the Tcl code must return a list of column name/value pairs matching
      the expected result type.  Any column names omitted from the list
      are returned as nulls, and an error is raised if there are unexpected
      column names.  Here is an example:
+</span>PL/Tcl関数は複合型の結果を返すこともできます。
+このためには、Tclコードは期待する結果型と一致する列の名前/値のペアのリストを返さなければなりません。
+そのリストで省略された列名は結果がNULLになり、期待されない列名があるとエラーが生じます。
+例を示します。
 
 </p><pre class="programlisting">CREATE FUNCTION square_cube(in int, out squared int, out cubed int) AS $$
     return [list squared [expr {$1 * $1}] cubed [expr {$1 * $1 * $1}]]
 $$ LANGUAGE pltcl;</pre><p>
-    </p><div class="tip"><h3 class="title">ヒント</h3><p>      The result list can be made from an array representation of the
-      desired tuple with the <code class="literal">array get</code> Tcl command.  For example:
+    </p><div class="tip"><h3 class="title">ヒント</h3><p><span class="original">
+      The result list can be made from an array representation of the
+      desired tuple with the &lt;literal&gt;array get&lt;/&gt; Tcl command.  For example:
+</span><code class="literal">array get</code> Tclコマンドを使って、希望するタプルの配列表現から結果リストを作成することができます。
 
 </p><pre class="programlisting">CREATE FUNCTION raise_pay(employee, delta int) RETURNS employee AS $$
     set 1(salary) [expr {$1(salary) + $2}]
     return [array get 1]
 $$ LANGUAGE pltcl;</pre><p>
-     </p></div><p>     PL/Tcl functions can return sets.  To do this, the Tcl code should
-     call <code class="function">return_next</code> once per row to be returned,
+     </p></div><p><span class="original">
+     PL/Tcl functions can return sets.  To do this, the Tcl code should
+     call &lt;function&gt;return_next&lt;/function&gt; once per row to be returned,
      passing either the appropriate value when returning a scalar type,
      or a list of column name/value pairs when returning a composite type.
      Here is an example returning a scalar type:
+</span>PL/Tcl関数は集合を返すことができます。
+このためにはTclコードで、<code class="function">return_next</code>を返却する行ごとに呼び出します。
+スカラー値を返却する場合は適切な値を、複合型を返す場合は列の名前/値ペアのリストを渡します。
+スカラー型を返す例を示します。
 
 </p><pre class="programlisting">CREATE FUNCTION sequence(int, int) RETURNS SETOF int AS $$
     for {set i $1} {$i &lt; $2} {incr i} {
         return_next $i
     }
 $$ LANGUAGE pltcl;</pre><p>
-
+<span class="original">
      and here is one returning a composite type:
+</span>
+複合型を返す例を示します。
 
 </p><pre class="programlisting">CREATE FUNCTION table_of_squares(int, int) RETURNS TABLE (x int, x2 int) AS $$
     for {set i $1} {$i &lt; $2} {incr i} {

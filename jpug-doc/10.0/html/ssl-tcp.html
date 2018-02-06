@@ -2,7 +2,7 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>18.9. SSLによる安全なTCP/IP接続</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="encryption-options.html" title="18.8. 暗号化オプション" /><link rel="next" href="ssh-tunnels.html" title="18.10. SSHトンネルを使った安全なTCP/IP接続" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 10.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="runtime.html" title="第18章 サーバの準備と運用">第18章 サーバの準備と運用</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 10.0 &#10;                      ssl-tcp.html">誤訳等の報告
                     </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="encryption-options.html" title="18.8. 暗号化オプション">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="runtime.html" title="第18章 サーバの準備と運用">上へ</a></td><td width="60%" align="center">18.9. SSLによる安全なTCP/IP接続</td><td width="20%" align="right"> <a accesskey="n" href="ssh-tunnels.html" title="18.10. SSHトンネルを使った安全なTCP/IP接続">次へ</a></td></tr></table><hr /></div><div class="sect1" id="ssl-tcp"><div class="titlepage"><div><div><h2 class="title" style="clear: both">18.9. SSLによる安全なTCP/IP接続</h2></div></div></div><span class="original">
   &lt;title&gt;Secure TCP/IP Connections with SSL&lt;/title&gt;
-</span><a id="idm45651801671952" class="indexterm"></a><p><span class="original">
+</span><a id="idm45337988272384" class="indexterm"></a><p><span class="original">
    &lt;productname&gt;PostgreSQL&lt;/&gt; has native support for using
    &lt;acronym&gt;SSL&lt;/&gt; connections to encrypt client/server communications
    for increased security. This requires that
@@ -88,6 +88,8 @@
    Furthermore, passphrase-protected private keys cannot be used at all
    on Windows.
 </span>秘密キーがパスフレーズで保護されている場合、サーバはパスフレーズの入力を促し、入力されるまでは起動しません。
+パスフレーズを使用すると、サーバを再起動せずにサーバのSSL設定を変更する機能も無効になります。
+さらに、パスフレーズで保護された秘密鍵は、Windowsではまったく使用できません。
   </p><p><span class="original">
    In some cases, the server certificate might be signed by an
    &lt;quote&gt;intermediate&lt;/&gt; certificate authority, rather than one that is
@@ -169,25 +171,37 @@
 （表示されているファイル名はデフォルトまたは一般的な名前です。異なる名前を個別に設定することもできます。）
    </p><div class="table" id="ssl-file-usage"><p class="title"><strong>表18.2 SSLサーバファイルの使用方法</strong></p><div class="table-contents"><span class="original">
    &lt;title&gt;SSL Server File Usage&lt;/title&gt;
-</span><table class="table" summary="SSLサーバファイルの使用方法" border="1"><colgroup><col /><col /><col /></colgroup><thead><tr><th>ファイル</th><th>内容</th><th>影響</th></tr></thead><tbody><tr><td><a class="xref" href="runtime-config-connection.html#guc-ssl-cert-file">ssl_cert_file</a> (<code class="filename">$PGDATA/server.crt</code>)</td><td>サーバ証明書</td><td>サーバの身元を示すためにクライアントに送信します</td></tr><tr><td><a class="xref" href="runtime-config-connection.html#guc-ssl-key-file">ssl_key_file</a> (<code class="filename">$PGDATA/server.key</code>)</td><td>サーバの秘密キー</td><td>サーバ証明書が所有者によって送られたことを証明します。証明書所有者が信頼できることを意味しません。</td></tr><tr><td><a class="xref" href="runtime-config-connection.html#guc-ssl-ca-file">ssl_ca_file</a> (<code class="filename">$PGDATA/root.crt</code>)</td><td>信頼できる認証局</td><td>信頼する認証局により署名されたクライアント証明書か検査します。</td></tr><tr><td><a class="xref" href="runtime-config-connection.html#guc-ssl-crl-file">ssl_crl_file</a> (<code class="filename">$PGDATA/root.crl</code>)</td><td>認証局により失効された証明書</td><td>クライアント証明書はこの一覧にあってはいけません。</td></tr></tbody></table></div></div><br class="table-break" /><p>    The server reads these files at server start and whenever the server
-    configuration is reloaded.  On <span class="systemitem">Windows</span>
+</span><table class="table" summary="SSLサーバファイルの使用方法" border="1"><colgroup><col /><col /><col /></colgroup><thead><tr><th>ファイル</th><th>内容</th><th>影響</th></tr></thead><tbody><tr><td><a class="xref" href="runtime-config-connection.html#guc-ssl-cert-file">ssl_cert_file</a> (<code class="filename">$PGDATA/server.crt</code>)</td><td>サーバ証明書</td><td>サーバの身元を示すためにクライアントに送信します</td></tr><tr><td><a class="xref" href="runtime-config-connection.html#guc-ssl-key-file">ssl_key_file</a> (<code class="filename">$PGDATA/server.key</code>)</td><td>サーバの秘密キー</td><td>サーバ証明書が所有者によって送られたことを証明します。証明書所有者が信頼できることを意味しません。</td></tr><tr><td><a class="xref" href="runtime-config-connection.html#guc-ssl-ca-file">ssl_ca_file</a> (<code class="filename">$PGDATA/root.crt</code>)</td><td>信頼できる認証局</td><td>信頼する認証局により署名されたクライアント証明書か検査します。</td></tr><tr><td><a class="xref" href="runtime-config-connection.html#guc-ssl-crl-file">ssl_crl_file</a> (<code class="filename">$PGDATA/root.crl</code>)</td><td>認証局により失効された証明書</td><td>クライアント証明書はこの一覧にあってはいけません。</td></tr></tbody></table></div></div><br class="table-break" /><p><span class="original">
+    The server reads these files at server start and whenever the server
+    configuration is reloaded.  On &lt;systemitem class="osname"&gt;Windows&lt;/&gt;
     systems, they are also re-read whenever a new backend process is spawned
     for a new client connection.
-   </p><p>    If an error in these files is detected at server start, the server will
+</span>サーバは、サーバ起動時及びサーバ設定がリロードされるたびに、これらのファイルを読み取ります。
+<span class="systemitem">Windows</span>システム上では新しいクライアント接続のために新しいバックエンドプロセスが生成されるたびに再読み込みされます。
+   </p><p><span class="original">
+    If an error in these files is detected at server start, the server will
     refuse to start.  But if an error is detected during a configuration
     reload, the files are ignored and the old SSL configuration continues to
-    be used.  On <span class="systemitem">Windows</span> systems, if an error in
+    be used.  On &lt;systemitem class="osname"&gt;Windows&lt;/&gt; systems, if an error in
     these files is detected at backend start, that backend will be unable to
     establish an SSL connection.  In all these cases, the error condition is
     reported in the server log.
+</span>サーバ起動時にこれらのファイルのエラーが検出された場合、サーバは起動を拒否します。
+ただし、設定のリロード中にエラーが検出された場合、ファイルは無視され、古いSSL設定が引き続き使用されます。
+<span class="systemitem">Windows</span>システム上ではバックエンドの開始時にこれらのファイルのエラーが検出された場合、そのバックエンドはSSL接続を確立出来ません。
+これらのすべてのケースでは、エラー状態がサーバログに記録されます。
    </p></div><div class="sect2" id="ssl-certificate-creation"><div class="titlepage"><div><div><h3 class="title">18.9.3. 自己署名証明書の作成</h3></div></div></div><span class="original">
    &lt;title&gt;Creating a Self-signed Certificate&lt;/title&gt;
-</span><p>     To create a quick self-signed certificate for the server, valid for 365
-     days, use the following <span class="productname">OpenSSL</span> command,
-     replacing <em class="replaceable"><code>yourdomain.com</code></em> with the server's host name:
+</span><p><span class="original">
+     To create a quick self-signed certificate for the server, valid for 365
+     days, use the following &lt;productname&gt;OpenSSL&lt;/productname&gt; command,
+     replacing &lt;replaceable&gt;yourdomain.com&lt;/&gt; with the server's host name:
+</span>365日有効なサーバ用の自己署名証明書を簡単に作るためには下記の<span class="productname">OpenSSL</span>コマンドを実行してください（<em class="replaceable"><code>yourdomain.com</code></em>をサーバのホスト名に置き換えてください）。
 </p><pre class="programlisting">openssl req -new -x509 -days 365 -nodes -text -out server.crt \
-  -keyout server.key -subj "/CN=<em class="replaceable"><code>yourdomain.com</code></em>"</pre><p>
+  -keyout server.key -subj "/CN=<em class="replaceable"><code>yourdomain.com</code></em>"</pre><p><span class="original">
     Then do:
+</span>
+続けて以下も実行します。
 </p><pre class="programlisting">chmod og-rwx server.key</pre><p><span class="original">
     because the server will reject the file if its permissions are more
     liberal than this.

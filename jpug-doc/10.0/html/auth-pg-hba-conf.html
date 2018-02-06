@@ -2,7 +2,7 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>20.1. pg_hba.confファイル</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="client-authentication.html" title="第20章 クライアント認証" /><link rel="next" href="auth-username-maps.html" title="20.2. ユーザ名マップ" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 10.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="client-authentication.html" title="第20章 クライアント認証">第20章 クライアント認証</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 10.0 &#10;                      auth-pg-hba-conf.html">誤訳等の報告
                     </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="client-authentication.html" title="第20章 クライアント認証">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="client-authentication.html" title="第20章 クライアント認証">上へ</a></td><td width="60%" align="center">20.1. <code class="filename">pg_hba.conf</code>ファイル</td><td width="20%" align="right"> <a accesskey="n" href="auth-username-maps.html" title="20.2. ユーザ名マップ">次へ</a></td></tr></table><hr /></div><div class="sect1" id="auth-pg-hba-conf"><div class="titlepage"><div><div><h2 class="title" style="clear: both">20.1. <code class="filename">pg_hba.conf</code>ファイル</h2></div></div></div><span class="original">
   &lt;title&gt;The &lt;filename&gt;pg_hba.conf&lt;/filename&gt; File&lt;/title&gt;
-</span><a id="idm45651798539696" class="indexterm"></a><p><span class="original">
+</span><a id="idm45337985136800" class="indexterm"></a><p><span class="original">
    Client authentication is controlled by a configuration file,
    which traditionally is named
    &lt;filename&gt;pg_hba.conf&lt;/filename&gt; and is stored in the database
@@ -99,6 +99,7 @@ hostnossl  <em class="replaceable"><code>database</code></em>  <em class="replac
        logging a warning that it cannot match any connections.
 </span>このオプションを使用するためには、サーバは<acronym class="acronym">SSL</acronym>サポートができるように構築されていなければいけません。
 また、 <acronym class="acronym">SSL</acronym>は<a class="xref" href="runtime-config-connection.html#guc-ssl">ssl</a>パラメータを設定することによりサーバの起動時に有効になっていなくてはなりません（詳細は<a class="xref" href="ssl-tcp.html" title="18.9. SSLによる安全なTCP/IP接続">18.9</a>を参照してください）。
+そうでなければ、どのような接続にも対応していないという警告が表示されることを除き、<code class="literal">hostssl</code>レコードは無視されます。
       </p></dd><dt><span class="term"><code class="literal">hostnossl</code></span></dt><dd><p><span class="original">
        This record type has the opposite behavior of &lt;literal&gt;hostssl&lt;/&gt;;
        it only matches connection attempts made over
@@ -132,7 +133,7 @@ hostnossl  <em class="replaceable"><code>database</code></em>  <em class="replac
 （以前は<code class="literal">samegroup</code>と書いていましたが、<code class="literal">samerole</code>と記述してください）
 スーパーユーザは、直接的であれ間接的であれ、明示的にsameroleのメンバでない限りsameroleのメンバとはみなされません。
 また、スーパーユーザであるからといって<code class="literal">samerole</code>のメンバとはみなされません。
-<code class="literal">replication</code>の値は、もしレプリケーション接続が要求された場合（レプリケーション接続は特定のデータベースを指定しないことに注意して下さい）にレコードが一致することを指定します。
+<code class="literal">replication</code>の値は、もし物理レプリケーション接続が要求された場合（レプリケーション接続は特定のデータベースを指定しないことに注意して下さい）にレコードが一致することを指定します。
 それ以外の場合には、特定の<span class="productname">PostgreSQL</span>データベースの名前になります。
 データベースの名前はカンマで区切ることで複数指定できます。
 データベース名を含む別のファイルを、そのファイル名の前に<code class="literal">@</code>を付けることで指定できます。
@@ -341,13 +342,16 @@ IPv6書式の項目は、システムのCライブラリがIPv6アドレスを�
 特定のホストをあるグループから<span class="quote">「<span class="quote">除外</span>」</span>するために便利です。
 例えば、1行の<code class="literal">reject</code>は特定のホストが接続することを拒否します。一方、
 後ろの行では特定のネットワーク内の残りのホストが接続することを許可します。
-         </p></dd><dt><span class="term"><code class="literal">scram-sha-256</code></span></dt><dd><p>          Perform SCRAM-SHA-256 authentication to verify the user's
-          password. See <a class="xref" href="auth-methods.html#auth-password" title="20.3.2. パスワード認証">20.3.2</a> for details.
+         </p></dd><dt><span class="term"><code class="literal">scram-sha-256</code></span></dt><dd><p><span class="original">
+          Perform SCRAM-SHA-256 authentication to verify the user's
+          password. See &lt;xref linkend="auth-password"&gt; for details.
+</span>ユーザのパスワードを検証するためにSCRAM-SHA-256認証を実行します。
+詳細は<a class="xref" href="auth-methods.html#auth-password" title="20.3.2. パスワード認証">20.3.2</a>をご覧ください。
          </p></dd><dt><span class="term"><code class="literal">md5</code></span></dt><dd><p><span class="original">
           Perform SCRAM-SHA-256 or MD5 authentication to verify the
           user's password. See &lt;xref linkend="auth-password"&gt;
           for details.
-</span>クライアントに対して認証時に二重MD5ハッシュ化パスワードを要求します。
+</span>ユーザのパスワードを検証するために、SCRAM-SHA-256あるいはMD5認証を実行します。
 詳細は<a class="xref" href="auth-methods.html#auth-password" title="20.3.2. パスワード認証">20.3.2</a>を参照してください。
          </p></dd><dt><span class="term"><code class="literal">password</code></span></dt><dd><p><span class="original">
           Require the client to supply an unencrypted password for
@@ -472,18 +476,25 @@ ident認証は、TCP/IP接続でのみ使用可能です。ローカル接続が
    active system, you will need to signal the postmaster
    (using &lt;literal&gt;pg_ctl reload&lt;/&gt; or &lt;literal&gt;kill -HUP&lt;/&gt;) to make it
    re-read the file.
-</span><code class="filename">pg_hba.conf</code>ファイルは起動時と、主サーバプロセスが<span class="systemitem">SIGHUP</span>シグナルを受け取った時に読み込まれます。<a id="idm45651798370912" class="indexterm"></a>
+</span><code class="filename">pg_hba.conf</code>ファイルは起動時と、主サーバプロセスが<span class="systemitem">SIGHUP</span>シグナルを受け取った時に読み込まれます。<a id="idm45337984966736" class="indexterm"></a>
 稼働中のシステムでファイルを編集した場合は、（<code class="literal">pg_ctl reload</code>あるいは<code class="literal">kill -HUP</code>を使用して）postmasterにファイルをもう一度読み込むようにシグナルを出さなければなりません。
-  </p><div class="note"><h3 class="title">注記</h3><p>    The preceding statement is not true on Microsoft Windows: there, any
-    changes in the <code class="filename">pg_hba.conf</code> file are immediately
+  </p><div class="note"><h3 class="title">注記</h3><p><span class="original">
+    The preceding statement is not true on Microsoft Windows: there, any
+    changes in the &lt;filename&gt;pg_hba.conf&lt;/filename&gt; file are immediately
     applied by subsequent new connections.
-   </p></div><p>   The system view
-   <a class="link" href="view-pg-hba-file-rules.html" title="51.71. pg_hba_file_rules"><code class="structname">pg_hba_file_rules</code></a>
-   can be helpful for pre-testing changes to the <code class="filename">pg_hba.conf</code>
+</span>上記はマイクロソフトWindowsに対しては当てはまりません。
+つまり、<code class="filename">pg_hba.conf</code>に対する変更は、ただちにそれ以降の新しい接続に反映されます。
+   </p></div><p><span class="original">
+   The system view
+   &lt;link linkend="view-pg-hba-file-rules"&gt;&lt;structname&gt;pg_hba_file_rules&lt;/structname&gt;&lt;/link&gt;
+   can be helpful for pre-testing changes to the &lt;filename&gt;pg_hba.conf&lt;/&gt;
    file, or for diagnosing problems if loading of the file did not have the
    desired effects.  Rows in the view with
-   non-null <code class="structfield">error</code> fields indicate problems in the
+   non-null &lt;structfield&gt;error&lt;/structfield&gt; fields indicate problems in the
    corresponding lines of the file.
+</span><code class="filename">pg_hba.conf</code>に対する変更をテストする際、あるいはそのファイルをロードしても期待していた結果が得られなかった場合には、
+システムビュー<a class="link" href="view-pg-hba-file-rules.html" title="51.71. pg_hba_file_rules"><code class="structname">pg_hba_file_rules</code></a>が役に立ちます。
+そのビューの<code class="structfield">error</code>フィールドがNULLでない行は、そのファイルの該当行に問題があることを示しています。
   </p><div class="tip"><h3 class="title">ヒント</h3><p><span class="original">
     To connect to a particular database, a user must not only pass the
     &lt;filename&gt;pg_hba.conf&lt;/filename&gt; checks, but must have the

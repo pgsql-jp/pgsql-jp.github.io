@@ -75,11 +75,13 @@ aminsert (Relation indexRelation,
    indexed, &lt;function&gt;aminsert&lt;/&gt; should just return without doing anything.
 </span>一部のインデックスではすべてのタプルをインデックス付けしない可能性があります。
 タプルがインデックス付けされない場合、<code class="function">aminsert</code>は何も行わずに戻らなければなりません。
-  </p><p>   If the index AM wishes to cache data across successive index insertions
+  </p><p><span class="original">
+   If the index AM wishes to cache data across successive index insertions
    within a SQL statement, it can allocate space
-   in <code class="literal">indexInfo-&gt;ii_Context</code> and store a pointer to the
-   data in <code class="literal">indexInfo-&gt;ii_AmCache</code> (which will be NULL
+   in &lt;literal&gt;indexInfo-&amp;gt;ii_Context&lt;/literal&gt; and store a pointer to the
+   data in &lt;literal&gt;indexInfo-&amp;gt;ii_AmCache&lt;/literal&gt; (which will be NULL
    initially).
+</span>SQL文の中で、インデックスAMがインデックスへの連続的な挿入をまたがってデータをキャッシュすることが望ましい場合は、<code class="literal">indexInfo-&gt;ii_Context</code>にメモリを確保し、そのデータへのポインタを<code class="literal">indexInfo-&gt;ii_AmCache</code>（初期値はNULLです)に格納することができます。
   </p><pre class="programlisting">IndexBulkDeleteResult *
 ambulkdelete (IndexVacuumInfo *info,
               IndexBulkDeleteResult *stats,
@@ -370,7 +372,6 @@ amgettuple (IndexScanDesc scan,
 再検査はスキャン条件のみに拡大適用されることに注意してください。
 部分インデックス述語（もしあれば）は<code class="function">amgettuple</code>呼び出し元で決して再検査されません。
   </p><p><span class="original">
-
    If the index supports &lt;link linkend="indexes-index-only-scans"&gt;index-only
    scans&lt;/link&gt; (i.e., &lt;function&gt;amcanreturn&lt;/function&gt; returns TRUE for it),
    then on success the AM must also check &lt;literal&gt;scan-&amp;gt;xs_want_itup&lt;/&gt;,
@@ -386,8 +387,11 @@ amgettuple (IndexScanDesc scan,
    responsibility.  The data must remain good at least until the next
    &lt;function&gt;amgettuple&lt;/&gt;, &lt;function&gt;amrescan&lt;/&gt;, or &lt;function&gt;amendscan&lt;/&gt;
    call for the scan.
-</span>そのインデックスが<a class="link" href="indexes-index-only-scans.html" title="11.11. インデックスオンリースキャン">インデックスオンリースキャン</a>をサポートしている場合(その場合は<code class="function">amcanreturn</code>により真が返されます)、そのアクセスメソッドは<code class="literal">scan-&gt;xs_want_itup</code>も確認し、それが真の場合、<code class="literal">scan-&gt;xs_itupdesc</code>タプルディスクリプタとともに<code class="literal">scan-&gt;xs_itup</code>に格納された<code class="structname">IndexTuple</code>ポインタの形式でインデックスエントリに対する元のインデックスされたデータが返されます。
-(ポインタによって参照されているデータはアクセスメソッドのもとで管理されます。データは少なくとも<code class="function">amgettuple</code>、<code class="function">amrescan</code>または<code class="function">amendscan</code>によってスキャンされるまでよい状態を保たなくてはなりません。)
+</span>そのインデックスが<a class="link" href="indexes-index-only-scans.html" title="11.11. インデックスオンリースキャン">インデックスオンリースキャン</a>をサポートしている場合(つまり<code class="function">amcanreturn</code>が真を返す場合)、そのアクセスメソッドはスキャンが成功したならば<code class="literal">scan-&gt;xs_want_itup</code>も確認し、それが真の場合、そのインデックスエントリに対応する元のインデックスされたデータを返さなければなりません。
+返却されるデータは、<code class="literal">scan-&gt;xs_itupdesc</code>タプルディスクリプタとともに<code class="literal">scan-&gt;xs_itup</code>に格納された<code class="structname">IndexTuple</code>ポインタの形式か、あるいは、<code class="literal">scan-&gt;xs_hitupdesc</code>タプルディスクリプタとともに<code class="literal">scan-&gt;xs_hitup</code>に格納された<code class="structname">HeapTuple</code>ポインタの形式です。
+（後者の形式は、再構成されたデータが<code class="structname">IndexTuple</code>に収まらない場合に使用するべきです。）
+どちらの場合でも、そのポインタが参照するデータの管理はアクセスメソッドの責任です。
+データは少なくとも<code class="function">amgettuple</code>、<code class="function">amrescan</code>または<code class="function">amendscan</code>によってスキャンされるまでよい状態を保たなくてはなりません。
   </p><p><span class="original">
    The &lt;function&gt;amgettuple&lt;/&gt; function need only be provided if the access
    method supports &lt;quote&gt;plain&lt;/&gt; index scans.  If it doesn't, the
@@ -466,8 +470,9 @@ amrestrpos (IndexScanDesc scan);</pre><p><span class="original">
    struct may be set to NULL.
 </span><code class="function">amrestrpos</code>関数はアクセスメソッドが順序付けされたスキャンをサポートする場合にのみ提供する必要があります。
 そうでなければ、その<code class="structname">IndexAmRoutine</code>構造体の<code class="structfield">amrestrpos</code>フィールドはNULLに設定しても構いません。
-  </p><p>   In addition to supporting ordinary index scans, some types of index
-   may wish to support <em class="firstterm">parallel index scans</em>, which allow
+  </p><p><span class="original">
+   In addition to supporting ordinary index scans, some types of index
+   may wish to support &lt;firstterm&gt;parallel index scans&lt;/&gt;, which allow
    multiple backends to cooperate in performing an index scan.  The
    index access method should arrange things so that each cooperating
    process returns a subset of the tuples that would be performed by
@@ -478,29 +483,46 @@ amrestrpos (IndexScanDesc scan);</pre><p><span class="original">
    scan, the ordering of that subset of tuples returned within each
    cooperating backend must match the requested ordering.  The following
    functions may be implemented to support parallel index scans:
+</span>通常のインデックススキャンのサポートに加え、ある種のインデックスは、複数のバックエンドが協調してインデックススキャンを実行する<em class="firstterm">パラレルインデックススキャン</em>をサポートすることができます。
+インデックスアクセスメソッドは、協調するプロセスが、通常の非パラレルインデックススキャンが実行対象とする行のサブセットを返しつつ、しかもそれらのサブセットの合計が、通常の非パラレルインデックススキャンが返すタプルの集合と同じになるように調整しなければなりません。
+それだけでなく、パラレルスキャンが返すタプル全体の順序付けが想定されていない場合でも、協調するバックエンドが返すサブセットのタプルの順序付けは、要求された順序付けと一致しなければなりません。
+パラレルインデックススキャンをサポートするために、以下の関数を実装することができます。
   </p><pre class="programlisting">Size
-amestimateparallelscan (void);</pre><p>
+amestimateparallelscan (void);</pre><p><span class="original">
    Estimate and return the number of bytes of dynamic shared memory which
    the access method will be needed to perform a parallel scan.  (This number
    is in addition to, not in lieu of, the amount of space needed for
-   AM-independent data in <code class="structname">ParallelIndexScanDescData</code>.)
-  </p><p>   It is not necessary to implement this function for access methods which
+   AM-independent data in &lt;structname&gt;ParallelIndexScanDescData&lt;/&gt;.)
+</span>
+パラレルスキャンを実行するために、アクセスメソッドによって必要とされる動的共有メモリのバイト数を推測し、返します。
+（この数値は、<code class="structname">ParallelIndexScanDescData</code>のAM独立データに必要となる量に追加するための値であり、それを置き換えるものではありません。）
+  </p><p><span class="original">
+   It is not necessary to implement this function for access methods which
    do not support parallel scans or for which the number of additional bytes
    of storage required is zero.
+</span>パラレルスキャンをサポートしない、あるいはメモリ領域への追加のバイト数が0のアクセスメソッドでは、この関数を実装する必要はありません。
   </p><pre class="programlisting">void
-aminitparallelscan (void *target);</pre><p>
+aminitparallelscan (void *target);</pre><p><span class="original">
    This function will be called to initialize dynamic shared memory at the
-   beginning of a parallel scan.  <em class="parameter"><code>target</code></em> will point to at least
+   beginning of a parallel scan.  &lt;parameter&gt;target&lt;/&gt; will point to at least
    the number of bytes previously returned by
-   <code class="function">amestimateparallelscan</code>, and this function may use that
+   &lt;function&gt;amestimateparallelscan&lt;/&gt;, and this function may use that
    amount of space to store whatever data it wishes.
-  </p><p>   It is not necessary to implement this function for access methods which
+</span>
+この関数は、パラレルスキャンの最初に動的共有メモリを初期化するために呼ばれます。
+<em class="parameter"><code>target</code></em>は、前もって<code class="function">amestimateparallelscan</code>が返したバイト数を少なくとも持つ領域を指し、この関数はその分だけのスペースを使って必要なデータを保管することができます。
+  </p><p><span class="original">
+   It is not necessary to implement this function for access methods which
    do not support parallel scans or in cases where the shared memory space
    required needs no initialization.
+</span>パラレルスキャンをサポートしない、あるいは共有メモリスペースの初期化が必要ないアクセスメソッドでは、この関数を実装する必要はありません。
   </p><pre class="programlisting">void
-amparallelrescan (IndexScanDesc scan);</pre><p>
+amparallelrescan (IndexScanDesc scan);</pre><p><span class="original">
    This function, if implemented, will be called when a parallel index scan
    must be restarted.  It should reset any shared state set up by
-   <code class="function">aminitparallelscan</code> such that the scan will be restarted from
+   &lt;function&gt;aminitparallelscan&lt;/&gt; such that the scan will be restarted from
    the beginning.
+</span>
+実装された場合、この関数はパラレルインデックススキャンを再起動しなければならない時に呼ばれます。
+この関数は、<code class="function">aminitparallelscan</code>が設定した共有状態を初期化し、スキャンが最初から再開できるようにします。
   </p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="index-api.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="indexam.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="index-scanning.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">60.1. インデックスの基本的API構造 </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> 60.3. インデックススキャン</td></tr></table></div></body></html>
