@@ -2,7 +2,7 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>37.15. 関連するオブジェクトを拡張としてパッケージ化</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="xindex.html" title="37.14. インデックス拡張機能へのインタフェース" /><link rel="next" href="extend-pgxs.html" title="37.16. 拡張構築基盤" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 10.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="extend.html" title="第37章 SQLの拡張">第37章 <acronym class="acronym">SQL</acronym>の拡張</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 10.0 &#10;                      extend-extensions.html">誤訳等の報告
                     </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="xindex.html" title="37.14. インデックス拡張機能へのインタフェース">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="extend.html" title="第37章 SQLの拡張">上へ</a></td><td width="60%" align="center">37.15. 関連するオブジェクトを拡張としてパッケージ化</td><td width="20%" align="right"> <a accesskey="n" href="extend-pgxs.html" title="37.16. 拡張構築基盤">次へ</a></td></tr></table><hr /></div><div class="sect1" id="extend-extensions"><div class="titlepage"><div><div><h2 class="title" style="clear: both">37.15. 関連するオブジェクトを拡張としてパッケージ化</h2></div></div></div><span class="original">
    &lt;title&gt;Packaging Related Objects into an Extension&lt;/title&gt;
-</span><a id="idm45337970837616" class="indexterm"></a><p><span class="original">
+</span><a id="idp46517398959632" class="indexterm"></a><p><span class="original">
     A useful extension to &lt;productname&gt;PostgreSQL&lt;/&gt; typically includes
     multiple SQL objects; for example, a new data type will require new
     functions, new operators, and probably new index operator classes.
@@ -120,15 +120,19 @@
 拡張は非修飾名でいかなるスキーマ<span class="quote">「<span class="quote">の中に</span>」</span>も存在しません。
 しかし、拡張のメンバオブジェクトはオブジェクトの型が適切であればスキーマに属します。
 拡張が自身のメンバオブジェクトが属するスキーマを所有することは適切かも知れませんし、そうでないかも知れません。
-   </p><p>    If an extension's script creates any temporary objects (such as temp
+   </p><p><span class="original">
+    If an extension's script creates any temporary objects (such as temp
     tables), those objects are treated as extension members for the
     remainder of the current session, but are automatically dropped at
     session end, as any temporary object would be.  This is an exception
     to the rule that extension member objects cannot be dropped without
     dropping the whole extension.
-   </p><div class="sect2" id="idm45337970798544"><div class="titlepage"><div><div><h3 class="title">37.15.1. 拡張のファイル</h3></div></div></div><span class="original">
+</span>ある拡張のスクリプトが（一時テーブルのような）一時オブジェクトを作成する場合、現在のセッションで、以降そのオブジェクトは拡張のメンバーとして扱われます。
+しかしすべての一時オブジェクト同様、セッションの終わりに削除されます。
+これは、拡張全体を削除することなしに、拡張のメンバーオブジェクトは削除できない、という規則の例外です。
+   </p><div class="sect2" id="idp46517398998400"><div class="titlepage"><div><div><h3 class="title">37.15.1. 拡張のファイル</h3></div></div></div><span class="original">
     &lt;title&gt;Extension Files&lt;/title&gt;
-</span><a id="idm45337970797904" class="indexterm"></a><p><span class="original">
+</span><a id="idp46517399000624" class="indexterm"></a><p><span class="original">
      The &lt;xref linkend="sql-createextension"&gt; command relies on a control
      file for each extension, which must be named the same as the extension
      with a suffix of &lt;literal&gt;.control&lt;/&gt;, and must be placed in the
@@ -404,7 +408,7 @@
 しかしこの振舞いは設定テーブルの場合望まれません。
 ユーザによってなされたデータ変更はダンプ内に含まれなければなりません。
 さもないとダンプしリストアした後で拡張の動作が変わってしまいます。
-    </p><a id="idm45337970695744" class="indexterm"></a><p><span class="original">
+    </p><a id="idp46517399102560" class="indexterm"></a><p><span class="original">
      To solve this problem, an extension's script file can mark a table
      or a sequence it has created as a configuration relation, which will
      cause &lt;application&gt;pg_dump&lt;/&gt; to include the table's or the sequence's
@@ -481,7 +485,7 @@ SELECT pg_catalog.pg_extension_config_dump('my_config', 'WHERE NOT standard_entr
      relation is not enough for this purpose.
 </span><code class="type">serial</code>列または<code class="type">bigserial</code>列に関連したシーケンスは、それらの状態をダンプするために直接印付けする必要があります。
 親リレーションを印付けすることは、この目的に十分ではありません。
-    </p></div><div class="sect2" id="idm45337970675440"><div class="titlepage"><div><div><h3 class="title">37.15.4. 拡張の更新</h3></div></div></div><span class="original">
+    </p></div><div class="sect2" id="idp46517399122864"><div class="titlepage"><div><div><h3 class="title">37.15.4. 拡張の更新</h3></div></div></div><span class="original">
     &lt;title&gt;Extension Updates&lt;/title&gt;
 </span><p><span class="original">
      One advantage of the extension mechanism is that it provides convenient
@@ -512,6 +516,7 @@ SELECT pg_catalog.pg_extension_config_dump('my_config', 'WHERE NOT standard_entr
 </span>適切な更新スクリプトが利用可能である場合、<code class="command">ALTER EXTENSION UPDATE</code>コマンドはインストール済みの拡張を指定した新しいバージョンへ更新します。
 更新スクリプトは、<code class="command">CREATE EXTENSION</code>がインストール用スクリプト向けに提供する環境と同じ環境で実行されます。
 具体的には<code class="varname">search_path</code>は同じ方法で設定され、スクリプトにより作成される新しいオブジェクトはすべて自動的に拡張に追加されます。
+また、スクリプトが拡張のメンバーオブジェクトを削除する場合には、それらのメンバーオブジェクトは拡張から自動的に分離されます。
     </p><p><span class="original">
      If an extension has secondary control files, the control parameters
      that are used for an update script are those associated with the script's
@@ -603,37 +608,54 @@ SELECT pg_catalog.pg_extension_config_dump('my_config', 'WHERE NOT standard_entr
 これは指定した拡張の個々の既知のバージョン名の組み合わせをそれぞれ、元のバージョンから対象のバージョンへ進む時に取られる更新経路順、またはもし利用できる更新経路がなければ<code class="literal">NULL</code>を付けて、表示します。
 経路は<code class="literal">--</code>を区切り文字として使用したテキスト形式で表示されます。
 配列形式の方が良ければ<code class="literal">regexp_split_to_array(path,'--')</code>を使用することができます。
-    </p></div><div class="sect2" id="idm45337970631136"><div class="titlepage"><div><div><h3 class="title">37.15.5. Installing Extensions using Update Scripts</h3></div></div></div><p>     An extension that has been around for awhile will probably exist in
+    </p></div><div class="sect2" id="idp46517399167760"><div class="titlepage"><div><div><h3 class="title">37.15.5. 更新スクリプトを利用した拡張のインストール</h3></div></div></div><span class="original">
+    &lt;title&gt;Installing Extensions using Update Scripts&lt;/title&gt;
+</span><p><span class="original">
+     An extension that has been around for awhile will probably exist in
      several versions, for which the author will need to write update scripts.
-     For example, if you have released a <code class="literal">foo</code> extension in
-     versions <code class="literal">1.0</code>, <code class="literal">1.1</code>, and <code class="literal">1.2</code>, there
-     should be update scripts <code class="filename">foo--1.0--1.1.sql</code>
-     and <code class="filename">foo--1.1--1.2.sql</code>.
-     Before <span class="productname">PostgreSQL</span> 10, it was necessary to also create
-     new script files <code class="filename">foo--1.1.sql</code> and <code class="filename">foo--1.2.sql</code>
+     For example, if you have released a &lt;literal&gt;foo&lt;/&gt; extension in
+     versions &lt;literal&gt;1.0&lt;/&gt;, &lt;literal&gt;1.1&lt;/&gt;, and &lt;literal&gt;1.2&lt;/&gt;, there
+     should be update scripts &lt;filename&gt;foo&amp;#045;&amp;#045;1.0&amp;#045;&amp;#045;1.1.sql&lt;/&gt;
+     and &lt;filename&gt;foo&amp;#045;&amp;#045;1.1&amp;#045;&amp;#045;1.2.sql&lt;/&gt;.
+     Before &lt;productname&gt;PostgreSQL&lt;/&gt; 10, it was necessary to also create
+     new script files &lt;filename&gt;foo&amp;#045;&amp;#045;1.1.sql&lt;/&gt; and &lt;filename&gt;foo&amp;#045;&amp;#045;1.2.sql&lt;/&gt;
      that directly build the newer extension versions, or else the newer
      versions could not be installed directly, only by
-     installing <code class="literal">1.0</code> and then updating.  That was tedious and
-     duplicative, but now it's unnecessary, because <code class="command">CREATE
-     EXTENSION</code> can follow update chains automatically.
+     installing &lt;literal&gt;1.0&lt;/&gt; and then updating.  That was tedious and
+     duplicative, but now it's unnecessary, because &lt;command&gt;CREATE
+     EXTENSION&lt;/&gt; can follow update chains automatically.
      For example, if only the script
-     files <code class="filename">foo--1.0.sql</code>, <code class="filename">foo--1.0--1.1.sql</code>,
-     and <code class="filename">foo--1.1--1.2.sql</code> are available then a request to
-     install version <code class="literal">1.2</code> is honored by running those three
+     files &lt;filename&gt;foo&amp;#045;&amp;#045;1.0.sql&lt;/&gt;, &lt;filename&gt;foo&amp;#045;&amp;#045;1.0&amp;#045;&amp;#045;1.1.sql&lt;/&gt;,
+     and &lt;filename&gt;foo&amp;#045;&amp;#045;1.1&amp;#045;&amp;#045;1.2.sql&lt;/&gt; are available then a request to
+     install version &lt;literal&gt;1.2&lt;/&gt; is honored by running those three
      scripts in sequence.  The processing is the same as if you'd first
-     installed <code class="literal">1.0</code> and then updated to <code class="literal">1.2</code>.
-     (As with <code class="command">ALTER EXTENSION UPDATE</code>, if multiple pathways are
+     installed &lt;literal&gt;1.0&lt;/&gt; and then updated to &lt;literal&gt;1.2&lt;/&gt;.
+     (As with &lt;command&gt;ALTER EXTENSION UPDATE&lt;/&gt;, if multiple pathways are
      available then the shortest is preferred.)  Arranging an extension's
      script files in this style can reduce the amount of maintenance effort
      needed to produce small updates.
-    </p><p>     If you use secondary (version-specific) control files with an extension
+</span>以前から存在している拡張は、おそらく複数のバージョンに渡って存在しているので、拡張の作者は更新スクリプトを開発する必要性が出てきます。
+たとえば、拡張<code class="literal">foo</code>がバージョン<code class="literal">1.0</code>、<code class="literal">1.1</code>、<code class="literal">1.2</code>をリリースしていたとすると、更新スクリプト<code class="filename">foo--1.0--1.1.sql</code>と<code class="filename">foo--1.1--1.2.sql</code>が存在しなければなりません。
+<span class="productname">PostgreSQL</span> 10より前では、新しい拡張のバージョンを直接作成するスクリプトファイル<code class="filename">foo--1.1.sql</code>と<code class="filename">foo--1.2.sql</code>も新規に作る必要がありました。
+これらがないと、新しいバージョンの拡張を直接インストールすることはできず、<code class="literal">1.0</code>をインストールしてから更新するしかありませんでした。
+それにはうんざりしますし、また冗長です。
+しかし、今では<code class="command">CREATE EXTENSION</code>が自動的に更新連鎖を追跡してくるので、それは不要になりました。
+たとえば、<code class="filename">foo--1.0.sql</code>、<code class="filename">foo--1.0--1.1.sql</code>、<code class="filename">foo--1.1--1.2.sql</code>だけしかない場合、バージョン<code class="literal">1.2</code>のインストールのリクエストは、これらのスクリプトを順に実行することによって達成されます。
+この手順は、最初に<code class="literal">1.0</code>をインストールして、<code class="literal">1.2</code>にアップデートする場合でも同じです。
+（<code class="command">ALTER EXTENSION UPDATE</code>は、複数の手順がある場合には、最短の手順を選びます。）
+この方法で拡張のスクリプトを調整することにより、小さな更新を複数作成するための保守の手間を減らすことができます。
+    </p><p><span class="original">
+     If you use secondary (version-specific) control files with an extension
      maintained in this style, keep in mind that each version needs a control
      file even if it has no stand-alone installation script, as that control
      file will determine how the implicit update to that version is performed.
-     For example, if <code class="filename">foo--1.0.control</code> specifies <code class="literal">requires
-     = 'bar'</code> but <code class="literal">foo</code>'s other control files do not, the
-     extension's dependency on <code class="literal">bar</code> will be dropped when updating
-     from <code class="literal">1.0</code> to another version.
+     For example, if &lt;filename&gt;foo&amp;#045;&amp;#045;1.0.control&lt;/&gt; specifies &lt;literal&gt;requires
+     = 'bar'&lt;/&gt; but &lt;literal&gt;foo&lt;/&gt;'s other control files do not, the
+     extension's dependency on &lt;literal&gt;bar&lt;/&gt; will be dropped when updating
+     from &lt;literal&gt;1.0&lt;/&gt; to another version.
+</span>この方法で保守している拡張に二次的な（バージョン固有の）制御ファイルがある場合は、スタンドアローンのインストールスクリプトがない場合でも、各バージョンで制御ファイルが必要になることに注意してください。
+そのバージョンへと更新する暗黙的な方法を、制御ファイルが決定するからです。
+たとえば、<code class="filename">foo--1.0.control</code>が<code class="literal">requires = 'bar'</code>を指定しているのに、<code class="literal">foo</code>の他の制御ファイルが指定していないとすると、<code class="literal">1.0</code>から他のバージョンに更新した際に<code class="literal">bar</code>への依存性が削除されてしまうでしょう。
     </p></div><div class="sect2" id="extend-extensions-example"><div class="titlepage"><div><div><h3 class="title">37.15.6. 拡張の例</h3></div></div></div><span class="original">
     &lt;title&gt;Extension Example&lt;/title&gt;
 </span><p><span class="original">

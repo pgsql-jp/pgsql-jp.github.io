@@ -2,7 +2,7 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>20.1. pg_hba.confファイル</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="client-authentication.html" title="第20章 クライアント認証" /><link rel="next" href="auth-username-maps.html" title="20.2. ユーザ名マップ" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 10.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="client-authentication.html" title="第20章 クライアント認証">第20章 クライアント認証</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 10.0 &#10;                      auth-pg-hba-conf.html">誤訳等の報告
                     </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="client-authentication.html" title="第20章 クライアント認証">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="client-authentication.html" title="第20章 クライアント認証">上へ</a></td><td width="60%" align="center">20.1. <code class="filename">pg_hba.conf</code>ファイル</td><td width="20%" align="right"> <a accesskey="n" href="auth-username-maps.html" title="20.2. ユーザ名マップ">次へ</a></td></tr></table><hr /></div><div class="sect1" id="auth-pg-hba-conf"><div class="titlepage"><div><div><h2 class="title" style="clear: both">20.1. <code class="filename">pg_hba.conf</code>ファイル</h2></div></div></div><span class="original">
   &lt;title&gt;The &lt;filename&gt;pg_hba.conf&lt;/filename&gt; File&lt;/title&gt;
-</span><a id="idm45337985136800" class="indexterm"></a><p><span class="original">
+</span><a id="idp46517384601712" class="indexterm"></a><p><span class="original">
    Client authentication is controlled by a configuration file,
    which traditionally is named
    &lt;filename&gt;pg_hba.conf&lt;/filename&gt; and is stored in the database
@@ -235,8 +235,9 @@ IPv6書式の項目は、システムのCライブラリがIPv6アドレスを�
        the operating system will only return one host name when asked
        to resolve an IP address.)
 </span>もし、ホスト名（IPアドレスの範囲ではない場合の全て、もしくはホスト名として処理される特別なキーワード）が指定されている場合は、その名前は、クライアントのIPアドレスの逆引き名前解決の結果と比較されます（例えば、もしDNSが使用されている場合は逆引きDNS検索により解決されます）。
-ホスト名の比較は、大文字小文字が区別されます。もし一致するものがあった場合は、解決された、どのアドレスもクライアントのIPアドレスと等しいか否かをチェックするために（例えば、前方一致のDNS検索のような）ホスト名の前方一致の名前解決が実行されます。
-もし前方、後方の両方向で一致した場合は、エントリは一致するものとみなされます。
+ホスト名の比較は、大文字小文字が区別されます。
+もし一致するものがあった場合は、解決された、どのアドレスもクライアントのIPアドレスと等しいか否かをチェックするために（例えば、正引きDNS検索のような）ホスト名の正引き名前解決が実行されます。
+もし正引き、逆引きの両方で一致した場合は、エントリは一致するものとみなされます。
 （<code class="filename">pg_hba.conf</code>内で使用されているホスト名は、クライアントのIPアドレスのアドレス-名前解決が返すホスト名の1つでなければいけません。
 もしそうでなければこの行は一致しません。
 1つのIPアドレスを複数のホスト名に関連付けるホスト名データベースもありますが、IPアドレスの解決を要求された場合にオペレーティングシステムは1つのホスト名のみを返します。）
@@ -285,7 +286,7 @@ IPv6書式の項目は、システムのCライブラリがIPv6アドレスを�
 このため、クライアントの逆引きDNSエントリが設定されていなかったり、いくつかの望ましくないホスト名を生成する場合にこの機能の使用が複雑になります。
 これは主に効率のために行なわれます。このように、接続要求では最大2つのリゾルバの検索、1つは逆引き、1つは正引き、が必要になります。
 もしリゾルバにおいて、アドレスに問題があった場合、クライアントのみの問題となります。
-前方検索のみを行うような実装を仮に行っていると、全ての接続要求において<code class="filename">pg_hba.conf</code>内に記載された全てのホスト名を解決しなくてはいけなくなります。
+正引き検索のみを行うような実装を仮に行っていると、全ての接続要求において<code class="filename">pg_hba.conf</code>内に記載された全てのホスト名を解決しなくてはいけなくなります。
 これは、多くの名前が列挙されていた場合にかなり遅くなります。
 また、リゾルバにおいて1つのホスト名に問題があった場合、全員の問題となってしまいます。
        </p><p><span class="original">
@@ -476,7 +477,7 @@ ident認証は、TCP/IP接続でのみ使用可能です。ローカル接続が
    active system, you will need to signal the postmaster
    (using &lt;literal&gt;pg_ctl reload&lt;/&gt; or &lt;literal&gt;kill -HUP&lt;/&gt;) to make it
    re-read the file.
-</span><code class="filename">pg_hba.conf</code>ファイルは起動時と、主サーバプロセスが<span class="systemitem">SIGHUP</span>シグナルを受け取った時に読み込まれます。<a id="idm45337984966736" class="indexterm"></a>
+</span><code class="filename">pg_hba.conf</code>ファイルは起動時と、主サーバプロセスが<span class="systemitem">SIGHUP</span>シグナルを受け取った時に読み込まれます。<a id="idp46517384771680" class="indexterm"></a>
 稼働中のシステムでファイルを編集した場合は、（<code class="literal">pg_ctl reload</code>あるいは<code class="literal">kill -HUP</code>を使用して）postmasterにファイルをもう一度読み込むようにシグナルを出さなければなりません。
   </p><div class="note"><h3 class="title">注記</h3><p><span class="original">
     The preceding statement is not true on Microsoft Windows: there, any
