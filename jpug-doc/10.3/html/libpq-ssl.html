@@ -35,28 +35,35 @@
    &lt;quote&gt;intermediate&lt;/&gt; certificate which is signed by the root
    certificate and signs leaf certificates.
 </span>デフォルトでは<span class="productname">PostgreSQL</span>はサーバ証明書の検証をまったく行いません。
-これは、（例えば、DNSレコードを変更したり、もしくはサーバのIPアドレスを接収したりして）クライアントに知られずにサーバの属性をなりすませることを意味します。
-なりすましを防止するには<acronym class="acronym">SSL</acronym>証明書検証を使用しなければなりません。
-  </p><p>   To allow the client to verify the identity of the server, place a root
+これは、（例えば、DNSレコードを変更したり、もしくはサーバのIPアドレスを乗っ取ったりして）クライアントに知られずにサーバの身元をなりすませることを意味します。
+なりすましを防止するには、クライアントは、トラストチェーン(chain of trust)を通じて、サーバの身元を検証できなければなりません。
+トラストチェーンは、ルート（自己署名）認証局（<acronym class="acronym">CA</acronym>）証明書をあるコンピュータに設置し、そのルート証明書によって<span class="emphasis"><em>署名された</em></span>リーフ証明書を他のコンピュータに設置することによって確立されます。
+また、ルート証明書によって署名された<span class="quote">「<span class="quote">中間</span>」</span>証明書を使って、リーフ証明書に署名することによっても可能です。
+  </p><p><span class="original">
+   To allow the client to verify the identity of the server, place a root
    certificate on the client and a leaf certificate signed by the root
    certificate on the server.  To allow the server to verify the identity
    of the client, place a root certificate on the server and a leaf
    certificate signed by the root certificate on the client.  One or more
    intermediate certificates (usually stored with the leaf certificate)
    can also be used to link the leaf certificate to the root certificate.
-  </p><p>   Once a chain of trust has been established, there are two ways for
+</span>クライアントがサーバの身元を検証するためには、ルート証明書をクライアントに設置し、そのルート証明書によって署名されたリーフ証明書をサーバに設置します。
+サーバがクライアントの身元を検証するためには、ルート証明書をサーバに設置し、そのルート証明書によって署名されたリーフ証明書をクライアントに設置します。
+一つ以上の中間証明書（通常リーフ証明書とともに格納されます）を使って、リーフ証明書をルート証明書につなげることもできます。
+  </p><p><span class="original">
+   Once a chain of trust has been established, there are two ways for
    the client to validate the leaf certificate sent by the server.
-   If the parameter <code class="literal">sslmode</code> is set to <code class="literal">verify-ca</code>,
+   If the parameter &lt;literal&gt;sslmode&lt;/&gt; is set to &lt;literal&gt;verify-ca&lt;/&gt;,
    libpq will verify that the server is trustworthy by checking the
    certificate chain up to the root certificate stored on the client.
-   If <code class="literal">sslmode</code> is set to <code class="literal">verify-full</code>,
-   libpq will <span class="emphasis"><em>also</em></span> verify that the server host
+   If &lt;literal&gt;sslmode&lt;/&gt; is set to &lt;literal&gt;verify-full&lt;/&gt;,
+   libpq will &lt;emphasis&gt;also&lt;/&gt; verify that the server host
    name matches the name stored in the server certificate. The
    SSL connection will fail if the server certificate cannot be
-   verified. <code class="literal">verify-full</code> is recommended in most
+   verified. &lt;literal&gt;verify-full&lt;/&gt; is recommended in most
    security-sensitive environments.
---&gt;
-パラメータ<code class="literal">sslmode</code>が<code class="literal">verify-ca</code>に設定されている場合、libpqは信頼される認証局(<acronym class="acronym">CA</acronym>)までの証明書連鎖を検査することで、サーバが信用に足るかを検証します。
+</span>トラストチェーンがひとたび確立されれば、クライアントがサーバから送信されたリーフ証明書を検証する二つの方法があります。
+パラメータ<code class="literal">sslmode</code>が<code class="literal">verify-ca</code>に設定されている場合、libpqはクライアントに格納されたルート証明書までの証明書連鎖を検査することで、サーバが信用に足るかを検証します。
 <code class="literal">sslmode</code>が<code class="literal">verify-full</code>に設定されていると、libpqは<span class="emphasis"><em>同時に</em></span>サーバホスト名が証明書のそれと一致するかを検証します。
 SSL接続はサーバ証明書が検証されない場合失敗します。
 安全性に慎重を期するほとんどのサーバ環境では<code class="literal">verify-full</code>を推奨します。
@@ -82,9 +89,9 @@ SSL接続はサーバ証明書が検証されない場合失敗します。
    certificates should also be added to the file if they are needed to link
    the certificate chain sent by the server to the root certificates
    stored on the client.
-</span>サーバ証明書の検証を可能にするには、1つ以上の信頼する<acronym class="acronym">CA</acronym>の証明書を、ユーザのホームディレクトリの<code class="filename">~/.postgresql/root.crt</code>ファイルに置かなければなりません。
-中間<acronym class="acronym">CA</acronym>が<code class="filename">root.crt</code>にあるのであれば、そのファイルはそのルート<acronym class="acronym">CA</acronym>への証明書チェーンも含まなければなりません。
+</span>サーバ証明書の検証を可能にするには、1つ以上のルート証明書を、ユーザのホームディレクトリの<code class="filename">~/.postgresql/root.crt</code>ファイルに置かなければなりません。
 （Microsoft Windowsの場合、このファイルの名前は<code class="filename">%APPDATA%\postgresql\root.crt</code>です。）
+サーバより送信された証明書連鎖から、クライアントに格納されたルート証明書にリンクするために（中間証明書）が必要なら、中間証明書もそのファイルに追加する必要があります。
   </p><p><span class="original">
    Certificate Revocation List (CRL) entries are also checked
    if the file &lt;filename&gt;~/.postgresql/root.crl&lt;/filename&gt; exists
@@ -129,19 +136,27 @@ SSL接続はサーバ証明書が検証されない場合失敗します。
    The location of the certificate and key files can be overridden by the
    connection parameters &lt;literal&gt;sslcert&lt;/&gt; and &lt;literal&gt;sslkey&lt;/&gt; or the
    environment variables &lt;envar&gt;PGSSLCERT&lt;/&gt; and &lt;envar&gt;PGSSLKEY&lt;/&gt;.
-</span>サーバが信頼できるクライアント証明書を要求する場合、<span class="application">libpq</span>はユーザのホームディレクトリにある<code class="filename">~/.postgresql/postgresql.crt</code>ファイルに格納された証明書を送信します。
-証明書はサーバで信頼された認証局（<acronym class="acronym">CA</acronym>）のいずれかで署名されなければなりません。
+</span>サーバが、クライアントのリーフ証明書を要求することによってクライアントの身元を検証しようとする場合、<span class="application">libpq</span>はユーザのホームディレクトリにある<code class="filename">~/.postgresql/postgresql.crt</code>ファイルに格納された証明書を送信します。
+証明書は、サーバが信頼するルート証明書につながらなければなりません。
 対応する<code class="filename">~/.postgresql/postgresql.key</code>秘密キーファイルも存在しなければなりません。
 秘密キーファイルは他者やグループからのアクセスを許可してはいけません。
 <code class="command">chmod 0600 ~/.postgresql/postgresql.key</code>コマンドでこれを実現してください。
 Microsoft Windowsでは、このファイルの名前はそれぞれ<code class="filename">%APPDATA%\postgresql\postgresql.crt</code>と<code class="filename">%APPDATA%\postgresql\postgresql.key</code>であり、このディレクトリは安全であると想定されますので、特別な権限検査は行われません。
 証明書とキーファイルの格納場所は<code class="literal">sslcert</code>および<code class="literal">sslkey</code>接続パラメータ、または<code class="envar">PGSSLCERT</code>および<code class="envar">PGSSLKEY</code>環境変数で上書きされます。
-  </p><p>   The first certificate in <code class="filename">postgresql.crt</code> must be the
+  </p><p><span class="original">
+   The first certificate in &lt;filename&gt;postgresql.crt&lt;/&gt; must be the
    client's certificate because it must match the client's private key.
-   <span class="quote">「<span class="quote">Intermediate</span>」</span> certificates can be optionally appended
-   to the file — doing so avoids requiring storage of intermediate
-   certificates on the server's <code class="filename">root.crt</code> file.
-  </p><p>   For instructions on creating certificates, see <a class="xref" href="ssl-tcp.html#SSL-CERTIFICATE-CREATION" title="18.9.3. Creating Certificates">18.9.3</a>.
+   &lt;quote&gt;Intermediate&lt;/&gt; certificates can be optionally appended
+   to the file &amp;mdash; doing so avoids requiring storage of intermediate
+   certificates on the server's &lt;filename&gt;root.crt&lt;/filename&gt; file.
+</span><code class="filename">postgresql.crt</code>中の最初の証明書は、クライアント証明書でなければなりません。
+クライアントの秘密鍵と一致していなければならないからです。
+オプションで、<span class="quote">「<span class="quote">中間</span>」</span>証明書を追加することができます。
+そうすることによって、サーバの<code class="filename">root.crt</code>ファイル上の中間証明書用の記憶領域が不要になります。
+  </p><p><span class="original">
+   For instructions on creating certificates, see &lt;xref
+   linkend="ssl-certificate-creation"&gt;.
+</span>証明書の作成手順については、<a class="xref" href="ssl-tcp.html#SSL-CERTIFICATE-CREATION" title="18.9.3. 証明書の作成">18.9.3</a>をご覧ください。
   </p></div><div class="sect2" id="LIBPQ-SSL-PROTECTION"><div class="titlepage"><div><div><h3 class="title">33.18.3. 異なるモードで提供される保護</h3></div></div></div><span class="original">
   &lt;title&gt;Protection Provided in Different Modes&lt;/title&gt;
 </span><p><span class="original">

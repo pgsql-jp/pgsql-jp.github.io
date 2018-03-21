@@ -162,18 +162,23 @@
 システムは、検索するスキーマのリストである<em class="firstterm">検索パス</em>に従って、どのテーブルを指しているのかを判別します。
 検索パスで最初に一致したテーブルが、該当テーブルだと解釈されます。
 検索パス内に一致するテーブルがないと、データベースの他のスキーマ内に一致するテーブルがある場合でもエラーが報告されます。
-   </p><p>    The ability to create like-named objects in different schemas complicates
+   </p><p><span class="original">
+    The ability to create like-named objects in different schemas complicates
     writing a query that references precisely the same objects every time.  It
     also opens up the potential for users to change the behavior of other
     users' queries, maliciously or accidentally.  Due to the prevalence of
     unqualified names in queries and their use
-    in <span class="productname">PostgreSQL</span> internals, adding a schema
-    to <code class="varname">search_path</code> effectively trusts all users having
-    <code class="literal">CREATE</code> privilege on that schema.  When you run an
+    in &lt;productname&gt;PostgreSQL&lt;/productname&gt; internals, adding a schema
+    to &lt;varname&gt;search_path&lt;/varname&gt; effectively trusts all users having
+    &lt;literal&gt;CREATE&lt;/literal&gt; privilege on that schema.  When you run an
     ordinary query, a malicious user able to create objects in a schema of
     your search path can take control and execute arbitrary SQL functions as
     though you executed them.
-   </p><a id="id-1.5.4.10.9.7" class="indexterm"></a><p><span class="original">
+</span>同じ名前のオブジェクトを異なるスキーマに作成できる結果、正確に同じオブジェクトを参照する問合せを書く作業が、いつも複雑になります。
+また、ユーザが悪意を持って、あるいは偶然に他のユーザの問合せの挙動を変える可能性をもたらします。
+<span class="productname">PostgreSQL</span>内部では非修飾名を問合せ中で使うことが一般的なので、<code class="varname">search_path</code>にスキーマを追加することは、<code class="literal">CREATE</code>の書き込み権限を持っているすべてのユーザを、実質的に信頼することになります。
+あなたが通常の問合せを実行する際、あなたのサーチパス内のスキーマにオブジェクトを作成できる悪意のあるユーザは、支配権を奪い、あたかもあたが実行したように任意のSQL関数を実行できます。
+  </p><a id="id-1.5.4.10.9.7" class="indexterm"></a><p><span class="original">
     The first schema named in the search path is called the current schema.
     Aside from being the first schema searched, it is also the schema in
     which new tables will be created if the &lt;command&gt;CREATE TABLE&lt;/&gt;
@@ -287,7 +292,7 @@ publicスキーマはデフォルトで存在するということ以外に特�
 それには、スキーマ上で<code class="literal">CREATE</code>権限が付与されていなければなりません。
 デフォルトでは、<code class="literal">public</code> スキーマに関しては全てのユーザが<code class="literal">CREATE</code>と<code class="literal">USAGE</code>権限を持っていることに注意してください。
 つまり、全てのユーザは、そのユーザが接続できる任意のデータベース上の<code class="literal">public</code>スキーマにオブジェクトを作成できるということです。
-これが好ましくない場合は、以下のように権限を取り消すことができます。
+<a class="link" href="ddl-schemas.html#DDL-SCHEMAS-PATTERNS" title="5.8.6. 使用パターン">利用パターン</a>では、その権限を剥奪することを求めています。
 </p><pre class="programlisting">REVOKE CREATE ON SCHEMA public FROM PUBLIC;</pre><p><span class="original">
     (The first &lt;quote&gt;public&lt;/quote&gt; is the schema, the second
     &lt;quote&gt;public&lt;/quote&gt; means &lt;quote&gt;every user&lt;/quote&gt;.  In the
@@ -339,46 +344,72 @@ publicスキーマはデフォルトで存在するということ以外に特�
 </span>スキーマは様々な方法でデータの編成に使用できます。
 デフォルト構成で簡単にサポートできるお勧めの使用パターンがいくつかあります。
     </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><span class="original"> "DROP SCHEMA public" is inferior to this REVOKE, because pg_dump
-           doesn't preserve that DROP. </span><p>       Constrain ordinary users to user-private schemas.  To implement this,
-       issue <code class="literal">REVOKE CREATE ON SCHEMA public FROM PUBLIC</code>,
+           doesn't preserve that DROP. </span><p><span class="original">
+       Constrain ordinary users to user-private schemas.  To implement this,
+       issue &lt;literal&gt;REVOKE CREATE ON SCHEMA public FROM PUBLIC&lt;/literal&gt;,
        and create a schema for each user with the same name as that user.  If
        affected users had logged in before this, consider auditing the public
        schema for objects named like objects in
-       schema <code class="literal">pg_catalog</code>.  Recall that the default search
-       path starts with <code class="literal">$user</code>, which resolves to the user
+       schema &lt;literal&gt;pg_catalog&lt;/literal&gt;.  Recall that the default search
+       path starts with &lt;literal&gt;$user&lt;/literal&gt;, which resolves to the user
        name.  Therefore, if each user has a separate schema, they access their
        own schemas by default.
-      </p></li><li class="listitem"><p>       Remove the public schema from each user's default search path
-       using <code class="literal">ALTER ROLE <em class="replaceable"><code>user</code></em> SET
-       search_path = "$user"</code>.  Everyone retains the ability to
+</span>一般ユーザに、ユーザ個人用のスキーマだけを使わせます。
+これを実現するには、<code class="literal">REVOKE CREATE ON SCHEMA public FROM PUBLIC</code>を発行し、個々のユーザにユーザと同じ名前でスキーマを作成してください。
+以前からログインしているユーザに対しては、<code class="literal">pg_catalog</code>スキーマ内にあるのと同じ名前のpublicスキーマ内のオブジェクトを監視することを考慮してください。
+デフォルトサーチパスは、ユーザ名として解釈される<code class="literal">$user</code>で始まることを思い出してください。
+ですから、デフォルトではユーザは別々のスキーマを所有し、自身のスキーマにアクセスします。
+      </p></li><li class="listitem"><p><span class="original">
+       Remove the public schema from each user's default search path
+       using &lt;literal&gt;ALTER ROLE &lt;replaceable&gt;user&lt;/replaceable&gt; SET
+       search_path = "$user"&lt;/literal&gt;.  Everyone retains the ability to
        create objects in the public schema, but only qualified names will
-       choose those objects.  A user holding the <code class="literal">CREATEROLE</code>
+       choose those objects.  A user holding the &lt;literal&gt;CREATEROLE&lt;/literal&gt;
        privilege can undo this setting and issue arbitrary queries under the
        identity of users relying on the setting.  If you
-       grant <code class="literal">CREATEROLE</code> to users not warranting this
+       grant &lt;literal&gt;CREATEROLE&lt;/literal&gt; to users not warranting this
        almost-superuser ability, use the first pattern instead.
-      </p></li><li class="listitem"><p>       Remove the public schema from <code class="varname">search_path</code> in
-       <a class="link" href="config-setting.html#CONFIG-SETTING-CONFIGURATION-FILE" title="19.1.2. 設定ファイルによるパラメータ操作"><code class="filename">postgresql.conf</code></a>.
+</span><code class="literal">ALTER ROLE <em class="replaceable"><code>user</code></em> SET search_path = "$user"</code>を使って個々のユーザのデフォルトサーチパスからpublicスキーマを削除します。
+すべてのユーザは依然としてpublicスキーマにオブジェクトを作ることはできますが、修飾名を使わなければそのオブジェクトを選択できません。
+<code class="literal">CREATEROLE</code>権限を保持するユーザは、この設定を元に戻して、この設定に依存しているユーザの資格で任意の問合せを発行できます。
+この、ほとんどスーパユーザと言える能力を正当な理由なく<code class="literal">CREATEROLE</code>をユーザに許可したいというので無い限り、最初に述べたパターンを代わりに使用してください。
+      </p></li><li class="listitem"><p><span class="original">
+       Remove the public schema from &lt;varname&gt;search_path&lt;/varname&gt; in
+       &lt;link linkend="config-setting-configuration-file"&gt;&lt;filename&gt;postgresql.conf&lt;/filename&gt;&lt;/link&gt;.
        The ensuing user experience matches the previous pattern.  In addition
-       to that pattern's implications for <code class="literal">CREATEROLE</code>, this
+       to that pattern's implications for &lt;literal&gt;CREATEROLE&lt;/literal&gt;, this
        trusts database owners the same way.  If you assign
-       the <code class="literal">CREATEROLE</code>
-       privilege, <code class="literal">CREATEDB</code> privilege or individual database
+       the &lt;literal&gt;CREATEROLE&lt;/literal&gt;
+       privilege, &lt;literal&gt;CREATEDB&lt;/literal&gt; privilege or individual database
        ownership to users not warranting almost-superuser access, use the
        first pattern instead.
-      </p></li><li class="listitem"><p>       Keep the default.  All users access the public schema implicitly.  This
+</span><a class="link" href="config-setting.html#CONFIG-SETTING-CONFIGURATION-FILE" title="19.1.2. 設定ファイルによるパラメータ操作"><code class="filename">postgresql.conf</code></a>の<code class="varname">search_path</code>からpublicスキーマを削除します。
+これによるユーザ体験は一つ前のパターンと合致します。
+<code class="literal">CREATEROLE</code>のもたらす結果に加え、これはデータベース所有者を同じ方法で信頼することになります。
+<code class="literal">CREATEROLE</code>権限、<code class="literal">CREATEDB</code>権限、あるいは個々のデータベース所有権を、ほとんどスーパユーザアクセスと言える能力を正当な理由なく与えたいというので無い限り、最初のパターンを代わりに使用してください。
+      </p></li><li class="listitem"><p><span class="original">
+       Keep the default.  All users access the public schema implicitly.  This
        simulates the situation where schemas are not available at all, giving
        a smooth transition from the non-schema-aware world.  However, any user
        can issue arbitrary queries under the identity of any user not electing
        to protect itself individually.  This pattern is acceptable only when
        the database has a single user or a few mutually-trusting users.
+</span>デフォルトを維持します。
+すべてのユーザがpublicスキーマに暗黙的にアクセスします。
+これはスキーマを考慮しない世界からのスムースな移行を可能にしながら、スキーマがまったく利用できない状況をシミュレートします。
+しかし、ユーザは自分自身を守る気がなく、任意のユーザ権限で任意の問合せを発行できます。
+このパターンは、データベースに一人、あるいは少数のお互いに信頼できるユーザだけが存在する場合にのみ受け入れ可能です。
       </p></li></ul></div><p>
-   </p><p>    For any pattern, to install shared applications (tables to be used by
+   </p><p><span class="original">
+    For any pattern, to install shared applications (tables to be used by
     everyone, additional functions provided by third parties, etc.), put them
     into separate schemas.  Remember to grant appropriate privileges to allow
     the other users to access them.  Users can then refer to these additional
     objects by qualifying the names with a schema name, or they can put the
     additional schemas into their search path, as they choose.
+</span>どのパターンでも、共有のアプリケーション（全員が使うテーブル、サードパーティが提供する追加の関数など）をインストールするには、別のスキーマにアプリケーションを入れてください。
+他のユーザがアプリケーションにアクセスするために、適切な権限を与えることを忘れないようにしてください。
+ユーザはスキーマ名で名前を修飾するか、あるいは追加スキーマをサーチパスに入れるかを選択し、これらの追加オブジェクトを参照できます。
    </p></div><div class="sect2" id="DDL-SCHEMAS-PORTABILITY"><div class="titlepage"><div><div><h3 class="title">5.8.7. 移植性</h3></div></div></div><span class="original">
    &lt;title&gt;Portability&lt;/title&gt;
 </span><p><span class="original">
@@ -403,7 +434,7 @@ publicスキーマはデフォルトで存在するということ以外に特�
     SQL standard.  For maximum conformance to the standard, you should
     not use the &lt;literal&gt;public&lt;/&gt; schema.
 </span>また、標準SQLには、<code class="literal">public</code>スキーマという概念もありません。
-標準に最大限従うためには、<code class="literal">public</code>スキーマは使用すべきではありません（おそらく削除した方が良いかもしれません）。
+標準に最大限従うためには、<code class="literal">public</code>スキーマは使用すべきではありません。
    </p><p><span class="original">
     Of course, some SQL database systems might not implement schemas
     at all, or provide namespace support by allowing (possibly
