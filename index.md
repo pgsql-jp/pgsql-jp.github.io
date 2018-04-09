@@ -9,7 +9,7 @@ layout: default
 
 | HTML （オンライン）           | PDF                                           | EPUB                                         | man | 更新日     |
 |:---------------------------|:---------------------------------------------:|:--------------------------------------------:|:---:|:----------:|
-| [10.3](jpug-doc/10.3/html/) | [PDF](jpug-doc/10.3/postgresql-10.3-A4.pdf) | [EPUB](jpug-doc/10.3/postgresql-10.3.epub) | [man.tar.gz](jpug-doc/10.3/man.tar.gz) | 2018-04-08 |
+| [10.3](jpug-doc/10.3/html/) | [PDF](jpug-doc/10.3/postgresql-10.3-A4.pdf) | [EPUB](jpug-doc/10.3/postgresql-10.3.epub) | [man.tar.gz](jpug-doc/10.3/man.tar.gz) | 2018-04-10 |
 | [10.0](jpug-doc/10.0/html/) | [PDF](jpug-doc/10.0/postgresql-10.0-A4.pdf) | [EPUB](jpug-doc/10.0/postgresql-10.0.epub) | [man.tar.gz](jpug-doc/10.0/man.tar.gz) | 2018-03-04 |
 
 ### PostgreSQL 9.6
