@@ -3,7 +3,7 @@ layout: default
 ---
 ## PostgreSQL日本語マニュアル
 
-[正式版](http://www.postgresql.jp/document/)
+[正式版](https://www.postgresql.jp/document/)
 
 ### PostgreSQL 10
 
