@@ -87,21 +87,32 @@ Here, since type &lt;type&gt;real&lt;/&gt; cannot be implicitly cast to &lt;type
 but &lt;type&gt;integer&lt;/&gt; can be implicitly cast to &lt;type&gt;real&lt;/&gt;, the union
 result type is resolved as &lt;type&gt;real&lt;/&gt;.
 </span>
-ここで、<code class="type">real</code>型を暗黙的に<code class="type">integer</code>型にキャストすることはできませんが、<code class="type">integer</code>型を暗黙的に<code class="type">real</code>型にキャストすることはできるため、UNIONの結果データ型は<code class="type">real</code>型として解決されます。</p></div></div><br class="example-break" /><div class="example" id="id-1.5.9.10.14"><p class="title"><strong>例10.12 Type Resolution in a Nested Union</strong></p><div class="example-contents"><pre class="screen">SELECT NULL UNION SELECT NULL UNION SELECT 1;
+ここで、<code class="type">real</code>型を暗黙的に<code class="type">integer</code>型にキャストすることはできませんが、<code class="type">integer</code>型を暗黙的に<code class="type">real</code>型にキャストすることはできるため、UNIONの結果データ型は<code class="type">real</code>型として解決されます。</p></div></div><br class="example-break" /><div class="example" id="id-1.5.9.10.14"><p class="title"><strong>例10.12 入れ子のUNIONにおける型解決</strong></p><div class="example-contents"><span class="original">
+&lt;title&gt;Type Resolution in a Nested Union&lt;/title&gt;
+</span><pre class="screen">SELECT NULL UNION SELECT NULL UNION SELECT 1;
 
-ERROR:  UNION types text and integer cannot be matched</pre><p>
-This failure occurs because <span class="productname">PostgreSQL</span> treats
-multiple <code class="literal">UNION</code>s as a nest of pairwise operations;
+ERROR:  UNION types text and integer cannot be matched</pre><p><span class="original">
+This failure occurs because &lt;productname&gt;PostgreSQL&lt;/productname&gt; treats
+multiple &lt;literal&gt;UNION&lt;/literal&gt;s as a nest of pairwise operations;
 that is, this input is the same as
-</p><pre class="screen">(SELECT NULL UNION SELECT NULL) UNION SELECT 1;</pre><p>
-The inner <code class="literal">UNION</code> is resolved as emitting
-type <code class="type">text</code>, according to the rules given above.  Then the
-outer <code class="literal">UNION</code> has inputs of types <code class="type">text</code>
-and <code class="type">integer</code>, leading to the observed error.  The problem
-can be fixed by ensuring that the leftmost <code class="literal">UNION</code>
-has at least one input of the desired result type.</p><p><code class="literal">INTERSECT</code> and <code class="literal">EXCEPT</code> operations are
+</span>
+この失敗は、<span class="productname">PostgreSQL</span>が複数の<code class="literal">UNION</code>を二項演算の入れ子として扱うために起こります。すなわち、この入力は以下と同じです。
+</p><pre class="screen">(SELECT NULL UNION SELECT NULL) UNION SELECT 1;</pre><p><span class="original">
+The inner &lt;literal&gt;UNION&lt;/literal&gt; is resolved as emitting
+type &lt;type&gt;text&lt;/type&gt;, according to the rules given above.  Then the
+outer &lt;literal&gt;UNION&lt;/literal&gt; has inputs of types &lt;type&gt;text&lt;/type&gt;
+and &lt;type&gt;integer&lt;/type&gt;, leading to the observed error.  The problem
+can be fixed by ensuring that the leftmost &lt;literal&gt;UNION&lt;/literal&gt;
+has at least one input of the desired result type.
+</span>
+内側の<code class="literal">UNION</code>は、上に挙げた規則に従って、型<code class="type">text</code>になるものとして解決されます。
+すると、外側の<code class="literal">UNION</code>は型<code class="type">text</code>と<code class="type">integer</code>の入力を受け取ることになりますので、上のようなエラーになります。
+一番左の<code class="literal">UNION</code>が望む結果型の入力を少なくとも1つ確実に受け取るようにすることで、この問題を修正できます。</p><p><span class="original">
+&lt;literal&gt;INTERSECT&lt;/literal&gt; and &lt;literal&gt;EXCEPT&lt;/literal&gt; operations are
 likewise resolved pairwise.  However, the other constructs described in this
-section consider all of their inputs in one resolution step.</p></div></div><br class="example-break" /><div class="footnotes"><br /><hr style="width:100; text-align:left;margin-left: 0" /><div id="ftn.id-1.5.9.10.9.3.1.1" class="footnote"><p><a href="#id-1.5.9.10.9.3.1.1" class="para"><sup class="para">[9] </sup></a><span class="original">
+section consider all of their inputs in one resolution step.
+</span><code class="literal">INTERSECT</code>と<code class="literal">EXCEPT</code>操作は同様に二項演算として解決されます。
+しかしながら、この節のその他の構文は入力をすべて解決の段階1つで考慮します。</p></div></div><br class="example-break" /><div class="footnotes"><br /><hr style="width:100; text-align:left;margin-left: 0" /><div id="ftn.id-1.5.9.10.9.3.1.1" class="footnote"><p><a href="#id-1.5.9.10.9.3.1.1" class="para"><sup class="para">[9] </sup></a><span class="original">
     Somewhat like the treatment of domain inputs for operators and
     functions, this behavior allows a domain type to be preserved through
     a &lt;literal&gt;UNION&lt;/&gt; or similar construct, so long as the user is
