@@ -1,16 +1,63 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>43.8. PL/Tclのエラー処理</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="pltcl-event-trigger.html" title="43.7. PL/Tclにおけるイベントトリガプロシージャ" /><link rel="next" href="pltcl-subtransactions.html" title="43.9. PL/Tclにおける明示的サブトランザクション" /></head><body><div xmlns="http://www.w3.org/TR/xhtml1/transitional" class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="5" align="center">43.8. PL/Tclのエラー処理</th></tr><tr><td width="10%" align="left"><a accesskey="p" href="pltcl-event-trigger.html" title="43.7. PL/Tclにおけるイベントトリガプロシージャ">Prev</a> </td><td width="10%" align="left"><a accesskey="u" href="pltcl.html" title="Chapter 43. PL/Tcl - Tcl手続き言語">Up</a></td><th width="60%" align="center">Chapter 43. PL/Tcl - Tcl手続き言語</th><td width="10%" align="right"><a accesskey="h" href="index.html" title="PostgreSQL 10.5文書">Home</a></td><td width="10%" align="right"> <a accesskey="n" href="pltcl-subtransactions.html" title="43.9. PL/Tclにおける明示的サブトランザクション">Next</a></td></tr></table><hr></hr></div><div class="sect1" id="PLTCL-ERROR-HANDLING"><div class="titlepage"><div><div><h2 class="title" style="clear: both">43.8. PL/Tclのエラー処理</h2></div></div></div><a id="id-1.8.9.12.2" class="indexterm"></a><p>PL/Tcl関数中の、あるいはPL/Tcl関数から呼ばれるTclコードは、無効な演算の実行により、あるいはTclの<code class="function">error</code>コマンドやPL/Tclの<code class="function">elog</code>コマンドを使ってエラーを生成することにより、エラーとなることがありえます。
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>43.8. PL/Tclのエラー処理</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="pltcl-event-trigger.html" title="43.7. PL/Tclにおけるイベントトリガプロシージャ" /><link rel="next" href="pltcl-subtransactions.html" title="43.9. PL/Tclにおける明示的サブトランザクション" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 10.5文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="pltcl.html" title="第43章 PL/Tcl - Tcl手続き言語">第43章 PL/Tcl - Tcl手続き言語</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 10.5 &#10;                      pltcl-error-handling.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="pltcl-event-trigger.html" title="43.7. PL/Tclにおけるイベントトリガプロシージャ">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="pltcl.html" title="第43章 PL/Tcl - Tcl手続き言語">上へ</a></td><td width="60%" align="center">43.8. PL/Tclのエラー処理</td><td width="20%" align="right"> <a accesskey="n" href="pltcl-subtransactions.html" title="43.9. PL/Tclにおける明示的サブトランザクション">次へ</a></td></tr></table><hr /></div><div class="sect1" id="PLTCL-ERROR-HANDLING"><div class="titlepage"><div><div><h2 class="title" style="clear: both">43.8. PL/Tclのエラー処理</h2></div></div></div><span class="original">
+    &lt;title&gt;Error Handling in PL/Tcl&lt;/title&gt;
+</span><a id="id-1.8.9.12.2" class="indexterm"></a><p><span class="original">
+     Tcl code within or called from a PL/Tcl function can raise an error,
+     either by executing some invalid operation or by generating an error
+     using the Tcl &lt;function&gt;error&lt;/function&gt; command or
+     PL/Tcl's &lt;function&gt;elog&lt;/function&gt; command.  Such errors can be caught
+     within Tcl using the Tcl &lt;function&gt;catch&lt;/function&gt; command.  If an
+     error is not caught but is allowed to propagate out to the top level of
+     execution of the PL/Tcl function, it is reported as a SQL error in the
+     function's calling query.
+</span>PL/Tcl関数中の、あるいはPL/Tcl関数から呼ばれるTclコードは、無効な演算の実行により、あるいはTclの<code class="function">error</code>コマンドやPL/Tclの<code class="function">elog</code>コマンドを使ってエラーを生成することにより、エラーとなることがありえます。
 これらエラーはTclの<code class="function">catch</code>コマンドを使ってTcl内で捕捉することができます。
 あるエラーが捕捉されず、PL/Tcl関数実行のトップレベルに伝播することが許容されているなら、関数が呼び出している問合せにおけるSQエラーとして報告されます。
-    </p><p>逆に、PL/Tclの<code class="function">spi_exec</code>、<code class="function">spi_prepare</code>、<code class="function">spi_execp</code>コマンドの中で起きるSQLエラーは、Tclのエラーとして報告され、したがって、これらはTclの<code class="function">catch</code>コマンドにより捕捉可能です。
+    </p><p><span class="original">
+     Conversely, SQL errors that occur within PL/Tcl's
+     &lt;function&gt;spi_exec&lt;/function&gt;, &lt;function&gt;spi_prepare&lt;/function&gt;,
+     and &lt;function&gt;spi_execp&lt;/function&gt; commands are reported as Tcl errors,
+     so they are catchable by Tcl's &lt;function&gt;catch&lt;/function&gt; command.
+     (Each of these PL/Tcl commands runs its SQL operation in a
+     subtransaction, which is rolled back on error, so that any
+     partially-completed operation is automatically cleaned up.)
+     Again, if an error propagates out to the top level without being caught,
+     it turns back into a SQL error.
+</span>逆に、PL/Tclの<code class="function">spi_exec</code>、<code class="function">spi_prepare</code>、<code class="function">spi_execp</code>コマンドの中で起きるSQLエラーは、Tclのエラーとして報告され、したがって、これらはTclの<code class="function">catch</code>コマンドにより捕捉可能です。
 （各々のPL/Tclコマンドは、エラー時にロールバックするSQL操作をサブトランザクション中で実行するので、部分的に完了した操作は自動的に後始末されます。）
 ここでも同様に、捕捉されることなくトップレベルに伝播するならSQLエラーに戻ります。
-    </p><p>Tclは、Tclプログラムで解釈しやすい形式でエラーに関する追加情報を表現できる<code class="varname">errorCode</code>変数を提供します。
+    </p><p><span class="original">
+     Tcl provides an &lt;varname&gt;errorCode&lt;/varname&gt; variable that can represent
+     additional information about an error in a form that is easy for Tcl
+     programs to interpret.  The contents are in Tcl list format, and the
+     first word identifies the subsystem or library reporting the error;
+     beyond that the contents are left to the individual subsystem or
+     library.  For database errors reported by PL/Tcl commands, the first
+     word is &lt;literal&gt;POSTGRES&lt;/literal&gt;, the second word is the PostgreSQL
+     version number, and additional words are field name/value pairs
+     providing detailed information about the error.
+     Fields &lt;varname&gt;SQLSTATE&lt;/&gt;, &lt;varname&gt;condition&lt;/&gt;,
+     and &lt;varname&gt;message&lt;/&gt; are always supplied
+     (the first two represent the error code and condition name as shown
+     in &lt;xref linkend="errcodes-appendix"&gt;).
+     Fields that may be present include
+     &lt;varname&gt;detail&lt;/&gt;, &lt;varname&gt;hint&lt;/&gt;, &lt;varname&gt;context&lt;/&gt;,
+     &lt;varname&gt;schema&lt;/&gt;, &lt;varname&gt;table&lt;/&gt;, &lt;varname&gt;column&lt;/&gt;,
+     &lt;varname&gt;datatype&lt;/&gt;, &lt;varname&gt;constraint&lt;/&gt;,
+     &lt;varname&gt;statement&lt;/&gt;, &lt;varname&gt;cursor_position&lt;/&gt;,
+     &lt;varname&gt;filename&lt;/&gt;, &lt;varname&gt;lineno&lt;/&gt;, and
+     &lt;varname&gt;funcname&lt;/&gt;.
+</span>Tclは、Tclプログラムで解釈しやすい形式でエラーに関する追加情報を表現できる<code class="varname">errorCode</code>変数を提供します。
 変数の中身はTclリスト形式で、1番目の語でエラーを報告したサブシステムまたはライブラリを識別します。それ以降の内容は個々のサブシステムやライブラリに任されています。
 PL/Tclコマンドで報告されるデータベースエラーむけには、1番目の語が<code class="literal">POSTGRES</code>、2番目の語がPostgreSQLのバージョン番号で、それ続く語はエラーの詳細情報を提供するフィールド名と値の組です。
-フィールド<code class="varname">SQLSTATE</code>、<code class="varname">condition</code>、および<code class="varname">message</code>は常に与えられます（最初の2つは<a class="xref" href="errcodes-appendix.html" title="Appendix A. PostgreSQLエラーコード">Appendix A</a>にあるエラーコードと状態名です）。
+フィールド<code class="varname">SQLSTATE</code>、<code class="varname">condition</code>、および<code class="varname">message</code>は常に与えられます（最初の2つは<a class="xref" href="errcodes-appendix.html" title="付録A PostgreSQLエラーコード">付録A</a>にあるエラーコードと状態名です）。
 出現しうるフィールドとしては、<code class="varname">detail</code>、<code class="varname">hint</code>、<code class="varname">context</code>、<code class="varname">schema</code>、<code class="varname">table</code>、<code class="varname">column</code>、<code class="varname">datatype</code>、<code class="varname">constraint</code>、<code class="varname">statement</code>、<code class="varname">cursor_position</code>、<code class="varname">filename</code>、<code class="varname">lineno</code>および<code class="varname">funcname</code>があります。
-    </p><p>PL/Tclの<code class="varname">errorCode</code>情報を処理する便利な方法は、それを配列に読み込むことです。これによりフィールド名は配列の添え字になります。
+    </p><p><span class="original">
+     A convenient way to work with PL/Tcl's &lt;varname&gt;errorCode&lt;/varname&gt;
+     information is to load it into an array, so that the field names become
+     array subscripts.  Code for doing that might look like
+</span>PL/Tclの<code class="varname">errorCode</code>情報を処理する便利な方法は、それを配列に読み込むことです。これによりフィールド名は配列の添え字になります。
 これを行うコードは以下のようになります。
 
 </p><pre class="programlisting">if {[catch { spi_exec $sql_command }]} {
@@ -22,6 +69,9 @@ PL/Tclコマンドで報告されるデータベースエラーむけには、1�
             # deal with some other type of SQL error
         }
     }
-}</pre><p>
+}</pre><p><span class="original">
+     (The double colons explicitly specify that &lt;varname&gt;errorCode&lt;/varname&gt;
+     is a global variable.)
+</span>
 （二重コロンは<code class="varname">errorCode</code>がグローバル変数であることを明示的に指定します。）
-    </p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="pltcl-event-trigger.html">Prev</a> </td><td width="20%" align="center"><a accesskey="u" href="pltcl.html">Up</a></td><td width="40%" align="right"> <a accesskey="n" href="pltcl-subtransactions.html">Next</a></td></tr><tr><td width="40%" align="left" valign="top">43.7. PL/Tclにおけるイベントトリガプロシージャ </td><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td><td width="40%" align="right" valign="top"> 43.9. PL/Tclにおける明示的サブトランザクション</td></tr></table></div></body></html>
+    </p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="pltcl-event-trigger.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="pltcl.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="pltcl-subtransactions.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">43.7. PL/Tclにおけるイベントトリガプロシージャ </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> 43.9. PL/Tclにおける明示的サブトランザクション</td></tr></table></div></body></html>
