@@ -1,128 +1,39 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>37.9. C言語関数</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="xfunc-internal.html" title="37.8. 内部関数" /><link rel="next" href="xaggr.html" title="37.10. ユーザ定義の集約" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 10.5文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="extend.html" title="第37章 SQLの拡張">第37章 <acronym class="acronym">SQL</acronym>の拡張</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 10.5 &#10;                      xfunc-c.html">誤訳等の報告
-                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="xfunc-internal.html" title="37.8. 内部関数">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="extend.html" title="第37章 SQLの拡張">上へ</a></td><td width="60%" align="center">37.9. C言語関数</td><td width="20%" align="right"> <a accesskey="n" href="xaggr.html" title="37.10. ユーザ定義の集約">次へ</a></td></tr></table><hr /></div><div class="sect1" id="XFUNC-C"><div class="titlepage"><div><div><h2 class="title" style="clear: both">37.9. C言語関数</h2></div></div></div><span class="original">
-   &lt;title&gt;C-Language Functions&lt;/title&gt;
-</span><a id="id-1.8.3.12.2" class="indexterm"></a><p><span class="original">
-    User-defined functions can be written in C (or a language that can
-    be made compatible with C, such as C++).  Such functions are
-    compiled into dynamically loadable objects (also called shared
-    libraries) and are loaded by the server on demand.  The dynamic
-    loading feature is what distinguishes &lt;quote&gt;C language&lt;/&gt; functions
-    from &lt;quote&gt;internal&lt;/&gt; functions &amp;mdash; the actual coding conventions
-    are essentially the same for both.  (Hence, the standard internal
-    function library is a rich source of coding examples for user-defined
-    C functions.)
-</span>ユーザ定義の関数はC（もしくはC++のようなCと互換性のある言語）で作成することができます。
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>37.9. C言語関数</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="xfunc-internal.html" title="37.8. 内部関数" /><link rel="next" href="xaggr.html" title="37.10. ユーザ定義の集約" /></head><body><div xmlns="http://www.w3.org/TR/xhtml1/transitional" class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="5" align="center">37.9. C言語関数</th></tr><tr><td width="10%" align="left"><a accesskey="p" href="xfunc-internal.html" title="37.8. 内部関数">Prev</a> </td><td width="10%" align="left"><a accesskey="u" href="extend.html" title="Chapter 37. SQLの拡張">Up</a></td><th width="60%" align="center">Chapter 37. <acronym xmlns="http://www.w3.org/1999/xhtml" class="acronym">SQL</acronym>の拡張</th><td width="10%" align="right"><a accesskey="h" href="index.html" title="PostgreSQL 10.5文書">Home</a></td><td width="10%" align="right"> <a accesskey="n" href="xaggr.html" title="37.10. ユーザ定義の集約">Next</a></td></tr></table><hr></hr></div><div class="sect1" id="XFUNC-C"><div class="titlepage"><div><div><h2 class="title" style="clear: both">37.9. C言語関数</h2></div></div></div><div class="toc"><dl class="toc"><dt><span class="sect2"><a href="xfunc-c.html#XFUNC-C-DYNLOAD">37.9.1. 動的ロード</a></span></dt><dt><span class="sect2"><a href="xfunc-c.html#XFUNC-C-BASETYPE">37.9.2. C言語関数における基本型</a></span></dt><dt><span class="sect2"><a href="xfunc-c.html#id-1.8.3.12.7">37.9.3. Version 1 呼び出し規約</a></span></dt><dt><span class="sect2"><a href="xfunc-c.html#id-1.8.3.12.8">37.9.4. コードの作成</a></span></dt><dt><span class="sect2"><a href="xfunc-c.html#DFUNC">37.9.5. 動的にロードされる関数のコンパイルとリンク</a></span></dt><dt><span class="sect2"><a href="xfunc-c.html#id-1.8.3.12.10">37.9.6. 複合型引数</a></span></dt><dt><span class="sect2"><a href="xfunc-c.html#id-1.8.3.12.11">37.9.7. 行（複合型）を返す</a></span></dt><dt><span class="sect2"><a href="xfunc-c.html#XFUNC-C-RETURN-SET">37.9.8. 集合を返す</a></span></dt><dt><span class="sect2"><a href="xfunc-c.html#id-1.8.3.12.13">37.9.9. 引数と戻り値の多様性</a></span></dt><dt><span class="sect2"><a href="xfunc-c.html#XFUNC-TRANSFORM-FUNCTIONS">37.9.10. 変形関数</a></span></dt><dt><span class="sect2"><a href="xfunc-c.html#id-1.8.3.12.15">37.9.11. 共有メモリとLWLocks</a></span></dt><dt><span class="sect2"><a href="xfunc-c.html#EXTEND-CPP">37.9.12. 拡張へのC++の利用</a></span></dt></dl></div><a id="id-1.8.3.12.2" class="indexterm"></a><p>ユーザ定義の関数はC（もしくはC++のようなCと互換性のある言語）で作成することができます。
 そのような関数は動的ロード可能オブジェクト（共有ライブラリとも呼ばれます）としてコンパイルされ、必要に応じてサーバにロードされます。
-動的ロード機能が、<span class="quote">「<span class="quote">C言語</span>」</span>関数を<span class="quote">「<span class="quote">内部</span>」</span>関数と区別するものです。
+動的ロード機能が、<span class="quote">“<span class="quote">C言語</span>”</span>関数を<span class="quote">“<span class="quote">内部</span>”</span>関数と区別するものです。
 コーディング方法は基本的に両方とも同じです。
 （したがって、標準内部関数ライブラリはユーザ定義のC関数のコーディング例の豊富な情報源となります。）
-   </p><p><span class="original">
-    Currently only one calling convention is used for C functions
-    (&lt;quote&gt;version 1&lt;/quote&gt;). Support for that calling convention is
-    indicated by writing a &lt;literal&gt;PG_FUNCTION_INFO_V1()&lt;/literal&gt; macro
-    call for the function, as illustrated below.
-</span>現在、1つの呼び出し規約だけがC関数で使用されています(<span class="quote">「<span class="quote">version 1</span>」</span>)。
+   </p><p>現在、1つの呼び出し規約だけがC関数で使用されています(<span class="quote">“<span class="quote">version 1</span>”</span>)。
 その呼び出し規約をサポートしていることは、以下に示すように、その関数用に呼び出しマクロ<code class="literal">PG_FUNCTION_INFO_V1()</code>を書くことで示されます。
-   </p><div class="sect2" id="XFUNC-C-DYNLOAD"><div class="titlepage"><div><div><h3 class="title">37.9.1. 動的ロード</h3></div></div></div><span class="original">
-   &lt;title&gt;Dynamic Loading&lt;/title&gt;
-</span><a id="id-1.8.3.12.5.2" class="indexterm"></a><p><span class="original">
-    The first time a user-defined function in a particular
-    loadable object file is called in a session,
-    the dynamic loader loads that object file into memory so that the
-    function can be called.  The &lt;command&gt;CREATE FUNCTION&lt;/command&gt;
-    for a user-defined C function must therefore specify two pieces of
-    information for the function: the name of the loadable
-    object file, and the C name (link symbol) of the specific function to call
-    within that object file.  If the C name is not explicitly specified then
-    it is assumed to be the same as the SQL function name.
-</span>特定のロード可能オブジェクト内のユーザ定義の関数がセッションで最初に呼び出されると、動的ローダは、その関数を呼び出すことができるように、オブジェクトファイルをメモリ内に読み込みます。
+   </p><div class="sect2" id="XFUNC-C-DYNLOAD"><div class="titlepage"><div><div><h3 class="title">37.9.1. 動的ロード</h3></div></div></div><a id="id-1.8.3.12.5.2" class="indexterm"></a><p>特定のロード可能オブジェクト内のユーザ定義の関数がセッションで最初に呼び出されると、動的ローダは、その関数を呼び出すことができるように、オブジェクトファイルをメモリ内に読み込みます。
 そのため、ユーザ定義のC関数用の<code class="command">CREATE FUNCTION</code>はその関数について、ロード可能オブジェクトファイルの名前とオブジェクトファイル中の呼び出される特定の関数のC名称（リンクシンボル）という2つの情報を指定しなければなりません。
 C名称が明示的に指定されなかった場合、SQLにおける関数名と同じものと仮定されます。
-   </p><p><span class="original">
-    The following algorithm is used to locate the shared object file
-    based on the name given in the &lt;command&gt;CREATE FUNCTION&lt;/command&gt;
-    command:
-</span><code class="command">CREATE FUNCTION</code>コマンドで与えられた名前に基づいて、共有オブジェクトファイルの場所を見つける際に以下のアルゴリズムが使用されます。
+   </p><p><code class="command">CREATE FUNCTION</code>コマンドで与えられた名前に基づいて、共有オブジェクトファイルの場所を見つける際に以下のアルゴリズムが使用されます。
 
-    </p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p><span class="original">
-       If the name is an absolute path, the given file is loaded.
-</span>名前が絶対パスの場合、指定されたファイルが読み込まれます。
-      </p></li><li class="listitem"><p><span class="original">
-       If the name starts with the string &lt;literal&gt;$libdir&lt;/literal&gt;,
-       that part is replaced by the &lt;productname&gt;PostgreSQL&lt;/&gt; package
-        library directory
-       name, which is determined at build time.&lt;indexterm&gt;&lt;primary&gt;$libdir&lt;/&gt;&lt;/&gt;
-</span>名前が<code class="literal">$libdir</code>という文字列から始まる場合、その部分は<span class="productname">PostgreSQL</span>パッケージのライブラリディレクトリで置き換えられます。
+    </p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p>名前が絶対パスの場合、指定されたファイルが読み込まれます。
+      </p></li><li class="listitem"><p>名前が<code class="literal">$libdir</code>という文字列から始まる場合、その部分は<span class="productname">PostgreSQL</span>パッケージのライブラリディレクトリで置き換えられます。
 このディレクトリはビルド時に決定されます。
 <a id="id-1.8.3.12.5.4.2.2.1.3" class="indexterm"></a>
-      </p></li><li class="listitem"><p><span class="original">
-       If the name does not contain a directory part, the file is
-       searched for in the path specified by the configuration variable
-       &lt;xref linkend="guc-dynamic-library-path"&gt;.&lt;indexterm&gt;&lt;primary&gt;dynamic_library_path&lt;/&gt;&lt;/&gt;
-</span>名前にディレクトリ部分がない場合、そのファイルは<a class="xref" href="runtime-config-client.html#GUC-DYNAMIC-LIBRARY-PATH">dynamic_library_path</a>設定変数で指定されたパス内から検索されます。
+      </p></li><li class="listitem"><p>名前にディレクトリ部分がない場合、そのファイルは<a class="xref" href="runtime-config-client.html#GUC-DYNAMIC-LIBRARY-PATH">dynamic_library_path</a>設定変数で指定されたパス内から検索されます。
 <a id="id-1.8.3.12.5.4.2.3.1.2" class="indexterm"></a>
-      </p></li><li class="listitem"><p><span class="original">
-       Otherwise (the file was not found in the path, or it contains a
-       non-absolute directory part), the dynamic loader will try to
-       take the name as given, which will most likely fail.  (It is
-       unreliable to depend on the current working directory.)
-</span>上記以外の場合（ファイルがパス内に存在しない場合や相対ディレクトリ部分を持つ場合）、動的ローダは指定された名前をそのまま使用し、ほとんどの場合は失敗します。
+      </p></li><li class="listitem"><p>上記以外の場合（ファイルがパス内に存在しない場合や相対ディレクトリ部分を持つ場合）、動的ローダは指定された名前をそのまま使用し、ほとんどの場合は失敗します。
 （これは現在の作業ディレクトリに依存するため信頼できません。）
       </p></li></ol></div><p>
-<span class="original">
-    If this sequence does not work, the platform-specific shared
-    library file name extension (often &lt;filename&gt;.so&lt;/filename&gt;) is
-    appended to the given name and this sequence is tried again.  If
-    that fails as well, the load will fail.
-</span>
+
 ここまでの流れがうまくいかなかった場合、プラットフォーム独自の共有ライブラリファイル拡張子（多くの場合<code class="filename">.so</code>）が指定された名前に追加され、再度この流れを試みます。
 同様に失敗した場合は、読み込みは失敗します。
-   </p><p><span class="original">
-    It is recommended to locate shared libraries either relative to
-    &lt;literal&gt;$libdir&lt;/literal&gt; or through the dynamic library path.
-    This simplifies version upgrades if the new installation is at a
-    different location.  The actual directory that
-    &lt;literal&gt;$libdir&lt;/literal&gt; stands for can be found out with the
-    command &lt;literal&gt;pg_config &amp;#045;&amp;#045;pkglibdir&lt;/literal&gt;.
-</span>共有ライブラリを<code class="literal">$libdir</code>から相対的に、もしくは動的ライブラリパスの通った所に配置することを推奨します。
+   </p><p>共有ライブラリを<code class="literal">$libdir</code>から相対的に、もしくは動的ライブラリパスの通った所に配置することを推奨します。
 異なる場所に新しいインストレーションを配置する場合にバージョンアップを簡単にします。
 <code class="literal">$libdir</code>が示す実際のディレクトリは<code class="literal">pg_config --pkglibdir</code>コマンドを使用することでわかります。
-   </p><p><span class="original">
-    The user ID the &lt;productname&gt;PostgreSQL&lt;/productname&gt; server runs
-    as must be able to traverse the path to the file you intend to
-    load.  Making the file or a higher-level directory not readable
-    and/or not executable by the &lt;systemitem&gt;postgres&lt;/systemitem&gt;
-    user is a common mistake.
-</span><span class="productname">PostgreSQL</span>サーバの実効ユーザIDはロード予定のファイルのパスまで到達できなければなりません。
+   </p><p><span class="productname">PostgreSQL</span>サーバの実効ユーザIDはロード予定のファイルのパスまで到達できなければなりません。
 よくある失敗として、<span class="systemitem">postgres</span>ユーザに対して読み込み、実行、または両方の権限がそのファイルとその上位ディレクトリに与えられていないことがあります。
-   </p><p><span class="original">
-    In any case, the file name that is given in the
-    &lt;command&gt;CREATE FUNCTION&lt;/command&gt; command is recorded literally
-    in the system catalogs, so if the file needs to be loaded again
-    the same procedure is applied.
-</span>どの場合でも、<code class="command">CREATE FUNCTION</code>コマンドに与えたファイル名はそのままシステムカタログに保存されます。
+   </p><p>どの場合でも、<code class="command">CREATE FUNCTION</code>コマンドに与えたファイル名はそのままシステムカタログに保存されます。
 ですので、もしそのファイルを再度読み込む必要がある場合、同じ処理が適用されます。
-   </p><div class="note"><h3 class="title">注記</h3><p><span class="original">
-     &lt;productname&gt;PostgreSQL&lt;/productname&gt; will not compile a C function
-     automatically.  The object file must be compiled before it is referenced
-     in a &lt;command&gt;CREATE
-     FUNCTION&lt;/&gt; command.  See &lt;xref linkend="dfunc"&gt; for additional
-     information.
-</span><span class="productname">PostgreSQL</span>はC関数を自動的にコンパイルしません。
+   </p><div class="note"><h3 class="title">Note</h3><p><span class="productname">PostgreSQL</span>はC関数を自動的にコンパイルしません。
 <code class="command">CREATE FUNCTION</code>コマンドで参照する前に、そのオブジェクトファイルはコンパイルされていなければなりません。
-さらなる情報については<a class="xref" href="xfunc-c.html#DFUNC" title="37.9.5. 動的にロードされる関数のコンパイルとリンク">37.9.5</a>を参照してください。
-    </p></div><a id="id-1.8.3.12.5.9" class="indexterm"></a><p><span class="original">
-    To ensure that a dynamically loaded object file is not loaded into an
-    incompatible server, &lt;productname&gt;PostgreSQL&lt;/productname&gt; checks that the
-    file contains a &lt;quote&gt;magic block&lt;/&gt; with the appropriate contents.
-    This allows the server to detect obvious incompatibilities, such as code
-    compiled for a different major version of
-    &lt;productname&gt;PostgreSQL&lt;/productname&gt;.  A magic block is required as of
-    &lt;productname&gt;PostgreSQL&lt;/productname&gt; 8.2.  To include a magic block,
-    write this in one (and only one) of the module source files, after having
-    included the header &lt;filename&gt;fmgr.h&lt;/&gt;:
-</span>確実に、動的にロードされるモジュールが互換性がないサーバにロードされないように、<span class="productname">PostgreSQL</span>は、そのファイルに適切な内容を持つ<span class="quote">「<span class="quote">マジックブロック</span>」</span>が含まれているかどうか検査します。
+さらなる情報については<a class="xref" href="xfunc-c.html#DFUNC" title="37.9.5. 動的にロードされる関数のコンパイルとリンク">Section 37.9.5</a>を参照してください。
+    </p></div><a id="id-1.8.3.12.5.9" class="indexterm"></a><p>確実に、動的にロードされるモジュールが互換性がないサーバにロードされないように、<span class="productname">PostgreSQL</span>は、そのファイルに適切な内容を持つ<span class="quote">“<span class="quote">マジックブロック</span>”</span>が含まれているかどうか検査します。
 これによりサーバは、メジャーバージョンが異なる<span class="productname">PostgreSQL</span>用にコンパイルされたモジュールなど、明確に互換性がないことを検知することができます。
 マジックブロックは<span class="productname">PostgreSQL</span> 8.2から要求されています。
 マジックブロックを含めるためには、以下をモジュールのソースファイルに一度（一度だけ）、<code class="filename">fmgr.h</code>ヘッダファイルをincludeさせた後で、記述してください。
@@ -130,283 +41,111 @@ C名称が明示的に指定されなかった場合、SQLにおける関数名�
 </p><pre class="programlisting">#ifdef PG_MODULE_MAGIC
 PG_MODULE_MAGIC;
 #endif</pre><p>
-<span class="original">
-    The &lt;literal&gt;#ifdef&lt;/&gt; test can be omitted if the code doesn't
-    need to compile against pre-8.2 &lt;productname&gt;PostgreSQL&lt;/productname&gt;
-    releases.
-</span>
+
 そのコードをリリース8.2より前の<span class="productname">PostgreSQL</span>用にコンパイルする必要がなければ、<code class="literal">#ifdef</code>テストを省略することができます。
-   </p><p><span class="original">
-    After it is used for the first time, a dynamically loaded object
-    file is retained in memory.  Future calls in the same session to
-    the function(s) in that file will only incur the small overhead of
-    a symbol table lookup.  If you need to force a reload of an object
-    file, for example after recompiling it, begin a fresh session.
-</span>最初に使用された後も、動的にロードされたオブジェクトファイルはメモリ内に保持されます。
+   </p><p>最初に使用された後も、動的にロードされたオブジェクトファイルはメモリ内に保持されます。
 同一セッションにおいてそのファイル内の関数をその後に呼び出した場合、シンボルテーブルの検索に要する小さなオーバーヘッドしかかかりません。
 例えば再コンパイルした後など、そのオブジェクトファイルを強制的に再度読み込ませる必要がある場合は、新しいセッションを開始してください。
-   </p><a id="id-1.8.3.12.5.12" class="indexterm"></a><a id="id-1.8.3.12.5.13" class="indexterm"></a><a id="id-1.8.3.12.5.14" class="indexterm"></a><a id="id-1.8.3.12.5.15" class="indexterm"></a><p><span class="original">
-    Optionally, a dynamically loaded file can contain initialization and
-    finalization functions.  If the file includes a function named
-    &lt;function&gt;_PG_init&lt;/&gt;, that function will be called immediately after
-    loading the file.  The function receives no parameters and should
-    return void.  If the file includes a function named
-    &lt;function&gt;_PG_fini&lt;/&gt;, that function will be called immediately before
-    unloading the file.  Likewise, the function receives no parameters and
-    should return void.  Note that &lt;function&gt;_PG_fini&lt;/&gt; will only be called
-    during an unload of the file, not during process termination.
-    (Presently, unloads are disabled and will never occur, but this may
-    change in the future.)
-</span>省略することもできますが、動的にロードされるファイルに初期化処理関数と最終処理関数を含めることができます。
+   </p><a id="id-1.8.3.12.5.12" class="indexterm"></a><a id="id-1.8.3.12.5.13" class="indexterm"></a><a id="id-1.8.3.12.5.14" class="indexterm"></a><a id="id-1.8.3.12.5.15" class="indexterm"></a><p>省略することもできますが、動的にロードされるファイルに初期化処理関数と最終処理関数を含めることができます。
 <code class="function">_PG_init</code>という関数がファイルに存在すると、この関数はファイルがロードされた直後に呼び出されます。
 この関数は引数を取らずvoid型を返さなければなりません。
 <code class="function">_PG_fini</code>という関数がファイルに存在すると、この関数はファイルがアンロードされる直前に呼び出されます。
 この関数も同様に引数を取らずvoid型を返さなければなりません。
 <code class="function">_PG_fini</code>がファイルのアンロード時にのみ呼び出されるものであり、処理の終了時に呼び出されるものではないことに注意してください。
 （現在、アンロードは無効となっていますので、決して発生しません。将来変更される可能性があります。）
-   </p></div><div class="sect2" id="XFUNC-C-BASETYPE"><div class="titlepage"><div><div><h3 class="title">37.9.2. C言語関数における基本型</h3></div></div></div><span class="original">
-    &lt;title&gt;Base Types in C-Language Functions&lt;/title&gt;
-</span><a id="id-1.8.3.12.6.2" class="indexterm"></a><p><span class="original">
-     To know how to write C-language functions, you need to know how
-     &lt;productname&gt;PostgreSQL&lt;/productname&gt; internally represents base
-     data types and how they can be passed to and from functions.
-     Internally, &lt;productname&gt;PostgreSQL&lt;/productname&gt; regards a base
-     type as a &lt;quote&gt;blob of memory&lt;/quote&gt;.  The user-defined
-     functions that you define over a type in turn define the way that
-     &lt;productname&gt;PostgreSQL&lt;/productname&gt; can operate on it.  That
-     is, &lt;productname&gt;PostgreSQL&lt;/productname&gt; will only store and
-     retrieve the data from disk and use your user-defined functions
-     to input, process, and output the data.
-</span>C言語関数の作成方法を理解するためには、<span class="productname">PostgreSQL</span>が基本データ型を内部でどのように表現し、どのようにそれらを関数とやり取りしているかを理解する必要があります。
-内部的に<span class="productname">PostgreSQL</span>は基本型を<span class="quote">「<span class="quote">メモリの小さな塊</span>」</span>とみなします。
+   </p></div><div class="sect2" id="XFUNC-C-BASETYPE"><div class="titlepage"><div><div><h3 class="title">37.9.2. C言語関数における基本型</h3></div></div></div><a id="id-1.8.3.12.6.2" class="indexterm"></a><p>C言語関数の作成方法を理解するためには、<span class="productname">PostgreSQL</span>が基本データ型を内部でどのように表現し、どのようにそれらを関数とやり取りしているかを理解する必要があります。
+内部的に<span class="productname">PostgreSQL</span>は基本型を<span class="quote">“<span class="quote">メモリの小さな塊</span>”</span>とみなします。
 ある型を定義するユーザ定義関数は、言い換えると、<span class="productname">PostgreSQL</span>がそれを操作できる方法を定義します。
 つまり、<span class="productname">PostgreSQL</span>はデータの格納、ディスクからの取り出しのみを行い、データの入力や処理、出力にはユーザ定義関数を使用します。
-    </p><p><span class="original">
-     Base types can have one of three internal formats:
-</span>基本型は下記の3つのいずれかの内部書式を使用しています。
+    </p><p>基本型は下記の3つのいずれかの内部書式を使用しています。
 
-     </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p><span class="original">
-        pass by value, fixed-length
-</span>固定長の値渡し
-       </p></li><li class="listitem"><p><span class="original">
-        pass by reference, fixed-length
-</span>固定長の参照渡し
-       </p></li><li class="listitem"><p><span class="original">
-        pass by reference, variable-length
-</span>可変長の参照渡し
+     </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>固定長の値渡し
+       </p></li><li class="listitem"><p>固定長の参照渡し
+       </p></li><li class="listitem"><p>可変長の参照渡し
        </p></li></ul></div><p>
-    </p><p><span class="original">
-     By-value  types  can  only be 1, 2, or 4 bytes in length
-     (also 8 bytes, if &lt;literal&gt;sizeof(Datum)&lt;/literal&gt; is 8 on your machine).
-     You should be careful to define your types such that they will be the
-     same size (in bytes) on all architectures.  For example, the
-     &lt;literal&gt;long&lt;/literal&gt; type is dangerous because it is 4 bytes on some
-     machines and 8 bytes on others, whereas &lt;type&gt;int&lt;/type&gt; type is 4 bytes
-     on most Unix machines.  A reasonable implementation of the
-     &lt;type&gt;int4&lt;/type&gt; type on Unix machines might be:
-</span>値渡しは、1、2、4バイト長の型のみで使用することができます（使用するマシンの<code class="literal">sizeof(Datum)</code>が8の場合は8バイトも使用できます）。
+    </p><p>値渡しは、1、2、4バイト長の型のみで使用することができます（使用するマシンの<code class="literal">sizeof(Datum)</code>が8の場合は8バイトも使用できます）。
 データ型を定義する際、その型がすべてのアーキテクチャにおいて同一の大きさ（バイト数）となるように定義するように注意してください。
 例えば、<code class="literal">long</code>型はマシンによっては4バイトであったり、8バイトであったりして危険ですが、<code class="type">int</code>型はほとんどのUnixマシンでは4バイトです。
 Unixマシンにおける<code class="type">int4</code>の理論的な実装は以下のようになります。
 
-</p><pre class="programlisting"><span class="original">
-/* 4-byte integer, passed by value */
-</span>/* 4 バイト整数、値渡し */
+</p><pre class="programlisting">/* 4 バイト整数、値渡し */
 typedef int int4;</pre><p>
-<span class="original">
-     (The actual PostgreSQL C code calls this type &lt;type&gt;int32&lt;/type&gt;, because
-     it is a convention in C that &lt;type&gt;int&lt;replaceable&gt;XX&lt;/replaceable&gt;&lt;/type&gt;
-     means &lt;replaceable&gt;XX&lt;/replaceable&gt; &lt;emphasis&gt;bits&lt;/emphasis&gt;.  Note
-     therefore also that the C type &lt;type&gt;int8&lt;/type&gt; is 1 byte in size.  The
-     SQL type &lt;type&gt;int8&lt;/type&gt; is called &lt;type&gt;int64&lt;/type&gt; in C.  See also
-     &lt;xref linkend="xfunc-c-type-table"&gt;.)
-</span>
+
 （実際のPostgreSQLのCコードではこの型を<code class="type">int32</code>と呼びます。
 <code class="type">int<em class="replaceable"><code>XX</code></em></code>が<em class="replaceable"><code>XX</code></em> <span class="emphasis"><em>ビット</em></span>であることはCにおける規約だからです。
 したがって<code class="type">int8</code>というCの型のサイズは１バイトであることに注意してください。
 <code class="type">int8</code>というSQLの型はCでは<code class="type">int64</code>と呼ばれます。
-<a class="xref" href="xfunc-c.html#XFUNC-C-TYPE-TABLE" title="表37.1 組み込みSQL型に相当するCの型">表 37.1</a>も参照してください。）
-    </p><p><span class="original">
-     On  the  other hand, fixed-length types of any size can
-     be passed by-reference.  For example, here is a  sample
-     implementation of a &lt;productname&gt;PostgreSQL&lt;/productname&gt; type:
-</span>一方、任意の大きさの固定長の型は参照として引き渡すことができます。
+<a class="xref" href="xfunc-c.html#XFUNC-C-TYPE-TABLE" title="Table 37.1. 組み込みSQL型に相当するCの型">Table 37.1</a>も参照してください。）
+    </p><p>一方、任意の大きさの固定長の型は参照として引き渡すことができます。
 例として以下に<span class="productname">PostgreSQL</span>の型の実装サンプルを示します。
 
-</p><pre class="programlisting"><span class="original">
-/* 16-byte structure, passed by reference */
-</span>/* 16 バイト構造体、参照渡し */
+</p><pre class="programlisting">/* 16 バイト構造体、参照渡し */
 typedef struct
 {
     double  x, y;
 } Point;</pre><p>
-<span class="original">
-     Only  pointers  to  such types can be used when passing
-     them in and out of &lt;productname&gt;PostgreSQL&lt;/productname&gt; functions.
-     To return a value of such a type, allocate the right amount of
-     memory with &lt;literal&gt;palloc&lt;/literal&gt;, fill in the allocated memory,
-     and return a pointer to it.  (Also, if you just want to return the
-     same value as one of your input arguments that's of the same data type,
-     you can skip the extra &lt;literal&gt;palloc&lt;/literal&gt; and just return the
-     pointer to the input value.)
-</span>
+
 それらの型のポインタのみが<span class="productname">PostgreSQL</span>関数の入出力時に使用できます。
 それらの型の値を返すためには、<code class="literal">palloc()</code>を使用して正しい大きさのメモリ領域を割り当て、そのメモリ領域に値を入力し、それのポインタを返します。
 （また、入力引数の1つと同じ型かつ同じ値を返したいのであれば、<code class="literal">palloc</code>を行う手間を省くことができます。
 この場合は入力値へのポインタを単に返してください。）
-    </p><p><span class="original">
-     Finally, all variable-length types must also be  passed
-     by  reference.   All  variable-length  types must begin
-     with an opaque length field of exactly 4 bytes, which will be set
-     by &lt;symbol&gt;SET_VARSIZE&lt;/symbol&gt;; never set this field directly! All data to
-     be  stored within that type must be located in the memory
-     immediately  following  that  length  field.   The
-     length field contains the total length of the structure,
-     that is,  it  includes  the  size  of  the  length  field
-     itself.
-</span>最後に、すべての可変長型は参照として引き渡す必要があります。
+    </p><p>最後に、すべての可変長型は参照として引き渡す必要があります。
 また、すべての可変長型は正確に4バイトの不透明なlengthフィールドから始まる必要があります。
 このフィールドは<code class="symbol">SET_VARSIZE</code>で設定されます。決して直接このフィールドを設定してはいけません。
 その型に格納されるすべてのデータはlengthフィールドのすぐ後のメモリ領域に置かれる必要があります。
 lengthフィールドにはその構造体の総長が格納されます。つまり、lengthフィールドそのものもその大きさに含まれます。
-    </p><p><span class="original">
-     Another important point is to avoid leaving any uninitialized bits
-     within data type values; for example, take care to zero out any
-     alignment padding bytes that might be present in structs.  Without
-     this, logically-equivalent constants of your data type might be
-     seen as unequal by the planner, leading to inefficient (though not
-     incorrect) plans.
-</span>この他の重要な点は、データ型の値の中で初期化されていないビットを残さないことです。
+    </p><p>この他の重要な点は、データ型の値の中で初期化されていないビットを残さないことです。
 例えば、構造体内に存在する可能性がある整列用のパディングバイトを注意してすべてゼロクリアしてください。
 こうしないと、独自データ型の論理的に等価な定数がプランナにより一致しないものと判断され、（不正確ではありませんが）非効率的な計画をもたらすかもしれません。
-    </p><div class="warning"><h3 class="title">警告</h3><p><span class="original">
-      &lt;emphasis&gt;Never&lt;/&gt; modify the contents of a pass-by-reference input
-      value.  If you do so you are likely to corrupt on-disk data, since
-      the pointer you are given might point directly into a disk buffer.
-      The sole exception to this rule is explained in
-      &lt;xref linkend="xaggr"&gt;.
-</span>参照渡しの入力値の内容を<span class="emphasis"><em>決して</em></span>変更しないでください。
+    </p><div class="warning"><h3 class="title">Warning</h3><p>参照渡しの入力値の内容を<span class="emphasis"><em>決して</em></span>変更しないでください。
 指定したポインタがディスクバッファを直接指し示している可能性がよくありますので、変更すると、ディスク上のデータを破壊してしまうかもしれません。
-この規則の唯一の例外について<a class="xref" href="xaggr.html" title="37.10. ユーザ定義の集約">37.10</a>で説明します。
-     </p></div><p><span class="original">
-     As an example, we can define the type &lt;type&gt;text&lt;/type&gt; as
-     follows:
-</span>例えば、<code class="type">text</code>型を定義するには、下記のように行えます。
+この規則の唯一の例外について<a class="xref" href="xaggr.html" title="37.10. ユーザ定義の集約">Section 37.10</a>で説明します。
+     </p></div><p>例えば、<code class="type">text</code>型を定義するには、下記のように行えます。
 
 </p><pre class="programlisting">typedef struct {
     int32 length;
     char data[FLEXIBLE_ARRAY_MEMBER];
 } text;</pre><p>
-<span class="original">
-     The &lt;literal&gt;[FLEXIBLE_ARRAY_MEMBER]&lt;/&gt; notation means that the actual
-     length of the data part is not specified by this declaration.
-</span>
+
 <code class="literal">[FLEXIBLE_ARRAY_MEMBER]</code>表記は、データ部分の実際の長さはこの宣言では指定されないことを意味します。
-    </p><p><span class="original">
-     When manipulating
-     variable-length types, we must  be  careful  to  allocate
-     the  correct amount  of memory and set the length field correctly.
-     For example, if we wanted to  store  40  bytes  in  a &lt;structname&gt;text&lt;/&gt;
-     structure, we might use a code fragment like this:
-</span>可変長型を操作する時、正確な大きさのメモリを割り当て、lengthフィールドを正確に設定することに注意する必要があります。
+    </p><p>可変長型を操作する時、正確な大きさのメモリを割り当て、lengthフィールドを正確に設定することに注意する必要があります。
 例えば、40バイトを<code class="structname">text</code>構造体に保持させたい場合、下記のようなコードを使用します。
 
 </p><pre class="programlisting">#include "postgres.h"
-...<span class="original">
-char buffer[40]; /* our source data */
-</span>
+...
 char buffer[40]; /* 私たちの元のデータ */
 ...
 text *destination = (text *) palloc(VARHDRSZ + 40);
 SET_VARSIZE(destination, VARHDRSZ + 40);
 memcpy(destination-&gt;data, buffer, 40);
 ...</pre><p>
-<span class="original">
-     &lt;literal&gt;VARHDRSZ&lt;/&gt; is the same as &lt;literal&gt;sizeof(int32)&lt;/&gt;, but
-     it's considered good style to use the macro &lt;literal&gt;VARHDRSZ&lt;/&gt;
-     to refer to the size of the overhead for a variable-length type.
-     Also, the length field &lt;emphasis&gt;must&lt;/&gt; be set using the
-     &lt;literal&gt;SET_VARSIZE&lt;/&gt; macro, not by simple assignment.
-</span>
+
 <code class="literal">VARHDRSZ</code>は<code class="literal">sizeof(int32)</code>と同一ですが、可変長型のオーバーヘッド分の大きさを参照する時には、<code class="literal">VARHDRSZ</code>マクロを使用する方が好ましい形式とみなされています。
 また長さフィールドを単なる代入ではなく<code class="literal">SET_VARSIZE</code>マクロを使用して設定<span class="emphasis"><em>しなければなりません</em></span>。
-    </p><p><span class="original">
-     &lt;xref linkend="xfunc-c-type-table"&gt; specifies which C type
-     corresponds to which SQL type when writing a C-language function
-     that uses a built-in type of &lt;productname&gt;PostgreSQL&lt;/&gt;.
-     The &lt;quote&gt;Defined In&lt;/quote&gt; column gives the header file that
-     needs to be included to get the type definition.  (The actual
-     definition might be in a different file that is included by the
-     listed file.  It is recommended that users stick to the defined
-     interface.)  Note that you should always include
-     &lt;filename&gt;postgres.h&lt;/filename&gt; first in any source file, because
-     it declares a number of things that you will need anyway.
-</span><a class="xref" href="xfunc-c.html#XFUNC-C-TYPE-TABLE" title="表37.1 組み込みSQL型に相当するCの型">表 37.1</a>は、<span class="productname">PostgreSQL</span>の組み込み型を使用するC言語関数を作成する時の、Cの型とSQL型との対応を規定したものです。
-<span class="quote">「<span class="quote">定義場所</span>」</span>列では、型定義を取り出すためにインクルードしなければならないヘッダファイルを示しています。
+    </p><p><a class="xref" href="xfunc-c.html#XFUNC-C-TYPE-TABLE" title="Table 37.1. 組み込みSQL型に相当するCの型">Table 37.1</a>は、<span class="productname">PostgreSQL</span>の組み込み型を使用するC言語関数を作成する時の、Cの型とSQL型との対応を規定したものです。
+<span class="quote">“<span class="quote">定義場所</span>”</span>列では、型定義を取り出すためにインクルードしなければならないヘッダファイルを示しています。
 （実際の定義は一覧中のファイルからインクルードされた、別のファイルであるかもしれません。
 ユーザは定義されたインタフェースを厳守することを推奨されています。）
 <code class="filename">postgres.h</code>には必ず必要になる多くのものが宣言されていますので、ソースファイルの中で必ず初めにこのファイルをインクルードしなければならないことに注意してください。
-    </p><div class="table" id="XFUNC-C-TYPE-TABLE"><p class="title"><strong>表37.1 組み込みSQL型に相当するCの型</strong></p><div class="table-contents"><span class="original">
-      &lt;title&gt;Equivalent C Types for Built-in SQL Types&lt;/title&gt;
-</span><table class="table" summary="組み込みSQL型に相当するCの型" border="1"><colgroup><col /><col /><col /></colgroup><thead><tr><th><span class="original">
-          SQL Type
-</span>SQL型
-         </th><th><span class="original">
-          C Type
-</span>C 言語型
-         </th><th><span class="original">
-          Defined In
-</span>定義場所
-         </th></tr></thead><tbody><tr><td><code class="type">abstime</code></td><td><code class="type">AbsoluteTime</code></td><td><code class="filename">utils/nabstime.h</code></td></tr><tr><td><code class="type">bigint</code> (<code class="type">int8</code>)</td><td><code class="type">int64</code></td><td><code class="filename">postgres.h</code></td></tr><tr><td><code class="type">boolean</code></td><td><code class="type">bool</code></td><td><code class="filename">postgres.h</code>（コンパイラで組み込み済みの可能性があります）</td></tr><tr><td><code class="type">box</code></td><td><code class="type">BOX*</code></td><td><code class="filename">utils/geo_decls.h</code></td></tr><tr><td><code class="type">bytea</code></td><td><code class="type">bytea*</code></td><td><code class="filename">postgres.h</code></td></tr><tr><td><code class="type">"char"</code></td><td><code class="type">char</code></td><td>（コンパイラで組み込み済み）</td></tr><tr><td><code class="type">character</code></td><td><code class="type">BpChar*</code></td><td><code class="filename">postgres.h</code></td></tr><tr><td><code class="type">cid</code></td><td><code class="type">CommandId</code></td><td><code class="filename">postgres.h</code></td></tr><tr><td><code class="type">date</code></td><td><code class="type">DateADT</code></td><td><code class="filename">utils/date.h</code></td></tr><tr><td><code class="type">smallint</code> (<code class="type">int2</code>)</td><td><code class="type">int16</code></td><td><code class="filename">postgres.h</code></td></tr><tr><td><code class="type">int2vector</code></td><td><code class="type">int2vector*</code></td><td><code class="filename">postgres.h</code></td></tr><tr><td><code class="type">integer</code> (<code class="type">int4</code>)</td><td><code class="type">int32</code></td><td><code class="filename">postgres.h</code></td></tr><tr><td><code class="type">real</code> (<code class="type">float4</code>)</td><td><code class="type">float4*</code></td><td><code class="filename">postgres.h</code></td></tr><tr><td><code class="type">double precision</code> (<code class="type">float8</code>)</td><td><code class="type">float8*</code></td><td><code class="filename">postgres.h</code></td></tr><tr><td><code class="type">interval</code></td><td><code class="type">Interval*</code></td><td><code class="filename">datatype/timestamp.h</code></td></tr><tr><td><code class="type">lseg</code></td><td><code class="type">LSEG*</code></td><td><code class="filename">utils/geo_decls.h</code></td></tr><tr><td><code class="type">name</code></td><td><code class="type">Name</code></td><td><code class="filename">postgres.h</code></td></tr><tr><td><code class="type">oid</code></td><td><code class="type">Oid</code></td><td><code class="filename">postgres.h</code></td></tr><tr><td><code class="type">oidvector</code></td><td><code class="type">oidvector*</code></td><td><code class="filename">postgres.h</code></td></tr><tr><td><code class="type">path</code></td><td><code class="type">PATH*</code></td><td><code class="filename">utils/geo_decls.h</code></td></tr><tr><td><code class="type">point</code></td><td><code class="type">POINT*</code></td><td><code class="filename">utils/geo_decls.h</code></td></tr><tr><td><code class="type">regproc</code></td><td><code class="type">regproc</code></td><td><code class="filename">postgres.h</code></td></tr><tr><td><code class="type">reltime</code></td><td><code class="type">RelativeTime</code></td><td><code class="filename">utils/nabstime.h</code></td></tr><tr><td><code class="type">text</code></td><td><code class="type">text*</code></td><td><code class="filename">postgres.h</code></td></tr><tr><td><code class="type">tid</code></td><td><code class="type">ItemPointer</code></td><td><code class="filename">storage/itemptr.h</code></td></tr><tr><td><code class="type">time</code></td><td><code class="type">TimeADT</code></td><td><code class="filename">utils/date.h</code></td></tr><tr><td><code class="type">time with time zone</code></td><td><code class="type">TimeTzADT</code></td><td><code class="filename">utils/date.h</code></td></tr><tr><td><code class="type">timestamp</code></td><td><code class="type">Timestamp*</code></td><td><code class="filename">datatype/timestamp.h</code></td></tr><tr><td><code class="type">tinterval</code></td><td><code class="type">TimeInterval</code></td><td><code class="filename">utils/nabstime.h</code></td></tr><tr><td><code class="type">varchar</code></td><td><code class="type">VarChar*</code></td><td><code class="filename">postgres.h</code></td></tr><tr><td><code class="type">xid</code></td><td><code class="type">TransactionId</code></td><td><code class="filename">postgres.h</code></td></tr></tbody></table></div></div><br class="table-break" /><p><span class="original">
-     Now that we've gone over all of the possible structures
-     for base types, we can show some examples of real functions.
-</span>ここまでで基本型に関してあり得る構造体のすべてを記述しましたので、実際の関数の例をいくつか示すことができます。
-    </p></div><div class="sect2" id="id-1.8.3.12.7"><div class="titlepage"><div><div><h3 class="title">37.9.3. Version 1 呼び出し規約</h3></div></div></div><span class="original">
-    &lt;title&gt;Version 1 Calling Conventions&lt;/title&gt;
-</span><p><span class="original">
-     The version-1 calling convention relies on macros to suppress most
-     of the complexity of passing arguments and results.  The C declaration
-     of a version-1 function is always:
-</span>Version-1呼び出し規約では、引数と結果の引き渡しの複雑さをなくすためにマクロを使用しています。
+    </p><div class="table" id="XFUNC-C-TYPE-TABLE"><p class="title"><strong>Table 37.1. 組み込みSQL型に相当するCの型</strong></p><div class="table-contents"><table class="table" summary="組み込みSQL型に相当するCの型" border="1"><colgroup><col /><col /><col /></colgroup><thead><tr><th>SQL型
+         </th><th>C 言語型
+         </th><th>定義場所
+         </th></tr></thead><tbody><tr><td><code class="type">abstime</code></td><td><code class="type">AbsoluteTime</code></td><td><code class="filename">utils/nabstime.h</code></td></tr><tr><td><code class="type">bigint</code> (<code class="type">int8</code>)</td><td><code class="type">int64</code></td><td><code class="filename">postgres.h</code></td></tr><tr><td><code class="type">boolean</code></td><td><code class="type">bool</code></td><td><code class="filename">postgres.h</code>（コンパイラで組み込み済みの可能性があります）</td></tr><tr><td><code class="type">box</code></td><td><code class="type">BOX*</code></td><td><code class="filename">utils/geo_decls.h</code></td></tr><tr><td><code class="type">bytea</code></td><td><code class="type">bytea*</code></td><td><code class="filename">postgres.h</code></td></tr><tr><td><code class="type">"char"</code></td><td><code class="type">char</code></td><td>（コンパイラで組み込み済み）</td></tr><tr><td><code class="type">character</code></td><td><code class="type">BpChar*</code></td><td><code class="filename">postgres.h</code></td></tr><tr><td><code class="type">cid</code></td><td><code class="type">CommandId</code></td><td><code class="filename">postgres.h</code></td></tr><tr><td><code class="type">date</code></td><td><code class="type">DateADT</code></td><td><code class="filename">utils/date.h</code></td></tr><tr><td><code class="type">smallint</code> (<code class="type">int2</code>)</td><td><code class="type">int16</code></td><td><code class="filename">postgres.h</code></td></tr><tr><td><code class="type">int2vector</code></td><td><code class="type">int2vector*</code></td><td><code class="filename">postgres.h</code></td></tr><tr><td><code class="type">integer</code> (<code class="type">int4</code>)</td><td><code class="type">int32</code></td><td><code class="filename">postgres.h</code></td></tr><tr><td><code class="type">real</code> (<code class="type">float4</code>)</td><td><code class="type">float4*</code></td><td><code class="filename">postgres.h</code></td></tr><tr><td><code class="type">double precision</code> (<code class="type">float8</code>)</td><td><code class="type">float8*</code></td><td><code class="filename">postgres.h</code></td></tr><tr><td><code class="type">interval</code></td><td><code class="type">Interval*</code></td><td><code class="filename">datatype/timestamp.h</code></td></tr><tr><td><code class="type">lseg</code></td><td><code class="type">LSEG*</code></td><td><code class="filename">utils/geo_decls.h</code></td></tr><tr><td><code class="type">name</code></td><td><code class="type">Name</code></td><td><code class="filename">postgres.h</code></td></tr><tr><td><code class="type">oid</code></td><td><code class="type">Oid</code></td><td><code class="filename">postgres.h</code></td></tr><tr><td><code class="type">oidvector</code></td><td><code class="type">oidvector*</code></td><td><code class="filename">postgres.h</code></td></tr><tr><td><code class="type">path</code></td><td><code class="type">PATH*</code></td><td><code class="filename">utils/geo_decls.h</code></td></tr><tr><td><code class="type">point</code></td><td><code class="type">POINT*</code></td><td><code class="filename">utils/geo_decls.h</code></td></tr><tr><td><code class="type">regproc</code></td><td><code class="type">regproc</code></td><td><code class="filename">postgres.h</code></td></tr><tr><td><code class="type">reltime</code></td><td><code class="type">RelativeTime</code></td><td><code class="filename">utils/nabstime.h</code></td></tr><tr><td><code class="type">text</code></td><td><code class="type">text*</code></td><td><code class="filename">postgres.h</code></td></tr><tr><td><code class="type">tid</code></td><td><code class="type">ItemPointer</code></td><td><code class="filename">storage/itemptr.h</code></td></tr><tr><td><code class="type">time</code></td><td><code class="type">TimeADT</code></td><td><code class="filename">utils/date.h</code></td></tr><tr><td><code class="type">time with time zone</code></td><td><code class="type">TimeTzADT</code></td><td><code class="filename">utils/date.h</code></td></tr><tr><td><code class="type">timestamp</code></td><td><code class="type">Timestamp*</code></td><td><code class="filename">datatype/timestamp.h</code></td></tr><tr><td><code class="type">tinterval</code></td><td><code class="type">TimeInterval</code></td><td><code class="filename">utils/nabstime.h</code></td></tr><tr><td><code class="type">varchar</code></td><td><code class="type">VarChar*</code></td><td><code class="filename">postgres.h</code></td></tr><tr><td><code class="type">xid</code></td><td><code class="type">TransactionId</code></td><td><code class="filename">postgres.h</code></td></tr></tbody></table></div></div><br class="table-break" /><p>ここまでで基本型に関してあり得る構造体のすべてを記述しましたので、実際の関数の例をいくつか示すことができます。
+    </p></div><div class="sect2" id="id-1.8.3.12.7"><div class="titlepage"><div><div><h3 class="title">37.9.3. Version 1 呼び出し規約</h3></div></div></div><p>Version-1呼び出し規約では、引数と結果の引き渡しの複雑さをなくすためにマクロを使用しています。
 Version-1関数のC言語宣言は必ず下記のように行います。
-</p><pre class="programlisting">Datum funcname(PG_FUNCTION_ARGS)</pre><p><span class="original">
-     In addition, the macro call:
-</span>
+</p><pre class="programlisting">Datum funcname(PG_FUNCTION_ARGS)</pre><p>
      さらに、マクロ呼び出し
-</p><pre class="programlisting">PG_FUNCTION_INFO_V1(funcname);</pre><p><span class="original">
-     must appear in the same source file.  (Conventionally, it's
-     written just before the function itself.)  This macro call is not
-     needed for &lt;literal&gt;internal&lt;/&gt;-language functions, since
-     &lt;productname&gt;PostgreSQL&lt;/&gt; assumes that all internal functions
-     use the version-1 convention.  It is, however, required for
-     dynamically-loaded functions.
-</span>
+</p><pre class="programlisting">PG_FUNCTION_INFO_V1(funcname);</pre><p>
 が同じソースファイルに書かれている必要があります。
 （一般には、関数の直前に書かれます。）
 <span class="productname">PostgreSQL</span>ではすべての内部関数はVersion-1であると認識するので、このマクロの呼び出しは<code class="literal">internal</code>言語関数では必要ありません。
 しかし、動的にロードされる関数では必要です。
-    </p><p><span class="original">
-     In a version-1 function, each actual argument is fetched using a
-     &lt;function&gt;PG_GETARG_&lt;replaceable&gt;xxx&lt;/replaceable&gt;()&lt;/function&gt;
-     macro that corresponds to the argument's data type.  In non-strict
-     functions there needs to be a previous check about argument null-ness
-     using &lt;function&gt;PG_ARGNULL_&lt;replaceable&gt;xxx&lt;/replaceable&gt;()&lt;/function&gt;.
-     The result is returned using a
-     &lt;function&gt;PG_RETURN_&lt;replaceable&gt;xxx&lt;/replaceable&gt;()&lt;/function&gt;
-     macro for the return type.
-     &lt;function&gt;PG_GETARG_&lt;replaceable&gt;xxx&lt;/replaceable&gt;()&lt;/function&gt;
-     takes as its argument the number of the function argument to
-     fetch, where the count starts at 0.
-     &lt;function&gt;PG_RETURN_&lt;replaceable&gt;xxx&lt;/replaceable&gt;()&lt;/function&gt;
-     takes as its argument the actual value to return.
-</span>Version-1関数では、それぞれの実引数は、引数のデータ型に合った<code class="function">PG_GETARG_<em class="replaceable"><code>xxx</code></em>()</code>マクロを使用して取り出されます。
+    </p><p>Version-1関数では、それぞれの実引数は、引数のデータ型に合った<code class="function">PG_GETARG_<em class="replaceable"><code>xxx</code></em>()</code>マクロを使用して取り出されます。
 厳格でない関数では、<code class="function">PG_ARGNULL_<em class="replaceable"><code>xxx</code></em>()</code>を使って引数がNULLかどうか事前に確認することが必要です。
 結果は戻り値の型に合った<code class="function">PG_RETURN_<em class="replaceable"><code>xxx</code></em>()</code>マクロを使用して返されます。
 <code class="function">PG_GETARG_<em class="replaceable"><code>xxx</code></em>()</code>は、その引数として、取り出す関数引数の番号（ゼロから始まります）を取ります。
 <code class="function">PG_RETURN_<em class="replaceable"><code>xxx</code></em>()</code>は、その引数として、実際に返す値を取ります。
-    </p><p><span class="original">
-     Here are some examples using the version-1 calling convention:
-</span>Version-1呼出し規約を使った例をいくつか以下に示します。
+    </p><p>Version-1呼出し規約を使った例をいくつか以下に示します。
     </p><pre class="programlisting">#include "postgres.h"
 #include &lt;string.h&gt;
 #include "fmgr.h"
@@ -415,9 +154,7 @@ Version-1関数のC言語宣言は必ず下記のように行います。
 #ifdef PG_MODULE_MAGIC
 PG_MODULE_MAGIC;
 #endif
-<span class="original">
-/* by value */
-</span>
+
 /* 値渡し */
 
 PG_FUNCTION_INFO_V1(add_one);
@@ -429,18 +166,14 @@ add_one(PG_FUNCTION_ARGS)
 
     PG_RETURN_INT32(arg + 1);
 }
-<span class="original">
-/* by reference, fixed length */
-</span>
+
 /* 固定長の参照渡し */
 
 PG_FUNCTION_INFO_V1(add_one_float8);
 
 Datum
 add_one_float8(PG_FUNCTION_ARGS)
-{<span class="original">
-    /* The macros for FLOAT8 hide its pass-by-reference nature. */
-</span>
+{
     /* FLOAT8用のマクロは参照渡しという性質を隠します */
     float8   arg = PG_GETARG_FLOAT8(0);
 
@@ -451,9 +184,7 @@ PG_FUNCTION_INFO_V1(makepoint);
 
 Datum
 makepoint(PG_FUNCTION_ARGS)
-{<span class="original">
-    /* Here, the pass-by-reference nature of Point is not hidden. */
-</span>
+{
     /* ここのPoint型の参照渡しという性質は隠されていません */
     Point     *pointx = PG_GETARG_POINT_P(0);
     Point     *pointy = PG_GETARG_POINT_P(1);
@@ -464,9 +195,7 @@ makepoint(PG_FUNCTION_ARGS)
 
     PG_RETURN_POINT_P(new_point);
 }
-<span class="original">
-/* by reference, variable length */
-</span>
+
 /* 可変長の参照渡し */
 
 PG_FUNCTION_INFO_V1(copytext);
@@ -476,11 +205,7 @@ copytext(PG_FUNCTION_ARGS)
 {
     text     *t = PG_GETARG_TEXT_PP(0);
 
-    /*<span class="original">
-     * VARSIZE_ANY_EXHDR is the size of the struct in bytes, minus the
-     * VARHDRSZ or VARHDRSZ_SHORT of its header.  Construct the copy with a
-     * full-length header.
-</span>
+    /*
      * VARSIZEは、そのヘッダのVARHDRSZまたはVARHDRSZ_SHORTを引いた
      * 構造体の総長をバイト数で表したものです。
      * 完全な長さのヘッダと合わせたコピーを作成します。
@@ -488,17 +213,10 @@ copytext(PG_FUNCTION_ARGS)
     text     *new_t = (text *) palloc(VARSIZE_ANY_EXHDR(t) + VARHDRSZ);
     SET_VARSIZE(new_t, VARSIZE_ANY_EXHDR(t) + VARHDRSZ);
 
-    /*<span class="original">
-     * VARDATA is a pointer to the data region of the new struct.  The source
-     * could be a short datum, so retrieve its data through VARDATA_ANY.
-</span>
+    /*
      * VARDATAは新しい構造体のデータ領域へのポインタです。
      * コピー元はshortデータかもしれませんので、VARDATA_ANYでデータを取り出します。
-     */<span class="original">
-    memcpy((void *) VARDATA(new_t), /* destination */
-           (void *) VARDATA_ANY(t), /* source */
-           VARSIZE_ANY_EXHDR(t));   /* how many bytes */
-</span>
+     */
     memcpy((void *) VARDATA(new_t), /* コピー先 */
            (void *) VARDATA_ANY(t), /* コピー元 */
            VARSIZE_ANY_EXHDR(t));   /* バイト数 */
@@ -521,18 +239,11 @@ concat_text(PG_FUNCTION_ARGS)
     memcpy(VARDATA(new_text), VARDATA_ANY(arg1), arg1_size);
     memcpy(VARDATA(new_text) + arg1_size, VARDATA_ANY(arg2), arg2_size);
     PG_RETURN_TEXT_P(new_text);
-}</pre><p><span class="original">
-     Supposing that the above code has been prepared in file
-     &lt;filename&gt;funcs.c&lt;/filename&gt; and compiled into a shared object,
-     we could define the functions to &lt;productname&gt;PostgreSQL&lt;/productname&gt;
-     with commands like this:
-</span>上のコードがファイル<code class="filename">funcs.c</code>に用意されていて、共有オブジェクトにコンパイルされているとしたら、以下のように<span class="productname">PostgreSQL</span>にコマンドで関数を定義できます。
+}</pre><p>上のコードがファイル<code class="filename">funcs.c</code>に用意されていて、共有オブジェクトにコンパイルされているとしたら、以下のように<span class="productname">PostgreSQL</span>にコマンドで関数を定義できます。
     </p><pre class="programlisting">CREATE FUNCTION add_one(integer) RETURNS integer
      AS '<em class="replaceable"><code>DIRECTORY</code></em>/funcs', 'add_one'
      LANGUAGE C STRICT;
-<span class="original">
-&amp;#45;- note overloading of SQL function name "add_one"
-</span>
+
 -- SQL関数名"add_one"のオーバーロードに注意
 CREATE FUNCTION add_one(double precision) RETURNS double precision
      AS '<em class="replaceable"><code>DIRECTORY</code></em>/funcs', 'add_one_float8'
@@ -548,82 +259,21 @@ CREATE FUNCTION copytext(text) RETURNS text
 
 CREATE FUNCTION concat_text(text, text) RETURNS text
      AS '<em class="replaceable"><code>DIRECTORY</code></em>/funcs', 'concat_text'
-     LANGUAGE C STRICT;</pre><p><span class="original">
-     Here, &lt;replaceable&gt;DIRECTORY&lt;/replaceable&gt; stands for the
-     directory of the shared library file (for instance the
-     &lt;productname&gt;PostgreSQL&lt;/productname&gt; tutorial directory, which
-     contains the code for the examples used in this section).
-     (Better style would be to use just &lt;literal&gt;'funcs'&lt;/&gt; in the
-     &lt;literal&gt;AS&lt;/&gt; clause, after having added
-     &lt;replaceable&gt;DIRECTORY&lt;/replaceable&gt; to the search path.  In any
-     case, we can omit the system-specific extension for a shared
-     library, commonly &lt;literal&gt;.so&lt;/literal&gt;.)
-</span>ここでは、<em class="replaceable"><code>DIRECTORY</code></em>は共有ライブラリファイルのディレクトリ(例えば<span class="productname">PostgreSQL</span>のチュートリアルのディレクトリ、そこにはこの節で使われている例のコードがあります)を表しています。
+     LANGUAGE C STRICT;</pre><p>ここでは、<em class="replaceable"><code>DIRECTORY</code></em>は共有ライブラリファイルのディレクトリ(例えば<span class="productname">PostgreSQL</span>のチュートリアルのディレクトリ、そこにはこの節で使われている例のコードがあります)を表しています。
 (<em class="replaceable"><code>DIRECTORY</code></em>を検索パスに追加した後に<code class="literal">AS</code>句で<code class="literal">'funcs'</code>だけを使うのがより良いやり方でしょう。
 どの場合でも、共有ライブラリを表すシステムに特有の拡張子、普通は<code class="literal">.so</code>を省略できます。)
-    </p><p><span class="original">
-     Notice that we have specified the functions as &lt;quote&gt;strict&lt;/quote&gt;,
-     meaning that
-     the system should automatically assume a null result if any input
-     value is null.  By doing this, we avoid having to check for null inputs
-     in the function code.  Without this, we'd have to check for null values
-     explicitly, using &lt;function&gt;PG_ARGISNULL()&lt;/function&gt;.
-</span>関数を<span class="quote">「<span class="quote">strict</span>」</span>と指定したことに注意してください。これは入力値のいずれかがNULLだった場合、システムが自動的に結果をNULLと決めてしまうことを意味します。
+    </p><p>関数を<span class="quote">“<span class="quote">strict</span>”</span>と指定したことに注意してください。これは入力値のいずれかがNULLだった場合、システムが自動的に結果をNULLと決めてしまうことを意味します。
 こうすることで、関数のコード内でNULLの入力を確認しなければならないことを避けています。
 これがなければ、<code class="function">PG_ARGISNULL()</code>を使ってNULL値を明示的に確認しなければなりません。
-    </p><p><span class="original">
-     At first glance, the version-1 coding conventions might appear to be just
-     pointless obscurantism, over using plain &lt;literal&gt;C&lt;/&gt; calling
-     conventions.  They do however allow to deal with &lt;literal&gt;NULL&lt;/&gt;able
-     arguments/return values, and &lt;quote&gt;toasted&lt;/quote&gt; (compressed or
-     out-of-line) values.
-</span>一見、Version-1のコーディング規約は無意味なもの、普通の<code class="literal">C</code>の呼出し規約の使い過ぎに見えるかもしれません。
-しかし、<code class="literal">NULL</code>になりうる引数や戻り値、<span class="quote">「<span class="quote">TOASTされた</span>」</span>（圧縮または行外）値を扱うことができます。
-    </p><p><span class="original">
-     The macro &lt;function&gt;PG_ARGISNULL(&lt;replaceable&gt;n&lt;/&gt;)&lt;/function&gt;
-     allows a function to test whether each input is null.  (Of course, doing
-     this is only necessary in functions not declared &lt;quote&gt;strict&lt;/&gt;.)
-     As with the
-     &lt;function&gt;PG_GETARG_&lt;replaceable&gt;xxx&lt;/replaceable&gt;()&lt;/function&gt; macros,
-     the input arguments are counted beginning at zero.  Note that one
-     should refrain from executing
-     &lt;function&gt;PG_GETARG_&lt;replaceable&gt;xxx&lt;/replaceable&gt;()&lt;/function&gt; until
-     one has verified that the argument isn't null.
-     To return a null result, execute &lt;function&gt;PG_RETURN_NULL()&lt;/function&gt;;
-     this works in both strict and nonstrict functions.
-</span><code class="function">PG_ARGISNULL(<em class="replaceable"><code>n</code></em>)</code>マクロにより関数は各入力がNULLであるかどうかの検査を行うことができます。
-（もちろんこれは、<span class="quote">「<span class="quote">厳密</span>」</span>と宣言されていない関数でのみ必要です。）
+    </p><p>一見、Version-1のコーディング規約は無意味なもの、普通の<code class="literal">C</code>の呼出し規約の使い過ぎに見えるかもしれません。
+しかし、<code class="literal">NULL</code>になりうる引数や戻り値、<span class="quote">“<span class="quote">TOASTされた</span>”</span>（圧縮または行外）値を扱うことができます。
+    </p><p><code class="function">PG_ARGISNULL(<em class="replaceable"><code>n</code></em>)</code>マクロにより関数は各入力がNULLであるかどうかの検査を行うことができます。
+（もちろんこれは、<span class="quote">“<span class="quote">厳密</span>”</span>と宣言されていない関数でのみ必要です。）
 <code class="function">PG_GETARG_<em class="replaceable"><code>xxx</code></em>()</code>マクロと同様、入力引数の番号はゼロから始まります。
 引数がNULLでないことを確認するまでは、<code class="function">PG_GETARG_<em class="replaceable"><code>xxx</code></em>()</code>の実行は控えなければなりません。
 結果としてNULLを返す場合は、<code class="function">PG_RETURN_NULL()</code>を実行します。
 これは、厳密な関数と厳密でない関数の両方で使用可能です。
-    </p><p><span class="original">
-     Other options provided by the version-1 interface are two
-     variants of the
-     &lt;function&gt;PG_GETARG_&lt;replaceable&gt;xxx&lt;/replaceable&gt;()&lt;/function&gt;
-     macros. The first of these,
-     &lt;function&gt;PG_GETARG_&lt;replaceable&gt;xxx&lt;/replaceable&gt;_COPY()&lt;/function&gt;,
-     guarantees to return a copy of the specified argument that is
-     safe for writing into. (The normal macros will sometimes return a
-     pointer to a value that is physically stored in a table, which
-     must not be written to. Using the
-     &lt;function&gt;PG_GETARG_&lt;replaceable&gt;xxx&lt;/replaceable&gt;_COPY()&lt;/function&gt;
-     macros guarantees a writable result.)
-    The second variant consists of the
-    &lt;function&gt;PG_GETARG_&lt;replaceable&gt;xxx&lt;/replaceable&gt;_SLICE()&lt;/function&gt;
-    macros which take three arguments. The first is the number of the
-    function argument (as above). The second and third are the offset and
-    length of the segment to be returned. Offsets are counted from
-    zero, and a negative length requests that the remainder of the
-    value be returned. These macros provide more efficient access to
-    parts of large values in the case where they have storage type
-    &lt;quote&gt;external&lt;/quote&gt;. (The storage type of a column can be specified using
-    &lt;literal&gt;ALTER TABLE &lt;replaceable&gt;tablename&lt;/replaceable&gt; ALTER
-    COLUMN &lt;replaceable&gt;colname&lt;/replaceable&gt; SET STORAGE
-    &lt;replaceable&gt;storagetype&lt;/replaceable&gt;&lt;/literal&gt;. &lt;replaceable&gt;storagetype&lt;/replaceable&gt; is one of
-    &lt;literal&gt;plain&lt;/&gt;, &lt;literal&gt;external&lt;/&gt;, &lt;literal&gt;extended&lt;/literal&gt;,
-     or &lt;literal&gt;main&lt;/&gt;.)
-</span>Version 1のインタフェースでは、その他のオプションとして<code class="function">PG_GETARG_<em class="replaceable"><code>xxx</code></em>()</code>マクロの変形を2つ提供しています。
+    </p><p>Version 1のインタフェースでは、その他のオプションとして<code class="function">PG_GETARG_<em class="replaceable"><code>xxx</code></em>()</code>マクロの変形を2つ提供しています。
 1つ目の<code class="function">PG_GETARG_<em class="replaceable"><code>xxx</code></em>_COPY()</code>によって、安全に書き込むことができる指定引数のコピーが確実に返されます。
 （通常のマクロは、物理的にテーブルに格納されている値へのポインタを返すことがあるので、書き込んではなりません。
 <code class="function">PG_GETARG_<em class="replaceable"><code>xxx</code></em>_COPY()</code>マクロの結果は書き込み可能であることが保証されています。）
@@ -631,359 +281,129 @@ CREATE FUNCTION concat_text(text, text) RETURNS text
 1つ目は関数の引数の番号（上記の通り）です。
 2つ目と3つ目は、オフセットと返されるセグメントの長さです。
 オフセットはゼロから始まり、負の長さは残りの値を返すことを要求します。
-これらのマクロを使用すると、ストレージ種類が<span class="quote">「<span class="quote">external</span>」</span>（外部）である大きな値の一部へアクセスする際に非常に効果的です。
+これらのマクロを使用すると、ストレージ種類が<span class="quote">“<span class="quote">external</span>”</span>（外部）である大きな値の一部へアクセスする際に非常に効果的です。
 （列のストレージ種類は<code class="literal">ALTER TABLE <em class="replaceable"><code>tablename</code></em> ALTER COLUMN <em class="replaceable"><code>colname</code></em> SET STORAGE <em class="replaceable"><code>storagetype</code></em></code>を使用して指定できます。
 <em class="replaceable"><code>storagetype</code></em>は、<code class="literal">plain</code>、<code class="literal">external</code>、<code class="literal">extended</code>、または<code class="literal">main</code>のいずれかです。）
-    </p><p><span class="original">
-     Finally, the version-1 function call conventions make it possible
-     to return set results (&lt;xref linkend="xfunc-c-return-set"&gt;) and
-     implement trigger functions (&lt;xref linkend="triggers"&gt;) and
-     procedural-language call handlers (&lt;xref
-     linkend="plhandler"&gt;).  For more details
-     see &lt;filename&gt;src/backend/utils/fmgr/README&lt;/filename&gt; in the
-     source distribution.
-</span>最後に、Version-1関数呼び出し規約では、結果集合（<a class="xref" href="xfunc-c.html#XFUNC-C-RETURN-SET" title="37.9.8. 集合を返す">37.9.8</a>）を返すこと、およびトリガ関数（<a class="xref" href="triggers.html" title="第38章 トリガ">第38章</a>）と手続型言語の呼び出しハンドラ（<a class="xref" href="plhandler.html" title="第55章 手続き言語ハンドラの作成">第55章</a>）を実装することができます。
+    </p><p>最後に、Version-1関数呼び出し規約では、結果集合（<a class="xref" href="xfunc-c.html#XFUNC-C-RETURN-SET" title="37.9.8. 集合を返す">Section 37.9.8</a>）を返すこと、およびトリガ関数（<a class="xref" href="triggers.html" title="Chapter 38. トリガ">Chapter 38</a>）と手続型言語の呼び出しハンドラ（<a class="xref" href="plhandler.html" title="Chapter 55. 手続き言語ハンドラの作成">Chapter 55</a>）を実装することができます。
 詳細についてはソース配布物内の<code class="filename">src/backend/utils/fmgr/README</code>を参照してください。
-    </p></div><div class="sect2" id="id-1.8.3.12.8"><div class="titlepage"><div><div><h3 class="title">37.9.4. コードの作成</h3></div></div></div><span class="original">
-    &lt;title&gt;Writing Code&lt;/title&gt;
-</span><p><span class="original">
-     Before we turn to the more advanced topics, we should discuss
-     some coding rules for &lt;productname&gt;PostgreSQL&lt;/productname&gt;
-     C-language functions.  While it might be possible to load functions
-     written in languages other than C into
-     &lt;productname&gt;PostgreSQL&lt;/productname&gt;, this is usually difficult
-     (when it is possible at all) because other languages, such as
-     C++, FORTRAN, or Pascal often do not follow the same calling
-     convention as C.  That is, other languages do not pass argument
-     and return values between functions in the same way.  For this
-     reason, we will assume that your C-language functions are
-     actually written in C.
-</span>より先進的な話題に入る前に、<span class="productname">PostgreSQL</span> C言語関数のコーディングについての規則をいくつか説明します。
+    </p></div><div class="sect2" id="id-1.8.3.12.8"><div class="titlepage"><div><div><h3 class="title">37.9.4. コードの作成</h3></div></div></div><p>より先進的な話題に入る前に、<span class="productname">PostgreSQL</span> C言語関数のコーディングについての規則をいくつか説明します。
 C言語以外の言語で記述した関数を<span class="productname">PostgreSQL</span>に組み込みむことは可能であるかもしれませんが、例えばC++、FORTRANやPascalといった言語はC言語と同じ呼び出し規約に従いませんので、多くの場合、（可能であったとしても）困難です。
 それはつまり、他の言語では同じ方法で関数に引数を渡したり、関数から結果を返すことを行わないということです。
 このため、C言語関数は実際にC言語で書かれているものと仮定します。
-    </p><p><span class="original">
-     The basic rules for writing and building C functions are as follows:
-</span>C関数の作成と構築の基本規則を以下に示します。
+    </p><p>C関数の作成と構築の基本規則を以下に示します。
 
-     </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p><span class="original">
-        Use &lt;literal&gt;pg_config
-        &amp;#045;&amp;#045;includedir-server&lt;/literal&gt;&lt;indexterm&gt;&lt;primary&gt;pg_config&lt;/&gt;&lt;secondary&gt;with user-defined C functions&lt;/&gt;&lt;/&gt;
-        to find out where the &lt;productname&gt;PostgreSQL&lt;/&gt; server header
-        files are installed on your system (or the system that your
-        users will be running on).
-</span><code class="literal">pg_config --includedir-server</code>を使用して、使用中のシステム（もしくはユーザが実行するシステム）にて<span class="productname">PostgreSQL</span>サーバのヘッダファイルがインストールされた場所を見つけます。
+     </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p><code class="literal">pg_config --includedir-server</code>を使用して、使用中のシステム（もしくはユーザが実行するシステム）にて<span class="productname">PostgreSQL</span>サーバのヘッダファイルがインストールされた場所を見つけます。
 <a id="id-1.8.3.12.8.3.1.1.1.3" class="indexterm"></a>
-       </p></li><li class="listitem"><p><span class="original">
-        Compiling and linking your code so that it can be dynamically
-        loaded into &lt;productname&gt;PostgreSQL&lt;/productname&gt; always
-        requires special flags.  See &lt;xref linkend="dfunc"&gt; for a
-        detailed explanation of how to do it for your particular
-        operating system.
-</span><span class="productname">PostgreSQL</span>に動的にロードできるように独自コードをコンパイル/リンクする時には常に、特別なフラグが必要となります。
-特定のオペレーティングシステムにおけるコンパイル/リンク方法については<a class="xref" href="xfunc-c.html#DFUNC" title="37.9.5. 動的にロードされる関数のコンパイルとリンク">37.9.5</a>を参照してください。
-       </p></li><li class="listitem"><p><span class="original">
-        Remember to define a &lt;quote&gt;magic block&lt;/&gt; for your shared library,
-        as described in &lt;xref linkend="xfunc-c-dynload"&gt;.
-</span>忘れずに<a class="xref" href="xfunc-c.html#XFUNC-C-DYNLOAD" title="37.9.1. 動的ロード">37.9.1</a>で説明した<span class="quote">「<span class="quote">マジックブロック</span>」</span>を共有ライブラリで定義してください。
-       </p></li><li class="listitem"><p><span class="original">
-        When allocating memory, use the
-        &lt;productname&gt;PostgreSQL&lt;/productname&gt; functions
-        &lt;function&gt;palloc&lt;/function&gt;&lt;indexterm&gt;&lt;primary&gt;palloc&lt;/&gt;&lt;/&gt; and &lt;function&gt;pfree&lt;/function&gt;&lt;indexterm&gt;&lt;primary&gt;pfree&lt;/&gt;&lt;/&gt;
-        instead of the corresponding C library functions
-        &lt;function&gt;malloc&lt;/function&gt; and &lt;function&gt;free&lt;/function&gt;.
-        The memory allocated by &lt;function&gt;palloc&lt;/function&gt; will be
-        freed automatically at the end of each transaction, preventing
-        memory leaks.
-</span>メモリを割り当てる際、Cライブラリの<code class="function">malloc</code>と<code class="function">free</code>ではなく、<span class="productname">PostgreSQL</span>の<code class="function">palloc</code>と<code class="function">pfree</code>を使用してください。
+       </p></li><li class="listitem"><p><span class="productname">PostgreSQL</span>に動的にロードできるように独自コードをコンパイル/リンクする時には常に、特別なフラグが必要となります。
+特定のオペレーティングシステムにおけるコンパイル/リンク方法については<a class="xref" href="xfunc-c.html#DFUNC" title="37.9.5. 動的にロードされる関数のコンパイルとリンク">Section 37.9.5</a>を参照してください。
+       </p></li><li class="listitem"><p>忘れずに<a class="xref" href="xfunc-c.html#XFUNC-C-DYNLOAD" title="37.9.1. 動的ロード">Section 37.9.1</a>で説明した<span class="quote">“<span class="quote">マジックブロック</span>”</span>を共有ライブラリで定義してください。
+       </p></li><li class="listitem"><p>メモリを割り当てる際、Cライブラリの<code class="function">malloc</code>と<code class="function">free</code>ではなく、<span class="productname">PostgreSQL</span>の<code class="function">palloc</code>と<code class="function">pfree</code>を使用してください。
 <a id="id-1.8.3.12.8.3.1.4.1.6" class="indexterm"></a><a id="id-1.8.3.12.8.3.1.4.1.7" class="indexterm"></a>
 <code class="function">palloc</code>で割り当てられたメモリは各トランザクションの終わりに自動的に解放され、メモリリークを防ぎます。
-       </p></li><li class="listitem"><p><span class="original">
-        Always zero the bytes of your structures using &lt;function&gt;memset&lt;/&gt;
-        (or allocate them with &lt;function&gt;palloc0&lt;/&gt; in the first place).
-        Even if you assign to each field of your structure, there might be
-        alignment padding (holes in the structure) that contain
-        garbage values.  Without this, it's difficult to
-        support hash indexes or hash joins, as you must pick out only
-        the significant bits of your data structure to compute a hash.
-        The planner also sometimes relies on comparing constants via
-        bitwise equality, so you can get undesirable planning results if
-        logically-equivalent values aren't bitwise equal.
-</span><code class="function">memset</code>を使用して、構造体を必ずゼロクリアしてください（または最初の段階で<code class="function">palloc0</code>を用いて割り当ててください）。
+       </p></li><li class="listitem"><p><code class="function">memset</code>を使用して、構造体を必ずゼロクリアしてください（または最初の段階で<code class="function">palloc0</code>を用いて割り当ててください）。
 構造体の各フィールドを割り当てたとしても、ゴミの値を持つ整列用のパディング（構造体内の穴）があるかもしれません。
 こうしないと、ハッシュインデックスやハッシュ結合をサポートすることが困難です。
 ハッシュを計算するには、データ構造体内の有意なビットのみを取り出す必要があるためです。
 プランナはまた時折ビット単位の等価性を用いて定数の比較を行います。
 このため論理的にな値がビット単位で等価でない場合に望まない計画になってしまう可能性があります。
-       </p></li><li class="listitem"><p><span class="original">
-        Most of the internal &lt;productname&gt;PostgreSQL&lt;/productname&gt;
-        types are declared in &lt;filename&gt;postgres.h&lt;/filename&gt;, while
-        the function manager interfaces
-        (&lt;symbol&gt;PG_FUNCTION_ARGS&lt;/symbol&gt;, etc.)  are in
-        &lt;filename&gt;fmgr.h&lt;/filename&gt;, so you will need to include at
-        least these two files.  For portability reasons it's best to
-        include &lt;filename&gt;postgres.h&lt;/filename&gt; &lt;emphasis&gt;first&lt;/&gt;,
-        before any other system or user header files.  Including
-        &lt;filename&gt;postgres.h&lt;/filename&gt; will also include
-        &lt;filename&gt;elog.h&lt;/filename&gt; and &lt;filename&gt;palloc.h&lt;/filename&gt;
-        for you.
-</span>ほとんどの<span class="productname">PostgreSQL</span>の内部型は<code class="filename">postgres.h</code>に宣言されています。
+       </p></li><li class="listitem"><p>ほとんどの<span class="productname">PostgreSQL</span>の内部型は<code class="filename">postgres.h</code>に宣言されています。
 一方、関数管理インタフェース（<code class="symbol">PG_FUNCTION_ARGS</code>など）は<code class="filename">fmgr.h</code>で宣言されています。
 したがって、少なくともこの2つのファイルをインクルードする必要があります。
 移植性に関する理由により、<code class="filename">postgres.h</code>をその他のシステムヘッダファイル、ユーザヘッダファイルよりも<span class="emphasis"><em>先に</em></span>インクルードしておくことが最善です。
 <code class="filename">postgres.h</code>をインクルードすることは<code class="filename">elog.h</code>、<code class="filename">palloc.h</code>もインクルードすることになります。
-       </p></li><li class="listitem"><p><span class="original">
-        Symbol names defined within object files must not conflict
-        with each other or with symbols defined in the
-        &lt;productname&gt;PostgreSQL&lt;/productname&gt; server executable.  You
-        will have to rename your functions or variables if you get
-        error messages to this effect.
-</span>オブジェクトファイルで定義されているシンボル名は、互いに、または<span class="productname">PostgreSQL</span>サーバの実行ファイルで定義されているものと異なっている必要があります。
+       </p></li><li class="listitem"><p>オブジェクトファイルで定義されているシンボル名は、互いに、または<span class="productname">PostgreSQL</span>サーバの実行ファイルで定義されているものと異なっている必要があります。
 これに関するエラーが表示される場合は、関数名または変数名を変更する必要があります。
        </p></li></ul></div><p>
-    </p></div><span class="original"> doc/src/sgml/dfunc.sgml </span><div class="sect2" id="DFUNC"><div class="titlepage"><div><div><h3 class="title">37.9.5. 動的にロードされる関数のコンパイルとリンク</h3></div></div></div><span class="original">
- &lt;title&gt;Compiling and Linking Dynamically-loaded Functions&lt;/title&gt;
-</span><p><span class="original">
-  Before you are able to use your
-  &lt;productname&gt;PostgreSQL&lt;/productname&gt; extension functions written in
-  C, they must be compiled and linked in a special way to produce a
-  file that can be dynamically loaded by the server.  To be precise, a
-  &lt;firstterm&gt;shared library&lt;/firstterm&gt; needs to be
-  created.&lt;indexterm&gt;&lt;primary&gt;shared library&lt;/&gt;&lt;/indexterm&gt;
-</span>Cで書かれた<span class="productname">PostgreSQL</span>の拡張関数を使うためには、サーバが動的にロードできるように特別な方法でコンパイルとリンクを行う必要があります。
+    </p></div><div class="sect2" id="DFUNC"><div class="titlepage"><div><div><h3 class="title">37.9.5. 動的にロードされる関数のコンパイルとリンク</h3></div></div></div><p>Cで書かれた<span class="productname">PostgreSQL</span>の拡張関数を使うためには、サーバが動的にロードできるように特別な方法でコンパイルとリンクを行う必要があります。
 正確には<em class="firstterm">共有ライブラリ</em>を作る必要があります。
 <a id="id-1.8.3.12.9.2.3" class="indexterm"></a>
 
- </p><p><span class="original">
-  For information beyond what is contained in this section
-  you should read the documentation of your
-  operating system, in particular the manual pages for the C compiler,
-  &lt;command&gt;cc&lt;/command&gt;, and the link editor, &lt;command&gt;ld&lt;/command&gt;.
-  In addition, the &lt;productname&gt;PostgreSQL&lt;/productname&gt; source code
-  contains several working examples in the
-  &lt;filename&gt;contrib&lt;/filename&gt; directory.  If you rely on these
-  examples you will make your modules dependent on the availability
-  of the &lt;productname&gt;PostgreSQL&lt;/productname&gt; source code, however.
-</span>本節の説明以上の詳しい情報はオペレーティングシステムのドキュメント、特にCコンパイラ<code class="command">cc</code>とリンクエディタ<code class="command">ld</code>のマニュアルページを参照してください。
+ </p><p>本節の説明以上の詳しい情報はオペレーティングシステムのドキュメント、特にCコンパイラ<code class="command">cc</code>とリンクエディタ<code class="command">ld</code>のマニュアルページを参照してください。
 さらに、<span class="productname">PostgreSQL</span>のソースコードの<code class="filename">contrib</code>ディレクトリにいくつか実例があります。
 しかし、もしこれらの例に頼ると<span class="productname">PostgreSQL</span>ソースコードが利用できることに依存したモジュールが作られてしまいます。
- </p><p><span class="original">
-  Creating shared libraries is generally analogous to linking
-  executables: first the source files are compiled into object files,
-  then the object files are linked together.  The object files need to
-  be created as &lt;firstterm&gt;position-independent code&lt;/firstterm&gt;
-  (&lt;acronym&gt;PIC&lt;/acronym&gt;),&lt;indexterm&gt;&lt;primary&gt;PIC&lt;/&gt;&lt;/&gt; which
-  conceptually means that they can be placed at an arbitrary location
-  in memory when they are loaded by the executable.  (Object files
-  intended for executables are usually not compiled that way.)  The
-  command to link a shared library contains special flags to
-  distinguish it from linking an executable (at least in theory
-  &amp;mdash; on some systems the practice is much uglier).
-</span>共有ライブラリの作成は一般的に実行プログラムのリンクに類似しています。
+ </p><p>共有ライブラリの作成は一般的に実行プログラムのリンクに類似しています。
 まずソースファイルがオブジェクトファイルにコンパイルされ、そのオブジェクトファイル同士がリンクされます。
 これらのオブジェクトファイルは<em class="firstterm">位置独立なコード</em>（<acronym class="acronym">PIC</acronym>）として作られる必要があります。
 <a id="id-1.8.3.12.9.4.3" class="indexterm"></a>
 それは概念的には、実行プログラムから呼び出される時にメモリの適当な場所に置くことができるということです
 （実行プログラム用として作られたオブジェクトファイルはそのようにはコンパイルされません）。
 共有ライブラリをリンクするコマンドは実行プログラムのリンクと区別するための特別なフラグがあります（少なくとも理論上ではそのようになっています。システムによってはもっと醜い実際が見受けられます)。
- </p><p><span class="original">
-  In the following examples we assume that your source code is in a
-  file &lt;filename&gt;foo.c&lt;/filename&gt; and we will create a shared library
-  &lt;filename&gt;foo.so&lt;/filename&gt;.  The intermediate object file will be
-  called &lt;filename&gt;foo.o&lt;/filename&gt; unless otherwise noted.  A shared
-  library can contain more than one object file, but we only use one
-  here.
-</span>次の例ではソースコードは<code class="filename">foo.c</code>ファイルにあると仮定し、<code class="filename">foo.so</code>という共有ライブラリを作るとします。
+ </p><p>次の例ではソースコードは<code class="filename">foo.c</code>ファイルにあると仮定し、<code class="filename">foo.so</code>という共有ライブラリを作るとします。
 中間のオブジェクトファイルは特別な記述がない限り<code class="filename">foo.o</code>と呼ばれます。
 共有ライブラリは1つ以上のオブジェクトファイルを持つことができますが、ここでは1つしか使いません。
- </p><span class="original"> 原文コメント
-  Note: Reading GNU Libtool sources is generally a good way of
-  figuring out this information.  The methods used within PostgreSQL
-  source code are not necessarily ideal.
-</span><div class="variablelist"><dl class="variablelist"><dt><span class="term">     <span class="systemitem">FreeBSD</span><span class="original">
-     &lt;indexterm&gt;&lt;primary&gt;FreeBSD&lt;/&gt;&lt;secondary&gt;shared library&lt;/&gt;&lt;/&gt;
-</span>
+ </p><div class="variablelist"><dl class="variablelist"><dt><span class="term">     <span class="systemitem">FreeBSD</span>
      <a id="id-1.8.3.12.9.6.1.1.2" class="indexterm"></a>
-    </span></dt><dd><p><span class="original">
-      The compiler flag to create &lt;acronym&gt;PIC&lt;/acronym&gt; is
-      &lt;option&gt;-fPIC&lt;/option&gt;.  To create shared libraries the compiler
-      flag is &lt;option&gt;-shared&lt;/option&gt;.
-</span><acronym class="acronym">PIC</acronym>を作るためのコンパイラフラグは<code class="option">-fPIC</code>です。
+    </span></dt><dd><p><acronym class="acronym">PIC</acronym>を作るためのコンパイラフラグは<code class="option">-fPIC</code>です。
 共有ライブラリを作るコンパイラフラグは<code class="option">-shared</code>です。
 </p><pre class="programlisting">gcc -fPIC -c foo.c
-gcc -shared -o foo.so foo.o</pre><p><span class="original">
-      This is applicable as of version 3.0 of
-      &lt;systemitem class="osname"&gt;FreeBSD&lt;/&gt;.
-</span>
+gcc -shared -o foo.so foo.o</pre><p>
 これは<span class="systemitem">FreeBSD</span>のバージョン3.0に適用されます。
-     </p></dd><dt><span class="term">     <span class="systemitem">HP-UX</span><span class="original">
-     &lt;indexterm&gt;&lt;primary&gt;HP-UX&lt;/&gt;&lt;secondary&gt;shared library&lt;/&gt;&lt;/&gt;
-</span>
+     </p></dd><dt><span class="term">     <span class="systemitem">HP-UX</span>
      <a id="id-1.8.3.12.9.6.2.1.2" class="indexterm"></a>
-    </span></dt><dd><p><span class="original">
-      The compiler flag of the system compiler to create
-      &lt;acronym&gt;PIC&lt;/acronym&gt; is &lt;option&gt;+z&lt;/option&gt;.  When using
-      &lt;application&gt;GCC&lt;/application&gt; it's &lt;option&gt;-fPIC&lt;/option&gt;. The
-      linker flag for shared libraries is &lt;option&gt;-b&lt;/option&gt;.  So:
-</span><acronym class="acronym">PIC</acronym>を作るためのシステムコンパイラのコンパイラフラグは<code class="option">+z</code>です。
+    </span></dt><dd><p><acronym class="acronym">PIC</acronym>を作るためのシステムコンパイラのコンパイラフラグは<code class="option">+z</code>です。
 <span class="application">GCC</span>を使う場合は<code class="option">-fPIC</code>です。
 共有ライブラリのためのリンカフラグは<code class="option">-b</code>です。
 したがって、以下のようになります。
-</p><pre class="programlisting">cc +z -c foo.c</pre><p><span class="original">
-      or:
-</span>
+</p><pre class="programlisting">cc +z -c foo.c</pre><p>
 または
-</p><pre class="programlisting">gcc -fPIC -c foo.c</pre><p><span class="original">
-      and then:
-</span>
+</p><pre class="programlisting">gcc -fPIC -c foo.c</pre><p>
 そして
-</p><pre class="programlisting">ld -b -o foo.sl foo.o</pre><p><span class="original">
-      &lt;systemitem class="osname"&gt;HP-UX&lt;/&gt; uses the extension
-      &lt;filename&gt;.sl&lt;/filename&gt; for shared libraries, unlike most other
-      systems.
-</span>
+</p><pre class="programlisting">ld -b -o foo.sl foo.o</pre><p>
 <span class="systemitem">HP-UX</span>は他のほとんどのシステムと異なり共有ライブラリに<code class="filename">.sl</code>という拡張子を使います。
-     </p></dd><dt><span class="term">     <span class="systemitem">Linux</span><span class="original">
-     &lt;indexterm&gt;&lt;primary&gt;Linux&lt;/&gt;&lt;secondary&gt;shared library&lt;/&gt;&lt;/&gt;
-</span>
+     </p></dd><dt><span class="term">     <span class="systemitem">Linux</span>
      <a id="id-1.8.3.12.9.6.3.1.2" class="indexterm"></a>
-    </span></dt><dd><p><span class="original">
-      The compiler flag to create &lt;acronym&gt;PIC&lt;/acronym&gt; is
-      &lt;option&gt;-fPIC&lt;/option&gt;.
-      The compiler flag to create a shared library is
-      &lt;option&gt;-shared&lt;/option&gt;.  A complete example looks like this:
-</span><acronym class="acronym">PIC</acronym>を作るためのコンパイラフラグは<code class="option">-fPIC</code>です。
+    </span></dt><dd><p><acronym class="acronym">PIC</acronym>を作るためのコンパイラフラグは<code class="option">-fPIC</code>です。
 共有ライブラリを作るコンパイラフラグは<code class="option">-shared</code>です。
 完全な例は下記のようになります。
 </p><pre class="programlisting">cc -fPIC -c foo.c
 cc -shared -o foo.so foo.o</pre><p>
-     </p></dd><dt><span class="term">     <span class="systemitem">macOS</span><span class="original">
-     &lt;indexterm&gt;&lt;primary&gt;macOS&lt;/&gt;&lt;secondary&gt;shared library&lt;/&gt;&lt;/&gt;
-</span>
+     </p></dd><dt><span class="term">     <span class="systemitem">macOS</span>
      <a id="id-1.8.3.12.9.6.4.1.2" class="indexterm"></a>
-    </span></dt><dd><p><span class="original">
-      Here is an example.  It assumes the developer tools are installed.
-</span>例を以下に示します。
+    </span></dt><dd><p>例を以下に示します。
 開発者用ツールがインストールされていることが前提です。
 </p><pre class="programlisting">cc -c foo.c
 cc -bundle -flat_namespace -undefined suppress -o foo.so foo.o</pre><p>
-     </p></dd><dt><span class="term">     <span class="systemitem">NetBSD</span><span class="original">
-     &lt;indexterm&gt;&lt;primary&gt;NetBSD&lt;/&gt;&lt;secondary&gt;shared library&lt;/&gt;&lt;/&gt;
-</span>
+     </p></dd><dt><span class="term">     <span class="systemitem">NetBSD</span>
      <a id="id-1.8.3.12.9.6.5.1.2" class="indexterm"></a>
-    </span></dt><dd><p><span class="original">
-      The compiler flag to create &lt;acronym&gt;PIC&lt;/acronym&gt; is
-      &lt;option&gt;-fPIC&lt;/option&gt;.  For &lt;acronym&gt;ELF&lt;/acronym&gt; systems, the
-      compiler with the flag &lt;option&gt;-shared&lt;/option&gt; is used to link
-      shared libraries.  On the older non-ELF systems, &lt;literal&gt;ld
-      -Bshareable&lt;/literal&gt; is used.
-</span><acronym class="acronym">PIC</acronym>を作るためのコンパイラフラグは<code class="option">-fPIC</code>です。
+    </span></dt><dd><p><acronym class="acronym">PIC</acronym>を作るためのコンパイラフラグは<code class="option">-fPIC</code>です。
 <acronym class="acronym">ELF</acronym>システムでは<code class="option">-shared</code>コンパイラフラグを使用して共有ライブラリをリンクします。
 より古い非ELFシステムでは<code class="literal">ld -Bshareable</code>が使われます。
 </p><pre class="programlisting">gcc -fPIC -c foo.c
 gcc -shared -o foo.so foo.o</pre><p>
-     </p></dd><dt><span class="term">     <span class="systemitem">OpenBSD</span><span class="original">
-     &lt;indexterm&gt;&lt;primary&gt;OpenBSD&lt;/&gt;&lt;secondary&gt;shared library&lt;/&gt;&lt;/&gt;
-</span>
+     </p></dd><dt><span class="term">     <span class="systemitem">OpenBSD</span>
      <a id="id-1.8.3.12.9.6.6.1.2" class="indexterm"></a>
-    </span></dt><dd><p><span class="original">
-      The compiler flag to create &lt;acronym&gt;PIC&lt;/acronym&gt; is
-      &lt;option&gt;-fPIC&lt;/option&gt;.  &lt;literal&gt;ld -Bshareable&lt;/literal&gt; is
-      used to link shared libraries.
-</span><acronym class="acronym">PIC</acronym>を作成するためのコンパイラフラグは<code class="option">-fPIC</code>です。
+    </span></dt><dd><p><acronym class="acronym">PIC</acronym>を作成するためのコンパイラフラグは<code class="option">-fPIC</code>です。
 共有ライブラリをリンクするには<code class="literal">ld -Bshareable</code>を使用します。
 </p><pre class="programlisting">gcc -fPIC -c foo.c
 ld -Bshareable -o foo.so foo.o</pre><p>
-     </p></dd><dt><span class="term">     <span class="systemitem">Solaris</span><span class="original">
-     &lt;indexterm&gt;&lt;primary&gt;Solaris&lt;/&gt;&lt;secondary&gt;shared library&lt;/&gt;&lt;/&gt;
-</span>
+     </p></dd><dt><span class="term">     <span class="systemitem">Solaris</span>
      <a id="id-1.8.3.12.9.6.7.1.2" class="indexterm"></a>
-    </span></dt><dd><p><span class="original">
-      The compiler flag to create &lt;acronym&gt;PIC&lt;/acronym&gt; is
-      &lt;option&gt;-KPIC&lt;/option&gt; with the Sun compiler and
-      &lt;option&gt;-fPIC&lt;/option&gt; with &lt;application&gt;GCC&lt;/&gt;.  To
-      link shared libraries, the compiler option is
-      &lt;option&gt;-G&lt;/option&gt; with either compiler or alternatively
-      &lt;option&gt;-shared&lt;/option&gt; with &lt;application&gt;GCC&lt;/&gt;.
-</span><acronym class="acronym">PIC</acronym>を作るためのコンパイラフラグはSunコンパイラでは<code class="option">-KPIC</code>で、<span class="application">GCC</span>では<code class="option">-fPIC</code>です。
+    </span></dt><dd><p><acronym class="acronym">PIC</acronym>を作るためのコンパイラフラグはSunコンパイラでは<code class="option">-KPIC</code>で、<span class="application">GCC</span>では<code class="option">-fPIC</code>です。
 共有ライブラリをリンクするためには、どちらのコンパイラでもコンパイラオプションは<code class="option">-G</code>で、<span class="application">GCC</span>の場合、代わりに<code class="option">-shared</code>オプションを使うこともできます。
 </p><pre class="programlisting">cc -KPIC -c foo.c
-cc -G -o foo.so foo.o</pre><p><span class="original">
-      or
-</span>
+cc -G -o foo.so foo.o</pre><p>
 もしくは
 </p><pre class="programlisting">gcc -fPIC -c foo.c
 gcc -G -o foo.so foo.o</pre><p>
-     </p></dd></dl></div><div class="tip"><h3 class="title">ヒント</h3><p><span class="original">
-   If this is too complicated for you, you should consider using
-   &lt;ulink url="http://www.gnu.org/software/libtool/"&gt;
-   &lt;productname&gt;GNU Libtool&lt;/productname&gt;&lt;/ulink&gt;,
-   which hides the platform differences behind a uniform interface.
-</span>これがあまりに難しいようであれば、<a class="ulink" href="http://www.gnu.org/software/libtool/" target="_top"><span class="productname">GNU Libtool</span></a>の使用を検討すべきです。
+     </p></dd></dl></div><div class="tip"><h3 class="title">Tip</h3><p>これがあまりに難しいようであれば、<a class="ulink" href="http://www.gnu.org/software/libtool/" target="_top"><span class="productname">GNU Libtool</span></a>の使用を検討すべきです。
 これはプラットフォームの違いを、統一されたインタフェースで判らないようにします。
-  </p></div><p><span class="original">
-  The resulting shared library file can then be loaded into
-  &lt;productname&gt;PostgreSQL&lt;/productname&gt;.  When specifying the file name
-  to the &lt;command&gt;CREATE FUNCTION&lt;/command&gt; command, one must give it
-  the name of the shared library file, not the intermediate object file.
-  Note that the system's standard shared-library extension (usually
-  &lt;literal&gt;.so&lt;/literal&gt; or &lt;literal&gt;.sl&lt;/literal&gt;) can be omitted from
-  the &lt;command&gt;CREATE FUNCTION&lt;/command&gt; command, and normally should
-  be omitted for best portability.
-</span>これで完成した共有ライブラリファイルは<span class="productname">PostgreSQL</span>にロードすることができます。
+  </p></div><p>これで完成した共有ライブラリファイルは<span class="productname">PostgreSQL</span>にロードすることができます。
 <code class="command">CREATE FUNCTION</code>コマンドにファイル名を指定する時には、中間オブジェクトファイルではなく共有ライブラリファイルの名前を与えてください。
 システムの標準共有ライブラリ用の拡張子（通常<code class="literal">.so</code>あるいは<code class="literal">.sl</code>）は<code class="command">CREATE FUNCTION</code>で省略することができ、そして移植性を最も高くするため通常は省略されます。
- </p><p><span class="original">
-  Refer back to &lt;xref linkend="xfunc-c-dynload"&gt; about where the
-  server expects to find the shared library files.
-</span>サーバがライブラリファイルをどこに見つけるかに関しては<a class="xref" href="xfunc-c.html#XFUNC-C-DYNLOAD" title="37.9.1. 動的ロード">37.9.1</a>を見直してください。
- </p><span class="original"> 原文コメント
-Under AIX, object files are compiled normally but building the shared
-library requires a couple of steps.  First, create the object file:
-.nf
-cc &lt;other flags&gt; -c foo.c
-.fi
-You must then create a symbol \*(lqexports\*(rq file for the object
-file:
-.nf
-mkldexport foo.o `pwd` &amp;gt; foo.exp
-.fi
-Finally, you can create the shared library:
-.nf
-ld &lt;other flags&gt; -H512 -T512 -o foo.so -e _nostart \e
-   -bI:.../lib/postgres.exp -bE:foo.exp foo.o \e
-   -lm -lc 2&gt;/dev/null
-.fi
-  </span></div><div class="sect2" id="id-1.8.3.12.10"><div class="titlepage"><div><div><h3 class="title">37.9.6. 複合型引数</h3></div></div></div><span class="original">
-    &lt;title&gt;Composite-type Arguments&lt;/title&gt;
-</span><p><span class="original">
-     Composite types do not have a fixed layout like C structures.
-     Instances of a composite type can contain null fields.  In
-     addition, composite types that are part of an inheritance
-     hierarchy can have different fields than other members of the
-     same inheritance hierarchy.  Therefore,
-     &lt;productname&gt;PostgreSQL&lt;/productname&gt; provides a function
-     interface for accessing fields of composite types from C.
-</span>複合型ではCの構造体のような固定のレイアウトがありません。
+ </p><p>サーバがライブラリファイルをどこに見つけるかに関しては<a class="xref" href="xfunc-c.html#XFUNC-C-DYNLOAD" title="37.9.1. 動的ロード">Section 37.9.1</a>を見直してください。
+ </p></div><div class="sect2" id="id-1.8.3.12.10"><div class="titlepage"><div><div><h3 class="title">37.9.6. 複合型引数</h3></div></div></div><p>複合型ではCの構造体のような固定のレイアウトがありません。
 複合型のインスタンスはNULLフィールドを持つことができます。
 さらに、複合型で継承階層の一部であるものは、同じ継承階層の他のメンバとは異なるフィールドを持つこともできます。
 そのため、<span class="productname">PostgreSQL</span>はC言語から複合型のフィールドにアクセスするための関数インタフェースを提供します。
-    </p><p><span class="original">
-     Suppose we want to write a function to answer the query:
-</span>以下のような問い合わせに答える関数を書こうとしていると仮定します。
+    </p><p>以下のような問い合わせに答える関数を書こうとしていると仮定します。
 
 </p><pre class="programlisting">SELECT name, c_overpaid(emp, 1500) AS overpaid
     FROM emp
     WHERE name = 'Bill' OR name = 'Sam';</pre><p>
-<span class="original">
-     Using the version-1 calling conventions, we can define
-     &lt;function&gt;c_overpaid&lt;/&gt; as:
-</span>
+
 Version 1呼び出し規約を使用すると、<code class="function">c_overpaid</code>は以下のように定義できます。
 
-</p><pre class="programlisting">#include "postgres.h"<span class="original">
-#include "executor/executor.h"  /* for GetAttributeByName() */
-</span>
+</p><pre class="programlisting">#include "postgres.h"
 #include "executor/executor.h"  /* GetAttributeByName()用 */
 
 #ifdef PG_MODULE_MAGIC
@@ -1002,255 +422,101 @@ c_overpaid(PG_FUNCTION_ARGS)
 
     salary = GetAttributeByName(t, "salary", &amp;isnull);
     if (isnull)
-        PG_RETURN_BOOL(false);<span class="original">
-    /* Alternatively, we might prefer to do PG_RETURN_NULL() for null salary. */
-</span>
+        PG_RETURN_BOOL(false);
     /* この他、salaryがNULLの場合用にPG_RETURN_NULL()を行った方が良いでしょう */
 
     PG_RETURN_BOOL(DatumGetInt32(salary) &gt; limit);
 }</pre><p>
-    </p><p><span class="original">
-     &lt;function&gt;GetAttributeByName&lt;/function&gt; is the
-     &lt;productname&gt;PostgreSQL&lt;/productname&gt; system function that
-     returns attributes out of the specified row.  It has
-     three arguments: the argument of type &lt;type&gt;HeapTupleHeader&lt;/type&gt; passed
-     into
-     the  function, the name of the desired attribute, and a
-     return parameter that tells whether  the  attribute
-     is  null.   &lt;function&gt;GetAttributeByName&lt;/function&gt; returns a &lt;type&gt;Datum&lt;/type&gt;
-     value that you can convert to the proper data type by using the
-     appropriate &lt;function&gt;DatumGet&lt;replaceable&gt;XXX&lt;/replaceable&gt;()&lt;/function&gt;
-     macro.  Note that the return value is meaningless if the null flag is
-     set; always check the null flag before trying to do anything with the
-     result.
-</span><code class="function">GetAttributeByName</code>は、指定された行から属性を返す、<span class="productname">PostgreSQL</span>システム関数です。
+    </p><p><code class="function">GetAttributeByName</code>は、指定された行から属性を返す、<span class="productname">PostgreSQL</span>システム関数です。
 これには3つの引数があります。
 それらは、関数に渡された<code class="type">HeapTupleHeader</code>型の引数、求められた属性の名前、属性がNULLであるかどうかを通知する返りパラメータです。
 <code class="function">GetAttributeByName</code>は適切な<code class="function">DatumGet<em class="replaceable"><code>XXX</code></em>()</code>マクロを使用して適切なデータ型に変換可能な<code class="type">Datum</code>型の値を返します。
 このNULLフラグが設定されている場合、戻り値の意味がないことに注意し、この結果で何かを行おうとする前に常に、NULLフラグを検査してください。
-    </p><p><span class="original">
-     There is also &lt;function&gt;GetAttributeByNum&lt;/function&gt;, which selects
-     the target attribute by column number instead of name.
-</span>対象列を名前ではなく列番号で選択する<code class="function">GetAttributeByNum</code>もあります。
-    </p><p><span class="original">
-     The following command declares the function
-     &lt;function&gt;c_overpaid&lt;/function&gt; in SQL:
-</span>下記のコマンドで<code class="function">c_overpaid</code>関数をSQLで宣言します。
+    </p><p>対象列を名前ではなく列番号で選択する<code class="function">GetAttributeByNum</code>もあります。
+    </p><p>下記のコマンドで<code class="function">c_overpaid</code>関数をSQLで宣言します。
 
 </p><pre class="programlisting">CREATE FUNCTION c_overpaid(emp, integer) RETURNS boolean
     AS '<em class="replaceable"><code>DIRECTORY</code></em>/funcs', 'c_overpaid'
     LANGUAGE C STRICT;</pre><p>
-<span class="original">
-     Notice we have used &lt;literal&gt;STRICT&lt;/&gt; so that we did not have to
-     check whether the input arguments were NULL.
-</span>
+
 入力引数がNULLかどうかを検査する必要がないように<code class="literal">STRICT</code>を使用していることに注意してください。
-    </p></div><div class="sect2" id="id-1.8.3.12.11"><div class="titlepage"><div><div><h3 class="title">37.9.7. 行（複合型）を返す</h3></div></div></div><span class="original">
-    &lt;title&gt;Returning Rows (Composite Types)&lt;/title&gt;
-</span><p><span class="original">
-     To return a row or composite-type value from a C-language
-     function, you can use a special API that provides macros and
-     functions to hide most of the complexity of building composite
-     data types.  To use this API, the source file must include:
-</span>C言語関数から行もしくは複合型の値を返すために、複合型の複雑な作成のほとんどを隠蔽するマクロや関数を提供する、特別なAPIを使用することができます。
+    </p></div><div class="sect2" id="id-1.8.3.12.11"><div class="titlepage"><div><div><h3 class="title">37.9.7. 行（複合型）を返す</h3></div></div></div><p>C言語関数から行もしくは複合型の値を返すために、複合型の複雑な作成のほとんどを隠蔽するマクロや関数を提供する、特別なAPIを使用することができます。
 このAPIを使用するためには、ソースファイルで以下をインクルードする必要があります。
 </p><pre class="programlisting">#include "funcapi.h"</pre><p>
-    </p><p><span class="original">
-     There are two ways you can build a composite data value (henceforth
-     a &lt;quote&gt;tuple&lt;/&gt;): you can build it from an array of Datum values,
-     or from an array of C strings that can be passed to the input
-     conversion functions of the tuple's column data types.  In either
-     case, you first need to obtain or construct a &lt;structname&gt;TupleDesc&lt;/&gt;
-     descriptor for the tuple structure.  When working with Datums, you
-     pass the &lt;structname&gt;TupleDesc&lt;/&gt; to &lt;function&gt;BlessTupleDesc&lt;/&gt;,
-     and then call &lt;function&gt;heap_form_tuple&lt;/&gt; for each row.  When working
-     with C strings, you pass the &lt;structname&gt;TupleDesc&lt;/&gt; to
-     &lt;function&gt;TupleDescGetAttInMetadata&lt;/&gt;, and then call
-     &lt;function&gt;BuildTupleFromCStrings&lt;/&gt; for each row.  In the case of a
-     function returning a set of tuples, the setup steps can all be done
-     once during the first call of the function.
-</span>複合型のデータ値（以降<span class="quote">「<span class="quote">タプル</span>」</span>と記す）を作成する2つの方法があります。
+    </p><p>複合型のデータ値（以降<span class="quote">“<span class="quote">タプル</span>”</span>と記す）を作成する2つの方法があります。
 Datum値の配列から作成する方法、もしくはタプルのある列の型の入力変換関数に渡すことができるC文字列の配列から作成することです。
 どちらの方法でも、まずタプル構造体用の<code class="structname">TupleDesc</code>記述子を入手、あるいは作成しなければなりません。
 Datumを使用する場合は、<code class="structname">TupleDesc</code>を<code class="function">BlessTupleDesc</code>に渡し、各行に対して<code class="function">heap_form_tuple</code>を呼び出します。
 C文字列を使用する場合は、<code class="structname">TupleDesc</code> を<code class="function">TupleDescGetAttInMetadata</code>に渡し、各行に対して <code class="function">BuildTupleFromCStrings</code>を呼び出します。
 タプルの集合を返す関数の場合、この設定段階を最初の関数呼び出しで一度にまとめて行うことができます。
-    </p><p><span class="original">
-     Several helper functions are available for setting up the needed
-     &lt;structname&gt;TupleDesc&lt;/&gt;.  The recommended way to do this in most
-     functions returning composite values is to call:
-</span>必要な<code class="structname">TupleDesc</code>の設定用の補助用関数がいくつかあります。
+    </p><p>必要な<code class="structname">TupleDesc</code>の設定用の補助用関数がいくつかあります。
 ほとんどの複合型を返す関数での推奨方法は、以下の関数を呼び出し、呼び出し元の関数自身に渡される<code class="literal">fcinfo</code>構造体と同じものを渡すことです。
 </p><pre class="programlisting">TypeFuncClass get_call_result_type(FunctionCallInfo fcinfo,
                                    Oid *resultTypeId,
-                                   TupleDesc *resultTupleDesc)</pre><p><span class="original">
-     passing the same &lt;literal&gt;fcinfo&lt;/&gt; struct passed to the calling function
-     itself.  (This of course requires that you use the version-1
-     calling conventions.)  &lt;varname&gt;resultTypeId&lt;/&gt; can be specified
-     as &lt;literal&gt;NULL&lt;/&gt; or as the address of a local variable to receive the
-     function's result type OID.  &lt;varname&gt;resultTupleDesc&lt;/&gt; should be the
-     address of a local &lt;structname&gt;TupleDesc&lt;/&gt; variable.  Check that the
-     result is &lt;literal&gt;TYPEFUNC_COMPOSITE&lt;/&gt;; if so,
-     &lt;varname&gt;resultTupleDesc&lt;/&gt; has been filled with the needed
-     &lt;structname&gt;TupleDesc&lt;/&gt;.  (If it is not, you can report an error along
-     the lines of &lt;quote&gt;function returning record called in context that
-     cannot accept type record&lt;/quote&gt;.)
-</span>
+                                   TupleDesc *resultTupleDesc)</pre><p>
 （これにはもちろん、version 1呼び出し規約を使用していることが必要です。）
 <code class="varname">resultTypeId</code>を<code class="literal">NULL</code>とすることも、ローカル変数のアドレスを指定して関数の戻り値型のOIDを受け取ることができます。
 <code class="varname">resultTupleDesc</code>はローカルな<code class="structname">TupleDesc</code>変数のアドレスでなければなりません。
 結果が<code class="literal">TYPEFUNC_COMPOSITE</code>かどうかを確認してください。
 <code class="literal">TYPEFUNC_COMPOSITE</code>であった場合、<code class="varname">resultTupleDesc</code>には必要な<code class="structname">TupleDesc</code>が格納されています。
-（<code class="literal">TYPEFUNC_COMPOSITE</code>ではなかった場合、<span class="quote">「<span class="quote">レコード型を受け付けない文脈でレコードを返す関数が呼び出されました</span>」</span>というエラーを報告することができます。）
-    </p><div class="tip"><h3 class="title">ヒント</h3><p><span class="original">
-      &lt;function&gt;get_call_result_type&lt;/&gt; can resolve the actual type of a
-      polymorphic function result; so it is useful in functions that return
-      scalar polymorphic results, not only functions that return composites.
-      The &lt;varname&gt;resultTypeId&lt;/&gt; output is primarily useful for functions
-      returning polymorphic scalars.
-</span><code class="function">get_call_result_type</code>は、多様性関数の結果の実際の型を解決することができます。
+（<code class="literal">TYPEFUNC_COMPOSITE</code>ではなかった場合、<span class="quote">“<span class="quote">レコード型を受け付けない文脈でレコードを返す関数が呼び出されました</span>”</span>というエラーを報告することができます。）
+    </p><div class="tip"><h3 class="title">Tip</h3><p><code class="function">get_call_result_type</code>は、多様性関数の結果の実際の型を解決することができます。
 ですので、複合型を返す関数だけではなく、スカラの多様結果を返す関数でも有意です。
 <code class="varname">resultTypeId</code>出力は主にスカラの多様結果を返す関数で有意です。
-     </p></div><div class="note"><h3 class="title">注記</h3><p><span class="original">
-      &lt;function&gt;get_call_result_type&lt;/&gt; has a sibling
-      &lt;function&gt;get_expr_result_type&lt;/&gt;, which can be used to resolve the
-      expected output type for a function call represented by an expression
-      tree.  This can be used when trying to determine the result type from
-      outside the function itself.  There is also
-      &lt;function&gt;get_func_result_type&lt;/&gt;, which can be used when only the
-      function's OID is available.  However these functions are not able
-      to deal with functions declared to return &lt;structname&gt;record&lt;/&gt;, and
-      &lt;function&gt;get_func_result_type&lt;/&gt; cannot resolve polymorphic types,
-      so you should preferentially use &lt;function&gt;get_call_result_type&lt;/&gt;.
-</span><code class="function">get_call_result_type</code>は、<code class="function">get_expr_result_type</code>と似たような関数で、関数呼び出しで想定される出力型を式のツリー構造として解決します。
+     </p></div><div class="note"><h3 class="title">Note</h3><p><code class="function">get_call_result_type</code>は、<code class="function">get_expr_result_type</code>と似たような関数で、関数呼び出しで想定される出力型を式のツリー構造として解決します。
 関数自身以外から結果型を決定したい場合に、これを使用することができます。
 また、<code class="function">get_func_result_type</code>という関数もあります。
 これは関数のOIDが利用できる場合にのみ使用することができます。
 しかし、これらの関数は、<code class="structname">record</code>型を返すものと宣言された関数では使用できません。
 また、<code class="function">get_func_result_type</code>は多様型を解決することができません。
 したがって、優先して<code class="function">get_call_result_type</code>を使用すべきです。
-     </p></div><p><span class="original">
-     Older, now-deprecated functions for obtaining
-     &lt;structname&gt;TupleDesc&lt;/&gt;s are:
-</span>古く、廃止予定の<code class="structname">TupleDesc</code>を入手するための関数を以下に示します。
-</p><pre class="programlisting">TupleDesc RelationNameGetTupleDesc(const char *relname)</pre><p><span class="original">
-     to get a &lt;structname&gt;TupleDesc&lt;/&gt; for the row type of a named relation,
-     and:
-</span>
+     </p></div><p>古く、廃止予定の<code class="structname">TupleDesc</code>を入手するための関数を以下に示します。
+</p><pre class="programlisting">TupleDesc RelationNameGetTupleDesc(const char *relname)</pre><p>
 これを指名したリレーションの行型用の<code class="structname">TupleDesc</code>を取り出すために使用してください。
 また、
-</p><pre class="programlisting">TupleDesc TypeGetTupleDesc(Oid typeoid, List *colaliases)</pre><p><span class="original">
-     to get a &lt;structname&gt;TupleDesc&lt;/&gt; based on a type OID. This can
-     be used to get a &lt;structname&gt;TupleDesc&lt;/&gt; for a base or
-     composite type.  It will not work for a function that returns
-     &lt;structname&gt;record&lt;/&gt;, however, and it cannot resolve polymorphic
-     types.
-</span>
+</p><pre class="programlisting">TupleDesc TypeGetTupleDesc(Oid typeoid, List *colaliases)</pre><p>
 これを型のOIDに基づいて<code class="structname">TupleDesc</code>を取り出すために使用してください。
 これは、基本型もしくは複合型の<code class="structname">TupleDesc</code>を取り出すために使用可能です。
 これは<code class="structname">record</code>を返す関数ではうまく動作しません。
 また、多様型を解決することもできません。
-    </p><p><span class="original">
-     Once you have a &lt;structname&gt;TupleDesc&lt;/&gt;, call:
-</span><code class="structname">TupleDesc</code>を獲得した後に、Datumを使用する場合は以下を呼び出してください。
-</p><pre class="programlisting">TupleDesc BlessTupleDesc(TupleDesc tupdesc)</pre><p><span class="original">
-     if you plan to work with Datums, or:
-</span>
+    </p><p><code class="structname">TupleDesc</code>を獲得した後に、Datumを使用する場合は以下を呼び出してください。
+</p><pre class="programlisting">TupleDesc BlessTupleDesc(TupleDesc tupdesc)</pre><p>
 C文字列を使用する場合は以下を呼び出してください。
-</p><pre class="programlisting">AttInMetadata *TupleDescGetAttInMetadata(TupleDesc tupdesc)</pre><p><span class="original">
-     if you plan to work with C strings.  If you are writing a function
-     returning set, you can save the results of these functions in the
-     &lt;structname&gt;FuncCallContext&lt;/&gt; structure &amp;mdash; use the
-     &lt;structfield&gt;tuple_desc&lt;/&gt; or &lt;structfield&gt;attinmeta&lt;/&gt; field
-     respectively.
-</span>
+</p><pre class="programlisting">AttInMetadata *TupleDescGetAttInMetadata(TupleDesc tupdesc)</pre><p>
 集合を返す関数を作成する場合は、これらの関数の結果を<code class="structname">FuncCallContext</code>構造体に格納してください。
 それぞれ<code class="structfield">tuple_desc</code>と<code class="structfield">attinmeta</code>を使用します。
-    </p><p><span class="original">
-     When working with Datums, use:
-</span>Datumを使用する場合は、ユーザデータをDatum形式に格納した<code class="structname">HeapTuple</code>を構築するために以下を使用します。
-</p><pre class="programlisting">HeapTuple heap_form_tuple(TupleDesc tupdesc, Datum *values, bool *isnull)</pre><p><span class="original">
-     to build a &lt;structname&gt;HeapTuple&lt;/&gt; given user data in Datum form.
-</span>
-    </p><p><span class="original">
-     When working with C strings, use:
-</span>C文字列を使用する場合は、ユーザデータをC文字列形式に格納した<code class="structname">HeapTuple</code>を構築するために以下を使用します。
-</p><pre class="programlisting">HeapTuple BuildTupleFromCStrings(AttInMetadata *attinmeta, char **values)</pre><p><span class="original">
-     to build a &lt;structname&gt;HeapTuple&lt;/&gt; given user data
-     in C string form.  &lt;parameter&gt;values&lt;/parameter&gt; is an array of C strings,
-     one for each attribute of the return row. Each C string should be in
-     the form expected by the input function of the attribute data
-     type. In order to return a null value for one of the attributes,
-     the corresponding pointer in the &lt;parameter&gt;values&lt;/&gt; array
-     should be set to &lt;symbol&gt;NULL&lt;/&gt;.  This function will need to
-     be called again for each row you return.
-</span>
+    </p><p>Datumを使用する場合は、ユーザデータをDatum形式に格納した<code class="structname">HeapTuple</code>を構築するために以下を使用します。
+</p><pre class="programlisting">HeapTuple heap_form_tuple(TupleDesc tupdesc, Datum *values, bool *isnull)</pre><p>
+    </p><p>C文字列を使用する場合は、ユーザデータをC文字列形式に格納した<code class="structname">HeapTuple</code>を構築するために以下を使用します。
+</p><pre class="programlisting">HeapTuple BuildTupleFromCStrings(AttInMetadata *attinmeta, char **values)</pre><p>
 <code class="literal">values</code>は行の各属性を1要素としたC文字列の配列です。
 各C文字列は、属性のデータ型用の入力関数が受け付け可能な形式でなければなりません。
 属性の値をNULL値として返すためには、<em class="parameter"><code>values</code></em>配列の対応するポインタに<code class="symbol">NULL</code>を設定してください。
 この関数は返す行それぞれに対して繰り返し呼び出す必要があります。
-    </p><p><span class="original">
-     Once you have built a tuple to return from your function, it
-     must be converted into a &lt;type&gt;Datum&lt;/&gt;. Use:
-</span>関数から返すタプルを構築し終わったら、それを<code class="type">Datum</code>に変換しなければなりません。
+    </p><p>関数から返すタプルを構築し終わったら、それを<code class="type">Datum</code>に変換しなければなりません。
 以下を使用して、<code class="structname">HeapTuple</code>を有効なDatumに変換してください。
-</p><pre class="programlisting">HeapTupleGetDatum(HeapTuple tuple)</pre><p><span class="original">
-     to convert a &lt;structname&gt;HeapTuple&lt;/&gt; into a valid Datum.  This
-     &lt;type&gt;Datum&lt;/&gt; can be returned directly if you intend to return
-     just a single row, or it can be used as the current return value
-     in a set-returning function.
-</span>
+</p><pre class="programlisting">HeapTupleGetDatum(HeapTuple tuple)</pre><p>
 単一行のみを返すのであれば、この<code class="type">Datum</code>を直接返すことができます。
 さもなくば、集合を返す関数における現在の戻り値として使用することができます。
-    </p><p><span class="original">
-     An example appears in the next section.
-</span>次節に例を示します。
-    </p></div><div class="sect2" id="XFUNC-C-RETURN-SET"><div class="titlepage"><div><div><h3 class="title">37.9.8. 集合を返す</h3></div></div></div><span class="original">
-    &lt;title&gt;Returning Sets&lt;/title&gt;
-</span><p><span class="original">
-     There is also a special API that provides support for returning
-     sets (multiple rows) from a C-language function.  A set-returning
-     function must follow the version-1 calling conventions.  Also,
-     source files must include &lt;filename&gt;funcapi.h&lt;/filename&gt;, as
-     above.
-</span>C言語関数から集合（複数行）を返す機能のために特殊なAPIが用意されています。
+    </p><p>次節に例を示します。
+    </p></div><div class="sect2" id="XFUNC-C-RETURN-SET"><div class="titlepage"><div><div><h3 class="title">37.9.8. 集合を返す</h3></div></div></div><p>C言語関数から集合（複数行）を返す機能のために特殊なAPIが用意されています。
 集合を返す関数は、Version 1呼び出し規約に従う必要があります。
 また、ソースファイルは上述の通り<code class="filename">funcapi.h</code>をインクルードする必要があります。
-    </p><p><span class="original">
-     A set-returning function (&lt;acronym&gt;SRF&lt;/&gt;) is called
-     once for each item it returns.  The &lt;acronym&gt;SRF&lt;/&gt; must
-     therefore save enough state to remember what it was doing and
-     return the next item on each call.
-     The structure &lt;structname&gt;FuncCallContext&lt;/&gt; is provided to help
-     control this process.  Within a function, &lt;literal&gt;fcinfo-&amp;gt;flinfo-&amp;gt;fn_extra&lt;/&gt;
-     is used to hold a pointer to &lt;structname&gt;FuncCallContext&lt;/&gt;
-     across calls.
-</span>集合を返す関数（<acronym class="acronym">SRF</acronym>）は返される項目ごとに呼び出されます。
+    </p><p>集合を返す関数（<acronym class="acronym">SRF</acronym>）は返される項目ごとに呼び出されます。
 そのため、<acronym class="acronym">SRF</acronym>は、過去の操作を記憶して呼び出しの度に次の項目を返すために十分な状態を保っている必要があります。
 この処理を制御を補助するための<code class="structname">FuncCallContext</code>構造体が備わっています。
 関数内では、複数の呼び出しにまたがる<code class="structname">FuncCallContext</code>へのポインタを保持するには、<code class="literal">fcinfo-&gt;flinfo-&gt;fn_extra</code>を使用します。
 </p><pre class="programlisting">typedef struct FuncCallContext
 {
-    /*<span class="original">
-     * Number of times we've been called before
-</span>
+    /*
      * 既に行われた呼び出しの回数。
-     *<span class="original">
-     * call_cntr is initialized to 0 for you by SRF_FIRSTCALL_INIT(), and
-     * incremented for you every time SRF_RETURN_NEXT() is called.
-</span>
+     *
      * SRF_FIRSTCALL_INIT()によってcall_cntrが0に初期化され、
      * SRF_RETURN_NEXT()が呼び出される度に増分されます。
      */
     uint64 call_cntr;
 
-    /*<span class="original">
-     * OPTIONAL maximum number of calls
-     *
-     * max_calls is here for convenience only and setting it is optional.
-     * If not set, you must provide alternative means to know when the
-     * function is done.
-</span>
+    /*
      * 省略可能 : 呼び出しの最大数
      *
      * max_callsは、便宜上用意されているだけで、設定は省略可能です。
@@ -1259,12 +525,7 @@ C文字列を使用する場合は以下を呼び出してください。
      */
     uint64 max_calls;
 
-    /*<span class="original">
-     * OPTIONAL pointer to result slot
-     *
-     * This is obsolete and only present for backward compatibility, viz,
-     * user-defined SRFs that use the deprecated TupleDescGetSlot().
-</span>
+    /*
      * 省略可能 : 結果スロットへのポインタ
      *
      * これは廃止され、後方互換性、すなわち非推奨のTupleDescGetSlot()を使用する
@@ -1272,12 +533,7 @@ C文字列を使用する場合は以下を呼び出してください。
      */
     TupleTableSlot *slot;
 
-    /*<span class="original">
-     * OPTIONAL pointer to miscellaneous user-provided context information
-     *
-     * user_fctx is for use as a pointer to your own data to retain
-     * arbitrary context information between calls of your function.
-</span>
+    /*
      * 省略可能 : 様々なユーザによるコンテキスト情報へのポインタ
      *
      * user_fctxは、関数の呼び出し間の任意のコンテキスト情報を
@@ -1285,14 +541,7 @@ C文字列を使用する場合は以下を呼び出してください。
      */
     void *user_fctx;
 
-    /*<span class="original">
-     * OPTIONAL pointer to struct containing attribute type input metadata
-     *
-     * attinmeta is for use when returning tuples (i.e., composite data types)
-     * and is not used when returning base data types. It is only needed
-     * if you intend to use BuildTupleFromCStrings() to create the return
-     * tuple.
-</span>
+    /*
      * 省略可能 : 属性型入力メタ情報を含んだ構造体へのポインタ
      *
      * attinmeta はタプル（つまり複合データ型）を返す際に使用され、
@@ -1301,14 +550,7 @@ C文字列を使用する場合は以下を呼び出してください。
      */
     AttInMetadata *attinmeta;
 
-    /*<span class="original">
-     * memory context used for structures that must live for multiple calls
-     *
-     * multi_call_memory_ctx is set by SRF_FIRSTCALL_INIT() for you, and used
-     * by SRF_RETURN_DONE() for cleanup. It is the most appropriate memory
-     * context for any memory that is to be reused across multiple calls
-     * of the SRF.
-</span>
+    /*
      *  複数の呼び出しで必要とされる構造体に使われるメモリコンテキスト
      *
      * multi_call_memory_ctxは、SRF_FIRSTCALL_INIT()によってに設定され、
@@ -1317,15 +559,7 @@ C文字列を使用する場合は以下を呼び出してください。
      */
     MemoryContext multi_call_memory_ctx;
 
-    /*<span class="original">
-     * OPTIONAL pointer to struct containing tuple description
-     *
-     * tuple_desc is for use when returning tuples (i.e., composite data types)
-     * and is only needed if you are going to build the tuples with
-     * heap_form_tuple() rather than with BuildTupleFromCStrings().  Note that
-     * the TupleDesc pointer stored here should usually have been run through
-     * BlessTupleDesc() first.
-</span>
+    /*
      * 省略可能: タプル説明を含む構造体へのポインタ。
      * tuple_descはタプル（つまり複合データ型）を返す場合に使用され、BuildTupleFromCStrings()
      * ではなくheap_form_tuple()を使用してタプルを作成する場合にのみ必要です。
@@ -1335,77 +569,31 @@ C文字列を使用する場合は以下を呼び出してください。
     TupleDesc tuple_desc;
 
 } FuncCallContext;</pre><p>
-    </p><p><span class="original">
-     An &lt;acronym&gt;SRF&lt;/&gt; uses several functions and macros that
-     automatically manipulate the &lt;structname&gt;FuncCallContext&lt;/&gt;
-     structure (and expect to find it via &lt;literal&gt;fn_extra&lt;/&gt;).  Use:
-</span><acronym class="acronym">SRF</acronym>はいくつかの関数およびマクロを使用して<code class="structname">FuncCallContext</code>構造体を自動的に操作します（また<code class="literal">fn_extra</code>で検索することを想定します)。
-</p><pre class="programlisting">SRF_IS_FIRSTCALL()</pre><p><span class="original">
-     to determine if your function is being called for the first or a
-     subsequent time. On the first call (only) use:
-</span>
+    </p><p><acronym class="acronym">SRF</acronym>はいくつかの関数およびマクロを使用して<code class="structname">FuncCallContext</code>構造体を自動的に操作します（また<code class="literal">fn_extra</code>で検索することを想定します)。
+</p><pre class="programlisting">SRF_IS_FIRSTCALL()</pre><p>
 を使用して、その関数呼び出しが初回のものであるか、2回目以降であるかを判断します。
 最初の呼び出し（のみ）で、
-</p><pre class="programlisting">SRF_FIRSTCALL_INIT()</pre><p><span class="original">
-     to initialize the &lt;structname&gt;FuncCallContext&lt;/&gt;. On every function call,
-     including the first, use:
-</span>
+</p><pre class="programlisting">SRF_FIRSTCALL_INIT()</pre><p>
 を使用して、<code class="structname">FuncCallContext</code>を初期化します。
 最初の呼び出しを含むすべての呼び出しで、
-</p><pre class="programlisting">SRF_PERCALL_SETUP()</pre><p><span class="original">
-     to properly set up for using the &lt;structname&gt;FuncCallContext&lt;/&gt;
-     and clearing any previously returned data left over from the
-     previous pass.
-</span>
+</p><pre class="programlisting">SRF_PERCALL_SETUP()</pre><p>
 を使用して、<code class="structname">FuncCallContext</code>を使用するための適切な設定を行い、以前の受け渡しから残っている結果データを消去します。
-    </p><p><span class="original">
-     If your function has data to return, use:
-</span>関数で返すべきデータがある場合は、
-</p><pre class="programlisting">SRF_RETURN_NEXT(funcctx, result)</pre><p><span class="original">
-     to return it to the caller.  (&lt;literal&gt;result&lt;/&gt; must be of type
-     &lt;type&gt;Datum&lt;/&gt;, either a single value or a tuple prepared as
-     described above.)  Finally, when your function is finished
-     returning data, use:
-</span>
+    </p><p>関数で返すべきデータがある場合は、
+</p><pre class="programlisting">SRF_RETURN_NEXT(funcctx, result)</pre><p>
 を使用して、そのデータを呼び出し側に返します。
 （先に説明した通り <code class="literal">result</code>は<code class="type">Datum</code>型、つまり1つの値またはタプルである必要があります。）
 最後に、関数がデータを返し終わったら、
-</p><pre class="programlisting">SRF_RETURN_DONE(funcctx)</pre><p><span class="original">
-     to clean up and end the &lt;acronym&gt;SRF&lt;/&gt;.
-</span>
+</p><pre class="programlisting">SRF_RETURN_DONE(funcctx)</pre><p>
 を使用して<acronym class="acronym">SRF</acronym>を片付け、終了します。
-    </p><p><span class="original">
-     The memory context that is current when the &lt;acronym&gt;SRF&lt;/&gt; is called is
-     a transient context that will be cleared between calls.  This means
-     that you do not need to call &lt;function&gt;pfree&lt;/&gt; on everything
-     you allocated using &lt;function&gt;palloc&lt;/&gt;; it will go away anyway.  However, if you want to allocate
-     any data structures to live across calls, you need to put them somewhere
-     else.  The memory context referenced by
-     &lt;structfield&gt;multi_call_memory_ctx&lt;/&gt; is a suitable location for any
-     data that needs to survive until the &lt;acronym&gt;SRF&lt;/&gt; is finished running.  In most
-     cases, this means that you should switch into
-     &lt;structfield&gt;multi_call_memory_ctx&lt;/&gt; while doing the first-call setup.
-</span><acronym class="acronym">SRF</acronym>の呼び出し時に現行になっているメモリコンテキストは一時的なコンテキストで、各呼び出しの間に消去されます。
+    </p><p><acronym class="acronym">SRF</acronym>の呼び出し時に現行になっているメモリコンテキストは一時的なコンテキストで、各呼び出しの間に消去されます。
 つまり<code class="function">palloc</code>を使用して割り当てたもののすべてを<code class="function">pfree</code>する必要はありません。
 これらはいずれ消去されるものだからです。
 しかし、データ構造体を複数の呼び出しに渡って使用するように割り当てる場合は、どこか別の場所に置いておく必要があります。
 <code class="structfield">multi_call_memory_ctx</code>によって参照されるメモリコンテキストは、<acronym class="acronym">SRF</acronym>の実行が終わるまで使用可能にしなければならないデータの保管場所として適しています。
 つまり、ほとんどの場合、最初の呼び出しのセットアップ中に<code class="structfield">multi_call_memory_ctx</code>へ切り替える必要があるということです。
-    </p><div class="warning"><h3 class="title">警告</h3><p><span class="original">
-      While the actual arguments to the function remain unchanged between
-      calls, if you detoast the argument values (which is normally done
-      transparently by the
-      &lt;function&gt;PG_GETARG_&lt;replaceable&gt;xxx&lt;/replaceable&gt;&lt;/function&gt; macro)
-      in the transient context then the detoasted copies will be freed on
-      each cycle. Accordingly, if you keep references to such values in
-      your &lt;structfield&gt;user_fctx&lt;/&gt;, you must either copy them into the
-      &lt;structfield&gt;multi_call_memory_ctx&lt;/&gt; after detoasting, or ensure
-      that you detoast the values only in that context.
-</span>関数の実引数は呼出しの間変わらないままですが、一時的なコンテキストで引数の値をTOAST解除した場合には(これは通常、<code class="function">PG_GETARG_<em class="replaceable"><code>xxx</code></em></code>マクロにより透過的に行なわれます)、TOAST解除されたコピーが各サイクルで解放されます。
+    </p><div class="warning"><h3 class="title">Warning</h3><p>関数の実引数は呼出しの間変わらないままですが、一時的なコンテキストで引数の値をTOAST解除した場合には(これは通常、<code class="function">PG_GETARG_<em class="replaceable"><code>xxx</code></em></code>マクロにより透過的に行なわれます)、TOAST解除されたコピーが各サイクルで解放されます。
 従って、<code class="structfield">user_fctx</code>内のその値への参照を保持する場合には、TOAST解除した後に<code class="structfield">multi_call_memory_ctx</code>にそれらをコピーするか、その値をTOAST解除するのはそのコンテキストの中だけであること確実にしなければなりません。
-     </p></div><p><span class="original">
-     A complete pseudo-code example looks like the following:
-</span>     完全な疑似コードの例を示します。
+     </p></div><p>     完全な疑似コードの例を示します。
 </p><pre class="programlisting">Datum
 my_set_returning_function(PG_FUNCTION_ARGS)
 {
@@ -1418,9 +606,7 @@ my_set_returning_function(PG_FUNCTION_ARGS)
         MemoryContext oldcontext;
 
         funcctx = SRF_FIRSTCALL_INIT();
-        oldcontext = MemoryContextSwitchTo(funcctx-&gt;multi_call_memory_ctx);<span class="original">
-        /* One-time setup code appears here: */
-</span>
+        oldcontext = MemoryContextSwitchTo(funcctx-&gt;multi_call_memory_ctx);
         /* 一度限りのセットアップコードがここに入ります: */
         <em class="replaceable"><code>user code</code></em>
         <em class="replaceable"><code>if returning composite</code></em>
@@ -1429,39 +615,28 @@ my_set_returning_function(PG_FUNCTION_ARGS)
         <em class="replaceable"><code>user code</code></em>
         MemoryContextSwitchTo(oldcontext);
     }
-<span class="original">
-    /* Each-time setup code appears here: */
-</span>
+
     /* 毎回実行するセットアップコードがここに入ります: */
     <em class="replaceable"><code>user code</code></em>
     funcctx = SRF_PERCALL_SETUP();
     <em class="replaceable"><code>user code</code></em>
-<span class="original">
-    /* this is just one way we might test whether we are done: */
-</span>
+
     /* これは、終了したかどうかをテストする方法の1つです: */
     if (funcctx-&gt;call_cntr &lt; funcctx-&gt;max_calls)
-    {<span class="original">
-        /* Here we want to return another item: */
-</span>
+    {
         /* ここで、別の項目を返します: */
         <em class="replaceable"><code>user code</code></em>
         <em class="replaceable"><code>obtain result Datum</code></em>
         SRF_RETURN_NEXT(funcctx, result);
     }
     else
-    {<span class="original">
-        /* Here we are done returning items and just need to clean up: */
-</span>
+    {
         /* これで項目を返し終わりました。 後はクリーンアップするだけです。 */
         <em class="replaceable"><code>user code</code></em>
         SRF_RETURN_DONE(funcctx);
     }
 }</pre><p>
-    </p><p><span class="original">
-     A complete example of a simple &lt;acronym&gt;SRF&lt;/&gt; returning a composite type
-     looks like:
-</span>複合型を返す単純な<acronym class="acronym">SRF</acronym>の完全な例は以下の通りです。
+    </p><p>複合型を返す単純な<acronym class="acronym">SRF</acronym>の完全な例は以下の通りです。
 </p><pre class="programlisting">PG_FUNCTION_INFO_V1(retcomposite);
 
 Datum
@@ -1472,31 +647,21 @@ retcomposite(PG_FUNCTION_ARGS)
     int                  max_calls;
     TupleDesc            tupdesc;
     AttInMetadata       *attinmeta;
-<span class="original">
-    /* stuff done only on the first call of the function */
-</span>
+
      /* 関数の最初の呼び出し時にのみ実行 */
     if (SRF_IS_FIRSTCALL())
     {
         MemoryContext   oldcontext;
-<span class="original">
-        /* create a function context for cross-call persistence */
-</span>
+
         /* 呼び出し間で永続化する関数コンテキストを作成 */
         funcctx = SRF_FIRSTCALL_INIT();
-<span class="original">
-        /* switch to memory context appropriate for multiple function calls */
-</span>
+
         /* 複数関数呼び出しに適切なメモリコンテキストへの切り替え */
         oldcontext = MemoryContextSwitchTo(funcctx-&gt;multi_call_memory_ctx);
-<span class="original">
-        /* total number of tuples to be returned */
-</span>
+
         /* 返されるタプルの合計数 */
         funcctx-&gt;max_calls = PG_GETARG_UINT32(0);
-<span class="original">
-        /* Build a tuple descriptor for our result type */
-</span>
+
         /*  結果型用のタプル記述子を作成 */
         if (get_call_result_type(fcinfo, NULL, &amp;tupdesc) != TYPEFUNC_COMPOSITE)
             ereport(ERROR,
@@ -1504,10 +669,7 @@ retcomposite(PG_FUNCTION_ARGS)
                      errmsg("function returning record called in context "
                             "that cannot accept type record")));
 
-        /*<span class="original">
-         * generate attribute metadata needed later to produce tuples from raw
-         * C strings
-</span>
+        /*
          * 後で未加工のC文字列からタプルを作成するために必要となる
          * 属性メタデータの生成
          */
@@ -1516,29 +678,21 @@ retcomposite(PG_FUNCTION_ARGS)
 
         MemoryContextSwitchTo(oldcontext);
     }
-<span class="original">
-    /* stuff done on every call of the function */
-</span>
+
     /* 全ての関数呼び出しで実行 */
     funcctx = SRF_PERCALL_SETUP();
 
     call_cntr = funcctx-&gt;call_cntr;
     max_calls = funcctx-&gt;max_calls;
     attinmeta = funcctx-&gt;attinmeta;
-<span class="original">
-    if (call_cntr &lt; max_calls)    /* do when there is more left to send */
-</span>
+
     if (call_cntr &lt; max_calls)    /* 他にも送るものがある場合  */
     {
         char       **values;
         HeapTuple    tuple;
         Datum        result;
 
-        /*<span class="original">
-         * Prepare a values array for building the returned tuple.
-         * This should be an array of C strings which will
-         * be processed later by the type input functions.
-</span>
+        /*
          * 返すタプルを構築するためのvalues配列を用意します。
          * これは、後で適切な入力関数で処理される
          * C文字列の配列でなければなりません。
@@ -1551,19 +705,13 @@ retcomposite(PG_FUNCTION_ARGS)
         snprintf(values[0], 16, "%d", 1 * PG_GETARG_INT32(1));
         snprintf(values[1], 16, "%d", 2 * PG_GETARG_INT32(1));
         snprintf(values[2], 16, "%d", 3 * PG_GETARG_INT32(1));
-<span class="original">
-        /* build a tuple */
-</span>
+
         /* タプルの作成 */
         tuple = BuildTupleFromCStrings(attinmeta, values);
-<span class="original">
-        /* make the tuple into a datum */
-</span>
+
         /* タプルをdatumに変換 */
         result = HeapTupleGetDatum(tuple);
-<span class="original">
-        /* clean up (this is not really necessary) */
-</span>
+
         /* クリーンアップ（これは必須ではありません） */
         pfree(values[0]);
         pfree(values[1]);
@@ -1571,70 +719,30 @@ retcomposite(PG_FUNCTION_ARGS)
         pfree(values);
 
         SRF_RETURN_NEXT(funcctx, result);
-    }<span class="original">
-    else    /* do when there is no more left */
-</span>
+    }
     else    /* 何も残っていない場合 */
     {
         SRF_RETURN_DONE(funcctx);
     }
 }</pre><p>
-<span class="original">
-     One way to declare this function in SQL is:
-</span>
+
 以下にこの関数をSQLで宣言する一例を示します。
 </p><pre class="programlisting">CREATE TYPE __retcomposite AS (f1 integer, f2 integer, f3 integer);
 
 CREATE OR REPLACE FUNCTION retcomposite(integer, integer)
     RETURNS SETOF __retcomposite
     AS '<em class="replaceable"><code>filename</code></em>', 'retcomposite'
-    LANGUAGE C IMMUTABLE STRICT;</pre><p><span class="original">
-     A different way is to use OUT parameters:
-</span>
+    LANGUAGE C IMMUTABLE STRICT;</pre><p>
 他にも以下のようにOUTパラメータを使用する方法もあります。
 </p><pre class="programlisting">CREATE OR REPLACE FUNCTION retcomposite(IN integer, IN integer,
     OUT f1 integer, OUT f2 integer, OUT f3 integer)
     RETURNS SETOF record
     AS '<em class="replaceable"><code>filename</code></em>', 'retcomposite'
-    LANGUAGE C IMMUTABLE STRICT;</pre><p><span class="original">
-     Notice that in this method the output type of the function is formally
-     an anonymous &lt;structname&gt;record&lt;/&gt; type.
-</span>
+    LANGUAGE C IMMUTABLE STRICT;</pre><p>
 この方法では、関数の出力型は形式上無名の<code class="structname">record</code>型になることに注意してください。
-    </p><p><span class="original">
-     The directory &lt;link linkend="tablefunc"&gt;&lt;filename&gt;contrib/tablefunc&lt;/filename&gt;&lt;/&gt;
-     module in the source distribution contains more examples of
-     set-returning functions.
-</span>ソース配布物内の<a class="link" href="tablefunc.html" title="F.39. tablefunc"><code class="filename">contrib/tablefunc</code></a>モジュールのディレクトリには、集合を返す関数のより多くの例があります。
-    </p></div><div class="sect2" id="id-1.8.3.12.13"><div class="titlepage"><div><div><h3 class="title">37.9.9. 引数と戻り値の多様性</h3></div></div></div><span class="original">
-    &lt;title&gt;Polymorphic Arguments and Return Types&lt;/title&gt;
-</span><p><span class="original">
-     C-language functions can be declared to accept and
-     return the polymorphic types
-     &lt;type&gt;anyelement&lt;/type&gt;, &lt;type&gt;anyarray&lt;/type&gt;, &lt;type&gt;anynonarray&lt;/type&gt;,
-     &lt;type&gt;anyenum&lt;/type&gt;, and &lt;type&gt;anyrange&lt;/type&gt;.
-     See &lt;xref linkend="extend-types-polymorphic"&gt; for a more detailed explanation
-     of polymorphic functions. When function arguments or return types
-     are defined as polymorphic types, the function author cannot know
-     in advance what data type it will be called with, or
-     need to return. There are two routines provided in &lt;filename&gt;fmgr.h&lt;/&gt;
-     to allow a version-1 C function to discover the actual data types
-     of its arguments and the type it is expected to return. The routines are
-     called &lt;literal&gt;get_fn_expr_rettype(FmgrInfo *flinfo)&lt;/&gt; and
-     &lt;literal&gt;get_fn_expr_argtype(FmgrInfo *flinfo, int argnum)&lt;/&gt;.
-     They return the result or argument type OID, or &lt;symbol&gt;InvalidOid&lt;/symbol&gt; if the
-     information is not available.
-     The structure &lt;literal&gt;flinfo&lt;/&gt; is normally accessed as
-     &lt;literal&gt;fcinfo-&amp;gt;flinfo&lt;/&gt;. The parameter &lt;literal&gt;argnum&lt;/&gt;
-     is zero based.  &lt;function&gt;get_call_result_type&lt;/&gt; can also be used
-     as an alternative to &lt;function&gt;get_fn_expr_rettype&lt;/&gt;.
-     There is also &lt;function&gt;get_fn_expr_variadic&lt;/&gt;, which can be used to
-     find out whether variadic arguments have been merged into an array.
-     This is primarily useful for &lt;literal&gt;VARIADIC "any"&lt;/&gt; functions,
-     since such merging will always have occurred for variadic functions
-     taking ordinary array types.
-</span>C言語関数は、<code class="type">anyelement</code>、<code class="type">anyarray</code>、<code class="type">anynonarray</code>、<code class="type">anyenum</code>および<code class="type">anyrange</code>多様型を受け付ける、または返すように宣言することができます。
-多様関数の詳細な説明は<a class="xref" href="extend-type-system.html#EXTEND-TYPES-POLYMORPHIC" title="37.2.5. 多様型">37.2.5</a>を参照してください。
+    </p><p>ソース配布物内の<a class="link" href="tablefunc.html" title="F.39. tablefunc"><code class="filename">contrib/tablefunc</code></a>モジュールのディレクトリには、集合を返す関数のより多くの例があります。
+    </p></div><div class="sect2" id="id-1.8.3.12.13"><div class="titlepage"><div><div><h3 class="title">37.9.9. 引数と戻り値の多様性</h3></div></div></div><p>C言語関数は、<code class="type">anyelement</code>、<code class="type">anyarray</code>、<code class="type">anynonarray</code>、<code class="type">anyenum</code>および<code class="type">anyrange</code>多様型を受け付ける、または返すように宣言することができます。
+多様関数の詳細な説明は<a class="xref" href="extend-type-system.html#EXTEND-TYPES-POLYMORPHIC" title="37.2.5. 多様型">Section 37.2.5</a>を参照してください。
 関数の引数もしくは戻り値が多様型として定義される時、関数の作成者は前もって呼び出しにおけるデータ型や返すべきデータ型が何であるかを知ることはできません。
 Version-1 C関数で引数の実データ型と、返すべきと想定された型を発見できるための2つのルーチンが<code class="filename">fmgr.h</code>に用意されています。
 このルーチンは<code class="literal">get_fn_expr_rettype(FmgrInfo *flinfo)</code>と<code class="literal">get_fn_expr_argtype(FmgrInfo *flinfo, int argnum)</code>という名前です。
@@ -1645,10 +753,7 @@ Version-1 C関数で引数の実データ型と、返すべきと想定された
 また、<code class="function">get_fn_expr_rettype</code>の代わりに<code class="function">get_call_result_type</code>を使用することもできます。
 また、variadic変数が配列に吸収されたかどうかを判定するために使用できる<code class="function">get_fn_expr_variadic</code>があります。
 そのような吸収はvariadic関数が普通の配列型をとる場合に必ず起こりますので、これは特に<code class="literal">VARIADIC "any"</code>の場合に有用です。
-    </p><p><span class="original">
-     For example, suppose we want to write a function to accept a single
-     element of any type, and return a one-dimensional array of that type:
-</span>例えば、任意の型の単一要素を受け付け、その型の1次元配列を返す関数を考えてみます。
+    </p><p>例えば、任意の型の単一要素を受け付け、その型の1次元配列を返す関数を考えてみます。
 
 </p><pre class="programlisting">PG_FUNCTION_INFO_V1(make_array);
 Datum
@@ -1667,71 +772,36 @@ make_array(PG_FUNCTION_ARGS)
 
     if (!OidIsValid(element_type))
         elog(ERROR, "could not determine data type of input");
-<span class="original">
-    /* get the provided element, being careful in case it's NULL */
-</span>
+
     /* 与えられた要素がNULLかどうか注意しつつ、要素を取り出します。*/
     isnull = PG_ARGISNULL(0);
     if (isnull)
         element = (Datum) 0;
     else
         element = PG_GETARG_DATUM(0);
-<span class="original">
-    /* we have one dimension */
-</span>
+
     /* 次元数は1 */
-    ndims = 1;<span class="original">
-    /* and one element */
-</span>
+    ndims = 1;
     /* 要素を1つ */
-    dims[0] = 1;<span class="original">
-    /* and lower bound is 1 */
-</span>
+    dims[0] = 1;
     /* 下限は1 */
     lbs[0] = 1;
-<span class="original">
-    /* get required info about the element type */
-</span>
+
     /* この要素型に関する必要情報を取り出す。 */
     get_typlenbyvalalign(element_type, &amp;typlen, &amp;typbyval, &amp;typalign);
-<span class="original">
-    /* now build the array */
-</span>
+
     /* ここで配列を作成 */
     result = construct_md_array(&amp;element, &amp;isnull, ndims, dims, lbs,
                                 element_type, typlen, typbyval, typalign);
 
     PG_RETURN_ARRAYTYPE_P(result);
 }</pre><p>
-    </p><p><span class="original">
-     The following command declares the function
-     &lt;function&gt;make_array&lt;/function&gt; in SQL:
-</span>以下のコマンドはSQLで<code class="function">make_array</code>関数を宣言します。
+    </p><p>以下のコマンドはSQLで<code class="function">make_array</code>関数を宣言します。
 
 </p><pre class="programlisting">CREATE FUNCTION make_array(anyelement) RETURNS anyarray
     AS '<em class="replaceable"><code>DIRECTORY</code></em>/funcs', 'make_array'
     LANGUAGE C IMMUTABLE;</pre><p>
-    </p><p><span class="original">
-     There is a variant of polymorphism that is only available to C-language
-     functions: they can be declared to take parameters of type
-     &lt;literal&gt;"any"&lt;/&gt;.  (Note that this type name must be double-quoted,
-     since it's also a SQL reserved word.)  This works like
-     &lt;type&gt;anyelement&lt;/&gt; except that it does not constrain different
-     &lt;literal&gt;"any"&lt;/&gt; arguments to be the same type, nor do they help
-     determine the function's result type.  A C-language function can also
-     declare its final parameter to be &lt;literal&gt;VARIADIC "any"&lt;/&gt;.  This will
-     match one or more actual arguments of any type (not necessarily the same
-     type).  These arguments will &lt;emphasis&gt;not&lt;/&gt; be gathered into an array
-     as happens with normal variadic functions; they will just be passed to
-     the function separately.  The &lt;function&gt;PG_NARGS()&lt;/&gt; macro and the
-     methods described above must be used to determine the number of actual
-     arguments and their types when using this feature.  Also, users of such
-     a function might wish to use the &lt;literal&gt;VARIADIC&lt;/&gt; keyword in their
-     function call, with the expectation that the function would treat the
-     array elements as separate arguments.  The function itself must implement
-     that behavior if wanted, after using &lt;function&gt;get_fn_expr_variadic&lt;/&gt; to
-     detect that the actual argument was marked with &lt;literal&gt;VARIADIC&lt;/&gt;.
-</span>C言語関数でのみ使用できる多様性の変異体があります。
+    </p><p>C言語関数でのみ使用できる多様性の変異体があります。
 <code class="literal">"any"</code>型のパラメータを取るように宣言できます。
 （この型名は、SQL予約語でもあるため二重引用符で括らなくてはならないことに注意してください。）
 これは、他の<code class="literal">"any"</code>引数が同じ型になることを強要することも、関数の結果型の決定を支援することもない点を除いて、<code class="type">anyelement</code>のように動作します。
@@ -1742,73 +812,26 @@ C言語関数は最終パラメータが<code class="literal">VARIADIC "any"</co
 <code class="function">PG_NARGS()</code>マクロと上に記載したメソッドは、この機能を使用するときに実際の引数とその型を決定するため使用されなければなりません。
 また、こうした関数のユーザは、その関数呼び出しにおいて、関数が配列要素を分離した引数として扱うだろうという予想のもとで<code class="literal">VARIADIC</code>キーワードを良く使用するかもしれません。
 関数自身は必要ならば、<code class="function">get_fn_expr_variadic</code>を実行した後で、実引数が<code class="literal">VARIADIC</code>付きであることを検出した場合に、その動作を実装しなければなりません。
-    </p></div><div class="sect2" id="XFUNC-TRANSFORM-FUNCTIONS"><div class="titlepage"><div><div><h3 class="title">37.9.10. 変形関数</h3></div></div></div><span class="original">
-    &lt;title&gt;Transform Functions&lt;/title&gt;
-</span><p><span class="original">
-     Some function calls can be simplified during planning based on
-     properties specific to the function.  For example,
-     &lt;literal&gt;int4mul(n, 1)&lt;/&gt; could be simplified to just &lt;literal&gt;n&lt;/&gt;.
-     To define such function-specific optimizations, write a
-     &lt;firstterm&gt;transform function&lt;/&gt; and place its OID in the
-     &lt;structfield&gt;protransform&lt;/&gt; field of the primary function's
-     &lt;structname&gt;pg_proc&lt;/&gt; entry.  The transform function must have the SQL
-     signature &lt;literal&gt;protransform(internal) RETURNS internal&lt;/&gt;.  The
-     argument, actually &lt;type&gt;FuncExpr *&lt;/&gt;, is a dummy node representing a
-     call to the primary function.  If the transform function's study of the
-     expression tree proves that a simplified expression tree can substitute
-     for all possible concrete calls represented thereby, build and return
-     that simplified expression.  Otherwise, return a &lt;literal&gt;NULL&lt;/&gt;
-     pointer (&lt;emphasis&gt;not&lt;/&gt; a SQL null).
-</span>一部の関数呼び出しでは、関数固有の属性に基づいて計画作成を単純化できます。
+    </p></div><div class="sect2" id="XFUNC-TRANSFORM-FUNCTIONS"><div class="titlepage"><div><div><h3 class="title">37.9.10. 変形関数</h3></div></div></div><p>一部の関数呼び出しでは、関数固有の属性に基づいて計画作成を単純化できます。
 例えば、<code class="literal">int4mul(n, 1)</code>は<code class="literal">n</code>だけに単純化することができます。
 こうした関数固有の最適化を定義するためには、<em class="firstterm">変形関数</em>を作成し、そのOIDを主関数の<code class="structname">pg_proc</code>項目の<code class="structfield">protransform</code>フィールドに格納します。
 変形関数は<code class="literal">protransform(internal) RETURNS internal</code>というSQLシグネチャを持たなければなりません。
 引数、実際は<code class="type">FuncExpr *</code>は、主関数の呼び出しを表すダミーノードです。
 変形関数の式ツリー学習によって、式ツリーで表されるすべての可能性がある実際の呼び出しを単純化した式ツリーで置き換えられることが証明された場合、単純化した式を構築し返します。
 さもなければ、(SQLのNULLでは<span class="emphasis"><em>なく</em></span>)<code class="literal">NULL</code>ポインタを返します。
-    </p><p><span class="original">
-     We make no guarantee that &lt;productname&gt;PostgreSQL&lt;/&gt; will never call the
-     primary function in cases that the transform function could simplify.
-     Ensure rigorous equivalence between the simplified expression and an
-     actual call to the primary function.
-</span><span class="productname">PostgreSQL</span>が変形関数によって単純化できる場合に主関数を呼び出さないことは保証されません。
+    </p><p><span class="productname">PostgreSQL</span>が変形関数によって単純化できる場合に主関数を呼び出さないことは保証されません。
 単純化した式と実際の主関数の呼び出しとで、厳密に等価であることを確実にしてください。
-    </p><p><span class="original">
-     Currently, this facility is not exposed to users at the SQL level
-     because of security concerns, so it is only practical to use for
-     optimizing built-in functions.
-</span>現在、セキュリティ上の懸念から、この機能がSQLレベルでユーザに見えることはありません。
+    </p><p>現在、セキュリティ上の懸念から、この機能がSQLレベルでユーザに見えることはありません。
 このため、これは組み込み関数の最適化での使用のみで実用的です。
-    </p></div><div class="sect2" id="id-1.8.3.12.15"><div class="titlepage"><div><div><h3 class="title">37.9.11. 共有メモリとLWLocks</h3></div></div></div><span class="original">
-    &lt;title&gt;Shared Memory and LWLocks&lt;/title&gt;
-</span><p><span class="original">
-     Add-ins can reserve LWLocks and an allocation of shared memory on server
-     startup.  The add-in's shared library must be preloaded by specifying
-     it in
-     &lt;xref linkend="guc-shared-preload-libraries"&gt;&lt;indexterm&gt;&lt;primary&gt;shared_preload_libraries&lt;/&gt;&lt;/&gt;.
-     Shared memory is reserved by calling:
-</span>アドインはLWLocks（軽量ロック）とサーバ起動時に共有メモリの割り当てを保持することができます。
+    </p></div><div class="sect2" id="id-1.8.3.12.15"><div class="titlepage"><div><div><h3 class="title">37.9.11. 共有メモリとLWLocks</h3></div></div></div><p>アドインはLWLocks（軽量ロック）とサーバ起動時に共有メモリの割り当てを保持することができます。
 <a class="xref" href="runtime-config-client.html#GUC-SHARED-PRELOAD-LIBRARIES">shared_preload_libraries</a><a id="id-1.8.3.12.15.2.2" class="indexterm"></a>で指定して、こうしたアドインの共有ライブラリを事前にロードしなければなりません。
 共有メモリは、その<code class="function">_PG_init</code>関数で以下を呼び出すことで保持されます。
-</p><pre class="programlisting">void RequestAddinShmemSpace(int size)</pre><p><span class="original">
-     from your &lt;function&gt;_PG_init&lt;/&gt; function.
-</span>
-    </p><p><span class="original">
-     LWLocks are reserved by calling:
-</span>LWLocksはその<code class="function">_PG_init</code>関数で以下を呼び出すことで保持されます。
-</p><pre class="programlisting">void RequestNamedLWLockTranche(const char *tranche_name, int num_lwlocks)</pre><p><span class="original">
-     from &lt;function&gt;_PG_init&lt;/&gt;.  This will ensure that an array of
-     &lt;literal&gt;num_lwlocks&lt;/&gt; LWLocks is available under the name
-     &lt;literal&gt;tranche_name&lt;/&gt;.  Use &lt;function&gt;GetNamedLWLockTranche&lt;/&gt;
-     to get a pointer to this array.
-</span>
+</p><pre class="programlisting">void RequestAddinShmemSpace(int size)</pre><p>
+    </p><p>LWLocksはその<code class="function">_PG_init</code>関数で以下を呼び出すことで保持されます。
+</p><pre class="programlisting">void RequestNamedLWLockTranche(const char *tranche_name, int num_lwlocks)</pre><p>
 <code class="literal">num_lwlocks</code>個のLWLockの配列が<code class="literal">tranche_name</code>という名前で確実に利用できるようにします。
 この配列へのポインタを得るには<code class="function">GetNamedLWLockTranche</code>を使ってください。
-    </p><p><span class="original">
-     To avoid possible race-conditions, each backend should use the LWLock
-     &lt;function&gt;AddinShmemInitLock&lt;/&gt; when connecting to and initializing
-     its allocation of shared memory, as shown here:
-</span>競合状態の可能性を防止するために、割り当てられた共有メモリへの接続やその初期化時に、以下のように各バックエンドで<code class="function">AddinShmemInitLock</code>軽量ロックを使用しなければなりません。
+    </p><p>競合状態の可能性を防止するために、割り当てられた共有メモリへの接続やその初期化時に、以下のように各バックエンドで<code class="function">AddinShmemInitLock</code>軽量ロックを使用しなければなりません。
 </p><pre class="programlisting">static mystruct *ptr = NULL;
 
 if (!ptr)
@@ -1825,61 +848,23 @@ if (!ptr)
         }
         LWLockRelease(AddinShmemInitLock);
 }</pre><p>
-    </p></div><div class="sect2" id="EXTEND-CPP"><div class="titlepage"><div><div><h3 class="title">37.9.12. 拡張へのC++の利用</h3></div></div></div><span class="original">
-    &lt;title&gt;Using C++ for Extensibility&lt;/title&gt;
-</span><a id="id-1.8.3.12.16.2" class="indexterm"></a><p><span class="original">
-     Although the &lt;productname&gt;PostgreSQL&lt;/productname&gt; backend is written in
-     C, it is possible to write extensions in C++ if these guidelines are
-     followed:
-</span>以下のガイドラインに従うことで、<span class="productname">PostgreSQL</span>の拡張を構築するためC++モードのコンパイラを利用できます。
+    </p></div><div class="sect2" id="EXTEND-CPP"><div class="titlepage"><div><div><h3 class="title">37.9.12. 拡張へのC++の利用</h3></div></div></div><a id="id-1.8.3.12.16.2" class="indexterm"></a><p>以下のガイドラインに従うことで、<span class="productname">PostgreSQL</span>の拡張を構築するためC++モードのコンパイラを利用できます。
 
-     </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p><span class="original">
-         All functions accessed by the backend must present a C interface
-         to the backend;  these C functions can then call C++ functions.
-         For example, &lt;literal&gt;extern C&lt;/&gt; linkage is required for
-         backend-accessed functions.  This is also necessary for any
-         functions that are passed as pointers between the backend and
-         C++ code.
-</span>バックエンドからアクセスされる関数はすべてバックエンドに対してCインタフェースを提供しなければなりません。
+     </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>バックエンドからアクセスされる関数はすべてバックエンドに対してCインタフェースを提供しなければなりません。
 このC関数はC++関数を呼びだすことができます。
 例えば、バックエンドからアクセスされる関数には<code class="literal">extern C</code>リンクが必要です。
 これはバックエンドとC++コードの間でポインタとして渡される関数にも必要です。
-       </p></li><li class="listitem"><p><span class="original">
-        Free memory using the appropriate deallocation method.  For example,
-        most backend memory is allocated using &lt;function&gt;palloc()&lt;/&gt;, so use
-        &lt;function&gt;pfree()&lt;/&gt; to free it.  Using C++
-        &lt;function&gt;delete&lt;/&gt; in such cases will fail.
-</span>適切な解放メソッドを使ってメモリを解放してください。
+       </p></li><li class="listitem"><p>適切な解放メソッドを使ってメモリを解放してください。
 例えば、ほとんどのバックエンドメモリは<code class="function">palloc()</code>で確保されますので、<code class="function">pfree()</code>を使って解放してください。
 この場合にC++の<code class="function">delete()</code>を使うと失敗するでしょう。
-       </p></li><li class="listitem"><p><span class="original">
-        Prevent exceptions from propagating into the C code (use a catch-all
-        block at the top level of all &lt;literal&gt;extern C&lt;/&gt; functions).  This
-        is necessary even if the C++ code does not explicitly throw any
-        exceptions, because events like out-of-memory can still throw
-        exceptions.  Any exceptions must be caught and appropriate errors
-        passed back to the C interface.  If possible, compile C++ with
-        &lt;option&gt;-fno-exceptions&lt;/&gt; to eliminate exceptions entirely; in such
-        cases, you must check for failures in your C++ code, e.g.  check for
-        NULL returned by &lt;function&gt;new()&lt;/&gt;.
-</span>例外がCコードへ伝播しないようにしてください（<code class="literal">extern C</code>関数すべての最上位ですべての例外を捕捉するブロックを使ってください）。
+       </p></li><li class="listitem"><p>例外がCコードへ伝播しないようにしてください（<code class="literal">extern C</code>関数すべての最上位ですべての例外を捕捉するブロックを使ってください）。
 メモリ不足のようなイベントにより例外が発生する可能性がありますので、C++コードが何も例外を発生させない場合であっても、これは必要です。
 例外はすべて捕捉しなければなりません。
 そして適切なエラーをCインタフェースに渡してください。
 可能であれば、例外を完全に除去できるように<code class="option">-fno-exceptions</code>を付けてC++をコンパイルしてください。
 その場合、例えば<code class="function">new()</code>で返されるNULLの検査など、C++コード内で失敗の検査を行わなければなりません。
-       </p></li><li class="listitem"><p><span class="original">
-        If calling backend functions from C++ code, be sure that the
-        C++ call stack contains only plain old data structures
-        (&lt;acronym&gt;POD&lt;/&gt;).  This is necessary because backend errors
-        generate a distant &lt;function&gt;longjmp()&lt;/&gt; that does not properly
-        unroll a C++ call stack with non-POD objects.
-</span>C++コードからバックエンド関数を呼び出す場合には、C++呼び出しスタック内にC言語互換構造体（<acronym class="acronym">POD</acronym>）のみが含まれていることを確認してください。
+       </p></li><li class="listitem"><p>C++コードからバックエンド関数を呼び出す場合には、C++呼び出しスタック内にC言語互換構造体（<acronym class="acronym">POD</acronym>）のみが含まれていることを確認してください。
 バックエンドのエラーは、非PODオブジェクトを持つC++呼び出しスタックを適切に戻すことができない、長距離<code class="function">longjmp()</code>を生成しますので、これは必要です。
        </p></li></ul></div><p>
-    </p><p><span class="original">
-     In summary, it is best to place C++ code behind a wall of
-     &lt;literal&gt;extern C&lt;/&gt; functions that interface to the backend,
-     and avoid exception, memory, and call stack leakage.
-</span>まとめると、バックエンドとやりとりするための壁の役割を担う<code class="literal">extern C</code>関数の背後にC++コードを配置して、例外、メモリ、呼び出しスタックそれぞれの漏れを避けるのが最善です。
-    </p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="xfunc-internal.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="extend.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="xaggr.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">37.8. 内部関数 </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> 37.10. ユーザ定義の集約</td></tr></table></div></body></html>
+    </p><p>まとめると、バックエンドとやりとりするための壁の役割を担う<code class="literal">extern C</code>関数の背後にC++コードを配置して、例外、メモリ、呼び出しスタックそれぞれの漏れを避けるのが最善です。
+    </p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="xfunc-internal.html">Prev</a> </td><td width="20%" align="center"><a accesskey="u" href="extend.html">Up</a></td><td width="40%" align="right"> <a accesskey="n" href="xaggr.html">Next</a></td></tr><tr><td width="40%" align="left" valign="top">37.8. 内部関数 </td><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td><td width="40%" align="right" valign="top"> 37.10. ユーザ定義の集約</td></tr></table></div></body></html>

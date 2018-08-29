@@ -1,19 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>43.9. PL/Tclにおける明示的サブトランザクション</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="pltcl-error-handling.html" title="43.8. PL/Tclのエラー処理" /><link rel="next" href="pltcl-config.html" title="43.10. PL/Tclの設定" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 10.5文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="pltcl.html" title="第43章 PL/Tcl - Tcl手続き言語">第43章 PL/Tcl - Tcl手続き言語</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 10.5 &#10;                      pltcl-subtransactions.html">誤訳等の報告
-                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="pltcl-error-handling.html" title="43.8. PL/Tclのエラー処理">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="pltcl.html" title="第43章 PL/Tcl - Tcl手続き言語">上へ</a></td><td width="60%" align="center">43.9. PL/Tclにおける明示的サブトランザクション</td><td width="20%" align="right"> <a accesskey="n" href="pltcl-config.html" title="43.10. PL/Tclの設定">次へ</a></td></tr></table><hr /></div><div class="sect1" id="PLTCL-SUBTRANSACTIONS"><div class="titlepage"><div><div><h2 class="title" style="clear: both">43.9. PL/Tclにおける明示的サブトランザクション</h2></div></div></div><span class="original">
-    &lt;title&gt;Explicit Subtransactions in PL/Tcl&lt;/title&gt;
-</span><a id="id-1.8.9.13.2" class="indexterm"></a><p><span class="original">
-     Recovering from errors caused by database access as described in
-     &lt;xref linkend="pltcl-error-handling"&gt; can lead to an undesirable
-     situation where some operations succeed before one of them fails,
-     and after recovering from that error the data is left in an
-     inconsistent state.  PL/Tcl offers a solution to this problem in
-     the form of explicit subtransactions.
-</span><a class="xref" href="pltcl-error-handling.html" title="43.8. PL/Tclのエラー処理">43.8</a>で説明されているように、データベースアクセスによって生じたエラーからの回復により、操作のうちいくつかが失敗する前に他の操作が成功し、エラーからの回復後、データの一貫性が失われた望ましくない状態になってしまう可能性があります。
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>43.9. PL/Tclにおける明示的サブトランザクション</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="pltcl-error-handling.html" title="43.8. PL/Tclのエラー処理" /><link rel="next" href="pltcl-config.html" title="43.10. PL/Tclの設定" /></head><body><div xmlns="http://www.w3.org/TR/xhtml1/transitional" class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="5" align="center">43.9. PL/Tclにおける明示的サブトランザクション</th></tr><tr><td width="10%" align="left"><a accesskey="p" href="pltcl-error-handling.html" title="43.8. PL/Tclのエラー処理">Prev</a> </td><td width="10%" align="left"><a accesskey="u" href="pltcl.html" title="Chapter 43. PL/Tcl - Tcl手続き言語">Up</a></td><th width="60%" align="center">Chapter 43. PL/Tcl - Tcl手続き言語</th><td width="10%" align="right"><a accesskey="h" href="index.html" title="PostgreSQL 10.5文書">Home</a></td><td width="10%" align="right"> <a accesskey="n" href="pltcl-config.html" title="43.10. PL/Tclの設定">Next</a></td></tr></table><hr></hr></div><div class="sect1" id="PLTCL-SUBTRANSACTIONS"><div class="titlepage"><div><div><h2 class="title" style="clear: both">43.9. PL/Tclにおける明示的サブトランザクション</h2></div></div></div><a id="id-1.8.9.13.2" class="indexterm"></a><p><a class="xref" href="pltcl-error-handling.html" title="43.8. PL/Tclのエラー処理">Section 43.8</a>で説明されているように、データベースアクセスによって生じたエラーからの回復により、操作のうちいくつかが失敗する前に他の操作が成功し、エラーからの回復後、データの一貫性が失われた望ましくない状態になってしまう可能性があります。
 PL/Tclは明示的なトランザクションの手法でこの問題を解決する手段を提供しています。
-    </p><p><span class="original">
-     Consider a function that implements a transfer between two accounts:
-</span>2つのアカウントの間の送金を実装する関数を考えます。
+    </p><p>2つのアカウントの間の送金を実装する関数を考えます。
 </p><pre class="programlisting">CREATE FUNCTION transfer_funds() RETURNS void AS $$
     if [catch {
         spi_exec "UPDATE accounts SET balance = balance - 100 WHERE account_name = 'joe'"
@@ -24,25 +12,11 @@ PL/Tclは明示的なトランザクションの手法でこの問題を解決�
         set result "funds transferred successfully"
     }
     spi_exec "INSERT INTO operations (result) VALUES ('[quote $result]')"
-$$ LANGUAGE pltcl;</pre><p><span class="original">
-     If the second &lt;command&gt;UPDATE&lt;/command&gt; statement results in an
-     exception being raised, this function will log the failure, but
-     the result of the first &lt;command&gt;UPDATE&lt;/command&gt; will
-     nevertheless be committed.  In other words, the funds will be
-     withdrawn from Joe's account, but will not be transferred to
-     Mary's account.  This happens because each &lt;function&gt;spi_exec&lt;/function&gt;
-     is a separate subtransaction, and only one of those subtransactions
-     got rolled back.
-</span>
+$$ LANGUAGE pltcl;</pre><p>
 ふたつ目の<code class="command">UPDATE</code>文で例外が発生する結果になると、この関数は失敗を記録しますが、それにもかかわらず、最初の<code class="command">UPDATE</code>はコミットされます。
 言い換えると、Joeのアカウントから資金が引き出されたのに、Maryのアカウントには転送されません。
 これは、それぞれの<code class="function">spi_exec</code>が別々のサブトランザクションになっていて、そのうち一つのサブトランザクションだけがロールバックされるからです。
-    </p><p><span class="original">
-     To handle such cases, you can wrap multiple database operations in an
-     explicit subtransaction, which will succeed or roll back as a whole.
-     PL/Tcl provides a &lt;function&gt;subtransaction&lt;/function&gt; command to manage
-     this.  We can rewrite our function as:
-</span>このような状況に対応するには、複数のデータベース操作を、全体が成功するか、あるいは失敗する明示的なサブトランザクションで包みます。
+    </p><p>このような状況に対応するには、複数のデータベース操作を、全体が成功するか、あるいは失敗する明示的なサブトランザクションで包みます。
 PL/Tclは、これを管理するための<code class="function">subtransaction</code>コマンドを提供しています。
 </p><pre class="programlisting">CREATE FUNCTION transfer_funds2() RETURNS void AS $$
     if [catch {
@@ -56,28 +30,12 @@ PL/Tclは、これを管理するための<code class="function">subtransaction<
         set result "funds transferred successfully"
     }
     spi_exec "INSERT INTO operations (result) VALUES ('[quote $result]')"
-$$ LANGUAGE pltcl;</pre><p><span class="original">
-     Note that use of &lt;function&gt;catch&lt;/function&gt; is still required for this
-     purpose.  Otherwise the error would propagate to the top level of the
-     function, preventing the desired insertion into
-     the &lt;structname&gt;operations&lt;/structname&gt; table.
-     The &lt;function&gt;subtransaction&lt;/function&gt; command does not trap errors, it
-     only assures that all database operations executed inside its scope will
-     be rolled back together when an error is reported.
-</span>
+$$ LANGUAGE pltcl;</pre><p>
 この目的のために、<code class="function">catch</code>が必要であることに注意してください。
 そうでないと、エラーが関数のトップレベルまで伝搬し、期待したような<code class="structname">operations</code>テーブルへの挿入が阻害されてしまいます。
 <code class="function">subtransaction</code>コマンドはエラーを補足しません。
 エラーが報告された際に、スコープの内側で実行されたすべてのデータベース操作がロールバックされることを保証するだけです。
-    </p><p><span class="original">
-     A rollback of an explicit subtransaction occurs on any error reported
-     by the contained Tcl code, not only errors originating from database
-     access.  Thus a regular Tcl exception raised inside
-     a &lt;function&gt;subtransaction&lt;/function&gt; command will also cause the
-     subtransaction to be rolled back.  However, non-error exits out of the
-     contained Tcl code (for instance, due to &lt;function&gt;return&lt;/function&gt;) do
-     not cause a rollback.
-</span>明示的なサブトランザクションのロールバックは、Tclのコードの中でエラーが報告された際だけでなく、データベースアクセスに起因するエラーの際にも起こります。
+    </p><p>明示的なサブトランザクションのロールバックは、Tclのコードの中でエラーが報告された際だけでなく、データベースアクセスに起因するエラーの際にも起こります。
 ですから、<code class="function">subtransaction</code>コマンド内の内側で起こった通常のTcl例外は、サブトランザクションのロールバックも引き起こします。
 しかし、Tclコードからのエラーによらない脱出（たとえば<code class="function">return</code>によるもの）は、ロールバックをもたらしません。
-    </p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="pltcl-error-handling.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="pltcl.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="pltcl-config.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">43.8. PL/Tclのエラー処理 </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> 43.10. PL/Tclの設定</td></tr></table></div></body></html>
+    </p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="pltcl-error-handling.html">Prev</a> </td><td width="20%" align="center"><a accesskey="u" href="pltcl.html">Up</a></td><td width="40%" align="right"> <a accesskey="n" href="pltcl-config.html">Next</a></td></tr><tr><td width="40%" align="left" valign="top">43.8. PL/Tclのエラー処理 </td><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td><td width="40%" align="right" valign="top"> 43.10. PL/Tclの設定</td></tr></table></div></body></html>
