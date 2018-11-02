@@ -35,16 +35,24 @@ function.  In that case the function appearing earlier in the search path is
 used, or if the two functions are in the same schema, the non-variadic one is
 preferred.
 </span>もし関数が<code class="literal">VARIADIC</code>型の配列パラメータを伴って定義されており、そして<code class="literal">VARIADIC</code>キーワードを用いずに呼ばれた場合は、呼び出しに適合するよう、一つかそれ以上の要素の型に配列のパラメータを置き換えた形で扱われます。
-このような拡張後は、その関数は実際の引数の型を持つので、他の非可変長の引数を持つ関数と同一になるかもしれません。この場合、検索パスで先に見つかった関数が使われます。また、同じスキーマに2つの関数が見つかった場合は非可変長の関数が優先されます。</p><p>This creates a security hazard when calling, via qualified name
-  <a href="#ftn.FUNC-QUALIFIED-SECURITY" class="footnote"><sup class="footnote" id="FUNC-QUALIFIED-SECURITY">[9]</sup></a>,
+このような拡張後は、その関数は実際の引数の型を持つので、他の非可変長の引数を持つ関数と同一になるかもしれません。この場合、検索パスで先に見つかった関数が使われます。また、同じスキーマに2つの関数が見つかった場合は非可変長の関数が優先されます。</p><p><span class="original">
+This creates a security hazard when calling, via qualified name
+</span>信用できないユーザにオブジェクトの作成を許可しているスキーマで見つかる可変長引数の関数を、修飾された名前で
+  <a href="#ftn.FUNC-QUALIFIED-SECURITY" class="footnote"><sup class="footnote" id="FUNC-QUALIFIED-SECURITY">[9]</sup></a><span class="original"> ,
 a variadic function found in a schema that permits untrusted users to create
 objects.  A malicious user can take control and execute arbitrary SQL
 functions as though you executed them.  Substitute a call bearing
-the <code class="literal">VARIADIC</code> keyword, which bypasses this hazard.  Calls
-populating <code class="literal">VARIADIC "any"</code> parameters often have no
-equivalent formulation containing the <code class="literal">VARIADIC</code> keyword.  To
+the &lt;literal&gt;VARIADIC&lt;/literal&gt; keyword, which bypasses this hazard.  Calls
+populating &lt;literal&gt;VARIADIC "any"&lt;/literal&gt; parameters often have no
+equivalent formulation containing the &lt;literal&gt;VARIADIC&lt;/literal&gt; keyword.  To
 issue those calls safely, the function's schema must permit only trusted users
-to create objects.</p></li><li class="step"><p><span class="original">
+to create objects.
+</span>
+呼び出す時にセキュリティの危険が発生します。
+悪意のあるユーザは、支配権を奪い、あたかもあなたが実行したかのように任意のSQL関数を実行できます。
+<code class="literal">VARIADIC</code>キーワードを持つ呼び出しを代わりに使ってください。そうすればこの危険は避けられます。
+<code class="literal">VARIADIC "any"</code>パラメータにデータを入れての呼び出しには、しばしば同等の<code class="literal">VARIADIC</code>キーワード含む定式化がありません。
+この呼び出しを安全に行なうには、関数のスキーマは信用できるユーザだけがオブジェクトを作成できるようにしなければなりません。</p></li><li class="step"><p><span class="original">
 Functions that have default values for parameters are considered to match any
 call that omits zero or more of the defaultable parameter positions.  If more
 than one such function matches a call, the one appearing earliest in the
@@ -56,13 +64,18 @@ function call&lt;/&gt; error will result if no better match to the call can be
 found.
 </span>パラメータにデフォルト値を持つ関数は、デフォルト指定可能なパラメータ位置のうち、0以上が省略されたどのような呼び出しに対しても適合すると見なされます。
 もし呼び出し時にこのような関数が2つ以上適合した場合、検索パスで先に見つかったものが使用されます。
-もし、デフォルト指定のない位置に同じパラメータ型を持つ関数(もしそれらが異なるデフォルト指定のあるパラメータのセットを持っていればあり得ます)が同じスキーマに2つ以上あった時は、システムはどの関数を使うべきか決定できず、呼出しにより適合するものが見つからなければ<span class="quote">「<span class="quote">ambiguous function call</span>」</span>エラーが結果として返るでしょう。</p><p>This creates an availability hazard when calling, via qualified
-name<a href="typeconv-func.html#ftn.FUNC-QUALIFIED-SECURITY" class="footnoteref"><sup class="footnoteref">[9]</sup></a>, any function found in a
+もし、デフォルト指定のない位置に同じパラメータ型を持つ関数(もしそれらが異なるデフォルト指定のあるパラメータのセットを持っていればあり得ます)が同じスキーマに2つ以上あった時は、システムはどの関数を使うべきか決定できず、呼び出しにより適合するものが見つからなければ<span class="quote">「<span class="quote">ambiguous function call</span>」</span>エラーが結果として返るでしょう。</p><p><span class="original">
+This creates an availability hazard when calling, via qualified
+name&lt;footnoteref linkend="func-qualified-security"&gt;, any function found in a
 schema that permits untrusted users to create objects.  A malicious user can
 create a function with the name of an existing function, replicating that
 function's parameters and appending novel parameters having default values.
 This precludes new calls to the original function.  To forestall this hazard,
-place functions in schemas that permit only trusted users to create objects.</p></li></ol></li><li class="step"><p><span class="original">
+place functions in schemas that permit only trusted users to create objects.
+</span>信用できないユーザにオブジェクトの作成を許可しているスキーマで見つかる関数を修飾された名前で<a href="typeconv-func.html#ftn.FUNC-QUALIFIED-SECURITY" class="footnoteref"><sup class="footnoteref">[9]</sup></a>呼び出す時に、これは濫用の危険を起こします。
+悪意のあるユーザは、既存の関数の名前で、その関数のパラメータを複製し、デフォルト値を持つ新しいパラメータを追加した関数を作成できます。
+これは元の関数への新しい呼び出しを妨げます。
+この危険を未然に防ぐには、関数を信用できるユーザだけがオブジェクトを作成できるスキーマに置いてください。</p></li></ol></li><li class="step"><p><span class="original">
 Check for a function accepting exactly the input argument types.
 If one exists (there can be only one exact match in the set of
 functions considered), use it.  Lack of an exact match creates a security
@@ -72,8 +85,10 @@ schema that permits untrusted users to create objects.  In such situations,
 cast arguments to force an exact match.  (Cases involving &lt;type&gt;unknown&lt;/type&gt;
 will never find a match at this step.)
 </span>正確に入力引数型を受け付ける関数があるかどうか検査します。
-該当する関数があれば（調査される関数の集合内で正確に一致するものは1つしかあり得ません）、それを使用します
-（<code class="type">unknown</code>を含む場合は、この段階で一致するものは決して見つかりません）。</p></li><li class="step"><p><span class="original">
+該当する関数があれば（調査される関数の集合内で正確に一致するものは1つしかあり得ません）、それを使用します。
+正確に一致するものがない場合、信用できないユーザにオブジェクトの作成を許可しているスキーマで見つかる関数を、修飾された名前で<a href="typeconv-func.html#ftn.FUNC-QUALIFIED-SECURITY" class="footnoteref"><sup class="footnoteref">[9]</sup></a>呼び出す時にセキュリティの危険が発生します。
+そのような状況では、強制的に正確に一致するように引数をキャストしてください。
+（<code class="type">unknown</code>を含む場合は、この段階で一致するものは決して見つかりません。）</p></li><li class="step"><p><span class="original">
 If no exact match is found, see if the function call appears
 to be a special type conversion request.  This happens if the function call
 has just one argument and the function name is the same as the (internal)
@@ -185,12 +200,17 @@ Since numeric constants with decimal points are initially assigned the
 type &lt;type&gt;numeric&lt;/type&gt;, the following query will require no type
 conversion and therefore might be slightly more efficient:
 </span>小数点を持つ数値定数はまず<code class="type">numeric</code>に割り当てられますので、以下の問い合わせでは型変換が不要です。そのためかなり効率的になる可能性があります。
-</p><pre class="screen">SELECT round(4.0, 4);</pre></div></div><br class="example-break" /><div class="example" id="id-1.5.9.8.7"><p class="title"><strong>例10.7 Variadic Function Resolution</strong></p><div class="example-contents"><pre class="screen">CREATE FUNCTION public.variadic_example(VARIADIC numeric[]) RETURNS int
+</p><pre class="screen">SELECT round(4.0, 4);</pre></div></div><br class="example-break" /><div class="example" id="id-1.5.9.8.7"><p class="title"><strong>例10.7 可変長引数の関数の解決</strong></p><div class="example-contents"><span class="original">
+&lt;title&gt;Variadic Function Resolution&lt;/title&gt;
+</span><pre class="screen">CREATE FUNCTION public.variadic_example(VARIADIC numeric[]) RETURNS int
   LANGUAGE sql AS 'SELECT 1';
 CREATE FUNCTION</pre><p>
-
+<span class="original">
 This function accepts, but does not require, the VARIADIC keyword.  It
 tolerates both integer and numeric arguments:
+</span>
+この関数は、必須ではないですがVARIADICキーワードを受け付けます。
+整数の引数と数値の引数の両方を許容します。
 
 </p><pre class="screen">SELECT public.variadic_example(0),
        public.variadic_example(0.0),
@@ -199,9 +219,11 @@ tolerates both integer and numeric arguments:
 ------------------+------------------+------------------
                 1 |                1 |                1
 (1 row)</pre><p>
-
+<span class="original">
 However, the first and second calls will prefer more-specific functions, if
 available:
+</span>
+しかしながら、1番目と2番目の呼び出しは、もし利用可能なら、より特定の関数を優先します。
 
 </p><pre class="screen">CREATE FUNCTION public.variadic_example(numeric) RETURNS int
   LANGUAGE sql AS 'SELECT 2';
@@ -218,11 +240,15 @@ SELECT public.variadic_example(0),
 ------------------+------------------+------------------
                 3 |                2 |                1
 (1 row)</pre><p>
-
+<span class="original">
 Given the default configuration and only the first function existing, the
 first and second calls are insecure.  Any user could intercept them by
 creating the second or third function.  By matching the argument type exactly
-and using the <code class="literal">VARIADIC</code> keyword, the third call is secure.</p></div></div><br class="example-break" /><div class="example" id="id-1.5.9.8.8"><p class="title"><strong>例10.8 部分文字列関数の型解決</strong></p><div class="example-contents"><span class="original">
+and using the &lt;literal&gt;VARIADIC&lt;/literal&gt; keyword, the third call is secure.
+</span>
+もしデフォルトの設定で最初の関数だけが存在しているなら、1番目と2番目の呼び出しは安全ではありません。
+ユーザは、2番目や3番目の関数を作成することで、それらを妨害できます。
+引数の型を厳密に一致させ<code class="literal">VARIADIC</code>キーワードを使うのなら、3番目の呼び出しは安全です。</p></div></div><br class="example-break" /><div class="example" id="id-1.5.9.8.8"><p class="title"><strong>例10.8 部分文字列関数の型解決</strong></p><div class="example-contents"><span class="original">
 &lt;title&gt;Substring Function Type Resolution&lt;/title&gt;
 </span><p><span class="original">
 There are several &lt;function&gt;substr&lt;/function&gt; functions, one of which
@@ -279,10 +305,12 @@ to &lt;type&gt;text&lt;/&gt;.  An explicit cast will work, however:
  substr
 --------
      34
-(1 row)</pre></div></div><br class="example-break" /><div class="footnotes"><br /><hr style="width:100; text-align:left;margin-left: 0" /><div id="ftn.FUNC-QUALIFIED-SECURITY" class="footnote"><span class="original"> If you edit this, consider editing op-qualified-security. </span><p><a href="#FUNC-QUALIFIED-SECURITY" class="para"><sup class="para">[9] </sup></a>    The hazard does not arise with a non-schema-qualified name, because a
+(1 row)</pre></div></div><br class="example-break" /><div class="footnotes"><br /><hr style="width:100; text-align:left;margin-left: 0" /><div id="ftn.FUNC-QUALIFIED-SECURITY" class="footnote"><span class="original"> 原文コメント If you edit this, consider editing op-qualified-security. </span><p><a href="#FUNC-QUALIFIED-SECURITY" class="para"><sup class="para">[9] </sup></a><span class="original">
+    The hazard does not arise with a non-schema-qualified name, because a
     search path containing schemas that permit untrusted users to create
-    objects is not a <a class="link" href="ddl-schemas.html#DDL-SCHEMAS-PATTERNS" title="5.8.6. 使用パターン">secure schema usage
-    pattern</a>.
+    objects is not a &lt;link linkend="ddl-schemas-patterns"&gt;secure schema usage
+    pattern&lt;/link&gt;.
+</span>信用できないユーザにオブジェクトの作成を許可するスキーマを含む検索パスは、<a class="link" href="ddl-schemas.html#DDL-SCHEMAS-PATTERNS" title="5.8.6. 使用パターン">安全なスキーマ使用パターン</a>ではありませんので、スキーマで修飾されていない名前では危険は起こりません。
    </p></div><div id="ftn.id-1.5.9.8.4.4.1.2" class="footnote"><p><a href="#id-1.5.9.8.4.4.1.2" class="para"><sup class="para">[10] </sup></a><span class="original">
     The reason for this step is to support function-style cast specifications
     in cases where there is not an actual cast function.  If there is a cast

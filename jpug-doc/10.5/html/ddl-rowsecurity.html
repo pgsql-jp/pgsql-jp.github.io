@@ -118,29 +118,36 @@ CREATE POLICY account_managers ON accounts TO managers
    manager) and to rows modified by a command (so rows belonging to a
    different manager cannot be created via &lt;command&gt;INSERT&lt;/command&gt;
    or &lt;command&gt;UPDATE&lt;/command&gt;).
+</span>上記のポリシーは、上記の<code class="literal">USING</code>句と同じ<code class="literal">WITH CHECK</code>句を暗黙的に提供するので、制約は、コマンドが選択した行にも適用されますし（ですから、マネージャは、違うマネージャに属する既存の行に対して<code class="command">SELECT</code>、<code class="command">UPDATE</code>、<code class="command">DELETE</code>を発行することはできません）、コマンドが変更した行にも適用されます（ですから、違うマネージャに属する行を、<code class="command">INSERT</code>あるいは<code class="command">UPDATE</code>で作ることはできません）。
+  </p><p><span class="original">
+   If no role is specified, or the special user name
+   &lt;literal&gt;PUBLIC&lt;/literal&gt; is used, then the policy applies to all
+   users on the system.  To allow all users to access only their own row in
+   a &lt;literal&gt;users&lt;/literal&gt; table, a simple policy can be used:
 </span>ロールが指定されなかった場合、あるいは特別なユーザ名<code class="literal">PUBLIC</code>が指定された場合、ポリシーはシステム上の全ユーザに適用されます。
 すべてのユーザが<code class="literal">users</code>テーブルの自分自身の行にだけアクセスできるようにするためには、次の簡単なポリシーが使用できます。
-  </p><p>   If no role is specified, or the special user name
-   <code class="literal">PUBLIC</code> is used, then the policy applies to all
-   users on the system.  To allow all users to access only their own row in
-   a <code class="literal">users</code> table, a simple policy can be used:
   </p><pre class="programlisting">CREATE POLICY user_policy ON users
-    USING (user_name = current_user);</pre><p>   This works similarly to the previous example.
+    USING (user_name = current_user);</pre><p><span class="original">
+   This works similarly to the previous example.
+</span>これは前の例と同じように動きます。
   </p><p><span class="original">
    To use a different policy for rows that are being added to the table
    compared to those rows that are visible, multiple policies can be
    combined.  This pair of policies would allow all users to view all rows
    in the &lt;literal&gt;users&lt;/literal&gt; table, but only modify their own:
-</span>テーブルに追加される行に対し、可視である行とは異なるポリシーを使用する場合は、<code class="literal">WITH CHECK</code>句を使うことができます。
-次のポリシーでは、すべてのユーザが<code class="literal">users</code>テーブルのすべての行を見ることができますが、自分自身の行だけしか更新できません。
+</span>テーブルに追加される行に対し、可視である行とは異なるポリシーを使用する場合は、複数のポリシーを組み合わせることができます。
+組み合わせたポリシーにより、すべてのユーザが<code class="literal">users</code>テーブルのすべての行を見ることができますが、自分自身の行だけしか更新できません。
   </p><pre class="programlisting">CREATE POLICY user_sel_policy ON users
     FOR SELECT
     USING (true);
 CREATE POLICY user_mod_policy ON users
-    USING (user_name = current_user);</pre><p>   In a <code class="command">SELECT</code> command, these two policies are combined
-   using <code class="literal">OR</code>, with the net effect being that all rows
+    USING (user_name = current_user);</pre><p><span class="original">
+   In a &lt;command&gt;SELECT&lt;/command&gt; command, these two policies are combined
+   using &lt;literal&gt;OR&lt;/literal&gt;, with the net effect being that all rows
    can be selected.  In other command types, only the second policy applies,
    so that the effects are the same as before.
+</span><code class="command">SELECT</code>コマンドでは、<code class="literal">OR</code>を使って2つのポリシーが組み合わされ、すべての行を検索できる効果をもたらします。
+他のコマンドに対しては、二番目のポリシーだけが適用され、以前と効果は同じです。
   </p><p><span class="original">
    Row security can also be disabled with the &lt;command&gt;ALTER TABLE&lt;/command&gt;
    command.  Disabling row security does not remove any policies that are
@@ -149,7 +156,7 @@ CREATE POLICY user_mod_policy ON users
    system.
 </span>行セキュリティは<code class="command">ALTER TABLE</code>で無効にすることもできます。
 行セキュリティを無効にしても、テーブルに定義されているポリシーは削除されず、単に無視されるだけになります。
-このときは標準的なSQLの権限システムに従って、すべての行が可視で更新可能になります。
+このときはSQL標準の権限システムに従って、すべての行が可視で更新可能になります。
   </p><p><span class="original">
    Below is a larger example of how this feature can be used in production
    environments.  The table &lt;literal&gt;passwd&lt;/&gt; emulates a Unix password
