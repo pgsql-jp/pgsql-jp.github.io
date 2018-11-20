@@ -5,6 +5,12 @@ layout: default
 
 [正式版](https://www.postgresql.jp/document/)
 
+### PostgreSQL 11
+
+| HTML （オンライン）           | PDF                                           | EPUB                                         | man | 更新日     |
+|:---------------------------|:---------------------------------------------:|:--------------------------------------------:|:---:|:----------:|
+| [11.1](jpug-doc/11.1/html/) | [PDF](jpug-doc/11.1/postgresql-11.1-A4.pdf) | [EPUB](jpug-doc/11.1/postgresql-11.1.epub) | [man.tar.gz](jpug-doc/11.1/man.tar.gz) | 2018-11-20 |
+
 ### PostgreSQL 10
 
 | HTML （オンライン）           | PDF                                           | EPUB                                         | man | 更新日     |
