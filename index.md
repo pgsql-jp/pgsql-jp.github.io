@@ -9,7 +9,7 @@ layout: default
 
 | HTML （オンライン）           | PDF                                           | EPUB                                         | man | 更新日     |
 |:---------------------------|:---------------------------------------------:|:--------------------------------------------:|:---:|:----------:|
-| [11.1](jpug-doc/11.1/html/) | [PDF](jpug-doc/11.1/postgresql-11.1-A4.pdf) | [EPUB](jpug-doc/11.1/postgresql-11.1.epub) | [man.tar.gz](jpug-doc/11.1/man.tar.gz) | 2018-11-20 |
+| [11.1](jpug-doc/11.1/html/) | [PDF](jpug-doc/11.1/postgresql-11.1-A4.pdf) | [EPUB](jpug-doc/11.1/postgresql-11.1.epub) | [man.tar.gz](jpug-doc/11.1/man.tar.gz) | 2018-12-10 |
 
 ### PostgreSQL 10
 
