@@ -584,6 +584,8 @@ SELECT percentile_disc(0.5) WITHIN GROUP (ORDER BY income) FROM households;
 この設計は、最終関数がソートされるデータに追加の<span class="quote">「<span class="quote">架空</span>」</span>行を注入するなどの特別な操作を実行するのを可能にします。
 通常の集約は多くの場合、<span class="application">PL/pgSQL</span>または別のPL言語で書かれたサポート関数で実装することができますが、順序集合集約は状態値が任意のSQLデータ型のように定義可能ではないため一般的にC言語で書かれます。
 (上の例では、状態値が<code class="type">内部</code>型 — として宣言されていることに気づくでしょう。これは典型的なものです。）
+また、最終関数がソートを実行しますので、遷移関数を後で再び実行し、引き続き入力行を追加することはできません。
+これは最終関数が<code class="literal">READ_ONLY</code>ではないことを意味します。追加の最終関数呼び出しで既にソートされた状態を使えるのなら、<a class="xref" href="sql-createaggregate.html" title="CREATE AGGREGATE"><span class="refentrytitle">CREATE AGGREGATE</span></a>で<code class="literal">READ_WRITE</code>または<code class="literal">SHAREABLE</code>と宣言しなければなりません。
   </p><p>
 <span class="original">
    The state transition function for an ordered-set aggregate receives
@@ -732,7 +734,7 @@ SELECT percentile_disc(0.5) WITHIN GROUP (ORDER BY income) FROM households;
    &lt;function&gt;AggCheckCallContext&lt;/function&gt;, for example:
 </span>
 C言語で作成された関数は、<code class="function">AggCheckCallContext</code>を呼び出して、集約サポート関数として呼び出されているかを検出することができます。
-例えば。
+例えば、
 </p><pre class="programlisting">
 if (AggCheckCallContext(fcinfo, NULL))
 </pre><p>
@@ -747,11 +749,10 @@ if (AggCheckCallContext(fcinfo, NULL))
    when creating the aggregate.  See &lt;xref linkend="sql-createaggregate"/&gt;
    for more detail.)
 </span>
-この検査を行う理由の１つとして、遷移関数に対してこれが真の場合、先頭の入力は一時的な状態値でなければなりませんので、新規に割り当ててコピーを持つことなくそのまま変更しても安全であることが分かることがあります。
+この検査を行う理由の１つは、これが真の場合、先頭の入力は一時的な状態値であるはずなので、新規に割り当ててコピーを持つことなくそのまま変更しても安全だからです。
 例として<code class="function">int8inc()</code>を参照してください。
-（これは関数内で参照渡しの入力を安全に変更できる<span class="emphasis"><em>唯一の</em></span>場合です。
-特に通常の集約のための最終関数はいかなる場合でもそれらの入力を変更してはなりません。
-なぜならいくつかのケースでは、同じ最終状態の値から再実行されることがあるからです。）
+（集約遷移関数は常に遷移値をその場で変更できますが、集約最終関数ではそのようなことをするのは一般には勧められません。もし、そうするなら集約を定義する時にその振舞いを宣言しなければなりません。
+より詳しくは<a class="xref" href="sql-createaggregate.html" title="CREATE AGGREGATE"><span class="refentrytitle">CREATE AGGREGATE</span></a>を見てください。）
   </p><p>
 <span class="original">
    The second argument of &lt;function&gt;AggCheckCallContext&lt;/function&gt; can be used to
