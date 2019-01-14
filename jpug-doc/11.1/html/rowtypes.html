@@ -101,7 +101,7 @@ CREATE TABLE inventory_item (
 テーブルを作成すると、上述のものと同じ<code class="literal">inventory_item</code>という複合型が副次的に作成され、同様に使用することができるようになります。
 しかし、現在の実装には、次のような重要な制限があることに注意してください。
 複合型には制約が関連付けられませんので、テーブル定義に含まれる制約は、テーブルの外部に作成される複合型には<span class="emphasis"><em>適用されません</em></span>。
-（部分的な回避方法は、複合型のメンバとしてドメイン型を使用することです。）
+（これを回避するためには、複合型を含むドメインを作成し、ドメインの<code class="literal">CHECK</code>制約として望みの制約を適用します。）
  </p></div><div class="sect2" id="id-1.5.7.24.6"><div class="titlepage"><div><div><h3 class="title">8.16.2. 複合型の値の構成</h3></div></div></div><span class="original">
   &lt;title&gt;Constructing Composite Values&lt;/title&gt;
 </span><a id="id-1.5.7.24.6.2" class="indexterm"></a><p>
@@ -422,14 +422,19 @@ SELECT (myfunc(x)).a, (myfunc(x)).b, (myfunc(x)).c FROM some_table;
 </p><pre class="programlisting">
 SELECT m.* FROM some_table, LATERAL myfunc(x) AS m;
 </pre><p>
+<span class="original">
     Placing the function in
-    a <code class="literal">LATERAL</code> <code class="literal">FROM</code> item keeps it from
-    being invoked more than once per row.  <code class="literal">m.*</code> is still
-    expanded into <code class="literal">m.a, m.b, m.c</code>, but now those variables
-    are just references to the output of the <code class="literal">FROM</code> item.
-    (The <code class="literal">LATERAL</code> keyword is optional here, but we show it
-    to clarify that the function is getting <code class="structfield">x</code>
-    from <code class="structname">some_table</code>.)
+    a &lt;literal&gt;LATERAL&lt;/literal&gt; &lt;literal&gt;FROM&lt;/literal&gt; item keeps it from
+    being invoked more than once per row.  &lt;literal&gt;m.*&lt;/literal&gt; is still
+    expanded into &lt;literal&gt;m.a, m.b, m.c&lt;/literal&gt;, but now those variables
+    are just references to the output of the &lt;literal&gt;FROM&lt;/literal&gt; item.
+    (The &lt;literal&gt;LATERAL&lt;/literal&gt; keyword is optional here, but we show it
+    to clarify that the function is getting &lt;structfield&gt;x&lt;/structfield&gt;
+    from &lt;structname&gt;some_table&lt;/structname&gt;.)
+</span>
+<code class="literal">LATERAL</code> <code class="literal">FROM</code>項目の中に関数を置くと、関数は1行につき2度以上は呼び出されません。
+<code class="literal">m.*</code>はまだ<code class="literal">m.a, m.b, m.c</code>に展開されますが、その変数は<code class="literal">FROM</code>項目の出力の単なる参照です。
+(<code class="literal">LATERAL</code>キーワードはここでは省略可能ですが、関数が<code class="structname">some_table</code>から<code class="structfield">x</code>を入手していることを明確にするために書きました。)
    </p></div><p>
 <span class="original">
    The &lt;replaceable&gt;composite_value&lt;/replaceable&gt;&lt;literal&gt;.*&lt;/literal&gt; syntax results in
@@ -562,7 +567,8 @@ SELECT c.somefunc FROM inventory_item c;
     &lt;literal&gt;&lt;replaceable&gt;schema&lt;/replaceable&gt;.&lt;replaceable&gt;func&lt;/replaceable&gt;(&lt;replaceable&gt;compositevalue&lt;/replaceable&gt;)&lt;/literal&gt;.
 </span>
 このような動作になるため、複合型の引数を一つだけとる関数に、その複合型に含まれるフィールドと同じ名前をつけることは賢明ではありません。
-曖昧なときにはフィールド名の解釈が優先されるため、何かの仕掛けをしないと関数を呼び出すことができません。
+曖昧なときには、フィールド名の構文が使われていれば、フィールド名の解釈が選ばれ、関数呼び出しの構文が使われていれば、関数が選ばれます。
+しかしながら、11より前の<span class="productname">PostgreSQL</span>のバージョンでは、呼び出し構文が関数呼び出しとしてしか扱えない場合を除いて、常にフィールド名の解釈を選んでいました。
 関数としての解釈を強制する一つの方法は、関数名をスキーマ修飾する、つまり<code class="literal"><em class="replaceable"><code>schema</code></em>.<em class="replaceable"><code>func</code></em>(<em class="replaceable"><code>compositevalue</code></em>)</code>とすることです。
    </p></div></div><div class="sect2" id="ROWTYPES-IO-SYNTAX"><div class="titlepage"><div><div><h3 class="title">8.16.6. 複合型の入出力構文</h3></div></div></div><span class="original">
   &lt;title&gt;Composite Type Input and Output Syntax&lt;/title&gt;
