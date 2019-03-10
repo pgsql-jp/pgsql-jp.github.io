@@ -41,7 +41,7 @@
 </span>
 <code class="classname">pg_am</code>テーブルには各インデックスメソッド（内部ではアクセスメソッドとして知られています）に対して1つの行が含まれています。
 テーブルへの通常のアクセスのサポートは<span class="productname">PostgreSQL</span>に組み込まれていますが、すべてのインデックスメソッドは、<code class="classname">pg_am</code>で記述されています。
-必要なコードを書いた後、<code class="classname">pg_am</code>に行を作成することによって、新しいインデックスアクセスメソッドを追加することができます。
+必要なコードを書いた後、<code class="classname">pg_am</code>にエントリを作成することによって、新しいインデックスアクセスメソッドを追加することができます。
 しかし、この方法についての説明は本章での範囲を超えています（<a class="xref" href="indexam.html" title="第61章 インデックスアクセスメソッドのインタフェース定義">第61章</a>を参照してください）。
   </p><p>
 <span class="original">
@@ -63,7 +63,7 @@
 代わりに、<em class="firstterm">演算子クラス</em>が、特定のデータ型の操作においてインデックスメソッドを使用する必要がある演算の集合を識別します。
 <a id="id-1.8.3.18.5.3.2" class="indexterm"></a>
 演算子クラスという名前の由来は、それらが指定するものの1つにインデックスで使用できる（つまり、インデックススキャン条件に変換できる）<code class="literal">WHERE</code>句演算子の集合があるからです。
-また、演算子クラスは、インデックスメソッドの内部演算で必要な、しかしインデックスで使用できる<code class="literal">WHERE</code>句演算子には直接的には対応しない、<em class="firstterm">サポートプロシージャ</em>をいくつか指定することができます。
+また、演算子クラスは、インデックスメソッドの内部演算で必要な、しかしインデックスで使用できる<code class="literal">WHERE</code>句演算子には直接的には対応しない、<em class="firstterm">サポート関数</em>をいくつか指定することができます。
   </p><p>
 <span class="original">
    It is possible to define multiple operator classes for the same
@@ -256,7 +256,8 @@ BRINインデックスは、いずれも固定のストラテジ群を持たな�
    The requirements for these support functions are explained further in
    &lt;xref linkend="btree-support-funcs"/&gt;.
 </span>
-<a class="xref" href="xindex.html#XINDEX-BTREE-SUPPORT-TABLE" title="表38.8 B-treeサポート関数">表 38.8</a>に示すように、B-treeでは１つのサポート関数が必須ですが、演算子クラス作成者のオプションとして提供されるもう１つのサポート関数を持つことができます。
+<a class="xref" href="xindex.html#XINDEX-BTREE-SUPPORT-TABLE" title="表38.8 B-treeサポート関数">表 38.8</a>に示すように、B-treeは比較サポート関数を必須とし、演算子クラスの作者が望めば二つの追加サポート関数を与えることができます。
+これらのサポート関数の要件は<a class="xref" href="btree-support-funcs.html" title="63.3. B-Treeサポート関数">63.3</a>でさらに詳しく解説されています。
   </p><div class="table" id="XINDEX-BTREE-SUPPORT-TABLE"><p class="title"><strong>表38.8 B-treeサポート関数</strong></p><div class="table-contents"><span class="original">
     &lt;title&gt;B-tree Support Functions&lt;/title&gt;
 </span><table class="table" summary="B-treeサポート関数" border="1"><colgroup><col /><col /></colgroup><thead><tr><th>関数</th><th>サポート番号</th></tr></thead><tbody><tr><td>
@@ -271,24 +272,31 @@ BRINインデックスは、いずれも固定のストラテジ群を持たな�
         Return the addresses of C-callable sort support function(s)
         (optional)
 </span>
-<code class="filename">utils/sortsupport.h</code>に記載した、C言語から呼び出し可能なソートサポート関数のアドレスを返します(省略可能)。
+C言語から呼び出し可能なソートサポート関数のアドレスを返します(省略可能)。
        </td><td>2</td></tr><tr><td>
+<span class="original">
         Compare a test value to a base value plus/minus an offset, and return
         true or false according to the comparison result (optional)
+</span>
+テスト値をベース値にオフセットを加減算したものと比較して、比較結果に従って真または偽を返します(省略可能)。
        </td><td>3</td></tr></tbody></table></div></div><br class="table-break" /><p>
 <span class="original">
    Hash indexes require one support function, and allow a second one to be
    supplied at the operator class author's option, as shown in &lt;xref
    linkend="xindex-hash-support-table"/&gt;.
 </span>
-<a class="xref" href="xindex.html#XINDEX-HASH-SUPPORT-TABLE" title="表38.9 ハッシュサポート関数">表 38.9</a>に示すように、ハッシュインデックスでは単一のサポート関数が必要です。
+<a class="xref" href="xindex.html#XINDEX-HASH-SUPPORT-TABLE" title="表38.9 ハッシュサポート関数">表 38.9</a>に示すようにハッシュインデックスでは一つのサポート関数が必須で、演算子クラス作者が望むなら、もう一つのサポート関数を与えることができます。
   </p><div class="table" id="XINDEX-HASH-SUPPORT-TABLE"><p class="title"><strong>表38.9 ハッシュサポート関数</strong></p><div class="table-contents"><span class="original">
     &lt;title&gt;Hash Support Functions&lt;/title&gt;
-</span><table class="table" summary="ハッシュサポート関数" border="1"><colgroup><col /><col /></colgroup><thead><tr><th>関数</th><th>サポート番号</th></tr></thead><tbody><tr><td>キーのハッシュ値を計算</td><td>1</td></tr><tr><td>
+</span><table class="table" summary="ハッシュサポート関数" border="1"><colgroup><col /><col /></colgroup><thead><tr><th>関数</th><th>サポート番号</th></tr></thead><tbody><tr><td>キーの32ビットハッシュ値を計算</td><td>1</td></tr><tr><td>
+<span class="original">
          Compute the 64-bit hash value for a key given a 64-bit salt; if
          the salt is 0, the low 32 bits of the result must match the value
          that would have been computed by function 1
          (optional)
+</span>
+64bitソルトが与えられたキーに対する64ビットハッシュ値を計算します。
+ソルトが0なら結果の下位32ビットは関数1で計算された値と一致しなければなりません。(省略可能)
        </td><td>2</td></tr></tbody></table></div></div><br class="table-break" /><p>
 <span class="original">
    GiST indexes have nine support functions, two of which are optional,
@@ -500,9 +508,7 @@ CREATE OPERATOR &lt; (
    functions, otherwise the optimizer will be unable to make effective
    use of the index.
 </span>
-正しく交代演算子と否定演算子を指定する他、適切な制限選択性関数と結合関数を指定することが重要です。
-さもないと、オプティマイザはインデックスを効率的に使用することができません。
-小なり、等価、大なりの場合に異なる選択性関数を使用しなければならないことに注意してください。
+正しく交代演算子と否定演算子を指定する他、適切な制限選択性関数と結合関数を指定することが重要です。さもないと、オプティマイザはインデックスを効率的に使用することができません。
   </p><p>
 <span class="original">
    Other things worth noting are happening here:
@@ -843,8 +849,7 @@ ALTER OPERATOR FAMILY integer_ops USING btree ADD
    included.  Each operator class should include just the non-cross-type
    operators and support function for its data type.
 </span>
-B-tree演算子族では、演算子族内のすべての演算子はソート互換、つまり、演算子族でサポートされるデータ型すべてに渡って推移規則、<span class="quote">「<span class="quote">A = BかつB = CならばA = C</span>」</span>および<span class="quote">「<span class="quote">A &lt; BかつB &lt; CならばA &lt; C</span>」</span>を維持しなければなりません。
-さらに、演算子族内で表現される型の間の暗黙的キャストとバイナリキャストは、関連するソート順序を変更してはいけません。
+詳細が<a class="xref" href="btree-behavior.html" title="63.2. B-Tree演算子クラスの振る舞い">63.2</a>で示されている通り、B-tree演算子族では演算子族内のすべての演算子は互換性をもってソートしなければなりません。
 演算子族内の各演算子では、演算子と同じデータ型の2つのデータ型を取るサポート関数が存在しなければなりません。
 演算子族を完結させること、つまり、データ型の組み合わせそれぞれに対する演算子をすべて含めることを推奨します。
 各演算子クラスは、自身のデータ型に対してデータ型を跨らない演算子とサポート関数だけを含めなければなりません。
@@ -940,7 +945,7 @@ BRINでは、要求は演算子クラスを提供するフレームワークに�
    not sorting.
 </span>
 データ型用のデフォルトのB-tree演算子クラスが存在しないと、システムはデフォルトのハッシュ演算子クラスを検索します。
-しかし、この種類の演算子クラスは等価性のみを提供しますので、実際にこれは、配列等価性のサポートだけに対して十分です。
+しかし、この種類の演算子クラスは等価性のみを提供しますので、ソートではなくグループ化のみサポートできます。
   </p><p>
 <span class="original">
    When there is no default operator class for a data type, you will get
@@ -959,50 +964,75 @@ BRINでは、要求は演算子クラスを提供するフレームワークに�
 <span class="productname">PostgreSQL</span>バージョン7.4より前まででは、ソートやグループ化演算は暗黙的に<code class="literal">=</code>、<code class="literal">&lt;</code>、<code class="literal">&gt;</code>という名前の演算子を使用していました。
 この新しい、デフォルトの演算子クラスに依存する振舞いによって、特定の名前を持つ演算子の振舞いについて何らかの仮定を立てることを防止しています。
     </p></div><p>
+<span class="original">
    Sorting by a non-default B-tree operator class is possible by specifying
-   the class's less-than operator in a <code class="literal">USING</code> option,
+   the class's less-than operator in a &lt;literal&gt;USING&lt;/literal&gt; option,
    for example
+</span>
+演算子クラスの小なり演算子を<code class="literal">USING</code>オプションに指定することで、デフォルトでないB-tree演算子クラスによるソートが可能です。
+以下に例を示します。
 </p><pre class="programlisting">
 SELECT * FROM mytable ORDER BY somecol USING ~&lt;~;
 </pre><p>
+<span class="original">
    Alternatively, specifying the class's greater-than operator
-   in <code class="literal">USING</code> selects a descending-order sort.
+   in &lt;literal&gt;USING&lt;/literal&gt; selects a descending-order sort.
+</span>
+代わりに<code class="literal">USING</code>で演算子クラスの大なり演算子を指定すると降順ソートが行われます。
   </p><p>
+<span class="original">
    Comparison of arrays of a user-defined type also relies on the semantics
    defined by the type's default B-tree operator class.  If there is no
    default B-tree operator class, but there is a default hash operator class,
    then array equality is supported, but not ordering comparisons.
+</span>
+ユーザ定義型の配列の比較も型のデフォルトB-tree演算子クラスで定義された意味に依存します。
+デフォルトのB-tree演算子クラスが無く、しかしデフォルトのハッシュ演算子クラスがある場合、配列の順比較ではなく同等比較がサポートされます。
   </p><p>
+<span class="original">
    Another SQL feature that requires even more data-type-specific knowledge
-   is the <code class="literal">RANGE</code> <em class="replaceable"><code>offset</code></em>
-   <code class="literal">PRECEDING</code>/<code class="literal">FOLLOWING</code> framing option
-   for window functions (see <a class="xref" href="sql-expressions.html#SYNTAX-WINDOW-FUNCTIONS" title="4.2.8. ウィンドウ関数呼び出し">4.2.8</a>).
+   is the &lt;literal&gt;RANGE&lt;/literal&gt; &lt;replaceable&gt;offset&lt;/replaceable&gt;
+   &lt;literal&gt;PRECEDING&lt;/literal&gt;/&lt;literal&gt;FOLLOWING&lt;/literal&gt; framing option
+   for window functions (see &lt;xref linkend="syntax-window-functions"/&gt;).
    For a query such as
+</span>
+データ型特有の知識をさらに必要とする他のSQL仕様としては、ウィンドウ関数（<a class="xref" href="sql-expressions.html#SYNTAX-WINDOW-FUNCTIONS" title="4.2.8. ウィンドウ関数呼び出し">4.2.8</a>を参照してください）の<code class="literal">RANGE</code> <em class="replaceable"><code>offset</code></em> <code class="literal">PRECEDING</code>/<code class="literal">FOLLOWING</code>フレームオプションがあります。
+下記のような問い合わせに対して、
 </p><pre class="programlisting">
 SELECT sum(x) OVER (ORDER BY x RANGE BETWEEN 5 PRECEDING AND 10 FOLLOWING)
   FROM mytable;
 </pre><p>
-   it is not sufficient to know how to order by <code class="literal">x</code>;
-   the database must also understand how to <span class="quote">「<span class="quote">subtract 5</span>」</span> or
-   <span class="quote">「<span class="quote">add 10</span>」</span> to the current row's value of <code class="literal">x</code>
+<span class="original">
+   it is not sufficient to know how to order by &lt;literal&gt;x&lt;/literal&gt;;
+   the database must also understand how to &lt;quote&gt;subtract 5&lt;/quote&gt; or
+   &lt;quote&gt;add 10&lt;/quote&gt; to the current row's value of &lt;literal&gt;x&lt;/literal&gt;
    to identify the bounds of the current window frame.  Comparing the
-   resulting bounds to other rows' values of <code class="literal">x</code> is
+   resulting bounds to other rows' values of &lt;literal&gt;x&lt;/literal&gt; is
    possible using the comparison operators provided by the B-tree operator
-   class that defines the <code class="literal">ORDER BY</code> ordering — but
+   class that defines the &lt;literal&gt;ORDER BY&lt;/literal&gt; ordering &amp;mdash; but
    addition and subtraction operators are not part of the operator class, so
    which ones should be used?  Hard-wiring that choice would be undesirable,
    because different sort orders (different B-tree operator classes) might
    need different behavior.  Therefore, a B-tree operator class can specify
-   an <em class="firstterm">in_range</em> support function that encapsulates the
+   an &lt;firstterm&gt;in_range&lt;/firstterm&gt; support function that encapsulates the
    addition and subtraction behaviors that make sense for its sort order.
    It can even provide more than one in_range support function, in case
    there is more than one data type that makes sense to use as the offset
-   in <code class="literal">RANGE</code> clauses.
-   If the B-tree operator class associated with the window's <code class="literal">ORDER
-   BY</code> clause does not have a matching in_range support function,
-   the <code class="literal">RANGE</code> <em class="replaceable"><code>offset</code></em>
-   <code class="literal">PRECEDING</code>/<code class="literal">FOLLOWING</code>
+   in &lt;literal&gt;RANGE&lt;/literal&gt; clauses.
+   If the B-tree operator class associated with the window's &lt;literal&gt;ORDER
+   BY&lt;/literal&gt; clause does not have a matching in_range support function,
+   the &lt;literal&gt;RANGE&lt;/literal&gt; &lt;replaceable&gt;offset&lt;/replaceable&gt;
+   &lt;literal&gt;PRECEDING&lt;/literal&gt;/&lt;literal&gt;FOLLOWING&lt;/literal&gt;
    option is not supported.
+</span>
+これはどのように<code class="literal">x</code>で整列するかを知るのに十分ではありません。
+データベースは現在のウィンドウフレームの境界を識別するためにどのように現在行の<code class="literal">x</code>の値に<span class="quote">「<span class="quote">5を減算</span>」</span>や<span class="quote">「<span class="quote">10を加算</span>」</span>を行うかを理解する必要もあります。
+<code class="literal">ORDER BY</code>整列を定義するB-tree演算子クラスで提供される比較演算子を使って結果として生じる他の行の<code class="literal">x</code>値への範囲を比較することは可能です。
+しかし、加算、減算演算子は演算子クラスの一部ではありません。では、どの演算子が使われるべきでしょうか。
+異なるソート順序（異なるB-tree演算子クラス）では異なる振る舞いを要するかもしれないため、選択を決め打ちすることは望ましくありません。
+そのため、B-tree演算子クラスはそのソート順に意味がある加算と減算の振る舞いをカプセル化する<em class="firstterm">in_range</em>サポート関数を指定することができます。
+<code class="literal">RANGE</code>句のオフセットとして使う意味のある複数のデータ型がある場合にむけて、複数のin_rangeサポート関数を提供することもできます。
+ウィンドウの<code class="literal">ORDER BY</code>句と関連しているB-tree演算子クラスが、一致するin_rangeサポート関数を持たない場合、<code class="literal">PRECEDING</code>/<code class="literal">FOLLOWING</code>オプションはサポートされません。
   </p><p>
 <span class="original">
    Another important point is that an equality operator that
@@ -1010,7 +1040,7 @@ SELECT sum(x) OVER (ORDER BY x RANGE BETWEEN 5 PRECEDING AND 10 FOLLOWING)
    hash aggregation, and related optimizations.  The hash operator family
    is essential here since it identifies the hash function(s) to use.
 </span>
-他の重要な点として、ハッシュ演算子族内に現れる演算子がハッシュ結合、ハッシュ集約、関連する最適化の候補となることがあります。
+他の重要な点として、ハッシュ演算子族内に現れる等価性演算子がハッシュ結合、ハッシュ集約、関連する最適化の候補となることがあります。
 使用するハッシュ関数を識別するため、ここでのハッシュ演算子族は基本的なものです。
   </p></div><div class="sect2" id="XINDEX-ORDERING-OPS"><div class="titlepage"><div><div><h3 class="title">38.15.7. 順序付け演算子</h3></div></div></div><span class="original">
   &lt;title&gt;Ordering Operators&lt;/title&gt;

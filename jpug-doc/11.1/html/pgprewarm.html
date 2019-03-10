@@ -13,6 +13,8 @@
   will, using 2 background workers, reload those same blocks after a restart.
 </span>
  <code class="filename">pg_prewarm</code>はオペレーティングシステムのバッファキャッシュまたは<span class="productname">PostgreSQL</span>のバッファキャッシュいずれかにリレーションデータをロードするための便利な方法を提供します。
+プレウォームは<code class="filename">pg_prewarm</code>関数を使って手動で行うこともできますし、<code class="literal">pg_prewarm</code>を<a class="xref" href="runtime-config-client.html#GUC-SHARED-PRELOAD-LIBRARIES">shared_preload_libraries</a>に含めることで自動でも実行できます。
+後者の場合には、システムは、定期的に<code class="filename">autoprewarm.blocks</code>という名前のファイルに共有バッファの内容を記録するバックグラウンドワーカーを実行し、再起動後には2つのバックグラウンドワーカー使って同じブロックを再ロードします。
  </p><div class="sect2" id="id-1.11.7.36.4"><div class="titlepage"><div><div><h3 class="title">F.27.1. 関数</h3></div></div></div><span class="original">
   &lt;title&gt;Functions&lt;/title&gt;
 </span><pre class="synopsis">
@@ -68,29 +70,50 @@ pg_prewarm(regclass, mode text default 'buffer', fork text default 'main',
   </p><pre class="synopsis">
 autoprewarm_start_worker() RETURNS void
 </pre><p>
+<span class="original">
    Launch the main autoprewarm worker.  This will normally happen
    automatically, but is useful if automatic prewarm was not configured at
    server startup time and you wish to start up the worker at a later time.
+</span>
+自動プレウォームワーカーを起動します。
+通常これは自動的に行なわれますが、サーバーのスタート時に自動プレウォームが設定されておらず、後でワーカーを起動したい場合に有用です。
   </p><pre class="synopsis">
 autoprewarm_dump_now() RETURNS int8
 </pre><p>
-   Update <code class="filename">autoprewarm.blocks</code> immediately.  This may be useful
+<span class="original">
+   Update &lt;filename&gt;autoprewarm.blocks&lt;/filename&gt; immediately.  This may be useful
    if the autoprewarm worker is not running but you anticipate running it
    after the next restart.  The return value is the number of records written
-   to <code class="filename">autoprewarm.blocks</code>.
-  </p></div><div class="sect2" id="id-1.11.7.36.5"><div class="titlepage"><div><div><h3 class="title">F.27.2. Configuration Parameters</h3></div></div></div><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+   to &lt;filename&gt;autoprewarm.blocks&lt;/filename&gt;.
+</span>
+直ちに<code class="filename">autoprewarm.blocks</code>を更新します。
+これは、自動プレウォームワーカーが動いていなくて、次の再起動後に自動プレウォームワーカーを動かそうと考えているときに有用かもしれません。
+戻り値は<code class="filename">autoprewarm.blocks</code>に書き込まれたブロック数です。
+  </p></div><div class="sect2" id="id-1.11.7.36.5"><div class="titlepage"><div><div><h3 class="title">F.27.2. 設定パラメータ</h3></div></div></div><span class="original">
+  &lt;title&gt;Configuration Parameters&lt;/title&gt;
+</span><div class="variablelist"><dl class="variablelist"><dt><span class="term">
      <code class="varname">pg_prewarm.autoprewarm</code> (<code class="type">boolean</code>)
      <a id="id-1.11.7.36.5.2.1.1.3" class="indexterm"></a>
     </span></dt><dd><p>
+<span class="original">
       Controls whether the server should run the autoprewarm worker. This is
       on by default. This parameter can only be set at server start.
+</span>
+サーバーが自動プレウォームワーカーを起動すべきかどうかを制御します。
+デフォルトはonです。
+このパラメータはサーバ起動時のみ設定可能です。
      </p></dd></dl></div><div class="variablelist"><dl class="variablelist"><dt><span class="term">
      <code class="varname">pg_prewarm.autoprewarm_interval</code> (<code class="type">int</code>)
      <a id="id-1.11.7.36.5.3.1.1.3" class="indexterm"></a>
     </span></dt><dd><p>
-      This is the interval between updates to <code class="literal">autoprewarm.blocks</code>.
+<span class="original">
+      This is the interval between updates to &lt;literal&gt;autoprewarm.blocks&lt;/literal&gt;.
       The default is 300 seconds. If set to 0, the file will not be
       dumped at regular intervals, but only when the server is shut down.
+</span>
+これは<code class="literal">autoprewarm.blocks</code>を更新する間隔です。
+デフォルトは300秒です。
+0に設定すると、このファイルは定常間隔では更新されず、サーバーが停止する時にだけ更新されます。
      </p></dd></dl></div></div><div class="sect2" id="id-1.11.7.36.6"><div class="titlepage"><div><div><h3 class="title">F.27.3. 作者</h3></div></div></div><span class="original">
   &lt;title&gt;Author&lt;/title&gt;
 </span><p>

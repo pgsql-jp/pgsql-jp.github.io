@@ -29,7 +29,7 @@
    use &lt;xref linkend="app-pg-dumpall"/&gt;.
 </span>
 <span class="application">pg_dump</span>は単一のデータベースしかダンプしません。
-ロールやテーブル空間など、クラスタ内の全データベースに共通のグローバルオブジェクトをダンプするには<a class="xref" href="app-pg-dumpall.html" title="pg_dumpall"><span class="refentrytitle"><span class="application">pg_dumpall</span></span></a>を使用してください。
+クラスタ全体、あるいは、クラスタ内の全データベースに共通のグローバルオブジェクト（ロールやテーブル空間など）をダンプするには<a class="xref" href="app-pg-dumpall.html" title="pg_dumpall"><span class="refentrytitle"><span class="application">pg_dumpall</span></span></a>を使用してください。
   </p><p>
 <span class="original">
    Dumps can be output in script or archive file formats. Script
@@ -177,14 +177,18 @@ blobはデータとみなされるため、--data-onlyが使われたときは�
 （このようなスクリプトを使用すると、スクリプトを実行する前に対象のインストレーションの中のどのデータベースに接続すればよいかという問題を考える必要がなくなります）。
 <code class="option">--clean</code>も同時に指定されている場合、このスクリプトは接続する前に対象データベースを削除し再作成します。
        </p><p>
-        With <code class="option">--create</code>, the output also includes the
+<span class="original">
+        With &lt;option&gt;-&amp;#045;create&lt;/option&gt;, the output also includes the
         database's comment if any, and any configuration variable settings
         that are specific to this database, that is,
-        any <code class="command">ALTER DATABASE ... SET ...</code>
-        and <code class="command">ALTER ROLE ... IN DATABASE ... SET ...</code>
+        any &lt;command&gt;ALTER DATABASE ... SET ...&lt;/command&gt;
+        and &lt;command&gt;ALTER ROLE ... IN DATABASE ... SET ...&lt;/command&gt;
         commands that mention this database.
         Access privileges for the database itself are also dumped,
-        unless <code class="option">--no-acl</code> is specified.
+        unless &lt;option&gt;-&amp;#045;no-acl&lt;/option&gt; is specified.
+</span>
+<code class="option">--create</code>では出力に、もしあるならデータベースのコメントも含まれます。また、あらゆる設定変数の設定、すなわち、このデーベースを対象としている<code class="command">ALTER DATABASE ... SET ...</code>と<code class="command">ALTER ROLE ... IN DATABASE ... SET ...</code>コマンドも含まれます。
+<code class="option">--no-acl</code>が指定されていない限り、データベースに対するアクセス権限自体もダンプされます。
        </p><p>
 <span class="original">
         This option is only meaningful for the plain-text format.  For
@@ -747,8 +751,9 @@ tarアーカイブ形式では現在圧縮を全くサポートしていませ�
 列の順序を変更した場合はリストアが失敗する可能性があることに注意してください。
 <code class="option">--column-inserts</code>はさらに処理が遅くなりますが、列の順序変更に対して安全です。
        </p></dd><dt><span class="term"><code class="option">--load-via-partition-root</code></span></dt><dd><p>
+<span class="original">
         When dumping data for a table partition, make
-        the <code class="command">COPY</code> or <code class="command">INSERT</code> statements
+        the &lt;command&gt;COPY&lt;/command&gt; or &lt;command&gt;INSERT&lt;/command&gt; statements
         target the root of the partitioning hierarchy that contains it, rather
         than the partition itself.  This causes the appropriate partition to
         be re-determined for each row when the data is loaded.  This may be
@@ -757,14 +762,23 @@ tarアーカイブ形式では現在圧縮を全くサポートしていませ�
         could happen, for example, if the partitioning column is of type text
         and the two systems have different definitions of the collation used
         to sort the partitioning column.
+</span>
+テーブルパーティションのデータをダンプするときには、<code class="command">COPY</code>あるいは<code class="command">INSERT</code>文の対象を、そのパーティションではなく、それを含むパーティション階層のルートにします。
+これにより、データが読み込まれるときに各行に対して適切なパーティションが再判断されます。
+これは行が元のサーバ上と同じパーティションに必ずしも落ちないようなサーバ上にデータを再読み込みするときに有用でしょう。
+例えば、パーティション列がtext型で二つのシステムがパーティション列のソートで使われる照合順序の異なる定義を持っている場合に、これはあり得ます。
        </p><p>
+<span class="original">
         It is best not to use parallelism when restoring from an archive made
-        with this option, because <span class="application">pg_restore</span> will
+        with this option, because &lt;application&gt;pg_restore&lt;/application&gt; will
         not know exactly which partition(s) a given archive data item will
         load data into.  This could result in inefficiency due to lock
         conflicts between parallel jobs, or perhaps even reload failures due
         to foreign key constraints being set up before all the relevant data
         is loaded.
+</span>
+<span class="application">pg_restore</span>は与えられたアーカイブデータ要素がデータを投入するパーティションがどれであるかを正確に知ることがないため、このオプションで作られたアーカイブからリストアを行うときには並列化しない方が良いです。
+並行ジョブ間でのロック競合のため、これは非効率になります。また、全ての関連データが読み込まれる前に外部キー制約が設定されることにより、場合によってはリロード失敗も起こります。
        </p></dd><dt><span class="term"><code class="option">--lock-wait-timeout=<em class="replaceable"><code>timeout</code></em></code></span></dt><dd><p>
 <span class="original">
         Do not wait forever to acquire shared table locks at the beginning of
@@ -783,7 +797,7 @@ tarアーカイブ形式では現在圧縮を全くサポートしていませ�
 <span class="original">
         Do not dump comments.
 </span>
-パブリケーションをダンプしません。
+コメントをダンプしません。
        </p></dd><dt><span class="term"><code class="option">--no-publications</code></span></dt><dd><p>
 <span class="original">
         Do not dump publications.
@@ -1282,8 +1296,11 @@ CREATE DATABASE foo WITH TEMPLATE template0;
 <code class="prompt">$</code> <strong class="userinput"><code>pg_restore -d newdb db.dump</code></strong>
 </pre><p>
   </p><p>
+<span class="original">
    To reload an archive file into the same database it was dumped from,
    discarding the current contents of that database:
+</span>
+アーカイブファイルをダンプ元と同じデータベースに再ロードし、そのデータベースの現在の内容を捨てます。
 
 </p><pre class="screen">
 <code class="prompt">$</code> <strong class="userinput"><code>pg_restore -d postgres --clean --create db.dump</code></strong>
