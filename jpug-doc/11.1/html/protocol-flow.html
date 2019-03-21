@@ -483,22 +483,35 @@ RowDescriptionメッセージ内で与えられる書式コードは、どの書
     rather than wiring in assumptions about the exact sequence of messages.
 </span>
 メッセージの正しい並びを前提としてコーディングするのではなく、任意のメッセージ種類を、そのメッセージが意味を持つ任意の時点で受け付ける状態マシン形式でフロントエンドのコーディングを行うことを推奨します。
-   </p><div class="sect3" id="PROTOCOL-FLOW-MULTI-STATEMENT"><div class="titlepage"><div><div><h4 class="title">53.2.2.1. Multiple Statements in a Simple Query</h4></div></div></div><p>
+   </p><div class="sect3" id="PROTOCOL-FLOW-MULTI-STATEMENT"><div class="titlepage"><div><div><h4 class="title">53.2.2.1. 簡易問い合わせでの複文</h4></div></div></div><span class="original">
+    &lt;title&gt;Multiple Statements in a Simple Query&lt;/title&gt;
+</span><p>
+<span class="original">
      When a simple Query message contains more than one SQL statement
      (separated by semicolons), those statements are executed as a single
      transaction, unless explicit transaction control commands are included
      to force a different behavior.  For example, if the message contains
+</span>
+簡易Queryメッセージが二つ以上の（セミコロンで区切られた）SQL文を含むとき、振る舞いを変えるように明示的なトランザクション制御コマンドが含まれていない限り、これらの文は単一トランザクションで実行されます。
+例えばメッセージが以下を含む場合、
 </p><pre class="programlisting">
 INSERT INTO mytable VALUES(1);
 SELECT 1/0;
 INSERT INTO mytable VALUES(2);
 </pre><p>
-     then the divide-by-zero failure in the <code class="command">SELECT</code> will force
-     rollback of the first <code class="command">INSERT</code>.  Furthermore, because
+<span class="original">
+     then the divide-by-zero failure in the &lt;command&gt;SELECT&lt;/command&gt; will force
+     rollback of the first &lt;command&gt;INSERT&lt;/command&gt;.  Furthermore, because
      execution of the message is abandoned at the first error, the second
-     <code class="command">INSERT</code> is never attempted at all.
+     &lt;command&gt;INSERT&lt;/command&gt; is never attempted at all.
+</span>
+<code class="command">SELECT</code>でのゼロ除算エラーは最初の<code class="command">INSERT</code>のロールバックを強制します。
+さらに、メッセージの実行が最初のエラー時点で中止されるので、二番目の<code class="command">INSERT</code>は全く試みられません。
     </p><p>
+<span class="original">
      If instead the message contains
+</span>
+代わりにメッセージが以下を含んでいる場合、
 </p><pre class="programlisting">
 BEGIN;
 INSERT INTO mytable VALUES(1);
@@ -506,62 +519,95 @@ COMMIT;
 INSERT INTO mytable VALUES(2);
 SELECT 1/0;
 </pre><p>
-     then the first <code class="command">INSERT</code> is committed by the
-     explicit <code class="command">COMMIT</code> command.  The second <code class="command">INSERT</code>
-     and the <code class="command">SELECT</code> are still treated as a single transaction,
+<span class="original">
+     then the first &lt;command&gt;INSERT&lt;/command&gt; is committed by the
+     explicit &lt;command&gt;COMMIT&lt;/command&gt; command.  The second &lt;command&gt;INSERT&lt;/command&gt;
+     and the &lt;command&gt;SELECT&lt;/command&gt; are still treated as a single transaction,
      so that the divide-by-zero failure will roll back the
-     second <code class="command">INSERT</code>, but not the first one.
+     second &lt;command&gt;INSERT&lt;/command&gt;, but not the first one.
+</span>
+最初の<code class="command">INSERT</code>は明示的な<code class="command">COMMIT</code>コマンドによりコミットされます。
+二番目の<code class="command">INSERT</code>と<code class="command">SELECT</code>は、やはり単一トランザクションとして処理されます。
+そのためゼロ除算エラーが二番目の<code class="command">INSERT</code>をロールバックしますが、最初の<code class="command">INSERT</code>はロールバックされません。
     </p><p>
+<span class="original">
      This behavior is implemented by running the statements in a
-     multi-statement Query message in an <em class="firstterm">implicit transaction
-     block</em> unless there is some explicit transaction block for them to
+     multi-statement Query message in an &lt;firstterm&gt;implicit transaction
+     block&lt;/firstterm&gt; unless there is some explicit transaction block for them to
      run in.  The main difference between an implicit transaction block and
      a regular one is that an implicit block is closed automatically at the
      end of the Query message, either by an implicit commit if there was no
      error, or an implicit rollback if there was an error.  This is similar
      to the implicit commit or rollback that happens for a statement
      executed by itself (when not in a transaction block).
+</span>
+この振る舞いは、<em class="firstterm">暗黙トランザクションブロック</em>で複文Queryメッセージ内の文を実行することで、その中に明示的なトランザクションブロックがある場合を除き、発現します。
+暗黙トランザクションブロックと通常のトラザクションブロックとの主な違いは、暗黙ブロックは自動的にQueryメッセージの最後にて、エラーが無いなら暗黙のコミット、エラーがあるなら暗黙のロールバックで、自動的に閉じられることです。
+これは（トランザクションブロック内に無いときの）文の単体実行に対して生じる暗黙のコミットあるいはロールバックに似ています。
     </p><p>
+<span class="original">
      If the session is already in a transaction block, as a result of
-     a <code class="command">BEGIN</code> in some previous message, then the Query message
+     a &lt;command&gt;BEGIN&lt;/command&gt; in some previous message, then the Query message
      simply continues that transaction block, whether the message contains
      one statement or several.  However, if the Query message contains
-     a <code class="command">COMMIT</code> or <code class="command">ROLLBACK</code> closing the existing
+     a &lt;command&gt;COMMIT&lt;/command&gt; or &lt;command&gt;ROLLBACK&lt;/command&gt; closing the existing
      transaction block, then any following statements are executed in an
      implicit transaction block.
-     Conversely, if a <code class="command">BEGIN</code> appears in a multi-statement Query
+     Conversely, if a &lt;command&gt;BEGIN&lt;/command&gt; appears in a multi-statement Query
      message, then it starts a regular transaction block that will only be
-     terminated by an explicit <code class="command">COMMIT</code> or <code class="command">ROLLBACK</code>,
+     terminated by an explicit &lt;command&gt;COMMIT&lt;/command&gt; or &lt;command&gt;ROLLBACK&lt;/command&gt;,
      whether that appears in this Query message or a later one.
-     If the <code class="command">BEGIN</code> follows some statements that were executed as
+     If the &lt;command&gt;BEGIN&lt;/command&gt; follows some statements that were executed as
      an implicit transaction block, those statements are not immediately
      committed; in effect, they are retroactively included into the new
      regular transaction block.
+</span>
+何らか手前のメッセージでの<code class="command">BEGIN</code>の結果として、セッションが既にトランザクションブロック内である場合、Queryメッセージは、含まれるのが単一文でもいくつかの文でも、単にそのトランザクションを継続します。
+しかしながら、Queryメッセージが既存トランザクションブロックを閉じる<code class="command">COMMIT</code>や<code class="command">ROLLBACK</code>を含む場合、続く全ての文は暗黙トランザクションブロックで実行されます。
+逆に言えば、複文Queryメッセージで<code class="command">BEGIN</code>が現れたなら、このQueryメッセージ内または後のメッセージのいずれかにあらわれる明示的な<code class="command">COMMIT</code>や<code class="command">ROLLBACK</code>でのみ終了する、通常のトランザクションブロックが開始されます。
+<code class="command">BEGIN</code>が暗黙トランザクションブロックとして実行されたいくつかの文に続く場合、これらの文が直ちにコミットされることはありません。
+結果として、これらは遡って新たな通常のトランザクションブロックに含められます。
     </p><p>
-     A <code class="command">COMMIT</code> or <code class="command">ROLLBACK</code> appearing in an implicit
+<span class="original">
+     A &lt;command&gt;COMMIT&lt;/command&gt; or &lt;command&gt;ROLLBACK&lt;/command&gt; appearing in an implicit
      transaction block is executed as normal, closing the implicit block;
-     however, a warning will be issued since a <code class="command">COMMIT</code>
-     or <code class="command">ROLLBACK</code> without a previous <code class="command">BEGIN</code> might
+     however, a warning will be issued since a &lt;command&gt;COMMIT&lt;/command&gt;
+     or &lt;command&gt;ROLLBACK&lt;/command&gt; without a previous &lt;command&gt;BEGIN&lt;/command&gt; might
      represent a mistake.  If more statements follow, a new implicit
      transaction block will be started for them.
+</span>
+暗黙トランザクションブロック内に現れた<code class="command">COMMIT</code>や<code class="command">ROLLBACK</code>は通常通り実行され、暗黙ブロックを閉じますが、手前の<code class="command">BEGIN</code>無しの<code class="command">COMMIT</code>や<code class="command">ROLLBACK</code>は誤りであるかもしれないので警告が発行されます。
+さらに文が続く場合、それらに対して新たな暗黙トランザクションブロックが開始されます。
     </p><p>
+<span class="original">
      Savepoints are not allowed in an implicit transaction block, since
      they would conflict with the behavior of automatically closing the
      block upon any error.
+</span>
+エラー時の自動ブロッククローズの振る舞いと競合するので暗黙トランザクションブロックでセーブポイントは使えません。
     </p><p>
+<span class="original">
      Remember that, regardless of any transaction control commands that may
      be present, execution of the Query message stops at the first error.
      Thus for example given
+</span>
+現状のいかなるトランザクション制御コマンドでも、Queryメッセージの実行は最初のエラー時点で打ち切られることに留意してください。
+例を示します。
 </p><pre class="programlisting">
 BEGIN;
 SELECT 1/0;
 ROLLBACK;
 </pre><p>
+<span class="original">
      in a single Query message, the session will be left inside a failed
-     regular transaction block, since the <code class="command">ROLLBACK</code> is not
-     reached after the divide-by-zero error.  Another <code class="command">ROLLBACK</code>
+     regular transaction block, since the &lt;command&gt;ROLLBACK&lt;/command&gt; is not
+     reached after the divide-by-zero error.  Another &lt;command&gt;ROLLBACK&lt;/command&gt;
      will be needed to restore the session to a usable state.
+</span>
+上記が単一Queryメッセージにあるとして、ゼロ除算エラーの後に<code class="command">ROLLBACK</code>に達することがないため、このセッションは失敗した通常のトランザクション内のままとなります。
+このセッションを通常の状態に回復させるには別の<code class="command">ROLLBACK</code>が必要となります。
     </p><p>
+<span class="original">
      Another behavior of note is that initial lexical and syntactic
      analysis is done on the entire query string before any of it is
      executed.  Thus simple errors (such as a misspelled keyword) in later
@@ -571,6 +617,12 @@ ROLLBACK;
      it can be visible when attempting to do multiple transactions within a
      multi-statement Query.  For instance, if a typo turned our previous
      example into
+</span>
+その他の注意すべき振る舞いは、初期の字句および構文解析が少しも実行されない段階で問い合わせ文字列全体に対して行われることです。
+従って、後ろの分にある（スペルミスしたキーワードなどの）単純なエラーは全ての文の実行を妨げることがあります。
+暗黙トランザクションブロックとして起きたとき、いずれにせよ全ての文はロールバックされるので、これは通常はユーザに見えません。
+しかしながら、複文問い合わせの中で複数のトランザクションを実行しようとするとき、この挙動が明らかになることがあります。
+例えば、タイプミスで先の例を以下のようにします。
 </p><pre class="programlisting">
 BEGIN;
 INSERT INTO mytable VALUES(1);
@@ -578,10 +630,14 @@ COMMIT;
 INSERT INTO mytable VALUES(2);
 SELCT 1/0;
 </pre><p>
+<span class="original">
      then none of the statements would get run, resulting in the visible
-     difference that the first <code class="command">INSERT</code> is not committed.
+     difference that the first &lt;command&gt;INSERT&lt;/command&gt; is not committed.
      Errors detected at semantic analysis or later, such as a misspelled
      table or column name, do not have this effect.
+</span>
+そうすると、含まれる文は一つも実行されず、最初の<code class="command">INSERT</code>がコミットされないという違いが明らかになります。
+エラーは、ミススペルしたテーブルやカラム名など、語彙の解析かその後に検出され、コマンドの効力はありません。
     </p></div></div><div class="sect2" id="PROTOCOL-FLOW-EXT-QUERY"><div class="titlepage"><div><div><h3 class="title">53.2.3. 拡張問い合わせ</h3></div></div></div><span class="original">
    &lt;title&gt;Extended Query&lt;/title&gt;
 </span><p>
@@ -721,7 +777,7 @@ Bindメッセージは、元となるプリペアド文（空文字列は無名�
     command level, using &lt;command&gt;DECLARE CURSOR&lt;/command&gt; and &lt;command&gt;FETCH&lt;/command&gt;.
 </span>
 作成に成功すると、名前付きポータルオブジェクトは明示的に破棄されない限り現在のセッションが終わるまで残ります。
-無名ポータルは、トランザクションの終わり、もしくは、次に無名ポータルを宛先に指定したParse文が発行されるまでの間のみに残ります。
+無名ポータルは、トランザクションの終わり、もしくは、次に無名ポータルを宛先に指定したBind文が発行されるまでの間のみに残ります。
 （単なるQueryメッセージでも無名ポータルは破壊されることに注意してください。）
 名前付きポータルは、他のBindメッセージで再定義する前に明示的に閉じなければなりません。
 しかし、これは無名ポータルでは必要ありません。
