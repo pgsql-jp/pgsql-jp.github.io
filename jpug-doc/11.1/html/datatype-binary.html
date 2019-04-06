@@ -29,7 +29,7 @@
 </span>
 バイナリ列はオクテット（またはバイト）の連続です。
 バイナリ列は２つの点で文字列と区別されます。
-1点目は、バイナリ列はゼロの値のオクテットと他の<span class="quote">「<span class="quote">表示できない</span>」</span>オクテット（通常32から126の範囲外のオクテット）を保存できるということです。
+1点目は、バイナリ列はゼロの値のオクテットと他の<span class="quote">「<span class="quote">表示できない</span>」</span>オクテット（通常10進数表記で32から126の範囲外のオクテット）を保存できるということです。
 文字列ではゼロというオクテットは使用できません。
 また、データベースで選択している文字セット符号化方式で無効なオクテット値やオクテット値の並びも使用できません。
 2点目は、バイナリ列を演算すると実際のバイトが処理されるのに対して、文字列の処理はロケール設定に従うということです。
@@ -46,7 +46,7 @@
     &lt;productname&gt;PostgreSQL&lt;/productname&gt; 9.0; earlier versions and some
     tools don't understand it.)
 </span>
-<code class="type">bytea</code>型は入出力用に2つの外部書式をサポートします。
+<code class="type">bytea</code>型は入出力用に2つの書式をサポートします。
 <span class="productname">PostgreSQL</span>の歴史的な<span class="quote">「<span class="quote">エスケープ</span>」</span>書式と<span class="quote">「<span class="quote">hex</span>」</span>です。
 入力ではこれらの両方とも常に受け入れられます。
 出力書式は<a class="xref" href="runtime-config-client.html#GUC-BYTEA-OUTPUT">bytea_output</a>設定パラメータに依存し、デフォルトではhexです。
@@ -140,11 +140,11 @@ SELECT '\xDEADBEEF';
 エスケープ書式で<code class="type">bytea</code>値を入力する際に、特定の値のオクテットをエスケープする<span class="emphasis"><em>必要</em></span>があります。
 なお、すべてのオクテットの値をエスケープすることが<span class="emphasis"><em>できます</em></span>。
 一般的にあるオクテットをエスケープするには、それをその3桁の8進数に変換し、バックスラッシュ(エスケープ文字列構文を使用してリテラルとして値を記述する場合は2つのバックスラッシュ)を前に付けます。
-他にもバックスラッシュ自体(オクテット値92)を二重のバックスラッシュとして表現することができます。
+他にもバックスラッシュ自体(10進数表記のオクテットで92)を二重のバックスラッシュとして表現することができます。
 <a class="xref" href="datatype-binary.html#DATATYPE-BINARY-SQLESC" title="表8.7 オクテットをエスケープしたbyteaリテラル">表 8.7</a>には、エスケープする必要がある文字と、その適用可能な代替エスケープシーケンスを示しています。
    </p><div class="table" id="DATATYPE-BINARY-SQLESC"><p class="title"><strong>表8.7 オクテットをエスケープした<code class="type">bytea</code>リテラル</strong></p><div class="table-contents"><span class="original">
     &lt;title&gt;&lt;type&gt;bytea&lt;/type&gt; Literal Escaped Octets&lt;/title&gt;
-</span><table class="table" summary="オクテットをエスケープしたbyteaリテラル" border="1"><colgroup><col /><col /><col /><col /><col /></colgroup><thead><tr><th>10進オクテット値</th><th>説明</th><th>エスケープされた入力表現</th><th>例</th><th>出力表現</th></tr></thead><tbody><tr><td>0</td><td>ゼロオクテット</td><td><code class="literal">E'\\000'</code></td><td><code class="literal">SELECT E'\\000'::bytea;</code></td><td><code class="literal">\000</code></td></tr><tr><td>39</td><td>単一引用符</td><td><code class="literal">''''</code>もしくは<code class="literal">'\047'</code></td><td><code class="literal">SELECT ''''::bytea;</code></td><td><code class="literal">\x27</code></td></tr><tr><td>92</td><td>バックスラッシュ</td><td><code class="literal">'\'</code>もしくは<code class="literal">'\\134'</code></td><td><code class="literal">SELECT '\\'::bytea;</code></td><td><code class="literal">\x5c</code></td></tr><tr><td>0から31まで、および127から255まで</td><td><span class="quote">「<span class="quote">表示できない</span>」</span>オクテット</td><td><code class="literal">'\<em class="replaceable"><code>xxx'</code></em></code> (8進数)</td><td><code class="literal">SELECT '\001'::bytea;</code></td><td><code class="literal">\x01</code></td></tr></tbody></table></div></div><br class="table-break" /><p>
+</span><table class="table" summary="オクテットをエスケープしたbyteaリテラル" border="1"><colgroup><col /><col /><col /><col /><col /></colgroup><thead><tr><th>10進オクテット値</th><th>説明</th><th>エスケープされた入力表現</th><th>例</th><th>出力表現</th></tr></thead><tbody><tr><td>0</td><td>ゼロオクテット</td><td><code class="literal">'\000'</code></td><td><code class="literal">SELECT '\000'::bytea;</code></td><td><code class="literal">\x00</code></td></tr><tr><td>39</td><td>単一引用符</td><td><code class="literal">''''</code>もしくは<code class="literal">'\047'</code></td><td><code class="literal">SELECT ''''::bytea;</code></td><td><code class="literal">\x27</code></td></tr><tr><td>92</td><td>バックスラッシュ</td><td><code class="literal">'\'</code>もしくは<code class="literal">'\\134'</code></td><td><code class="literal">SELECT '\\'::bytea;</code></td><td><code class="literal">\x5c</code></td></tr><tr><td>0から31まで、および127から255まで</td><td><span class="quote">「<span class="quote">表示できない</span>」</span>オクテット</td><td><code class="literal">'\<em class="replaceable"><code>xxx'</code></em></code> (8進数)</td><td><code class="literal">SELECT '\001'::bytea;</code></td><td><code class="literal">\x01</code></td></tr></tbody></table></div></div><br class="table-break" /><p>
 <span class="original">
     The requirement to escape &lt;emphasis&gt;non-printable&lt;/emphasis&gt; octets
     varies depending on locale settings. In some instances you can get away
@@ -182,7 +182,7 @@ SELECT '\xDEADBEEF';
 各組み合わせの最初のバックスラッシュは文字列リテラル用パーサでエスケープ文字と解釈（エスケープ文字列構文の使用を前提）され、2番目のバックスラッシュを残して、そこで消費されます。
 （この段階のエスケープを避けるためにドル引用符による文字列を使用することができます。）
 残りのバックスラッシュは、<code class="type">bytea</code>入力関数が3桁のオクテット値の先頭に付く記号、もしくは、他のバックスラッシュをエスケープする記号として認識します。
-例えば、<code class="literal">E'\\001'</code>としてサーバに渡された文字列リテラルは、エスケープ文字列パーサを通過した後<code class="literal">\001</code>のようになります。
+例えば、<code class="literal">'\\001'</code>としてサーバに渡された文字列リテラルは、エスケープ文字列パーサを通過した後<code class="literal">\001</code>のようになります。
 <code class="literal">\001</code>はその後<code class="type">bytea</code>入力関数に送られ、10進数値1の1つのオクテットに変換されます。
 単一引用符文字は<code class="type">bytea</code>では特別に扱われず、通常の文字列リテラルの規則に従うことに注意してください。
 （<a class="xref" href="sql-syntax-lexical.html#SQL-SYNTAX-STRINGS" title="4.1.2.1. 文字列定数">4.1.2.1</a>も参照してください。）
@@ -196,11 +196,9 @@ SELECT '\xDEADBEEF';
     Most &lt;quote&gt;printable&lt;/quote&gt; octets are output by their standard
     representation in the client character set, e.g.:
 </span>
-また、<code class="type">Bytea</code>オクテットは出力時も時々エスケープされます。
-一般的には、各<span class="quote">「<span class="quote">表示できない</span>」</span>オクテットは、1つのバックスラッシュの後に等価な3桁8進数という形に変換されます。
-ほとんどの<span class="quote">「<span class="quote">表示できる</span>」</span>オクテットは、クライアント文字セットにおける標準表現で表されます。
-10進数で92となるオクテット（バックスラッシュ）は出力では二重になります。
-詳細は<a class="xref" href="datatype-binary.html#DATATYPE-BINARY-RESESC" title="表8.8 bytea出力のエスケープされたオクテット">表 8.8</a>に示します。
+<code class="type">Bytea</code>オクテットはデフォルトでは<code class="literal">hex</code>フォーマットで出力されます。
+<a class="xref" href="runtime-config-client.html#GUC-BYTEA-OUTPUT">bytea_output</a>を<code class="literal">escape</code>に変えると、<span class="quote">「<span class="quote">表示できない</span>」</span>オクテットは先頭にバックスラッシュがついた3桁のオクテットの値に変換されます。
+ほとんどの<span class="quote">「<span class="quote">表示可能な</span>」</span>オクテットはクライアントキャラクタセットの標準的な表示で出力されます。例:
 
 </p><pre class="programlisting">
 SET bytea_output = 'escape';
@@ -211,8 +209,12 @@ SELECT 'abc \153\154\155 \052\251\124'::bytea;
  abc klm *\251T
 </pre><p>
 
+<span class="original">
     The octet with decimal value 92 (backslash) is doubled in the output.
-    Details are in <a class="xref" href="datatype-binary.html#DATATYPE-BINARY-RESESC" title="表8.8 bytea出力のエスケープされたオクテット">表 8.8</a>.
+    Details are in &lt;xref linkend="datatype-binary-resesc"/&gt;.
+</span>
+10進数で92(バックスラッシュ)を持つオクテットは出力時に二重になります。
+詳細は<a class="xref" href="datatype-binary.html#DATATYPE-BINARY-RESESC" title="表8.8 bytea出力のエスケープされたオクテット">表 8.8</a>を参照してください。
    </p><div class="table" id="DATATYPE-BINARY-RESESC"><p class="title"><strong>表8.8 <code class="type">bytea</code>出力のエスケープされたオクテット</strong></p><div class="table-contents"><span class="original">
     &lt;title&gt;&lt;type&gt;bytea&lt;/type&gt; Output Escaped Octets&lt;/title&gt;
 </span><table class="table" summary="bytea出力のエスケープされたオクテット" border="1"><colgroup><col /><col /><col /><col /><col /></colgroup><thead><tr><th>10進オクテット値</th><th>説明</th><th>エスケープされた出力表現</th><th>例</th><th>出力結果</th></tr></thead><tbody><tr><td>92</td><td>バックスラッシュ</td><td><code class="literal">\\</code></td><td><code class="literal">SELECT '\134'::bytea;</code></td><td><code class="literal">\\</code></td></tr><tr><td>0から31および127から255</td><td><span class="quote">「<span class="quote">表示できない</span>」</span>オクテット</td><td><code class="literal">\<em class="replaceable"><code>xxx</code></em></code>（8進数）</td><td><code class="literal">SELECT '\001'::bytea;</code></td><td><code class="literal">\001</code></td></tr><tr><td>32から126</td><td><span class="quote">「<span class="quote">表示できる</span>」</span>オクテット</td><td>クライアント文字セットにおける表現</td><td><code class="literal">SELECT '\176'::bytea;</code></td><td><code class="literal">~</code></td></tr></tbody></table></div></div><br class="table-break" /><p>

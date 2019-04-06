@@ -100,16 +100,17 @@
   accepts datum to be indexed as the only argument and returns value suitable
   for physical storage in leaf tuple.
 </span>
-<acronym class="acronym">SP-GiST</acronym>のインデックス演算子クラスが提供しなければならないユーザ定義メソッドが5つあります。
-5つのメソッドはいずれも2つの<code class="type">internal</code>引数をとり、1番目の引数はサポートメソッドの入力値を含むCの構造体へのポインタ、2番目の引数は出力値が置かれるCの構造体へのポインタという形式に従っています。
-メソッドのうち4つは、その結果がすべて出力構造体の中にあるので、単に<code class="type">void</code>を返しますが、<code class="function">leaf_consistent</code>は、さらに<code class="type">boolean</code>の結果を返します。
+<acronym class="acronym">SP-GiST</acronym>のインデックス演算子クラスが提供しなければならないユーザ定義メソッドは5つあり、加えて、オプションのメソッドが1つあります。
+5つの必須メソッド全ては2つの<code class="type">internal</code>引数を受け付けるというしきたりに従い、1つ目はサポートメソッドへの入力値を含むC構造体へのポインタで、一方2つ目は出力値が配置されるであろうC構造体へのポインタです。
+4つの必須メソッドでは、その結果がすべて出力構造体の中にあるので、単に<code class="type">void</code>を返します。<code class="function">leaf_consistent</code>は、さらに<code class="type">boolean</code>の結果を返します。
 メソッドは、その入力構造体のどのフィールドも変更してはいけません。
 どんな場合でも、出力構造体はユーザ定義メソッドを呼び出す前にゼロに初期化されます。
+オプションの6番目のメソッド<code class="function">compress</code>は、唯一の引数および戻り値として、リーフタプルの物理格納に適したインデックス付けされるデータを受け付けます。
  </p><p>
 <span class="original">
   The five mandatory user-defined methods are:
 </span>
-5つのユーザ定義メソッドは以下のとおりです。
+5つの必須ユーザ定義メソッドは以下のとおりです。
  </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="function">config</code></span></dt><dd><p>
 <span class="original">
        Returns static information about the index implementation, including
@@ -152,6 +153,7 @@ typedef struct spgConfigOut
 </span>
     Oid         prefixType;     /* 内部タプルの接頭辞のデータ型 */
     Oid         labelType;      /* 内部タプルのノードのラベルのデータ型 */
+    Oid         leafType;       /* リーフタプル値のデータ型 */
     bool        canReturnData;  /* 演算子クラスは元のデータを再構築できる */
     bool        longValuesOK;   /* 演算子クラスは1ページより大きな値を扱える */
 } spgConfigOut;
@@ -182,19 +184,27 @@ typedef struct spgConfigOut
 演算子クラスが、元々提供されていたインデックスの値を再構築できるときは、<code class="structfield">canReturnData</code>をtrueにします。
 <code class="structfield">attType</code>が可変長で、演算子クラスが接尾辞付けの繰り返しによって長い値を分割できるときにのみ、<code class="structfield">longValuesOK</code>をtrueにします(<a class="xref" href="spgist-implementation.html#SPGIST-LIMITS" title="65.4.1. SP-GiSTの制限">65.4.1</a>参照)。
      </p><p>
-      <code class="structfield">leafType</code> is typically the same as
-      <code class="structfield">attType</code>.  For the reasons of backward
-      compatibility, method <code class="function">config</code> can
-      leave <code class="structfield">leafType</code> uninitialized; that would
-      give the same effect as setting <code class="structfield">leafType</code> equal
-      to <code class="structfield">attType</code>.  When <code class="structfield">attType</code>
-      and <code class="structfield">leafType</code> are different, then optional
-      method <code class="function">compress</code> must be provided.
-      Method <code class="function">compress</code> is responsible
-      for transformation of datums to be indexed from <code class="structfield">attType</code>
-      to <code class="structfield">leafType</code>.
-      Note: both consistent functions will get <code class="structfield">scankeys</code>
-      unchanged, without transformation using <code class="function">compress</code>.
+<span class="original">
+      &lt;structfield&gt;leafType&lt;/structfield&gt; is typically the same as
+      &lt;structfield&gt;attType&lt;/structfield&gt;.  For the reasons of backward
+      compatibility, method &lt;function&gt;config&lt;/function&gt; can
+      leave &lt;structfield&gt;leafType&lt;/structfield&gt; uninitialized; that would
+      give the same effect as setting &lt;structfield&gt;leafType&lt;/structfield&gt; equal
+      to &lt;structfield&gt;attType&lt;/structfield&gt;.  When &lt;structfield&gt;attType&lt;/structfield&gt;
+      and &lt;structfield&gt;leafType&lt;/structfield&gt; are different, then optional
+      method &lt;function&gt;compress&lt;/function&gt; must be provided.
+      Method &lt;function&gt;compress&lt;/function&gt; is responsible
+      for transformation of datums to be indexed from &lt;structfield&gt;attType&lt;/structfield&gt;
+      to &lt;structfield&gt;leafType&lt;/structfield&gt;.
+      Note: both consistent functions will get &lt;structfield&gt;scankeys&lt;/structfield&gt;
+      unchanged, without transformation using &lt;function&gt;compress&lt;/function&gt;.
+</span>
+<code class="structfield">leafType</code>は一般的には<code class="structfield">attType</code>と同じです。
+後方互換性のため、<code class="function">config</code>メソッドは<code class="structfield">leafType</code>を初期化しないままにすることができます。
+このことは<code class="structfield">leafType</code>を<code class="structfield">attType</code>と同一に設定するのと同じ効果をもたらすでしょう。
+<code class="structfield">attType</code>と<code class="structfield">leafType</code>が異なるときには、オプションメソッド<code class="function">compress</code>が提供されなければなりません。
+メソッド<code class="function">compress</code>は<code class="structfield">attType</code>から<code class="structfield">leafType</code>へのインデックス付けされたデータの変換に責任を持ちます。
+注意: 両consistent関数は、<code class="function">compress</code>を使った変換を伴わない、変更されていない<code class="structfield">scankeys</code>を取得します。
      </p></dd><dt><span class="term"><code class="function">choose</code></span></dt><dd><p>
 <span class="original">
         Chooses a method for inserting a new value into an inner tuple.
@@ -352,9 +362,10 @@ typedef struct spgChooseOut
        &lt;structfield&gt;nodeLabels&lt;/structfield&gt; is an array of their label values, or
        NULL if there are no labels.
 </span>
-<code class="structfield">datum</code>はインデックスに挿入される元のデータです。
-<code class="structfield">leafDatum</code>は最初は<code class="structfield">datum</code>と同じですが、<code class="function">choose</code>あるいは<code class="function">picksplit</code>メソッドがそれを変更すると、ツリーのより低いレベルで変更されることがあります。
-挿入の探索がリーフのページに到達したとき、<code class="structfield">leafDatum</code>の現在値が、新しく作成されるリーフタプルに格納される値となります。
+<code class="structfield">datum</code>はインデックスに挿入できた<code class="structname">spgConfigIn</code>.<code class="structfield">attType</code>型の元データです。
+<code class="structfield">leafDatum</code>は<code class="structname">spgConfigOut</code>.<code class="structfield">leafType</code>型の値です。これは最初は、メソッド<code class="function">compress</code>が提供されているなら<code class="structfield">datum</code>に適用されたメソッド<code class="function">compress</code>の結果で、さもなくば<code class="structfield">datum</code>と同じ値です。
+<code class="structfield">leafDatum</code>は、<code class="function">choose</code>や<code class="function">picksplit</code>メソッドがこれを変更すると、ツリーのより低いレベルで変化することがあります。
+挿入の探索がリーフページに到達するとき、<code class="structfield">leafDatum</code>の現在値は、新しく作成されるリーフタプルに格納される値です。
 <code class="structfield">level</code>は、ルートレベルを0として、現在の内部タプルのレベルを示します。
 現在の内部タプルが複数の同等なノードを含むとして印を付けられているとき、<code class="structfield">allTheSame</code>をtrueにします(<a class="xref" href="spgist-implementation.html#SPGIST-ALL-THE-SAME" title="65.4.3. 「All-the-same」内部タプル">65.4.3</a>参照)。
 現在の内部タプルが接頭辞を含むとき、<code class="structfield">hasPrefix</code>をtrueにします。
@@ -514,9 +525,9 @@ typedef struct spgPickSplitOut
        &lt;structfield&gt;level&lt;/structfield&gt; is the current level that all the leaf tuples
        share, which will become the level of the new inner tuple.
 </span>
-<code class="structfield">nTuples</code>は入力されるリーフタプルの個数です。
-<code class="structfield">datums</code>はデータの値の配列です。
-<code class="structfield">level</code>はすべてのリーフタプルの現在のレベルで、これが新しい内部タプルのレベルになります。
+<code class="structfield">nTuples</code>は与えられるリーフタプルの個数です。
+<code class="structfield">datums</code>は<code class="structname">spgConfigOut</code>.<code class="structfield">leafType</code>型のそれらのデータ値の配列です。
+<code class="structfield">level</code>はすべてのリーフタプルが共有する現在のレベルで、これが新しい内部タプルのレベルになります。
       </p><p>
 <span class="original">
        Set &lt;structfield&gt;hasPrefix&lt;/structfield&gt; to indicate whether the new inner
@@ -697,17 +708,18 @@ typedef struct spgInnerConsistentOut
 </span>
 配列<code class="structfield">scankeys</code>は長さが<code class="structfield">nkeys</code>で、インデックス検索の条件を記述します。
 複数の条件はANDで結合されます。つまり、条件のすべてを満たすインデックスエントリのみが対象となります。
-(<code class="structfield">nkeys</code>が0ならば、すべてのエントリが検索条件を満たすことになる、ということに注意してください。)
+(<code class="structfield">nkeys</code> = 0 は全インデックスエントリが問い合わせを満たす意味になる、ということに注意してください。)
 通常、consistent関数では、配列のそれぞれのエントリの<code class="structfield">sk_strategy</code>および<code class="structfield">sk_argument</code>フィールドのみが問題となります。これらのフィールドにはそれぞれインデックス付け可能な演算子と比較値が入ります。
-なお、比較値がNULLかどうかを確認するために<code class="structfield">sk_flags</code>を検査する必要はありません。なぜならSP-GiSTのコアのコードがそのような条件を除外するからです。
+とりわけ、比較値がNULLかどうかを確認するために<code class="structfield">sk_flags</code>を検査する必要はありません。なぜならSP-GiSTのコアのコードがそのような条件を除外するからです。
 <code class="structfield">reconstructedValue</code>は親タプルのために再構築された値で、ルートレベルの場合、あるいは親レベルの<code class="function">inner_consistent</code>関数が値を返さなかった場合は<code class="literal">(Datum) 0</code>となります。
+<code class="structfield">reconstructedValue</code>は常に<code class="structname">spgConfigOut</code>.<code class="structfield">leafType</code>型です。
 <code class="structfield">traversalValue</code>は親インデックスのタプルの<code class="function">inner_consistent</code>の前の呼び出しから渡された探索データへのポインタで、ルートレベルならNULLです。
 <code class="structfield">traversalMemoryContext</code>は出力探索値が格納されるメモリコンテキストです（以下を参照）。
 <code class="structfield">level</code>は現在の内部タプルのレベルを、ルートレベルを0として数えたものです。
-<code class="structfield">returnData</code>は、この問い合わせで再構築されたデータが必要な場合に<code class="literal">true</code>となりますが、これは<code class="function">config</code>関数が<code class="structfield">canReturnData</code>を確認した場合にのみ、そうなります。
-<code class="structfield">allTheSame</code>は、現在の内部タプルに<span class="quote">「<span class="quote">all-the-same</span>」</span>の印が付いている場合にtrueになります。この場合、すべてのノードは(ラベルがあれば)同じラベルを持っていますから、そのすべてが問い合わせにマッチするか、いずれもマッチしないかのいずれかになります(<a class="xref" href="spgist-implementation.html#SPGIST-ALL-THE-SAME" title="65.4.3. 「All-the-same」内部タプル">65.4.3</a>参照)。
-<code class="structfield">hasPrefix</code>は現在の内部タプルが接頭辞を持っている場合にtrueとなり、このとき<code class="structfield">prefixDatum</code>がその値となります。
-<code class="structfield">nNodes</code>は内部タプルが含む子ノードの数です。<code class="structfield">nodeLabels</code>はそれらのラベル値の配列で、ノードにラベルがないときはNULLになります。
+<code class="structfield">returnData</code>は、この問い合わせで再構築されたデータが必要な場合に<code class="literal">true</code>となりますが、これは<code class="function">config</code>関数が<code class="structfield">canReturnData</code>であると主張した場合にのみ、そうなります。
+現在の内部タプルが<span class="quote">「<span class="quote">all-the-same</span>」</span>と印付けされているなら、<code class="structfield">allTheSame</code>は真になります。この場合、（もしあるなら）全てのノードが同じラベルを持ち、問い合わせに全てが一致するか、全く一致しないかのいずれかになります（<a class="xref" href="spgist-implementation.html#SPGIST-ALL-THE-SAME" title="65.4.3. 「All-the-same」内部タプル">65.4.3</a>を参照）。
+現在の内部タプルがプレフィックスを含んでいるなら<code class="structfield">hasPrefix</code>は真になります。その場合、<code class="structfield">prefixDatum</code>がその値です。
+<code class="structfield">nNodes</code>は内部タプルに含まれる子ノードの数で、<code class="structfield">nodeLabels</code>はそれらのラベル値の配列、あるいは、ノードがラベルを持たないならNULLです。
       </p><p>
 <span class="original">
        &lt;structfield&gt;nNodes&lt;/structfield&gt; must be set to the number of child nodes that
@@ -758,13 +770,13 @@ typedef struct spgInnerConsistentOut
 &lt;programlisting&gt;
 CREATE FUNCTION my_leaf_consistent(internal, internal) RETURNS bool ...
 &lt;/programlisting&gt;
-      The first argument is a pointer to a &lt;structname&gt;spgLeafConsistentIn&lt;/structname&gt;
 </span>
 関数の<acronym class="acronym">SQL</acronym>宣言は以下のようになります。
 </p><pre class="programlisting">
 CREATE FUNCTION my_leaf_consistent(internal, internal) RETURNS bool ...
 </pre><p>
 <span class="original">
+      The first argument is a pointer to a &lt;structname&gt;spgLeafConsistentIn&lt;/structname&gt;
       C struct, containing input data for the function.
       The second argument is a pointer to a &lt;structname&gt;spgLeafConsistentOut&lt;/structname&gt;
       C struct, which the function must fill with result data.
@@ -844,6 +856,7 @@ typedef struct spgLeafConsistentOut
 通常、consistent関数では、配列のそれぞれのエントリの<code class="structfield">sk_strategy</code>および<code class="structfield">sk_argument</code>フィールドのみが問題となります。これらのフィールドにはそれぞれインデックス付け可能な演算子と比較値が入ります。
 なお、比較値がNULLかどうかを確認するために<code class="structfield">sk_flags</code>を検査する必要はありません。なぜならSP-GiSTのコアのコードがそのような条件を除外するからです。
 <code class="structfield">reconstructedValue</code>は親タプルのために再構築された値で、ルートレベルの場合、あるいは親レベルの<code class="function">inner_consistent</code>関数が値を返さなかった場合は<code class="literal">(Datum) 0</code>となります。
+<code class="structfield">reconstructedValue</code>は常に<code class="structname">spgConfigOut</code>.<code class="structfield">leafType</code>型です。
 <code class="structfield">traversalValue</code>は親インデックスのタプルの<code class="function">inner_consistent</code>の前の呼び出しから渡された探索データへのポインタで、ルートレベルならNULLです。
 <code class="structfield">level</code>は現在のリーフタプルのレベルを、ルートレベルを0として数えたものです。
 <code class="structfield">returnData</code>は、この問い合わせで再構築されたデータが必要な場合に<code class="literal">true</code>となりますが、これは<code class="function">config</code>関数が<code class="structfield">canReturnData</code>を確認した場合にのみ、そうなります。
@@ -861,17 +874,25 @@ typedef struct spgLeafConsistentOut
        heap tuple to verify the match.
 </span>
 この関数は、リーフタプルが問い合わせにマッチすれば<code class="literal">true</code>を返し、マッチしなければ<code class="literal">false</code>を返します。
-<code class="literal">true</code>の場合、<code class="structfield">returnData</code>が<code class="literal">true</code>であれば、<code class="structfield">leafValue</code>は、このリーフタプルにインデックス付けするために元々提供された値にセットされなければなりません。
+<code class="literal">true</code>の場合、<code class="structfield">returnData</code>が<code class="literal">true</code>であれば、<code class="structfield">leafValue</code>は、このリーフタプルにインデックス付けするために元々提供された<code class="structname">spgConfigIn</code>.<code class="structfield">attType</code>型の値にセットされなければなりません。
 また、マッチするかどうかが不確実で、マッチするかの確認のために実際のヒープタプルに演算子を再適用しなければならないときは、<code class="structfield">recheck</code>が<code class="literal">true</code>にセットされることがあります。
       </p></dd></dl></div><p>
+<span class="original">
   The optional user-defined method is:
+</span>
+オプションのユーザ定義メソッドは以下です。
  </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="function">Datum compress(Datum in)</code></span></dt><dd><p>
+<span class="original">
        Converts the data item into a format suitable for physical storage in
        a leaf tuple of index page.  It accepts
-       <code class="structname">spgConfigIn</code>.<code class="structfield">attType</code>
+       &lt;structname&gt;spgConfigIn&lt;/structname&gt;.&lt;structfield&gt;attType&lt;/structfield&gt;
        value and return
-       <code class="structname">spgConfigOut</code>.<code class="structfield">leafType</code>
+       &lt;structname&gt;spgConfigOut&lt;/structname&gt;.&lt;structfield&gt;leafType&lt;/structfield&gt;
        value.  Output value should not be toasted.
+</span>
+インデックページのリーフタプルでデータ項目を物理ストレージに適した形式に変換します。
+<code class="structname">spgConfigIn</code>.<code class="structfield">attType</code>の値を受け付け、<code class="structname">spgConfigOut</code>.<code class="structfield">leafType</code>の値を返します。
+出力値はTOASTされていないべきです。
       </p></dd></dl></div><p>
 <span class="original">
    All the SP-GiST support methods are normally called in a short-lived

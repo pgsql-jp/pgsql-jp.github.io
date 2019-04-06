@@ -87,26 +87,39 @@ btree以外のインデックススキャンのような他のスキャンタイ
 </span>
 非パラレルプランと同様、処理対象のテーブルは、1個以上の他のテーブルとネステッドループ、ハッシュ結合、マージ結合で結合することができます。
 結合の内側は、パラレルワーカー中で実行しても安全だという条件下で、プランナがサポートするどのような非パラレルプランであっても構いません。
-たとえば、ネステッドループ結合が選択されると、内側のプランは結合の外側から取得された値を参照するインデックススキャンかもしれません。
+結合タイプによっては内側がパラレルプランであってもよいです。
   </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>
-        In a <span class="emphasis"><em>nested loop join</em></span>, the inner side is always
+<span class="original">
+        In a &lt;emphasis&gt;nested loop join&lt;/emphasis&gt;, the inner side is always
         non-parallel.  Although it is executed in full, this is efficient if
         the inner side is an index scan, because the outer tuples and thus
         the loops that look up values in the index are divided over the
         cooperating processes.
+</span>
+<span class="emphasis"><em>ネステッドループ結合</em></span>では、内側は常に非パラレルです。
+外側タプルとこのようなインデックスで値を探すループは共同するプロセス間で分割されるので、全体で実行されても内側がインデックススキャンであるなら、これは効率的です。
       </p></li><li class="listitem"><p>
-        In a <span class="emphasis"><em>merge join</em></span>, the inner side is always
+<span class="original">
+        In a &lt;emphasis&gt;merge join&lt;/emphasis&gt;, the inner side is always
         a non-parallel plan and therefore executed in full.  This may be
         inefficient, especially if a sort must be performed, because the work
         and resulting data are duplicated in every cooperating process.
+</span>
+<span class="emphasis"><em>マージ結合</em></span>では、内側は常に非パラレルプランで、それゆえに全体で実行されます。
+特にソート実行を要する場合、全ての共同プロセスで処理と結果データが重複するので、これは非効率的と考えられます。
       </p></li><li class="listitem"><p>
-        In a <span class="emphasis"><em>hash join</em></span> (without the "parallel" prefix),
+<span class="original">
+        In a &lt;emphasis&gt;hash join&lt;/emphasis&gt; (without the "parallel" prefix),
         the inner side is executed in full by every cooperating process
         to build identical copies of the hash table.  This may be inefficient
         if the hash table is large or the plan is expensive.  In a
-        <span class="emphasis"><em>parallel hash join</em></span>, the inner side is a
-        <span class="emphasis"><em>parallel hash</em></span> that divides the work of building
+        &lt;emphasis&gt;parallel hash join&lt;/emphasis&gt;, the inner side is a
+        &lt;emphasis&gt;parallel hash&lt;/emphasis&gt; that divides the work of building
         a shared hash table over the cooperating processes.
+</span>
+（parallelが付かない）<span class="emphasis"><em>ハッシュ結合</em></span>では、内側は全ての共同プロセスがハッシュテーブルの同じコピーを作ることで、全体で実行されます。
+ハッシュテーブルが大きかったり、そのプランが高価である場合、これは非効率的と考えられます。
+<span class="emphasis"><em>パラレルハッシュ結合</em></span>では、内側は共有ハッシュテーブルの構築処理を共同プロセス間で分割する<span class="emphasis"><em>パラレルハッシュ</em></span>です。
       </p></li></ul></div></div><div class="sect2" id="PARALLEL-AGGREGATION"><div class="titlepage"><div><div><h3 class="title">15.3.3. パラレル集約</h3></div></div></div><span class="original">
   &lt;title&gt;Parallel Aggregation&lt;/title&gt;
 </span><p>
@@ -158,47 +171,71 @@ btree以外のインデックススキャンのような他のスキャンタイ
     the query are also part of the parallel portion of the plan.
 </span>
 どんな状況でもパラレル集約がサポートされているわけではありません。
-個々の集約は並列処理<a class="link" href="parallel-safety.html" title="15.4. パラレル安全">安全</a>で、合同関数(combine function)を持っていなければなりません。
+個々の集約は並列処理<a class="link" href="parallel-safety.html" title="15.4. パラレル安全">安全</a>で、結合関数(combine function)を持っていなければなりません。
 その集約が<code class="literal">internal</code>型の遷移状態を持っているならば、シリアライズ関数とデシリアライズ関数を持っていなければなりません。
 更なる詳細は<a class="xref" href="sql-createaggregate.html" title="CREATE AGGREGATE"><span class="refentrytitle">CREATE AGGREGATE</span></a>をご覧ください。
 パラレル集約は、集約関数呼び出しが<code class="literal">DISTINCT</code>あるいは<code class="literal">ORDER BY</code>句を含む場合、また 順序集合集約、あるいはクエリが<code class="literal">GROUPING SETS</code>を実行する場合にはサポートされません。
 パラレル集約は、クエリの中で実行されるすべての結合が、プラン中の並列実行部分の一部であるときにのみ利用できます。
-  </p></div><div class="sect2" id="PARALLEL-APPEND"><div class="titlepage"><div><div><h3 class="title">15.3.4. Parallel Append</h3></div></div></div><p>
-    Whenever <span class="productname">PostgreSQL</span> needs to combine rows
+  </p></div><div class="sect2" id="PARALLEL-APPEND"><div class="titlepage"><div><div><h3 class="title">15.3.4. パラレルアペンド</h3></div></div></div><span class="original">
+  &lt;title&gt;Parallel Append&lt;/title&gt;
+</span><p>
+<span class="original">
+    Whenever &lt;productname&gt;PostgreSQL&lt;/productname&gt; needs to combine rows
     from multiple sources into a single result set, it uses an
-    <code class="literal">Append</code> or <code class="literal">MergeAppend</code> plan node.
-    This commonly happens when implementing <code class="literal">UNION ALL</code> or
+    &lt;literal&gt;Append&lt;/literal&gt; or &lt;literal&gt;MergeAppend&lt;/literal&gt; plan node.
+    This commonly happens when implementing &lt;literal&gt;UNION ALL&lt;/literal&gt; or
     when scanning a partitioned table.  Such nodes can be used in parallel
     plans just as they can in any other plan.  However, in a parallel plan,
-    the planner may instead use a <code class="literal">Parallel Append</code> node.
+    the planner may instead use a &lt;literal&gt;Parallel Append&lt;/literal&gt; node.
+</span>
+<span class="productname">PostgreSQL</span>が複数のソースから一つの結果セットへの行の連結を必要とするときはいつでも、<code class="literal">Append</code>または<code class="literal">MergeAppend</code>プランノードが使われます。
+これは一般に<code class="literal">UNION ALL</code>を実施するときや、パーティションテーブルをスキャンするときに発生します。
+他のプランと同様にこのようなノードをパラレルプランで使うことができます。
+しかしながら、パラレルプランではプランナは代わりに<code class="literal">Parallel Append</code>ノードを使ってもよいです。
   </p><p>
-    When an <code class="literal">Append</code> node is used in a parallel plan, each
+<span class="original">
+    When an &lt;literal&gt;Append&lt;/literal&gt; node is used in a parallel plan, each
     process will execute the child plans in the order in which they appear,
     so that all participating processes cooperate to execute the first child
     plan until it is complete and then move to the second plan at around the
-    same time.  When a <code class="literal">Parallel Append</code> is used instead, the
+    same time.  When a &lt;literal&gt;Parallel Append&lt;/literal&gt; is used instead, the
     executor will instead spread out the participating processes as evenly as
     possible across its child plans, so that multiple child plans are executed
     simultaneously.  This avoids contention, and also avoids paying the startup
     cost of a child plan in those processes that never execute it.
+</span>
+<code class="literal">Append</code>ノードがパラレルプランで使われるとき、各プロセスは子プランをそれらの出現順に実行します。そのため、全ての参加しているプロセスは共同して最初の子プランを完了するまで実行して、その後、一斉に次プランに移ります。
+代わりに<code class="literal">Parallel Append</code>が使われるときには、エグゼキュータは逆に参加しているプロセスを各子プランにできるだけ均等に分散させます。そのため、複数の子プランは同時並行に実行されます。
+これは競合を回避し、また、プランを実行することのないプロセスで子プランの開始コストが生じることも回避します。
   </p><p>
-    Also, unlike a regular <code class="literal">Append</code> node, which can only have
-    partial children when used within a parallel plan, a <code class="literal">Parallel
-    Append</code> node can have both partial and non-partial child plans.
+<span class="original">
+    Also, unlike a regular &lt;literal&gt;Append&lt;/literal&gt; node, which can only have
+    partial children when used within a parallel plan, a &lt;literal&gt;Parallel
+    Append&lt;/literal&gt; node can have both partial and non-partial child plans.
     Non-partial children will be scanned by only a single process, since
     scanning them more than once would produce duplicate results.  Plans that
     involve appending multiple results sets can therefore achieve
     coarse-grained parallelism even when efficient partial plans are not
     available.  For example, consider a query against a partitioned table
     which can be only be implemented efficiently by using an index that does
-    not support parallel scans.  The planner might choose a <code class="literal">Parallel
-    Append</code> of regular <code class="literal">Index Scan</code> plans; each
+    not support parallel scans.  The planner might choose a &lt;literal&gt;Parallel
+    Append&lt;/literal&gt; of regular &lt;literal&gt;Index Scan&lt;/literal&gt; plans; each
     individual index scan would have to be executed to completion by a single
     process, but different scans could be performed at the same time by
     different processes.
+</span>
+また、パラレルプランの中で使われるときだけ部分的な子プランを持てる、通常の<code class="literal">Append</code>ノードと違い、<code class="literal">Parallel Append</code>ノードは部分的、非部分的のどちらの子プランも持つことができます。
+複数回のスキャンは重複した結果をもたらすため、非部分的な子プランは単一プロセスのみからスキャンされます。
+複数の結果セットの連結に関わるプランは、効率的なパラレルプランが不可能なときでも、それゆえ粗い並列性を実現できます。
+例えば、パラレルスキャンをサポートしないインデックスを使うことでのみ効率的に実行できるパーティションテーブルに対する問い合わせを考えてください。
+プランナは通常の<code class="literal">Index Scan</code>プランの<code class="literal">Parallel Append</code>を選ぶことができます。
+個々のインデックススキャンは単一プロセスで最後まで実行しなければなりませんが、別のスキャンは同時に別プロセスで実行することができます。
   </p><p>
-    <a class="xref" href="runtime-config-query.html#GUC-ENABLE-PARALLEL-APPEND">enable_parallel_append</a> can be used to disable
+<span class="original">
+    &lt;xref linkend="guc-enable-parallel-append" /&gt; can be used to disable
     this feature.
+</span>
+本機能を無効にするために<a class="xref" href="runtime-config-query.html#GUC-ENABLE-PARALLEL-APPEND">enable_parallel_append</a>を使用できます。
   </p></div><div class="sect2" id="PARALLEL-PLAN-TIPS"><div class="titlepage"><div><div><h3 class="title">15.3.5. パラレルプランに関するヒント</h3></div></div></div><span class="original">
   &lt;title&gt;Parallel Plan Tips&lt;/title&gt;
 </span><p>

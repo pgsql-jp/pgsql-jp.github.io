@@ -137,8 +137,9 @@ UPDATE tt SET ti =
     of &lt;function&gt;to_tsquery&lt;/function&gt; with an alternative syntax, similar
     to the one used by web search engines.
 </span>
-<span class="productname">PostgreSQL</span>は、問い合わせを<code class="type">tsquery</code>に変換する関数<code class="function">to_tsquery</code>、<code class="function">plainto_tsquery</code>、<code class="function">phraseto_tsquery</code>を提供しています。
+<span class="productname">PostgreSQL</span>は、問い合わせを<code class="type">tsquery</code>に変換する関数<code class="function">to_tsquery</code>、<code class="function">plainto_tsquery</code>、<code class="function">phraseto_tsquery</code>、<code class="function">websearch_to_tsquery</code>を提供しています。
 <code class="function">to_tsquery</code>は、<code class="function">plainto_tsquery</code>と<code class="function">phraseto_tsquery</code>のいずれよりも多くの機能を提供していますが、入力のチェックはより厳格です。
+<code class="function">websearch_to_tsquery</code>は、webサーチエンジンで使われているものに似た別の構文を使う<code class="function">to_tsquery</code>の簡易バージョンです。
    </p><a id="id-1.5.11.6.4.3" class="indexterm"></a><pre class="synopsis">
 to_tsquery([<span class="optional"> <em class="replaceable"><code>config</code></em> <code class="type">regconfig</code>, </span>] <em class="replaceable"><code>querytext</code></em> <code class="type">text</code>) returns <code class="type">tsquery</code>
 </pre><p>
@@ -316,32 +317,53 @@ SELECT phraseto_tsquery('english', 'The Fat &amp; Rats:C');
    </p><pre class="synopsis">
 websearch_to_tsquery([<span class="optional"> <em class="replaceable"><code>config</code></em> <code class="type">regconfig</code>, </span>] <em class="replaceable"><code>querytext</code></em> <code class="type">text</code>) returns <code class="type">tsquery</code>
 </pre><p>
-    <code class="function">websearch_to_tsquery</code> creates a <code class="type">tsquery</code>
-    value from <em class="replaceable"><code>querytext</code></em> using an alternative
+<span class="original">
+    &lt;function&gt;websearch_to_tsquery&lt;/function&gt; creates a &lt;type&gt;tsquery&lt;/type&gt;
+    value from &lt;replaceable&gt;querytext&lt;/replaceable&gt; using an alternative
     syntax in which simple unformatted text is a valid query.
-    Unlike <code class="function">plainto_tsquery</code>
-    and <code class="function">phraseto_tsquery</code>, it also recognizes certain
+    Unlike &lt;function&gt;plainto_tsquery&lt;/function&gt;
+    and &lt;function&gt;phraseto_tsquery&lt;/function&gt;, it also recognizes certain
     operators. Moreover, this function should never raise syntax errors,
     which makes it possible to use raw user-supplied input for search.
     The following syntax is supported:
+</span>
+<code class="function">websearch_to_tsquery</code>は、問い合わせとして、単純で整形されていないテキストが代わりに使えるような構文を使って<em class="replaceable"><code>querytext</code></em>から<code class="type">tsquery</code>を作り出します。
+<code class="function">plainto_tsquery</code>および<code class="function">phraseto_tsquery</code>と違って、ある種の演算子を理解します。
+更にこの関数は決して構文エラーを引き起こさないので、ユーザ入力をそのまま検索で使用することができます。
+以下の構文をサポートします。
     </p><div class="itemizedlist"><ul class="itemizedlist compact" style="list-style-type: bullet; "><li class="listitem" style="list-style-type: disc"><p>
-        <code class="literal">unquoted text</code>: text not inside quote marks will be
-        converted to terms separated by <code class="literal">&amp;</code> operators, as
+<span class="original">
+        &lt;literal&gt;unquoted text&lt;/literal&gt;: text not inside quote marks will be
+        converted to terms separated by &lt;literal&gt;&amp;amp;&lt;/literal&gt; operators, as
         if processed by
-        <code class="function">plainto_tsquery</code>.
+        &lt;function&gt;plainto_tsquery&lt;/function&gt;.
+</span>
+<code class="literal">引用符なしのテキスト</code>:引用符の内側にないテキストは、あたかも<code class="function">plainto_tsquery</code>で処理されたように<code class="literal">&amp;</code>演算子で区切られます。
       </p></li><li class="listitem" style="list-style-type: disc"><p>
-        <code class="literal">"quoted text"</code>: text inside quote marks will be
-        converted to terms separated by <code class="literal">&lt;-&gt;</code>
-        operators, as if processed by <code class="function">phraseto_tsquery</code>.
+<span class="original">
+        &lt;literal&gt;"quoted text"&lt;/literal&gt;: text inside quote marks will be
+        converted to terms separated by &lt;literal&gt;&amp;lt;-&amp;gt;&lt;/literal&gt;
+        operators, as if processed by &lt;function&gt;phraseto_tsquery&lt;/function&gt;.
+</span>
+<code class="literal">"引用符内のテキスト"</code>:引用符内のテキストは、あたかも<code class="function">phraseto_tsquery</code>で処理されたように<code class="literal">&lt;-&gt;</code>で区切られた表現に変換されます。
       </p></li><li class="listitem" style="list-style-type: disc"><p>
-       <code class="literal">OR</code>: logical or will be converted to
-       the <code class="literal">|</code> operator.
+<span class="original">
+       &lt;literal&gt;OR&lt;/literal&gt;: logical or will be converted to
+       the &lt;literal&gt;|&lt;/literal&gt; operator.
+</span>
+<code class="literal">OR</code>:論理和は<code class="literal">|</code>演算子に変換されます。
       </p></li><li class="listitem" style="list-style-type: disc"><p>
-       <code class="literal">-</code>: the logical not operator, converted to the
-       the <code class="literal">!</code> operator.
+<span class="original">
+       &lt;literal&gt;-&lt;/literal&gt;: the logical not operator, converted to the
+       the &lt;literal&gt;!&lt;/literal&gt; operator.
+</span>
+<code class="literal">-</code>:論理否定演算子。<code class="literal">!</code>演算子に変換されます。
       </p></li></ul></div><p>
    </p><p>
+<span class="original">
     Examples:
+  </span>
+例を示します。
 </p><pre class="screen">
 SELECT websearch_to_tsquery('english', 'The fat rats');
  websearch_to_tsquery
