@@ -113,8 +113,9 @@ echo '\x \\ SELECT * FROM foo;' | psql
        because then &lt;application&gt;psql&lt;/application&gt; sends
        each &lt;acronym&gt;SQL&lt;/acronym&gt; command separately.
 </span>
-<code class="option">-c</code>に渡される各<acronym class="acronym">SQL</acronym>のコマンド文字列は、単一の問い合わせとしてサーバに送信されます。
+<code class="option">-c</code>に渡される各<acronym class="acronym">SQL</acronym>のコマンド文字列は、単一の要求としてサーバに送信されます。
 このため、トランザクションを複数に分ける<code class="command">BEGIN</code>/<code class="command">COMMIT</code>コマンドが明示的に文字列内に含まれない限り、文字列内に複数の<acronym class="acronym">SQL</acronym>コマンドが含まれていたとしても、サーバはそれを1つのトランザクションとして実行します。
+（複数問い合わせの文字列をどのようにサーバが処理するかについて、詳しくは<a class="xref" href="protocol-flow.html#PROTOCOL-FLOW-MULTI-STATEMENT" title="53.2.2.1. 簡易問い合わせでの複文">53.2.2.1</a>を参照してください。）
 また、<span class="application">psql</span>は文字列内の最後の<acronym class="acronym">SQL</acronym>コマンドの結果しか出力しません。
 同じ文字列をファイル、あるいは<span class="application">psql</span>の標準入力として渡した場合、<span class="application">psql</span>は各<acronym class="acronym">SQL</acronym>コマンドを別々に送信しますので、この場合とは動作が異なります。
       </p><p>
@@ -126,7 +127,7 @@ echo '\x \\ SELECT * FROM foo;' | psql
        either using &lt;application&gt;echo&lt;/application&gt; as illustrated above, or
        via a shell here-document, for example:
 </span>
-この動作のため、1つの<code class="option">-c</code>の文字列に2つ以上のコマンドを指定すると、予期しない結果をもたらすことがあります。
+この動作のため、1つの<code class="option">-c</code>の文字列に2つ以上のSQLコマンドを指定すると、予期しない結果をもたらすことがあります。
 <code class="option">-c</code>のコマンドを繰り返し使うか、あるいは、上記のように<span class="application">echo</span>を使うか、以下の例のようにシェルのヒアドキュメントを使うことで、<span class="application">psql</span>の標準入力に複数のコマンドを入力する方が良いでしょう。
 </p><pre class="programlisting">
 psql &lt;&lt;EOF
@@ -746,6 +747,9 @@ Cの形式のブロックコメントは、サーバに送信され、サーバ�
 </span>
 <a class="xref" href="app-psql.html#APP-PSQL-INTERPOLATION" title="SQL差し替え"><acronym class="acronym">SQL</acronym>差し替え</a>で説明されているとおり、引数の中に引用符で囲まれていないコロン（ <code class="literal">:</code>）とそれに続く<span class="application">psql</span>変数がある場合、その部分は変数の値で置換されます。
 そこで説明されている<code class="literal">:'<em class="replaceable"><code>variable_name</code></em>'</code>および<code class="literal">:"<em class="replaceable"><code>variable_name</code></em>"</code>という形式も同様に機能します。
+<code class="literal">:{?<em class="replaceable"><code>variable_name</code></em>}</code>構文は、変数が定義済みかどうかをテストできます。
+これはTRUEかFALSEに置き換えられます。
+コロンをバックスラッシュでエスケープすると置換が防止されます。
     </p><p>
 <span class="original">
     Within an argument, text that is enclosed in backquotes
@@ -1373,7 +1377,6 @@ Cの形式のブロックコメントは、サーバに送信され、サーバ�
         To display only functions
         of specific type(s), add the corresponding letters &lt;literal&gt;a&lt;/literal&gt;,
         &lt;literal&gt;n&lt;/literal&gt;, &lt;literal&gt;p&lt;/literal&gt;, &lt;literal&gt;t&lt;/literal&gt;, or &lt;literal&gt;w&lt;/literal&gt; to the command.
-        &lt;literal&gt;n&lt;/literal&gt;, &lt;literal&gt;t&lt;/literal&gt;, or &lt;literal&gt;w&lt;/literal&gt; to the command.
         If &lt;replaceable
         class="parameter"&gt;pattern&lt;/replaceable&gt; is specified, only
         functions whose names match the pattern are shown.
@@ -1385,8 +1388,8 @@ Cの形式のブロックコメントは、サーバに送信され、サーバ�
         parallel safety, owner, security classification, access privileges,
         language, source code and description.
 </span>
-関数とその結果のデータ型、引数のデータ型、および、<span class="quote">「<span class="quote">agg</span>」</span> (集約)、<span class="quote">「<span class="quote">normal</span>」</span>、<span class="quote">「<span class="quote">trigger</span>」</span>、<span class="quote">「<span class="quote">window</span>」</span>で分類される関数の種類の一覧を表示します。
-特定種類の関数のみを表示させるには、対応する文字<code class="literal">a</code>、<code class="literal">n</code>、<code class="literal">t</code>、<code class="literal">w</code>をコマンドに付けて下さい。
+関数とその結果のデータ型、引数のデータ型、および、<span class="quote">「<span class="quote">agg</span>」</span> (集約)、<span class="quote">「<span class="quote">normal</span>」</span>、<span class="quote">「<span class="quote">procedure</span>」</span>、<span class="quote">「<span class="quote">trigger</span>」</span>、<span class="quote">「<span class="quote">window</span>」</span>で分類される関数の種類の一覧を表示します。
+特定種類の関数のみを表示させるには、対応する文字<code class="literal">a</code>、<code class="literal">n</code>、<code class="literal">p</code>、<code class="literal">t</code>、<code class="literal">w</code>をコマンドに付けて下さい。
 <em class="replaceable"><code>pattern</code></em>が指定されている場合は、そのパターンに名前がマッチする関数のみが表示されます。
 デフォルトではユーザが作成したオブジェクトのみが表示されます。
 システムオブジェクトを含めるためには、パターンまたは<code class="literal">S</code>修飾子を付与してください。
@@ -1760,7 +1763,7 @@ Tue Oct 26 21:40:57 CEST 1999
          type semicolon or &lt;literal&gt;\g&lt;/literal&gt; to send it, or &lt;literal&gt;\r&lt;/literal&gt;
          to cancel.
 </span>
-このコマンドは指定された関数の定義を<code class="command">CREATE OR REPLACE FUNCTION</code>コマンド構文で取り出し、編集します。
+このコマンドは指定された関数やプロシージャの定義を<code class="command">CREATE OR REPLACE FUNCTION</code>や<code class="command">CREATE OR REPLACE PROCEDURE</code>コマンド構文で取り出し、編集します。
 編集は<code class="literal">\edit</code>と同様の方法で行われます。
 エディタ終了後、更新されたコマンドは問い合わせバッファ内で待機しています。
 セミコロンか<code class="literal">\g</code>を入力して送信するか、<code class="literal">\r</code>を入力して取り消すかしてください。
@@ -1896,13 +1899,20 @@ Tue Oct 26 21:40:57 CEST 1999
 引数が<code class="literal">|</code>で始まっている場合、行の残りの部分はすべて実行する<em class="replaceable"><code>command</code></em>であると解釈され、その中では変数の置換も逆引用符の展開も行われません。
 行の残り部分は、単にあるがままにシェルに渡されます。
         </p></dd><dt><span class="term"><code class="literal">\gdesc</code></span></dt><dd><p>
+<span class="original">
          Shows the description (that is, the column names and data types)
          of the result of the current query buffer.  The query is not
          actually executed; however, if it contains some type of syntax
          error, that error will be reported in the normal way.
+</span>
+現在の問い合わせバッファの結果の説明（列名とデータ型）を表示します。
+問い合わせは実際には実行されませんが、ある種の構文エラーが含まれている場合、そのエラーは通常の方法で報告されます。
         </p><p>
+<span class="original">
          If the current query buffer is empty, the most recently sent query
          is described instead.
+</span>
+現在の問い合わせバッファが空の場合、直近に送った問い合わせの説明が代わりに出力されます。
         </p></dd><dt><span class="term"><code class="literal">\gexec</code></span></dt><dd><p>
 <span class="original">
          Sends the current query buffer to the server, then treats
@@ -2625,8 +2635,8 @@ null値の代わりに表示する文字列を設定します。
           (such as &lt;filename&gt;more&lt;/filename&gt;) is used.
 </span>
 問い合わせおよび<span class="application">psql</span>のヘルプを出力する際の、ページャプログラムの使用を制御します。
-環境変数<code class="envar">PAGER</code>が設定されている場合、出力は指定したプログラムにパイプで渡されます。
-<code class="envar">PAGER</code>が設定されていない場合は、プラットフォーム依存のデフォルト（<code class="filename">more</code>など）が使用されます。
+環境変数<code class="envar">PSQL_PAGER</code>または<code class="envar">PAGER</code>が設定されている場合、出力は指定したプログラムにパイプで渡されます。
+設定されていない場合は、プラットフォーム依存のデフォルト（<code class="filename">more</code>など）が使用されます。
           </p><p>
 <span class="original">
           When the &lt;literal&gt;pager&lt;/literal&gt; option is &lt;literal&gt;off&lt;/literal&gt;, the pager
@@ -2856,7 +2866,7 @@ testdb=&gt; <strong class="userinput"><code>\setenv LESS -imx4F</code></strong>
          The definition is printed to the current query output channel,
          as set by &lt;command&gt;\o&lt;/command&gt;.
 </span>
-このコマンドは、<code class="command">CREATE OR REPLACE FUNCTION</code>コマンドの形式で、指定された関数の定義を抽出し表示します。
+このコマンドは、<code class="command">CREATE OR REPLACE FUNCTION</code>コマンドや<code class="command">CREATE OR REPLACE PROCEDURE</code>コマンドの形式で、指定された関数やプロシージャの定義を抽出し表示します。
 この定義は、<code class="command">\o</code>で設定された現在の問い合わせ出力チャネルに出力されます。
         </p><p>
 <span class="original">
@@ -3046,36 +3056,55 @@ testdb=&gt; <strong class="userinput"><code>\setenv LESS -imx4F</code></strong>
 オプションの<em class="replaceable"><code>topic</code></em>パラメータ（デフォルトは<code class="literal">commands</code>）は<span class="application">psql</span>のどの部分を説明するかを選択します。
 <code class="literal">commands</code>は<span class="application">psql</span>のバックスラッシュコマンドについて、<code class="literal">options</code>は<span class="application">psql</span>に渡すことができるコマンド行オプションについて、<code class="literal">variables</code>は<span class="application">psql</span>の設定変数についてのヘルプを表示します。
         </p></dd><dt><span class="term"><code class="literal">\;</code></span></dt><dd><p>
+<span class="original">
         Backslash-semicolon is not a meta-command in the same way as the
         preceding commands; rather, it simply causes a semicolon to be
         added to the query buffer without any further processing.
+</span>
+バックスラッシュ-セミコロンは前述のコマンドと同じ位置づけのメタコマンドではありません。そうではなく単にセミコロンを追加処理無しで問い合わせバッファに加えます。
         </p><p>
-        Normally, <span class="application">psql</span> will dispatch a SQL command to the
+<span class="original">
+        Normally, &lt;application&gt;psql&lt;/application&gt; will dispatch a SQL command to the
         server as soon as it reaches the command-ending semicolon, even if
         more input remains on the current line.  Thus for example entering
-</p><pre class="programlisting">
+</span>
+通常、<span class="application">psql</span>は、コマンド終了のセミコロンに到達したら、更なる入力が現在行に残っていても、SQLコマンドをすぐにサーバに送ります。
+よって、例えば、
+<span class="original">
+&lt;programlisting&gt;
 select 1; select 2; select 3;
-</pre><p>
+&lt;/programlisting&gt;
         will result in the three SQL commands being individually sent to
         the server, with each one's results being displayed before
         continuing to the next command.  However, a semicolon entered
-        as <code class="literal">\;</code> will not trigger command processing, so that the
+        as &lt;literal&gt;\;&lt;/literal&gt; will not trigger command processing, so that the
         command before it and the one after are effectively combined and
         sent to the server in one request.  So for example
+</span>     
+上記は3つのSQLコマンドが個々にサーバに送られることになり、各々の結果は続く次コマンドの前に表示されます。
+しかしながら、<code class="literal">\;</code>として挿入されたセミコロンはコマンド処理を誘発せず、その後、そのさらに後のコマンドは事実上結合されて、サーバに一つのリクエストとして送られます。
+したがって、例えば、
 </p><pre class="programlisting">
 select 1\; select 2\; select 3;
 </pre><p>
+<span class="original">
         results in sending the three SQL commands to the server in a single
         request, when the non-backslashed semicolon is reached.
         The server executes such a request as a single transaction,
-        unless there are explicit <code class="command">BEGIN</code>/<code class="command">COMMIT</code>
+        unless there are explicit &lt;command&gt;BEGIN&lt;/command&gt;/&lt;command&gt;COMMIT&lt;/command&gt;
         commands included in the string to divide it into multiple
-        transactions.  (See <a class="xref" href="protocol-flow.html#PROTOCOL-FLOW-MULTI-STATEMENT" title="53.2.2.1. 簡易問い合わせでの複文">53.2.2.1</a>
+        transactions.  (See &lt;xref linkend="protocol-flow-multi-statement"/&gt;
         for more details about how the server handles multi-query strings.)
-        <span class="application">psql</span> prints only the last query result
+        &lt;application&gt;psql&lt;/application&gt; prints only the last query result
         it receives for each request; in this example, although all
-        three <code class="command">SELECT</code>s are indeed executed, <span class="application">psql</span>
-        only prints the <code class="literal">3</code>.
+        three &lt;command&gt;SELECT&lt;/command&gt;s are indeed executed, &lt;application&gt;psql&lt;/application&gt;
+        only prints the &lt;literal&gt;3&lt;/literal&gt;.
+</span>
+上記は、バックスラッシュの無いセミコロンに達したときに、3つのSQLコマンドがサーバに単一リクエストでサーバに送られます。
+文字列にそれを複数トランザクションに分けるための明示的な<code class="command">BEGIN</code>/<code class="command">COMMIT</code>が含まれているのでない限り、サーバはこのようなリクエストを単一トランザクションとして実行します。
+（複数問い合わせの文字列をどのようにサーバが処理するかについて、詳しくは<a class="xref" href="protocol-flow.html#PROTOCOL-FLOW-MULTI-STATEMENT" title="53.2.2.1. 簡易問い合わせでの複文">53.2.2.1</a>を参照してください。）
+<span class="application">psql</span>は各リクエストに対して受け取った最後の問い合わせ結果だけを出力します。
+この例では、3つ全ての<code class="command">SELECT</code>が実際に実行されますが、<span class="application">psql</span>は<code class="literal">3</code>だけ出力します。
         </p></dd></dl></div><p>
   </p><div class="refsect3" id="APP-PSQL-PATTERNS"><h4>パターン</h4><span class="original">
    &lt;title id="app-psql-patterns-title"&gt;Patterns&lt;/title&gt;
@@ -3410,8 +3439,12 @@ SQLキーワードを補完する時に大文字小文字のどちらを使用�
 現在のクライアント側の文字セット符号化方式です。
 これは（プログラムの起動時を含め）データベースに接続する度に、また符号化方式を<code class="literal">\encoding</code>で変更した時に設定されますが、変更したり、未設定にすることができます。
         </p></dd><dt><span class="term"><code class="varname">ERROR</code></span></dt><dd><p>
-         <code class="literal">true</code> if the last SQL query failed, <code class="literal">false</code> if
-         it succeeded.  See also <code class="varname">SQLSTATE</code>.
+<span class="original">
+         &lt;literal&gt;true&lt;/literal&gt; if the last SQL query failed, &lt;literal&gt;false&lt;/literal&gt; if
+         it succeeded.  See also &lt;varname&gt;SQLSTATE&lt;/varname&gt;.
+</span>
+最後のSQL問い合わせが失敗したなら<code class="literal">true</code>、成功したなら<code class="literal">false</code>。
+<code class="varname">SQLSTATE</code>も参照してください。
         </p></dd><dt><span class="term"><code class="varname">FETCH_COUNT</code></span></dt><dd><p>
 <span class="original">
         If this variable is set to an integer value greater than zero,
@@ -3540,10 +3573,13 @@ SQLキーワードを補完する時に大文字小文字のどちらを使用�
 <code class="command">INSERT</code>や<code class="command">\lo_insert</code>コマンドによって返された、最後に影響を受けたOIDの値です。
 この変数は、次の<acronym class="acronym">SQL</acronym>コマンドの結果が表示されるまでの間のみ保証されています。
         </p></dd><dt><span class="term"><code class="varname">LAST_ERROR_MESSAGE</code><br /></span><span class="term"><code class="varname">LAST_ERROR_SQLSTATE</code></span></dt><dd><p>
+<span class="original">
          The primary error message and associated SQLSTATE code for the most
-         recent failed query in the current <span class="application">psql</span> session, or
-         an empty string and <code class="literal">00000</code> if no error has occurred in
+         recent failed query in the current &lt;application&gt;psql&lt;/application&gt; session, or
+         an empty string and &lt;literal&gt;00000&lt;/literal&gt; if no error has occurred in
          the current session.
+</span>
+現在の<span class="application">psql</span>セッションの直近の失敗した問い合わせに対する主エラーメッセージと関連するSQLSTATEコード。あるいは、現在セッションでエラーが無い場合、空文字列と<code class="literal">00000</code>。
         </p></dd><dt><span class="term">
        <code class="varname">ON_ERROR_ROLLBACK</code>
        <a id="id-1.9.4.18.8.5.2.9.16.1.2" class="indexterm"></a>
@@ -3610,8 +3646,11 @@ SQLキーワードを補完する時に大文字小文字のどちらを使用�
 この変数を<code class="literal">on</code>に設定することはコマンドラインオプション<code class="option">-q</code>と同じ効力を持ちます。
 対話式モードではあまり役立ちません。
         </p></dd><dt><span class="term"><code class="varname">ROW_COUNT</code></span></dt><dd><p>
+<span class="original">
          The number of rows returned or affected by the last SQL query, or 0
          if the query failed or did not report a row count.
+</span>
+最後のSQL問い合わせにより、返された、あるいは、影響をうけた行数。あるいは、問い合わせが失敗したか行数が報告されていない場合、0。
         </p></dd><dt><span class="term"><code class="varname">SERVER_VERSION_NAME</code><br /></span><span class="term"><code class="varname">SERVER_VERSION_NUM</code></span></dt><dd><p>
 <span class="original">
         The server's version number as a string, for
@@ -3652,9 +3691,12 @@ SQLキーワードを補完する時に大文字小文字のどちらを使用�
 </span>
 この変数を<code class="literal">on</code>に設定することはコマンドラインオプション<code class="option">-s</code>と同じ効力を持ちます。
         </p></dd><dt><span class="term"><code class="varname">SQLSTATE</code></span></dt><dd><p>
-         The error code (see <a class="xref" href="errcodes-appendix.html" title="付録A PostgreSQLエラーコード">付録A</a>) associated
-         with the last SQL query's failure, or <code class="literal">00000</code> if it
+<span class="original">
+         The error code (see &lt;xref linkend="errcodes-appendix"/&gt;) associated
+         with the last SQL query's failure, or &lt;literal&gt;00000&lt;/literal&gt; if it
          succeeded.
+</span>
+最後のSQL問い合わせの失敗に関するエラーコード（<a class="xref" href="errcodes-appendix.html" title="付録A PostgreSQLエラーコード">付録A</a>を参照）、あるいは、SQLが成功した場合には<code class="literal">00000</code>。
         </p></dd><dt><span class="term"><code class="varname">USER</code></span></dt><dd><p>
 <span class="original">
         The database user you are currently connected as. This is set
@@ -3778,9 +3820,12 @@ testdb=&gt; <strong class="userinput"><code>INSERT INTO my_table VALUES (:'conte
 指定した変数が現在設定されていない場合、差し替え時の見かけの置換(<code class="literal">:name</code>、<code class="literal">:'name'</code>、<code class="literal">:"name"</code>)は行われません。
 コロンをバックスラッシュでエスケープすれば、常に差し替えから保護することができます。
     </p><p>
-    The <code class="literal">:{?<em class="replaceable"><code>name</code></em>}</code> special syntax returns TRUE
+<span class="original">
+    The &lt;literal&gt;:{?&lt;replaceable&gt;name&lt;/replaceable&gt;}&lt;/literal&gt; special syntax returns TRUE
     or FALSE depending on whether the variable exists or not, and is thus
     always substituted, unless the colon is backslash-escaped.
+</span>
+<code class="literal">:{?<em class="replaceable"><code>name</code></em>}</code>特別構文は、その変数が存在しているかどうかに応じてTRUEかFALSEを返します。従って、コロンがバックスラッシュでエスケープされていない限り、常に置き換えられます。
     </p><p>
 <span class="original">
     The colon syntax for variables is standard &lt;acronym&gt;SQL&lt;/acronym&gt; for
@@ -4027,6 +4072,7 @@ $endif
 </span>
 <code class="command">\e</code>コマンド、<code class="command">\ef</code>コマンド、<code class="command">\ev</code>コマンドで使用されるエディタです。
 変数はこの順に検索され、設定された最初のものが使用されます。
+いずれも設定されていない場合、デフォルトでUnixシステムでは<code class="filename">vi</code>を、Windowsシステムでは<code class="filename">notepad.exe</code>を使用します。
      </p></dd><dt><span class="term"><code class="envar">PSQL_EDITOR_LINENUMBER_ARG</code></span></dt><dd><p>
 <span class="original">
       When &lt;command&gt;\e&lt;/command&gt;, &lt;command&gt;\ef&lt;/command&gt;, or
@@ -4077,8 +4123,9 @@ Unixシステム上のデフォルトは<code class="literal">+</code>です。
 </span>
 問い合わせ結果が画面に入り切らない場合、このコマンドによって結果をパイプします。
 一般的に指定される値は、<code class="literal">more</code>、または<code class="literal">less</code>です。
-デフォルトはプラットフォームによって異なります。
-ページャの使用を無効にするには<code class="envar">PAGER</code>を空にするか、<code class="command">\pset</code>コマンドのページャ関連のオプションを使用します。
+ページャの使用を無効にするには<code class="envar">PSQL_PAGER</code>や<code class="envar">PAGER</code>を空文字列にするか、<code class="command">\pset</code>コマンドのページャ関連のオプションを調整します。
+これらの変数は列挙した順で検査され、最初の設定されているものが使われます。
+いずれも設定されていない場合、デフォルトで大部分のプラットフォームでは<code class="literal">more</code>が使われ、しかし、Cygwinでは<code class="literal">less</code>が使われます。
      </p></dd><dt><span class="term"><code class="envar">PSQLRC</code></span></dt><dd><p>
 <span class="original">
       Alternative location of the user's &lt;filename&gt;.psqlrc&lt;/filename&gt; file. Tilde (&lt;literal&gt;~&lt;/literal&gt;) expansion is performed.

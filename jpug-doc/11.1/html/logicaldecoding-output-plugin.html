@@ -53,9 +53,8 @@ typedef void (*LogicalOutputPluginInit) (struct OutputPluginCallbacks *cb);
      If &lt;function&gt;truncate_cb&lt;/function&gt; is not set but a
      &lt;command&gt;TRUNCATE&lt;/command&gt; is to be decoded, the action will be ignored.
 </span>
-     コールバック関数の<code class="function">begin_cb</code>、<code class="function">change_cb</code>
-     <code class="function">commit_cb</code>は必須ですが、
-     <code class="function">startup_cb</code>、     <code class="function">filter_by_origin_cb</code>、それに<code class="function">shutdown_cb</code>必須ではありません。
+コールバック関数の<code class="function">begin_cb</code>、<code class="function">change_cb</code>、および、<code class="function">commit_cb</code>は必須ですが、<code class="function">startup_cb</code>、<code class="function">filter_by_origin_cb</code>、<code class="function">truncate_cb</code>、および、<code class="function">shutdown_cb</code>は必須ではありません。
+<code class="function">truncate_cb</code>が設定されていないけれども、<code class="command">TRUNCATE</code>がデコードされることになった場合、この動作は無視されます。
     </p></div><div class="sect2" id="LOGICALDECODING-CAPABILITIES"><div class="titlepage"><div><div><h3 class="title">49.6.2. 機能</h3></div></div></div><span class="original">
     &lt;title&gt;Capabilities&lt;/title&gt;
 </span><p>
@@ -177,7 +176,9 @@ typedef struct OutputPluginOptions
       replication, but they require special handling.
 </span>
       <code class="literal">output_type</code>は<code class="literal">OUTPUT_PLUGIN_TEXTUAL_OUTPUT</code>か<code class="literal">OUTPUT_PLUGIN_BINARY_OUTPUT</code>のどちらかです。
-      <a class="xref" href="logicaldecoding-output-plugin.html#LOGICALDECODING-OUTPUT-MODE" title="49.6.3. 出力モード">49.6.3</a>を参照してください。
+      <a class="xref" href="logicaldecoding-output-plugin.html#LOGICALDECODING-OUTPUT-MODE" title="49.6.3. 出力モード">49.6.3</a>も参照してください。
+<code class="literal">receive_rewrites</code>が真なら、何らかDDL操作時のヒープ書き換えで生じた変更に対して、出力プラグインも呼ばれます。
+これはDDLレプリケーションを処理するプラグインを対象としていますが、これらは特別な処理を必要とします。
      </p><p>
 <span class="original">
       The startup callback should validate the options present in
@@ -278,9 +279,14 @@ typedef void (*LogicalDecodeChangeCB) (struct LogicalDecodingContext *ctx,
 </span>
 unloggedテーブル(<a class="xref" href="sql-createtable.html#SQL-CREATETABLE-UNLOGGED"><code class="literal">UNLOGGED</code></a>参照)と(<a class="xref" href="sql-createtable.html#SQL-CREATETABLE-TEMPORARY"><code class="literal">TEMPORARY</code>または<code class="literal">TEMP</code></a>参照)以外のユーザ定義テーブルだけが、ロジカルデコーディングを使って更新データを取得できます。
 
-      </p></div></div><div class="sect3" id="LOGICALDECODING-OUTPUT-PLUGIN-TRUNCATE"><div class="titlepage"><div><div><h4 class="title">49.6.4.6. Truncate Callback</h4></div></div></div><p>
-      The <code class="function">truncate_cb</code> callback is called for a
-      <code class="command">TRUNCATE</code> command.
+      </p></div></div><div class="sect3" id="LOGICALDECODING-OUTPUT-PLUGIN-TRUNCATE"><div class="titlepage"><div><div><h4 class="title">49.6.4.6. TRUNCATEコールバック</h4></div></div></div><span class="original">
+     &lt;title&gt;Truncate Callback&lt;/title&gt;
+</span><p>
+<span class="original">
+      The &lt;function&gt;truncate_cb&lt;/function&gt; callback is called for a
+      &lt;command&gt;TRUNCATE&lt;/command&gt; command.
+</span>
+<code class="function">truncate_cb</code>コールバックは、<code class="command">TRUNCATE</code>コマンドに対して呼ばれます。
 </p><pre class="programlisting">
 typedef void (*LogicalDecodeTruncateCB) (struct LogicalDecodingContext *ctx,
                                          ReorderBufferTXN *txn,
@@ -288,12 +294,17 @@ typedef void (*LogicalDecodeTruncateCB) (struct LogicalDecodingContext *ctx,
                                          Relation relations[],
                                          ReorderBufferChange *change);
 </pre><p>
-      The parameters are analogous to the <code class="function">change_cb</code>
-      callback.  However, because <code class="command">TRUNCATE</code> actions on
+<span class="original">
+      The parameters are analogous to the &lt;function&gt;change_cb&lt;/function&gt;
+      callback.  However, because &lt;command&gt;TRUNCATE&lt;/command&gt; actions on
       tables connected by foreign keys need to be executed together, this
       callback receives an array of relations instead of just a single one.
-      See the description of the <a class="xref" href="sql-truncate.html" title="TRUNCATE"><span class="refentrytitle">TRUNCATE</span></a> statement for
+      See the description of the &lt;xref linkend="sql-truncate"/&gt; statement for
       details.
+</span>
+パラメータは<code class="function">change_cb</code>コールバックと似ています。
+しかしながら、外部キーで結びついたテーブル群の<code class="command">TRUNCATE</code>動作は一緒に実行される必要があるため、このコールバックは単一リレーションではなく、リレーションの配列を受け取ります。
+詳しくは<a class="xref" href="sql-truncate.html" title="TRUNCATE"><span class="refentrytitle">TRUNCATE</span></a>文の説明を参照してください。
      </p></div><div class="sect3" id="LOGICALDECODING-OUTPUT-PLUGIN-FILTER-ORIGIN"><div class="titlepage"><div><div><h4 class="title">49.6.4.7. オリジンフィルターコールバック</h4></div></div></div><span class="original">
      &lt;title&gt;Origin Filter Callback&lt;/title&gt;
 </span><p>
