@@ -296,8 +296,8 @@ PostgresPollingStatusType PQconnectPoll(PGconn *conn);
           to prevent DNS queries from being made.  See the documentation of
           this parameter in &lt;xref linkend="libpq-paramkeywords"/&gt; for details.
 </span>
-<code class="literal">hostaddr</code>と<code class="literal">host</code>パラメータは、ホスト名からのIPアドレス検索やホスト名の逆引きが起こらないように適切に使用されなければいけません。
-詳細に付いては<a class="xref" href="libpq-connect.html#LIBPQ-PARAMKEYWORDS" title="34.1.2. パラメータキーワード">34.1.2</a>内のパラメータ説明を参照してください。
+<code class="literal">hostaddr</code>パラメータは、DNS問い合わせが発生するのを防ぐように適切に使用されなければいけません。
+詳細については<a class="xref" href="libpq-connect.html#LIBPQ-PARAMKEYWORDS" title="34.1.2. パラメータキーワード">34.1.2</a>内のパラメータ説明を参照してください。
          </p></li><li class="listitem"><p>
 <span class="original">
           If you call &lt;function&gt;PQtrace&lt;/function&gt;, ensure that the stream object
@@ -324,12 +324,12 @@ PostgresPollingStatusType PQconnectPoll(PGconn *conn);
        is &lt;symbol&gt;CONNECTION_BAD&lt;/symbol&gt;, the connection attempt has already
        failed, typically because of invalid connection parameters.
 </span>
-非ブロック接続要求を始めるにはまず、<code class="literal">conn=PQconnectStart("<em class="replaceable"><code>connection_info_string</code></em>")</code>を呼び出します。
-<code class="varname">conn</code>がNULLの場合、<span class="application">libpq</span>が新たに<code class="structname">PGconn</code>構造体を割り当てられなかったことを表します。
+非ブロック接続要求を始めるにはまず、<code class="literal">PQconnectStart</code>か<code class="function">PQconnectStartParams</code>を呼び出します。
+その結果がNULLの場合、<span class="application">libpq</span>は新たな<code class="structname">PGconn</code>構造体を割り当てられませんでした。
 そうでない場合は、適切な<code class="structname">PGconn</code>へのポインタが返されます
-（ただし、データベースに正しく接続されていることを表しているわけではありません）。
-<code class="function">PQconnectStart</code>から値が返ってきた段階で、<code class="literal">status=PQstatus(conn)</code>を呼び出します。
-もし、<code class="varname">status</code>が<code class="symbol">CONNECTION_BAD</code>と等しい場合には、<code class="function">PQconnectStart</code>が失敗しています。
+（ただし、未だデータベースへの有効な接続を示しているわけではありません）。
+次に<code class="literal">PQstatus(conn)</code>を呼び出します。
+もし、結果が<code class="symbol">CONNECTION_BAD</code>であった場合、接続の試みは失敗しています。典型的には無効な接続パラメータに因ります。
       </p><p>
 <span class="original">
        If &lt;function&gt;PQconnectStart&lt;/function&gt;
@@ -356,14 +356,14 @@ PostgresPollingStatusType PQconnectPoll(PGconn *conn);
        has failed, or &lt;symbol&gt;PGRES_POLLING_OK&lt;/symbol&gt;, indicating the connection
        has been successfully made.
 </span>
-<code class="function">PQconnectStart</code>が成功したら、次は接続シーケンスを進めるために、<span class="application">libpq</span>をポーリングします。
+<code class="function">PQconnectStart</code>あるいは<code class="function">PQconnectStartParams</code>が成功したら、次は接続シーケンスを進めるために、<span class="application">libpq</span>をポーリングします。
 データベース接続の背後にあるソケットの記述子を取り出すには、<code class="function">PQsocket(conn)</code>を使用します。
+（注意：複数の<code class="function">PQconnectPoll</code>呼び出しでソケットが同じままであると思わないでください。）
 以下の繰り返しです。
-直前の<code class="function">PQconnectPoll(conn)</code>が<code class="symbol">PGRES_POLLING_READING</code>の場合、ソケットの読み込み準備が整うまで待機します。
-（<code class="function">select()</code>や<code class="function">poll()</code>などのシステム関数で示されます。）
+直前の<code class="function">PQconnectPoll(conn)</code>が<code class="symbol">PGRES_POLLING_READING</code>の場合、（<code class="function">select()</code>や<code class="function">poll()</code>などのシステム関数で示されて）ソケットの読み込み準備が整うまで待機します。
 そして、再度<code class="function">PQconnectPoll(conn)</code>を呼び出します。
 反対に直前の<code class="function">PQconnectPoll(conn)</code>が<code class="symbol">PGRES_POLLING_WRITING</code>の場合、ソケットの書き込み準備が整うまで待機し、その後、<code class="function">PQconnectPoll(conn)</code>を再度呼び出します。
-まだ<code class="function">PQconnectPoll</code>を呼び出していない場合、つまり、<code class="function">PQconnectStart</code>の呼び出し直後では、直前が<code class="symbol">PGRES_POLLING_WRITING</code>であった場合と同様の処理を行ないます。
+繰り返しの最初、すなわち、未だ<code class="function">PQconnectPoll</code>を呼び出していない場合、最後に<code class="symbol">PGRES_POLLING_WRITING</code>を返したかのように振舞います。
 この繰り返しを<code class="function">PQconnectPoll(conn)</code>が、接続手続きの失敗を示す<code class="symbol">PGRES_POLLING_FAILED</code>、もしくは、接続確立に成功したことを示す<code class="symbol">PGRES_POLLING_OK</code>を返すまで継続します。
       </p><p>
 <span class="original">
@@ -472,7 +472,7 @@ switch(PQstatus(conn))
        associated memory blocks.  This must be done even if the connection
        attempt fails or is abandoned.
 </span>
-<code class="function">PQconnectStart</code>が非NULLポインタを返した場合、処理を終了する際には、構造体や関連するメモリブロックを始末するために、<code class="function">PQfinish</code>を呼び出さなくてはならないことに注意してください。
+<code class="function">PQconnectStart</code>や<code class="function">PQconnectStartParams</code>が非NULLポインタを返した場合、処理を終了する際には、構造体や関連するメモリブロックを始末するために、<code class="function">PQfinish</code>を呼び出さなくてはならないことに注意してください。
 この処理は、接続試行が失敗した場合やその試行を中断する場合にも、必ず実行されなければいけません。
       </p></dd><dt id="LIBPQ-PQCONNDEFAULTS"><span class="term"><code class="function">PQconndefaults</code><a id="id-1.7.3.8.2.12.6.1.2" class="indexterm"></a></span></dt><dd><p>
 <span class="original">
@@ -928,7 +928,7 @@ postgresql://%2Fvar%2Flib%2Fpostgresql/dbname
 </span>
 接続先に複数のホストを指定することができ、指定された順に試されます。
 キーワード/値形式では、<code class="literal">host</code>、<code class="literal">hostaddr</code>、<code class="literal">port</code>オプションは、カンマで区切った値のリストを受け付けます。
-各々のオプションでは、同じ数の要素を与えなければなりません。
+指定された各々のオプションでは、同じ数の要素を与えなければなりません。
 たとえば、最初の<code class="literal">hostaddr</code>は最初のホスト名に関連付けられ、二番目の<code class="literal">hostaddr</code>は二番目のホスト名に関連付けられる、という具合です。
 例外として、一つの<code class="literal">port</code>だけが指定された場合には、すべてのホストにそれが適用されます。
      </p><p>
@@ -937,12 +937,14 @@ postgresql://%2Fvar%2Flib%2Fpostgresql/dbname
        separated by commas, in the &lt;literal&gt;host&lt;/literal&gt; component of the URI.
 </span>
 接続URI形式では、<code class="literal">host</code>要素中にカンマで区切って複数の<code class="literal">host:port</code>ペアを指定できます。
-いずれの形式においても、単一のホスト名は複数のネットワークアドレスに変換されることがあります。
-よくある例としては、ホストがIPv4とIPv6アドレスの両方を持つ場合です。
      </p><p>
+<span class="original">
        In either format, a single host name can translate to multiple network
        addresses. A common example of this is a host that has both an IPv4 and
        an IPv6 address.
+</span>
+いずれの形式でも、単一ホスト名は複数のネットワークアドレスに変換されることがあります。
+これの一般的な例はIPv4とIPv6のアドレスを両方持つホストです。
      </p><p>
 <span class="original">
        When multiple hosts are specified, or when a single host name is
@@ -986,11 +988,10 @@ postgresql://%2Fvar%2Flib%2Fpostgresql/dbname
         Unix-domain sockets, the default is to connect to &lt;literal&gt;localhost&lt;/literal&gt;.
 </span>
 接続するホスト名を指定します。
-<a id="id-1.7.3.8.4.2.1.1.2.1.1" class="indexterm"></a> ホスト名がスラッシュで始まるならば、TCP/IPによる通信ではなく、Unixドメインの通信を明示することになります。
+<a id="id-1.7.3.8.4.2.1.1.2.1.1" class="indexterm"></a> ホスト名がスラッシュで始まるならば、それはTCP/IPによる通信ではなく、Unixドメインの通信を示します。
 その場合、この値はソケットファイルを格納するディレクトリの名前になります。
-複数のホスト名が指定されると、指定された順に各々が試されます。
-<code class="literal">host</code>が指定されなかった場合や、空の場合のデフォルトは、<code class="filename">/tmp</code>にあるUnixドメインのソケットに接続することです。
-<a id="id-1.7.3.8.4.2.1.1.2.1.4" class="indexterm"></a> （または、<span class="productname">PostgreSQL</span>の構築時に指定した別のディレクトリにあるソケットです。）
+<code class="literal">host</code>が指定されなかったり、空の場合のデフォルトの振る舞いは、<code class="filename">/tmp</code>（または、<span class="productname">PostgreSQL</span>の構築時に指定したソケットディレクトリ）にあるUnixドメインのソケットに接続することです。
+<a id="id-1.7.3.8.4.2.1.1.2.1.5" class="indexterm"></a>
 Unixドメインソケットを持たないマシンにおけるデフォルトは、<code class="literal">localhost</code>に接続することです。
        </p><p>
 <span class="original">
@@ -1039,6 +1040,7 @@ Unixドメインソケットを持たないマシンにおけるデフォルト�
            for a significant amount of time.)
 </span>
 <code class="literal">hostaddr</code>を使わずに<code class="literal">host</code>を指定した場合は、ホスト名の検索が発生します。
+（<code class="function">PQconnectPoll</code>を使う場合、<code class="function">PQconnectPoll</code>が最初にホスト名を考慮するときに、<code class="function">PQconnectPoll</code>をかなり長い時間、ブロックさせてしまうかもしれません。）
           </p></li><li class="listitem"><p>
 <span class="original">
            If &lt;literal&gt;hostaddr&lt;/literal&gt; is specified without &lt;literal&gt;host&lt;/literal&gt;,
@@ -1156,9 +1158,12 @@ Unixドメインソケットを持たないマシンにおけるデフォルト�
        seconds, so the total time spent waiting for a connection might be
        up to 10 seconds.
 </span>
-接続用の最大待機時間を秒単位(10進数整数で表した文字列として記述してください)で指定します。
-ゼロもしくは未設定は、無限時間の待機を意味します。
-2秒未満の待機時間を使用することは勧めません。
+接続用の最大待機を秒単位（10進整数で記述してください、<code class="literal">10</code>など）で指定します。
+ゼロ、負値、もしくは未設定は、無期限の待機を意味します。
+許容される最小のタイムアウトは2秒です。
+したがって、<code class="literal">1</code>は<code class="literal">2</code>と解釈されます。
+このタイムアウトは各ホスト名やIPアドレスに別々に適用されます。
+例えば、二つのホストを指定して、<code class="literal">connect_timeout</code>が5であるなら、各ホストが5秒以内に接続できないときにタイムアウトして、接続を待つ合計所要時間は10秒近くになるかもしれません。
       </p></dd><dt id="LIBPQ-CONNECT-CLIENT-ENCODING"><span class="term"><code class="literal">client_encoding</code></span></dt><dd><p>
 <span class="original">
        This sets the &lt;varname&gt;client_encoding&lt;/varname&gt;
@@ -1269,31 +1274,51 @@ Unixドメインソケット経由でなされた接続の場合、またはキ�
 </span>
 無視されます(以前は、これはサーバデバッグ出力を送信する場所を指定するものでした)。
       </p></dd><dt id="LIBPQ-CONNECT-REPLICATION"><span class="term"><code class="literal">replication</code></span></dt><dd><p>
+<span class="original">
        This option determines whether the connection should use the
        replication protocol instead of the normal protocol.  This is what
        PostgreSQL replication connections as well as tools such as
-       <span class="application">pg_basebackup</span> use internally, but it can
+       &lt;application&gt;pg_basebackup&lt;/application&gt; use internally, but it can
        also be used by third-party applications.  For a description of the
-       replication protocol, consult <a class="xref" href="protocol-replication.html" title="53.4. ストリーミングレプリケーションプロトコル">53.4</a>.
+       replication protocol, consult &lt;xref linkend="protocol-replication"/&gt;.
+</span>
+このオプションは接続が通常プロトコルの代わりにレプリケーションプロトコルで使われるかどうかを決めます。
+これは<span class="application">pg_basebackup</span>などのツールが内部的に使うPostgreSQLのレプリケーション接続ですが、サードパーティアプリケーションからも使われることがあります。
+レプリケーションプロトコルについての説明は<a class="xref" href="protocol-replication.html" title="53.4. ストリーミングレプリケーションプロトコル">53.4</a>を参照してください。
       </p><p>
+<span class="original">
        The following values, which are case-insensitive, are supported:
+</span>
+以下の値がサポートされます。これらは大文字小文字を区別しません。
        </p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
           <code class="literal">true</code>, <code class="literal">on</code>,
           <code class="literal">yes</code>, <code class="literal">1</code>
          </span></dt><dd><p>
+<span class="original">
            The connection goes into physical replication mode.
+</span>
+接続は物理レプリケーションモードになります。
           </p></dd><dt><span class="term"><code class="literal">database</code></span></dt><dd><p>
+<span class="original">
            The connection goes into logical replication mode, connecting to
-           the database specified in the <code class="literal">dbname</code> parameter.
+           the database specified in the &lt;literal&gt;dbname&lt;/literal&gt; parameter.
+</span>
+接続はロジカルレプリケーションモードになり、<code class="literal">dbname</code>パラメータで指定されたデータベースに接続します。
           </p></dd><dt><span class="term">
           <code class="literal">false</code>, <code class="literal">off</code>,
           <code class="literal">no</code>, <code class="literal">0</code>
          </span></dt><dd><p>
+<span class="original">
            The connection is a regular one, which is the default behavior.
+</span>
+接続は通常のものになります。これがデフォルトの振る舞いです。
           </p></dd></dl></div><p>
       </p><p>
+<span class="original">
        In physical or logical replication mode, only the simple query protocol
        can be used.
+</span>
+物理あるいは論理レプリケーションモードでは、簡易問い合わせプロトコルのみが使用できます。
       </p></dd><dt id="LIBPQ-CONNECT-SSLMODE"><span class="term"><code class="literal">sslmode</code></span></dt><dd><p>
 <span class="original">
         This option determines whether or with what priority a secure
@@ -1397,24 +1422,34 @@ SSLサポート付きで<span class="productname">PostgreSQL</span>をコンパ�
         set to 0, compression will be disabled.  The default is 0.  This
         parameter is ignored if a connection without SSL is made.
 </span>
-１（デフォルト）に設定することで、SSL接続越えで送信されるデータは圧縮されます（これには<span class="productname">OpenSSL</span>バージョン0.9.8以降が必要です）。
-０に設定すると、圧縮が無効になります（これには<span class="productname">OpenSSL</span>1.0.0以降が必要です）。
-このパラメータはSSLが確立していない接続や使用される<span class="productname">OpenSSL</span>がサポートしていない場合は無視されます。
+1に設定することで、SSL接続越えで送信されるデータは圧縮されます。
+0に設定すると、圧縮が無効になります。
+デフォルトは0です。
+このパラメータはSSLを使わない接続では無視されます。
        </p><p>
+<span class="original">
         SSL compression is nowadays considered insecure and its use is no
-        longer recommended.  <span class="productname">OpenSSL</span> 1.1.0 disables
+        longer recommended.  &lt;productname&gt;OpenSSL&lt;/productname&gt; 1.1.0 disables
         compression by default, and many operating system distributions
         disable it in prior versions as well, so setting this parameter to on
         will not have any effect if the server does not accept compression.
-        On the other hand, <span class="productname">OpenSSL</span> before 1.0.0
+        On the other hand, &lt;productname&gt;OpenSSL&lt;/productname&gt; before 1.0.0
         does not support disabling compression, so this parameter is ignored
         with those versions, and whether compression is used depends on the
         server.
+</span>
+SSL圧縮は今日では安全ではないと考えられていて、もはや使用は推奨されません。
+<span class="productname">OpenSSL</span> 1.1.0はデフォルトでは圧縮を無効にしており、多くのOSディストリビューションでもこれまでのバージョンで無効化しています。そのため、サーバが圧縮を受け付けない場合、本パラメータをonに設定しても効果がありません。
+一方で、1.0.0以前の<span class="productname">OpenSSL</span>は圧縮の無効化をサポートしていませんので、これらのバージョンでは本パラメータは無視されて、圧縮が使用されるかはサーバ次第です。
        </p><p>
+<span class="original">
         If security is not a primary concern, compression can improve
         throughput if the network is the bottleneck.  Disabling compression
         can improve response time and throughput if CPU performance is the
         limiting factor.
+</span>
+セキュリティが主要な関心でないなら、ネットワークがボトルネックであるとき圧縮でスループットを改善できます。
+CPU性能が律速要素であるなら、圧縮を無効化することで応答時間とスループットを改善できます。
        </p></dd><dt id="LIBPQ-CONNECT-SSLCERT"><span class="term"><code class="literal">sslcert</code></span></dt><dd><p>
 <span class="original">
         This parameter specifies the file name of the client SSL

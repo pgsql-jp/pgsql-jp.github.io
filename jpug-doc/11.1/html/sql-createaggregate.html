@@ -234,7 +234,7 @@ NULL入力値を持つ行は無視されます。
    aggregate that includes an inverse transition function.
 </span>
 集約は、<a class="xref" href="xaggr.html#XAGGR-MOVING-AGGREGATES" title="38.11.1. 移動集約モード">38.11.1</a>に記述されているように<em class="firstterm">移動集約モード</em>をサポートすることができます。
-このためには、<code class="literal">MSFUNC</code>、<code class="literal">MINVFUNC</code>、<code class="literal">MSTYPE</code>のパラメータを指定する必要があり、またオプションで<code class="literal">MSPACE</code>、<code class="literal">MFINALFUNC</code>、<code class="literal">MFINALFUNC_EXTRA</code>、<code class="literal">MINITCOND</code>のパラメータを指定できます。
+このためには、<code class="literal">MSFUNC</code>、<code class="literal">MINVFUNC</code>、<code class="literal">MSTYPE</code>のパラメータを指定する必要があり、またオプションで<code class="literal">MSPACE</code>、<code class="literal">MFINALFUNC</code>、<code class="literal">MFINALFUNC_EXTRA</code>、<code class="literal">MFINALFUNC_MODIFY</code>、<code class="literal">MINITCOND</code>のパラメータを指定できます。
 <code class="literal">MINVFUNC</code>を除き、これらのパラメータは、<code class="literal">M</code>のない単純集約の対応するパラメータのように動作しますが、集約について逆変換関数を含む別の実装を定義します。
   </p><p>
 <span class="original">
@@ -456,12 +456,19 @@ SELECT col FROM tab ORDER BY col USING sortop LIMIT 1;
 <code class="literal">FINALFUNC_EXTRA</code>が指定された場合、最終関数は、終了時の状態値と直接引数に加えて、集約の通常の(集約された）引数に対応する追加のNULL値を受け取ります。
 これは主に、多様型の集約が定義されているときに、集約の結果の型を正しく解決するのに役立ちます。
      </p></dd><dt><span class="term"><code class="literal">FINALFUNC_MODIFY</code> = { <code class="literal">READ_ONLY</code> | <code class="literal">SHAREABLE</code> | <code class="literal">READ_WRITE</code> }</span></dt><dd><p>
+<span class="original">
       This option specifies whether the final function is a pure function
-      that does not modify its arguments.  <code class="literal">READ_ONLY</code> indicates
+      that does not modify its arguments.  &lt;literal&gt;READ_ONLY&lt;/literal&gt; indicates
       it does not; the other two values indicate that it may change the
-      transition state value.  See <a class="xref" href="sql-createaggregate.html#SQL-CREATEAGGREGATE-NOTES" title="Notes">Notes</a> below for more detail.  The
-      default is <code class="literal">READ_ONLY</code>, except for ordered-set aggregates,
-      for which the default is <code class="literal">READ_WRITE</code>.
+      transition state value.  See &lt;xref linkend="sql-createaggregate-notes"
+      endterm="sql-createaggregate-notes-title"/&gt; below for more detail.  The
+      default is &lt;literal&gt;READ_ONLY&lt;/literal&gt;, except for ordered-set aggregates,
+      for which the default is &lt;literal&gt;READ_WRITE&lt;/literal&gt;.
+</span>
+このオプションは、最終関数が引数を変更しない純粋な関数であるかどうかを指定します。
+<code class="literal">READ_ONLY</code>は変更しないことを示します。他の2つの値は遷移状態値を変更するかもしれないことを示します。
+さらなる詳細は以下の<a class="xref" href="sql-createaggregate.html#SQL-CREATEAGGREGATE-NOTES" title="注釈">注釈</a>をご覧ください。
+順序集合集約ではデフォルトが<code class="literal">READ_WRITE</code>であることを除き、デフォルトは<code class="literal">READ_ONLY</code>です。
      </p></dd><dt><span class="term"><em class="replaceable"><code>combinefunc</code></em></span></dt><dd><p>
 <span class="original">
       The &lt;replaceable class="parameter"&gt;combinefunc&lt;/replaceable&gt; function
@@ -598,8 +605,11 @@ SELECT col FROM tab ORDER BY col USING sortop LIMIT 1;
 これは、最初の引数の型が<em class="replaceable"><code>mstate_data_type</code></em>であり、<code class="literal">MFINALFUNC_EXTRA</code>により追加のダミー引数を指定できることを除けば、<em class="replaceable"><code>ffunc</code></em>と同じように作用します。
 <em class="replaceable"><code>mffunc</code></em>または<em class="replaceable"><code>mstate_data_type</code></em>によって決定される集約結果の型は、集約の通常の実装によって決定される型と適合しなければなりません。
      </p></dd><dt><span class="term"><code class="literal">MFINALFUNC_MODIFY</code> = { <code class="literal">READ_ONLY</code> | <code class="literal">SHAREABLE</code> | <code class="literal">READ_WRITE</code> }</span></dt><dd><p>
-      This option is like <code class="literal">FINALFUNC_MODIFY</code>, but it describes
+<span class="original">
+      This option is like &lt;literal&gt;FINALFUNC_MODIFY&lt;/literal&gt;, but it describes
       the behavior of the moving-aggregate final function.
+</span>
+このオプションは<code class="literal">FINALFUNC_MODIFY</code>と似ていますが、移動集約最終関数の挙動を記述します。
      </p></dd><dt><span class="term"><em class="replaceable"><code>minitial_condition</code></em></span></dt><dd><p>
 <span class="original">
       The initial setting for the state value, when using moving-aggregate
@@ -651,7 +661,9 @@ SELECT col FROM tab ORDER BY col USING sortop LIMIT 1;
    written in any order, not just the order illustrated above.
 </span>
 <code class="command">CREATE AGGREGATE</code>のパラメータは、任意の順番で記述することができます。上記の順番で記述する必要はありません。
-  </p></div><div class="refsect1" id="SQL-CREATEAGGREGATE-NOTES"><h2>Notes</h2><p>
+  </p></div><div class="refsect1" id="SQL-CREATEAGGREGATE-NOTES"><h2>注釈</h2><span class="original">
+  &lt;title id="sql-createaggregate-notes-title"&gt;Notes&lt;/title&gt;
+</span><p>
 <span class="original">
     In parameters that specify support function names, you can write
     a schema name if needed, for example &lt;literal&gt;SFUNC = public.sum&lt;/literal&gt;.
@@ -662,30 +674,46 @@ SELECT col FROM tab ORDER BY col USING sortop LIMIT 1;
 しかし、引数の型をそこに書くことはできません。
 サポート関数の引数の型は、他のパラメータにより決定されるからです。
    </p><p>
+<span class="original">
     Ordinarily, PostgreSQL functions are expected to be true functions that
     do not modify their input values.  However, an aggregate transition
-    function, <span class="emphasis"><em>when used in the context of an aggregate</em></span>,
+    function, &lt;emphasis&gt;when used in the context of an aggregate&lt;/emphasis&gt;,
     is allowed to cheat and modify its transition-state argument in place.
     This can provide substantial performance benefits compared to making
     a fresh copy of the transition state each time.
+</span>
+通常PostgreSQL関数は入力値を変更しない純粋な関数であることが期待されます。
+しかし<span class="emphasis"><em>集約のコンテキストで使用される場合には</em></span>、集約遷移関数は、これを偽ってその状態遷移引数を直接変更することが許されます。
+これにより、遷移状態の新しいコピーを都度作るのに比べると、かなりの性能上の利点が期待できます。
    </p><p>
+<span class="original">
     Likewise, while an aggregate final function is normally expected not to
     modify its input values, sometimes it is impractical to avoid modifying
     the transition-state argument.  Such behavior must be declared using
-    the <code class="literal">FINALFUNC_MODIFY</code> parameter.
-    The <code class="literal">READ_WRITE</code>
+    the &lt;literal&gt;FINALFUNC_MODIFY&lt;/literal&gt; parameter.
+    The &lt;literal&gt;READ_WRITE&lt;/literal&gt;
     value indicates that the final function modifies the transition state in
     unspecified ways.  This value prevents use of the aggregate as a window
     function, and it also prevents merging of transition states for aggregate
     calls that share the same input values and transition functions.
-    The <code class="literal">SHAREABLE</code> value indicates that the transition function
+    The &lt;literal&gt;SHAREABLE&lt;/literal&gt; value indicates that the transition function
     cannot be applied after the final function, but multiple final-function
     calls can be performed on the ending transition state value.  This value
     prevents use of the aggregate as a window function, but it allows merging
     of transition states.  (That is, the optimization of interest here is not
     applying the same final function repeatedly, but applying different final
     functions to the same ending transition state value.  This is allowed as
-    long as none of the final functions are marked <code class="literal">READ_WRITE</code>.)
+    long as none of the final functions are marked &lt;literal&gt;READ_WRITE&lt;/literal&gt;.)
+</span>
+同様に、集約最終関数は入力値を変更しない純粋な関数であることが期待されますが、状態遷移引数を変更するのを避けることが実用的でないことがあります。
+そうした挙動は<code class="literal">FINALFUNC_MODIFY</code>引数を使って宣言しなければなりません。
+<code class="literal">READ_WRITE</code>値は、最終関数が遷移状態を明示されていない方法で変更することを示します。
+この値はwindow関数として集約を使うことを回避します。
+また、同じ入力値と遷移関数を共有する集約の遷移状態をマージすることを回避します。
+<code class="literal">SHAREABLE</code>値は、遷移関数が最終関数の後に適用できないが、最終関数の複数回の呼び出しを終了遷移状態値に適用できることを示します。
+この値はwindow関数として集約を使うことを回避しますが、遷移状態のマージを許容します。
+（つまり、ここでの最適化の眼目は、同じ最終関数を繰り返し適用することではなく、異なる最終関数を同じ終了遷移状態値に適用することです。
+これは最終関数のうち<code class="literal">READ_WRITE</code>と印付けられているものが一つもない限り許容されます。）
    </p><p>
 <span class="original">
     If an aggregate supports moving-aggregate mode, it will improve
@@ -742,6 +770,7 @@ SELECT col FROM tab ORDER BY col USING sortop LIMIT 1;
 移動集約が実装されていない場合でも、集約は移動フレームを使うことができますが、フレームの開始が移動した場合、<span class="productname">PostgreSQL</span>は必ず集約全体を再計算します。
 集約が移動集約モードをサポートするかどうかに関わらず、<span class="productname">PostgreSQL</span>は移動フレームの終了を再計算なしに処理することができます。
 これは、集約の状態に新しい値を追加し続けることで処理できます。
+これがwindow関数として集約を利用するためには最終関数が読み出し専用でなければならない理由です。
 最終関数は集約の状態値を破壊しないものとされるので、フレームの境界の集合に対して集約結果の値が得られた後でも、集約を続行することが可能です。
    </p><p>
 <span class="original">
