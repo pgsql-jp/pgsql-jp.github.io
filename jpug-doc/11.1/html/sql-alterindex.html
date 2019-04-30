@@ -32,6 +32,7 @@ ALTER INDEX ALL IN TABLESPACE <em class="replaceable"><code>name</code></em> [ O
       There is no effect on the stored data.
 </span>
 この<code class="literal">RENAME</code>構文は、インデックスの名前を変更します。
+インデックスがテーブル制約（<code class="literal">UNIQUE</code>、<code class="literal">PRIMARY KEY</code>、<code class="literal">EXCLUDE</code>のいずれか）と関連付けられていた場合、制約名も変更されます。
 格納されたデータには影響しません。
      </p></dd><dt><span class="term"><code class="literal">SET TABLESPACE</code></span></dt><dd><p>
 <span class="original">
@@ -61,11 +62,16 @@ ALTER INDEX ALL IN TABLESPACE <em class="replaceable"><code>name</code></em> [ O
 必要であれば、<code class="command">ALTER DATABASE</code>を使うか、あるいは<code class="command">ALTER INDEX</code>で明示的に指定してください。
 <a class="xref" href="sql-createtablespace.html" title="CREATE TABLESPACE"><span class="refentrytitle">CREATE TABLESPACE</span></a>も参照してください。
      </p></dd><dt><span class="term"><code class="literal">ATTACH PARTITION</code></span></dt><dd><p>
+<span class="original">
       Causes the named index to become attached to the altered index.
       The named index must be on a partition of the table containing the
       index being altered, and have an equivalent definition.  An attached
       index cannot be dropped by itself, and will automatically be dropped
       if its parent index is dropped.
+</span>
+指定されたインデックスを変更するインデックスに付加します。
+指定されたインデックスは、変更するインデックスを持つテーブルのパーティションに対するもので、かつ、同じ定義を持たなければなりません。
+付加されたインデックスは、それ自身として削除できず、親インデックスが削除された場合に自動的に削除されます。
      </p></dd><dt><span class="term"><code class="literal">DEPENDS ON EXTENSION</code></span></dt><dd><p>
 <span class="original">
       This form marks the index as dependent on the extension, such that if the
@@ -97,17 +103,23 @@ ALTER INDEX ALL IN TABLESPACE <em class="replaceable"><code>name</code></em> [ O
 この構文は、1つ以上のインデックスメソッド固有の格納パラメータをデフォルト値に再設定します。
 <code class="literal">SET</code>同様、インデックスを完全に更新するために<code class="literal">REINDEX</code>が必要になる場合があります。
      </p></dd><dt><span class="term"><code class="literal">ALTER [ COLUMN ] <em class="replaceable"><code>column_number</code></em> SET STATISTICS <em class="replaceable"><code>integer</code></em></code></span></dt><dd><p>
+<span class="original">
       This form sets the per-column statistics-gathering target for
-      subsequent <a class="xref" href="sql-analyze.html" title="ANALYZE"><span class="refentrytitle">ANALYZE</span></a> operations, though can
+      subsequent &lt;xref linkend="sql-analyze"/&gt; operations, though can
       be used only on index columns that are defined as an expression.
       Since expressions lack a unique name, we refer to them using the
       ordinal number of the index column.
       The target can be set in the range 0 to 10000; alternatively, set it
       to -1 to revert to using the system default statistics
-      target (<a class="xref" href="runtime-config-query.html#GUC-DEFAULT-STATISTICS-TARGET">default_statistics_target</a>).
+      target (&lt;xref linkend="guc-default-statistics-target"/&gt;).
       For more information on the use of statistics by the
-      <span class="productname">PostgreSQL</span> query planner, refer to
-      <a class="xref" href="planner-stats.html" title="14.2. プランナで使用される統計情報">14.2</a>.
+      &lt;productname&gt;PostgreSQL&lt;/productname&gt; query planner, refer to
+      &lt;xref linkend="planner-stats"/&gt;.
+</span>
+この構文は、以後の<a class="xref" href="sql-analyze.html" title="ANALYZE"><span class="refentrytitle">ANALYZE</span></a>操作にむけた、列ごとの統計収集対象を設定します。ただし、式として定義されたインデックス列のみに使えます。
+式には一意な名前が無いため、これらはインデックス列の序数を使って参照します。
+対象は0から10000の範囲で設定できます。代わりに-1と設定すると、システムのデフォルト統計対象（<a class="xref" href="runtime-config-query.html#GUC-DEFAULT-STATISTICS-TARGET">default_statistics_target</a>）に戻します。
+<span class="productname">PostgreSQL</span>の問い合わせプランナによる統計の利用についての詳細は<a class="xref" href="planner-stats.html" title="14.2. プランナで使用される統計情報">14.2</a>を参照してください。
      </p></dd></dl></div><p>
   </p></div><div class="refsect1" id="id-1.9.3.16.6"><h2>パラメータ</h2><span class="original">
   &lt;title&gt;Parameters&lt;/title&gt;
@@ -119,8 +131,11 @@ ALTER INDEX ALL IN TABLESPACE <em class="replaceable"><code>name</code></em> [ O
 インデックスが存在しない場合にエラーとしません。
 この場合注意メッセージが発生します。
        </p></dd><dt><span class="term"><em class="replaceable"><code>column_number</code></em></span></dt><dd><p>
+<span class="original">
         The ordinal number refers to the ordinal (left-to-right) position
         of the index column.
+</span>
+インデックス列の順序位置（左から右）を参照する序数。
        </p></dd><dt><span class="term"><em class="replaceable"><code>name</code></em></span></dt><dd><p>
 <span class="original">
         The name (possibly schema-qualified) of an existing index to
@@ -208,7 +223,10 @@ ALTER INDEX distributors SET TABLESPACE fasttablespace;
 ALTER INDEX distributors SET (fillfactor = 75);
 REINDEX INDEX distributors;
 </pre><p>
+<span class="original">
    Set the statistics-gathering target for an expression index:
+</span>
+式インデックスに対して統計収集対象を設定します。
 </p><pre class="programlisting">
 CREATE INDEX coord_idx ON measured (x, y, (z + t));
 ALTER INDEX coord_idx ALTER COLUMN 3 SET STATISTICS 1000;

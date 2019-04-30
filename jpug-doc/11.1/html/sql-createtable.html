@@ -404,8 +404,11 @@ Bツリー演算子クラスがない場合はエラーが報告されます。
 </span>
 パーティションテーブルは<code class="literal">UNIQUE</code>、<code class="literal">PRIMARY KEY</code>、<code class="literal">EXCLUDE</code>、<code class="literal">FOREIGN KEY</code>の各制約をサポートしませんが、個々のパーティションでこれらの制約を定義することはできます。
      </p><p>
-      See <a class="xref" href="ddl-partitioning.html" title="5.10. テーブルのパーティショニング">5.10</a> for more discussion on table
+<span class="original">
+      See &lt;xref linkend="ddl-partitioning"/&gt; for more discussion on table
       partitioning.
+</span>
+テーブルパーティショニングの更なる議論は<a class="xref" href="ddl-partitioning.html" title="5.10. テーブルのパーティショニング">5.10</a>を参照してください。
      </p></dd><dt id="SQL-CREATETABLE-PARTITION"><span class="term"><code class="literal">PARTITION OF <em class="replaceable"><code>parent_table</code></em> { FOR VALUES <em class="replaceable"><code>partition_bound_spec</code></em> | DEFAULT }</code></span></dt><dd><p>
 <span class="original">
       Creates the table as a &lt;firstterm&gt;partition&lt;/firstterm&gt; of the specified
@@ -415,6 +418,8 @@ Bツリー演算子クラスがない場合はエラーが報告されます。
       hash-partitioned tables.
 </span>
 指定した親テーブルの<em class="firstterm">パーティション</em>としてテーブルを作成します。
+<code class="literal">FOR VALUES</code>を用いて特定の値のパーティションとして、あるいは、<code class="literal">DEFAULT</code>を用いてデフォルトパーティションとしてテーブルを作成できます。
+本オプションはハッシュパーティションされたテーブルには使用できません。
      </p><p>
 <span class="original">
       The &lt;replaceable class="parameter"&gt;partition_bound_spec&lt;/replaceable&gt;
@@ -426,7 +431,7 @@ Bツリー演算子クラスがない場合はエラーが報告されます。
       for hash partitioning.
 </span>
 <em class="replaceable"><code>partition_bound_spec</code></em>は親テーブルのパーティショニング方法とパーティションキーに対応していなければならず、またそのテーブルのどの既存のパーティションとも重なり合ってはいけません。
-<code class="literal">IN</code>の構文はリストパーティショニングで使用され、<code class="literal">FROM</code>と<code class="literal">TO</code>の構文は範囲パーティショニングで使用されます。
+<code class="literal">IN</code>の構文はリストパーティショニングで、<code class="literal">FROM</code>と<code class="literal">TO</code>の構文は範囲パーティショニングで、<code class="literal">WITH</code>の構文はハッシュパーティショニングで、使用されます。
      </p><p>
 <span class="original">
       Each of the values specified in
@@ -524,14 +529,21 @@ Bツリー演算子クラスがない場合はエラーが報告されます。
 <code class="literal">MAXVALUE</code>は"infinity"も含め、他のすべての値より大きいものと考えることができ、また<code class="literal">MINVALUE</code>は"minus infinity"も含め、他のすべての値より小さいものと考えることができます。
 従って、境界<code class="literal">FROM ('infinity') TO (MAXVALUE)</code>は空の範囲ではなく、たった1つの値、つまり"infinity"だけを保存します。
      </p><p>
-      If <code class="literal">DEFAULT</code> is specified, the table will be
+<span class="original">
+      If &lt;literal&gt;DEFAULT&lt;/literal&gt; is specified, the table will be
       created as a default partition of the parent table. The parent can
       either be a list or range partitioned table. A partition key value
       not fitting into any other partition of the given parent will be
       routed to the default partition. There can be only one default
       partition for a given parent table.
+</span>
+<code class="literal">DEFAULT</code>が指定された場合、テーブルは親テーブルのデフォルトパーティションとして作成されます。
+親はリストパーティションテーブルか範囲パーティションテーブルのいずれかがありえます。
+親の他のどのパーティションにも当てはまらないパーティションキー値はデフォルトパーティションに送られます。
+ある親テーブルに対してデフォルトパーティションは一つだけ存在できます。
      </p><p>
-      When a table has an existing <code class="literal">DEFAULT</code> partition and
+<span class="original">
+      When a table has an existing &lt;literal&gt;DEFAULT&lt;/literal&gt; partition and
       a new partition is added to it, the existing default partition must
       be scanned to verify that it does not contain any rows which properly
       belong in the new partition.  If the default partition contains a
@@ -539,7 +551,12 @@ Bツリー演算子クラスがない場合はエラーが報告されます。
       the default partition is a foreign table or if it has a constraint which
       proves that it cannot contain rows which should be placed in the new
       partition.
+</span>
+テーブルが既存の<code class="literal">DEFAULT</code>パーティションを持っていて、新たなパーティションが追加された場合、既存のデフォルトパーティションは、新たなパーティションに属すのがふさわしい行が含まれていないことを確かめるために、検査されなければなりません。
+デフォルトパーティションに多数の行が含まれている場合、これは時間を要すかもしれません。
+デフォルトパーティションが、外部テーブルであるか、新パーティションに置くべき行を含むことができないことを証明する制約を持つ場合、この検査は省略されます。
      </p><p>
+<span class="original">
       When creating a hash partition, a modulus and remainder must be specified.
       The modulus must be a positive integer, and the remainder must be a
       non-negative integer less than the modulus.  Typically, when initially
@@ -556,10 +573,20 @@ Bツリー演算子クラスがない場合はエラーが報告されます。
       modulus-16 partitions covering the same portion of the key space (one with
       a remainder equal to the remainder of the detached partition, and the
       other with a remainder equal to that value plus 8), and repopulate them
-      with data.  You can then repeat this -- perhaps at a later time -- for
+      with data.  You can then repeat this -&amp;#045;perhaps at a later time &amp;#045;- for
       each modulus-8 partition until none remain.  While this may still involve
       a large amount of data movement at each step, it is still better than
       having to create a whole new table and move all the data at once.
+</span>
+ハッシュパーティションを作るときには法と残余を指定しなければなりません。
+法は正の整数でなければならず、残余は法よりも小さい非負整数でなければなりません。
+典型的にはハッシュパーティションテーブル初期設定をするとき、パーティションの数と等しい法を選び、全てのテーブルに同じ法と異なる残余を割り当てます（後述の例を参照）。
+しかしながら、全てのパーティションが同じ法を持つ必要はなく、あるハッシュパーティションテーブルのパーティションに存在する全ての法が次に大きい法の因子であることだけ必要です。
+このことは、全データを一度に移すことなくパーティション数を徐々に増やすことを可能にします。
+例えば、各々の法が8である8パーティションのハッシュパーティションテーブルがあるとして、パーティション数を16に増やさなければならなくなったとします。
+私たちは8を法とするパーティションの一つをデタッチして、新たに16を法とするキー空間の同じ部分（一つはデタッチしたパーティションと等しい残余を持ち、一つはその値に8を加えたのと等しい残余を持つ）を対象とする二つのパーティションを追加して、データを再配置することができます。
+これを（おそらくはより後に）8を法とする各パーティションがなくなるまで、繰り返すことができます。
+これは依然として各ステップで大きなデータ移動を伴いますが、全体の新テーブルを作って全データを一度に移さなければならないというよりは、まだ良いです。
      </p><p>
 <span class="original">
       A partition must have the same column names and types as the partitioned
@@ -589,7 +616,6 @@ Bツリー演算子クラスがない場合はエラーが報告されます。
 </span>
 パーティションテーブルに挿入された行は、自動的に正しいパーティションに回されます。
 適当なパーティションが存在しないときは、エラーが発生します。
-また、パーティション内の行の更新で、パーティションキーの値が新しくなることにより他のパーティションに移動する必要がある場合も、エラーが発生します。
      </p><p>
 <span class="original">
       Operations such as TRUNCATE which normally affect a table and all of its
@@ -695,7 +721,7 @@ TRUNCATEのように通常はテーブルとそれを継承するすべての子
       &lt;literal&gt;INCLUDING ALL&lt;/literal&gt; is an abbreviated form of
       &lt;literal&gt;INCLUDING COMMENTS INCLUDING CONSTRAINTS INCLUDING DEFAULTS INCLUDING IDENTITY INCLUDING INDEXES INCLUDING STATISTICS INCLUDING STORAGE&lt;/literal&gt;.
 </span>
-<code class="literal">INCLUDING ALL</code>は<code class="literal">INCLUDING DEFAULTS INCLUDING IDENTITY INCLUDING CONSTRAINTS INCLUDING INDEXES INCLUDING STORAGE INCLUDING COMMENTS</code>の省略形です。
+<code class="literal">INCLUDING ALL</code>は<code class="literal">INCLUDING COMMENTS INCLUDING CONSTRAINTS INCLUDING DEFAULTS INCLUDING IDENTITY INCLUDING INDEXES INCLUDING STATISTICS INCLUDING STORAGE</code>の省略形です。
      </p><p>
 <span class="original">
       Note that unlike &lt;literal&gt;INHERITS&lt;/literal&gt;, columns and
@@ -876,19 +902,28 @@ TRUEまたはUNKNOWNと評価される式は成功します。
 それぞれの一意性テーブル制約には、そのテーブルの他の一意性制約もしくは主キー制約によって指定された列の集合とは、異なる名前の列の集合を指定しなければなりません
 （同じ名前を指定すると、同じ制約が2回現れるだけになります）。
      </p><p>
+<span class="original">
       When establishing a unique constraint for a multi-level partition
       hierarchy, all the columns in the partition key of the target
       partitioned table, as well as those of all its descendant partitioned
       tables, must be included in the constraint definition.
+</span>
+複数レベルのパーティション階層に一意性制約を設定するとき、対象パーティションテーブル、および全ての子孫のパーティションテーブルの、パーティションキー内の全ての列が制約定義に含まれなくてはなりません。
      </p><p>
+<span class="original">
       Adding a unique constraint will automatically create a unique btree
       index on the column or group of columns used in the constraint.
-      The optional clause <code class="literal">INCLUDE</code> adds to that index
+      The optional clause &lt;literal&gt;INCLUDE&lt;/literal&gt; adds to that index
       one or more columns on which the uniqueness is not enforced.
       Note that although the constraint is not enforced on the included columns,
       it still depends on them.  Consequently, some operations on these columns
-      (e.g. <code class="literal">DROP COLUMN</code>) can cause cascaded constraint and
+      (e.g. &lt;literal&gt;DROP COLUMN&lt;/literal&gt;) can cause cascaded constraint and
       index deletion.
+</span>
+一意性制約を加えると、制約で使われている列や列のグループに一意性btreeインデックスが自動的に作られます。
+省略可能な<code class="literal">INCLUDE</code>句はインデックスに一意性を強要されない列を1つまたは複数、追加します。
+含めた（INCLUDEした）列に制約は強制されませんが、依存はしていることに注意してください。
+このため、これらの列に対する一部の操作（例えば<code class="literal">DROP COLUMN</code>）は制約の連鎖とインデックスの削除をひき起こすことがあります。
      </p></dd><dt><span class="term"><code class="literal">PRIMARY KEY</code> （列制約）<br /></span><span class="term"><code class="literal">PRIMARY KEY ( <em class="replaceable"><code>column_name</code></em> [, ... ] )</code>
 <span class="original">
     &lt;optional&gt; INCLUDE ( &lt;replaceable class="parameter"&gt;column_name&lt;/replaceable&gt; [, ...]) &lt;/optional&gt; (table constraint)&lt;/term&gt;
@@ -922,18 +957,27 @@ TRUEまたはUNKNOWNと評価される式は成功します。
 <code class="literal">PRIMARY KEY</code>は<code class="literal">UNIQUE</code>と<code class="literal">NOT NULL</code>の組み合わせと同じデータ制約を課しますが、列の集合を主キーと指定することは、スキーマの設計についてのメタデータを提供することにもなります。
 なぜなら、主キーであることは、行を一意に特定するものとして、他のテーブルがその列の集合を当てにして良い、ということを意味するからです。
      </p><p>
-      <code class="literal">PRIMARY KEY</code> constraints share the restrictions that
-      <code class="literal">UNIQUE</code> constraints have when placed on partitioned
+<span class="original">
+      &lt;literal&gt;PRIMARY KEY&lt;/literal&gt; constraints share the restrictions that
+      &lt;literal&gt;UNIQUE&lt;/literal&gt; constraints have when placed on partitioned
       tables.
+</span>
+<code class="literal">PRIMARY KEY</code>制約は、パーティションテーブルに設定するときに<code class="literal">UNIQUE</code>制約が持つ制限を共有します。
      </p><p>
-      Adding a <code class="literal">PRIMARY KEY</code> constraint will automatically
+<span class="original">
+      Adding a &lt;literal&gt;PRIMARY KEY&lt;/literal&gt; constraint will automatically
       create a unique btree index on the column or group of columns used in the
-      constraint.  The optional <code class="literal">INCLUDE</code> clause allows a list
+      constraint.  The optional &lt;literal&gt;INCLUDE&lt;/literal&gt; clause allows a list
       of columns to be specified which will be included in the non-key portion
       of the index.  Although uniqueness is not enforced on the included columns,
       the constraint still depends on them. Consequently, some operations on the
-      included columns (e.g. <code class="literal">DROP COLUMN</code>) can cause cascaded
+      included columns (e.g. &lt;literal&gt;DROP COLUMN&lt;/literal&gt;) can cause cascaded
       constraint and index deletion.
+</span>
+<code class="literal">PRIMARY KEY</code>制約を追加すると、制約で使用する列や列のグループに一意性のbtreeインデックスが自動的に作られます。
+省略可能な<code class="literal">INCLUDE</code>句はインデックスの非キー部分に含める列のリストを指定できます。
+含めた列に一意性は強制されませんが、制約はこれらに依存はしています。
+このため、これらの含められた列に対する一部の操作（例えば<code class="literal">DROP COLUMN</code>）は制約の連鎖とインデックスの削除をひき起こすことがあります。
      </p></dd><dt id="SQL-CREATETABLE-EXCLUDE"><span class="term"><code class="literal">EXCLUDE [ USING <em class="replaceable"><code>index_method</code></em> ] ( <em class="replaceable"><code>exclude_element</code></em> WITH <em class="replaceable"><code>operator</code></em> [, ... ] ) <em class="replaceable"><code>index_parameters</code></em> [ WHERE ( <em class="replaceable"><code>predicate</code></em> ) ]</code></span></dt><dd><p>
 <span class="original">
       The &lt;literal&gt;EXCLUDE&lt;/literal&gt; clause defines an exclusion
@@ -1028,7 +1072,9 @@ predicateの前後に括弧が必要であることに注意して下さい。
 <em class="replaceable"><code>refcolumn</code></em>リストが省略された場合、<em class="replaceable"><code>reftable</code></em>の主キーが使用されます。
 被参照列は、被参照テーブルにおいて遅延不可の一意性制約もしくは主キー制約を持った列でなければなりません。
 ユーザは被参照テーブル（テーブル全体または特定の被参照列）について<code class="literal">REFERENCES</code>権限を持っていなければなりません。
+外部キー制約の追加は被参照テーブルに<code class="literal">SHARE ROW EXCLUSIVE</code>ロックを必要とします。
 一時テーブルと永続テーブルとの間で外部キー制約を定義できないことに注意してください。
+パーティションテーブルに外部キーを定義できる一方、外部キーテーブルを参照する外部キーは定義できないことにも注意してください。
      </p><p>
 <span class="original">
       A value inserted into the referencing column(s) is matched against the
@@ -1321,6 +1367,7 @@ predicateの前後に括弧が必要であることに注意して下さい。
 項目の更新がまったくないテーブルでは、すべてを使用することが最善の選択ですが、更新が非常に多いテーブルではより小さめのフィルファクタが適切です。
 TOASTテーブルではこのパラメータを設定できません。
      </p></dd><dt><span class="term"><code class="literal">toast_tuple_target</code> (<code class="type">integer</code>)</span></dt><dd><p>
+<span class="original">
       The toast_tuple_target specifies the minimum tuple length required before
       we try to move long column values into TOAST tables, and is also the
       target length we try to reduce the length below once toasting begins.
@@ -1334,6 +1381,13 @@ TOASTテーブルではこのパラメータを設定できません。
       it is possible that setting this parameter could have negative
       effects in some cases.
       This parameter cannot be set for TOAST tables.
+</span>
+toast_tuple_targetは、長い列値をTOASTテーブルに移動する前に必要とされる最小タプル長を指定します。また、これはTOAST化を開始したときに長さをそれ未満に減らそうとする目標にもなります。
+これはEXTERNALかEXTENDEDと印付けされた列にのみ影響があり、また、新たなタプルにのみ適用されます。既存の行には影響ありません。
+デフォルトでは、このパラメータは1ブロックあたり少なくとも4タプルが可能であるように設定されます。これはデフォルトブロックサイズであれば2040バイトになります。
+有効な値は128バイトから、ブロックサイズ - ヘッダ（デフォルトでは8160バイト）の間です。
+非常に短いあるいは長い行に対して、この値を変更することはおそらく有用ではありません。
+時にはデフォルト設定が最適に近く、本パラメータを設定することで場合によっては悪影響があるかもしれないことに注意してください。
      </p></dd><dt><span class="term"><code class="literal">parallel_workers</code> (<code class="type">integer</code>)</span></dt><dd><p>
 <span class="original">
       This sets the number of workers that should be used to assist a parallel
@@ -1344,7 +1398,7 @@ TOASTテーブルではこのパラメータを設定できません。
 </span>
 このテーブルの並列スキャンを支援するために使用されるワーカの数を設定します。
 設定されなければ、リレーションのサイズに基づいてシステムが値を決定します。
-プランナが選ぶ実際のワーカの数は、例えば<a class="xref" href="runtime-config-resource.html#GUC-MAX-WORKER-PROCESSES">max_worker_processes</a>の設定によって、それより少なくなるかもしれません。
+プランナやパラレルスキャンを使うユーティリティ文により選ばれるワーカの数は、例えば<a class="xref" href="runtime-config-resource.html#GUC-MAX-WORKER-PROCESSES">max_worker_processes</a>の設定によって、より少なくなるかもしれません。
      </p></dd><dt><span class="term"><code class="literal">autovacuum_enabled</code>, <code class="literal">toast.autovacuum_enabled</code> (<code class="type">boolean</code>)</span></dt><dd><p>
 <span class="original">
      Enables or disables the autovacuum daemon for a particular table.
@@ -1797,7 +1851,10 @@ CREATE TABLE cities (
     population   bigint
 ) PARTITION BY LIST (left(lower(name), 1));
 </pre><p>
+<span class="original">
    Create a hash partitioned table:
+</span>
+ハッシュパーティションテーブルを作成します。
 </p><pre class="programlisting">
 CREATE TABLE orders (
     order_id     bigint not null,
@@ -1861,7 +1918,10 @@ CREATE TABLE cities_ab
 CREATE TABLE cities_ab_10000_to_100000
     PARTITION OF cities_ab FOR VALUES FROM (10000) TO (100000);
 </pre><p>
+<span class="original">
    Create partitions of a hash partitioned table:
+</span>
+ハッシュパーティションテーブルのパーティションを作成します。
 </p><pre class="programlisting">
 CREATE TABLE orders_p1 PARTITION OF orders
     FOR VALUES WITH (MODULUS 4, REMAINDER 0);
@@ -2004,22 +2064,33 @@ CREATE TABLE cities_partdef
 </span>
 <code class="literal">NULL</code><span class="quote">「<span class="quote">制約</span>」</span>（実際には非制約）は、標準SQLに対する<span class="productname">PostgreSQL</span>の拡張で、他のいくつかのデータベースシステムとの互換性（および <code class="literal">NOT NULL</code>制約との対称性）のために含まれています。
 どんな列に対してもデフォルトとなるため、これには意味はありません。
-   </p></div><div class="refsect2" id="id-1.9.3.85.9.8"><h3>Constraint Naming</h3><p>
+   </p></div><div class="refsect2" id="id-1.9.3.85.9.8"><h3>制約の命名</h3><span class="original">
+   &lt;title&gt;Constraint Naming&lt;/title&gt;
+</span><p>
+<span class="original">
     The SQL standard says that table and domain constraints must have names
     that are unique across the schema containing the table or domain.
-    <span class="productname">PostgreSQL</span> is laxer: it only requires
+    &lt;productname&gt;PostgreSQL&lt;/productname&gt; is laxer: it only requires
     constraint names to be unique across the constraints attached to a
     particular table or domain.  However, this extra freedom does not exist
-    for index-based constraints (<code class="literal">UNIQUE</code>,
-    <code class="literal">PRIMARY KEY</code>, and <code class="literal">EXCLUDE</code>
+    for index-based constraints (&lt;literal&gt;UNIQUE&lt;/literal&gt;,
+    &lt;literal&gt;PRIMARY KEY&lt;/literal&gt;, and &lt;literal&gt;EXCLUDE&lt;/literal&gt;
     constraints), because the associated index is named the same as the
     constraint, and index names must be unique across all relations within
     the same schema.
+</span>
+SQL標準ではテーブルとドメインの制約はテーブルやドメインを含むスキーマ中で一意な名前を持たなければなりません。
+<span class="productname">PostgreSQL</span>はより緩やかで、制約名は特定のテーブルやドメインに付加された制約の中で一意であることだけが求められます。
+しかしながら、この追加的な自由はインデックスに基づく制約（<code class="literal">UNIQUE</code>、<code class="literal">PRIMARY KEY</code>、および<code class="literal">EXCLUDE</code>制約）にはありません。なぜなら、関連付けられたインデックスは制約と同じに命名されて、インデックス名は同スキーマ内の全てのリレーションの中で一意でなければならないからです。
    </p><p>
-    Currently, <span class="productname">PostgreSQL</span> does not record names
-    for <code class="literal">NOT NULL</code> constraints at all, so they are not
+<span class="original">
+    Currently, &lt;productname&gt;PostgreSQL&lt;/productname&gt; does not record names
+    for &lt;literal&gt;NOT NULL&lt;/literal&gt; constraints at all, so they are not
     subject to the uniqueness restriction.  This might change in a future
     release.
+</span>
+今のところ、<span class="productname">PostgreSQL</span>は<code class="literal">NOT NULL</code>制約の名前を全く記録しませんので、これらは一意性の制限の対象ではありません。
+これは将来のリリースで変更されるかもしれません。
    </p></div><div class="refsect2" id="id-1.9.3.85.9.9"><h3>継承</h3><span class="original">
    &lt;title&gt;Inheritance&lt;/title&gt;
 </span><p>
