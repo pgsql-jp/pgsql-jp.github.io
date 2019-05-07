@@ -5,6 +5,13 @@ layout: default
 
 [正式版](https://www.postgresql.jp/document/)
 
+### 最新
+
+last-updated: 2019-05-08 00:28:16 JST
+
+| HTML （オンライン）           | PDF                        |
+| [html](current/html) | [PDF](current/postgres-A4.pdf) |
+
 ### PostgreSQL 11
 
 | HTML （オンライン）           | PDF                                           | EPUB                                         | man | 更新日     |
