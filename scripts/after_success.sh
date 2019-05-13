@@ -9,5 +9,6 @@ git remote set-url origin git@github.com:pgsql-jp/pgsql-jp.github.io.git
 git checkout master
 
 mkdir -p current
+rm -R current/*
 cp -aR travis/jpug-doc/doc/src/sgml/html current/
 cp -a travis/jpug-doc/doc/src/sgml/postgres-A4.pdf current/
