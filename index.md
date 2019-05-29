@@ -10,6 +10,7 @@ layout: default
 last-updated: 2019-05-26 01:07:10 JST
 
 | HTML （オンライン）           | PDF                        |
+|:---------------------------|:-------------------:|
 | [html](current/html) | [PDF](current/postgres-A4.pdf) |
 
 ### PostgreSQL 11
