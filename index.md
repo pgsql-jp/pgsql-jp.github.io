@@ -17,7 +17,9 @@ last-updated: 2019-07-01 01:23:48 JST
 
 | HTML （オンライン）           | PDF                                           | EPUB                                         | man | 更新日     |
 |:---------------------------|:---------------------------------------------:|:--------------------------------------------:|:---:|:----------:|
+| [11.3](jpug-doc/11.3/html/) | [PDF](jpug-doc/11.3/postgresql-11.3-A4.pdf) | [EPUB](jpug-doc/11.3/postgresql-11.3.epub) | [man.tar.gz](jpug-doc/11.3/man.tar.gz) | 2019-07-01 |
 | [11.1](jpug-doc/11.1/html/) | [PDF](jpug-doc/11.1/postgresql-11.1-A4.pdf) | [EPUB](jpug-doc/11.1/postgresql-11.1.epub) | [man.tar.gz](jpug-doc/11.1/man.tar.gz) | 2019-04-30 |
+
 
 ### PostgreSQL 10
 
