@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>CREATE STATISTICS</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="sql-createserver.html" title="CREATE SERVER" /><link rel="next" href="sql-createsubscription.html" title="CREATE SUBSCRIPTION" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.5文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="sql-commands.html" title="SQLコマンド">SQLコマンド</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 11.5 &#10;                      sql-createstatistics.html">誤訳等の報告
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>CREATE STATISTICS</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="sql-createserver.html" title="CREATE SERVER" /><link rel="next" href="sql-createsubscription.html" title="CREATE SUBSCRIPTION" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 12.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="sql-commands.html" title="SQLコマンド">SQLコマンド</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 12.0 &#10;                      sql-createstatistics.html">誤訳等の報告
                     </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="sql-createserver.html" title="CREATE SERVER">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="sql-commands.html" title="SQLコマンド">上へ</a></td><td width="60%" align="center">CREATE STATISTICS</td><td width="20%" align="right"> <a accesskey="n" href="sql-createsubscription.html" title="CREATE SUBSCRIPTION">次へ</a></td></tr></table><hr /></div><div class="refentry" id="SQL-CREATESTATISTICS"><div class="titlepage"></div><a id="id-1.9.3.83.1" class="indexterm"></a><div class="refnamediv"><h2><span class="refentrytitle">CREATE STATISTICS</span></h2><p>CREATE STATISTICS<span class="original">
   &lt;refpurpose&gt;define extended statistics&lt;/refpurpose&gt;
 </span> — 拡張統計情報を定義する</p></div><div class="refsynopsisdiv"><h2>概要</h2><pre class="synopsis">
@@ -51,9 +51,10 @@ CREATE STATISTICS [ IF NOT EXISTS ] <em class="replaceable"><code>statistics_nam
 <span class="original">
       A statistics kind to be computed in this statistics object.
       Currently supported kinds are
-      &lt;literal&gt;ndistinct&lt;/literal&gt;, which enables n-distinct statistics, and
+      &lt;literal&gt;ndistinct&lt;/literal&gt;, which enables n-distinct statistics,
       &lt;literal&gt;dependencies&lt;/literal&gt;, which enables functional
-      dependency statistics.
+      dependency statistics, and &lt;literal&gt;mcv&lt;/literal&gt; which enables
+      most-common values lists.
       If this clause is omitted, all supported statistics kinds are
       included in the statistics object.
       For more information, see &lt;xref linkend="planner-stats-extended"/&gt;
@@ -66,7 +67,8 @@ CREATE STATISTICS [ IF NOT EXISTS ] <em class="replaceable"><code>statistics_nam
      </p></dd><dt><span class="term"><em class="replaceable"><code>column_name</code></em></span></dt><dd><p>
 <span class="original">
       The name of a table column to be covered by the computed statistics.
-      At least two column names must be given.
+      At least two column names must be given;  the order of the column names
+      is insignificant.
 </span>
 統計計算の対象となるテーブル列の名前です。
 少なくとも2つの列名を指定しなければなりません。
@@ -137,6 +139,34 @@ EXPLAIN ANALYZE SELECT * FROM t1 WHERE (a = 1) AND (b = 0);
 </span>
 関数的依存統計がなければ、プランナは2つの<code class="literal">WHERE</code>条件を独立なものとみなすため、それらの選択性を掛け算して、非常に小さな行数見積もりを導きます。
 このような統計があれば、プランナは<code class="literal">WHERE</code>条件が冗長であることを認識し、行数を低く見積もりません。
+  </p><p>
+   Create table <code class="structname">t2</code> with two perfectly correlated columns
+   (containing identical data), and a MCV list on those columns:
+
+</p><pre class="programlisting">
+CREATE TABLE t2 (
+    a   int,
+    b   int
+);
+
+INSERT INTO t2 SELECT mod(i,100), mod(i,100)
+                 FROM generate_series(1,1000000) s(i);
+
+CREATE STATISTICS s2 (mcv) ON a, b FROM t2;
+
+ANALYZE t2;
+
+-- valid combination (found in MCV)
+EXPLAIN ANALYZE SELECT * FROM t2 WHERE (a = 1) AND (b = 1);
+
+-- invalid combination (not found in MCV)
+EXPLAIN ANALYZE SELECT * FROM t2 WHERE (a = 1) AND (b = 2);
+</pre><p>
+
+   The MCV list gives the planner more detailed information about the
+   specific values that commonly appear in the table, as well as an upper
+   bound on the selectivities of combinations of values that do not appear
+   in the table, allowing it to generate better estimates in both cases.
   </p></div><div class="refsect1" id="id-1.9.3.83.9"><h2>互換性</h2><span class="original">
   &lt;title&gt;Compatibility&lt;/title&gt;
 </span><p>

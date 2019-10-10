@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>24.3. ログファイルの保守</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="routine-reindex.html" title="24.2. 定常的なインデックスの再作成" /><link rel="next" href="backup.html" title="第25章 バックアップとリストア" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.5文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="maintenance.html" title="第24章 定常的なデータベース保守作業">第24章 定常的なデータベース保守作業</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 11.5 &#10;                      logfile-maintenance.html">誤訳等の報告
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>24.3. ログファイルの保守</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="routine-reindex.html" title="24.2. 定常的なインデックスの再作成" /><link rel="next" href="backup.html" title="第25章 バックアップとリストア" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 12.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="maintenance.html" title="第24章 定常的なデータベース保守作業">第24章 定常的なデータベース保守作業</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 12.0 &#10;                      logfile-maintenance.html">誤訳等の報告
                     </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="routine-reindex.html" title="24.2. 定常的なインデックスの再作成">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="maintenance.html" title="第24章 定常的なデータベース保守作業">上へ</a></td><td width="60%" align="center">24.3. ログファイルの保守</td><td width="20%" align="right"> <a accesskey="n" href="backup.html" title="第25章 バックアップとリストア">次へ</a></td></tr></table><hr /></div><div class="sect1" id="LOGFILE-MAINTENANCE"><div class="titlepage"><div><div><h2 class="title" style="clear: both">24.3. ログファイルの保守</h2></div></div></div><span class="original">
   &lt;title&gt;Log File Maintenance&lt;/title&gt;
 </span><a id="id-1.6.11.12.2" class="indexterm"></a><p>
@@ -51,8 +51,8 @@
    program if you have one that you are already using with other
    server software. For example, the &lt;application&gt;rotatelogs&lt;/application&gt;
    tool included in the &lt;productname&gt;Apache&lt;/productname&gt; distribution
-   can be used with &lt;productname&gt;PostgreSQL&lt;/productname&gt;.  To do this,
-   just pipe the server's
+   can be used with &lt;productname&gt;PostgreSQL&lt;/productname&gt;.  One way to
+   do this is to pipe the server's
    &lt;systemitem&gt;stderr&lt;/systemitem&gt; output to the desired program.
    If you start the server with
    &lt;command&gt;pg_ctl&lt;/command&gt;, then &lt;systemitem&gt;stderr&lt;/systemitem&gt;
@@ -68,6 +68,30 @@
 pg_ctl start | rotatelogs /var/log/pgsql_log 86400
 </pre><p>
   </p><p>
+   You can combine these approaches by setting up <span class="application">logrotate</span>
+   to collect log files produced by <span class="productname">PostgreSQL</span> built-in
+   logging collector.  In this case, the logging collector defines the names and
+   location of the log files, while <span class="application">logrotate</span>
+   periodically archives these files.  When initiating log rotation,
+   <span class="application">logrotate</span> must ensure that the application
+   sends further output to the new file.  This is commonly done with a
+   <code class="literal">postrotate</code> script that sends a <code class="literal">SIGHUP</code>
+   signal to the application, which then reopens the log file.
+   In <span class="productname">PostgreSQL</span>, you can run <code class="command">pg_ctl</code>
+   with the <code class="literal">logrotate</code> option instead.  When the server receives
+   this command, the server either switches to a new log file or reopens the
+   existing file, depending on the logging configuration
+   (see <a class="xref" href="runtime-config-logging.html#RUNTIME-CONFIG-LOGGING-WHERE" title="19.8.1. ログの出力先">19.8.1</a>).
+  </p><div class="note"><h3 class="title">注記</h3><p>
+    When using static log file names, the server might fail to reopen the log
+    file if the max open file limit is reached or a file table overflow occurs.
+    In this case, log messages are sent to the old log file until a
+    successful log rotation. If <span class="application">logrotate</span> is
+    configured to compress the log file and delete it, the server may lose
+    the messages logged in this timeframe. To avoid this issue, you can
+    configure the logging collector to dynamically assign log file names
+    and use a <code class="literal">prerotate</code> script to ignore open log files.
+    </p></div><p>
 <span class="original">
    Another production-grade approach to managing log output is to
    send it to &lt;application&gt;syslog&lt;/application&gt; and let

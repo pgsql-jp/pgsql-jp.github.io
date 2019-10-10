@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>66.3. 拡張性</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="gin-builtin-opclasses.html" title="66.2. 組み込み演算子クラス" /><link rel="next" href="gin-implementation.html" title="66.4. 実装" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.5文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="gin.html" title="第66章 GINインデックス">第66章 GINインデックス</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 11.5 &#10;                      gin-extensibility.html">誤訳等の報告
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>66.3. 拡張性</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="gin-builtin-opclasses.html" title="66.2. 組み込み演算子クラス" /><link rel="next" href="gin-implementation.html" title="66.4. 実装" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 12.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="gin.html" title="第66章 GINインデックス">第66章 GINインデックス</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 12.0 &#10;                      gin-extensibility.html">誤訳等の報告
                     </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="gin-builtin-opclasses.html" title="66.2. 組み込み演算子クラス">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="gin.html" title="第66章 GINインデックス">上へ</a></td><td width="60%" align="center">66.3. 拡張性</td><td width="20%" align="right"> <a accesskey="n" href="gin-implementation.html" title="66.4. 実装">次へ</a></td></tr></table><hr /></div><div class="sect1" id="GIN-EXTENSIBILITY"><div class="titlepage"><div><div><h2 class="title" style="clear: both">66.3. 拡張性</h2></div></div></div><span class="original">
  &lt;title&gt;Extensibility&lt;/title&gt;
 </span><p>
@@ -70,7 +70,7 @@
 問い合わせ対象の値に与えられる、pallocで割り当てられたキーの配列を返します。
 つまり、<code class="literal">query</code>はインデックス可能な演算子の右辺の値です。
 この左辺はインデックス対象の列です。
-<code class="literal">n</code>は演算子クラス内の演算子の戦略番号です（<a class="xref" href="xindex.html#XINDEX-STRATEGIES" title="38.15.2. インデックスメソッドのストラテジ">38.15.2</a>を参照）。
+<code class="literal">n</code>は演算子クラス内の演算子の戦略番号です（<a class="xref" href="xindex.html#XINDEX-STRATEGIES" title="37.16.2. インデックスメソッドのストラテジ">37.16.2</a>を参照）。
 <code class="function">extractQuery</code>はしばしば、<code class="literal">query</code>のデータ型とキー値を抽出するために使用しなければならないメソッドを決定するために、<code class="literal">n</code>を調べなければなりません。
 返されるキーの数を<code class="literal">*nkeys</code>に格納しなければなりません。
 キーのいずれかがNULLとなる可能性がある場合はまた、<code class="literal">*nkeys</code>個の<code class="type">bool</code>の配列をpallocで割り当て、<code class="literal">*nullFlags</code>にそのアドレスを格納し、必要に応じてNULLフラグを設定してください。
@@ -115,7 +115,7 @@
 <span class="original">
        &lt;literal&gt;pmatch&lt;/literal&gt; is an output argument for use when partial match
        is supported.  To use it, &lt;function&gt;extractQuery&lt;/function&gt; must allocate
-       an array of &lt;literal&gt;*nkeys&lt;/literal&gt; bools and store its address at
+       an array of &lt;literal&gt;*nkeys&lt;/literal&gt; &lt;type&gt;bool&lt;/type&gt;s and store its address at
        &lt;literal&gt;*pmatch&lt;/literal&gt;.  Each element of the array should be set to true
        if the corresponding key requires partial match, false if not.
        If &lt;literal&gt;*pmatch&lt;/literal&gt; is set to &lt;symbol&gt;NULL&lt;/symbol&gt; then GIN assumes partial match
@@ -150,12 +150,12 @@
 
 <span class="original">
   An operator class must also provide a function to check if an indexed item
-  matches the query. It comes in two flavors, a boolean &lt;function&gt;consistent&lt;/function&gt;
+  matches the query. It comes in two flavors, a Boolean &lt;function&gt;consistent&lt;/function&gt;
   function, and a ternary &lt;function&gt;triConsistent&lt;/function&gt; function.
   &lt;function&gt;triConsistent&lt;/function&gt; covers the functionality of both, so providing
-  &lt;function&gt;triConsistent&lt;/function&gt; alone is sufficient. However, if the boolean
+  &lt;function&gt;triConsistent&lt;/function&gt; alone is sufficient. However, if the Boolean
   variant is significantly cheaper to calculate, it can be advantageous to
-  provide both.  If only the boolean variant is provided, some optimizations
+  provide both.  If only the Boolean variant is provided, some optimizations
   that depend on refuting index items before fetching all the keys are
   disabled.
 </span>
@@ -231,11 +231,11 @@
         Datum queryKeys[], bool nullFlags[])</code></span></dt><dd><p>
 <span class="original">
        &lt;function&gt;triConsistent&lt;/function&gt; is similar to &lt;function&gt;consistent&lt;/function&gt;,
-       but instead of booleans in the &lt;literal&gt;check&lt;/literal&gt; vector, there are
+       but instead of Booleans in the &lt;literal&gt;check&lt;/literal&gt; vector, there are
        three possible values for each
        key: &lt;literal&gt;GIN_TRUE&lt;/literal&gt;, &lt;literal&gt;GIN_FALSE&lt;/literal&gt; and
        &lt;literal&gt;GIN_MAYBE&lt;/literal&gt;. &lt;literal&gt;GIN_FALSE&lt;/literal&gt; and &lt;literal&gt;GIN_TRUE&lt;/literal&gt;
-       have the same meaning as regular boolean values, while
+       have the same meaning as regular Boolean values, while
        &lt;literal&gt;GIN_MAYBE&lt;/literal&gt; means that the presence of that key is not known.
        When &lt;literal&gt;GIN_MAYBE&lt;/literal&gt; values are present, the function should only
        return &lt;literal&gt;GIN_TRUE&lt;/literal&gt; if the item certainly matches whether or
@@ -256,7 +256,7 @@
        When there are no &lt;literal&gt;GIN_MAYBE&lt;/literal&gt; values in the &lt;literal&gt;check&lt;/literal&gt;
        vector, a &lt;literal&gt;GIN_MAYBE&lt;/literal&gt; return value is the equivalent of
        setting the &lt;literal&gt;recheck&lt;/literal&gt; flag in the
-       boolean &lt;function&gt;consistent&lt;/function&gt; function.
+       Boolean &lt;function&gt;consistent&lt;/function&gt; function.
 </span>
 <code class="literal">check</code>ベクターに<code class="literal">GIN_MAYBE</code>値がなければ、<code class="literal">GIN_MAYBE</code>戻り値は論理値の<code class="function">consistent</code>関数で<code class="literal">recheck</code>フラグを設定することと同じです。
       </p></dd></dl></div><p>

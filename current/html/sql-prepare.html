@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>PREPARE</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="sql-notify.html" title="NOTIFY" /><link rel="next" href="sql-prepare-transaction.html" title="PREPARE TRANSACTION" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.5文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="sql-commands.html" title="SQLコマンド">SQLコマンド</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 11.5 &#10;                      sql-prepare.html">誤訳等の報告
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>PREPARE</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="sql-notify.html" title="NOTIFY" /><link rel="next" href="sql-prepare-transaction.html" title="PREPARE TRANSACTION" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 12.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="sql-commands.html" title="SQLコマンド">SQLコマンド</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 12.0 &#10;                      sql-prepare.html">誤訳等の報告
                     </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="sql-notify.html" title="NOTIFY">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="sql-commands.html" title="SQLコマンド">上へ</a></td><td width="60%" align="center">PREPARE</td><td width="20%" align="right"> <a accesskey="n" href="sql-prepare-transaction.html" title="PREPARE TRANSACTION">次へ</a></td></tr></table><hr /></div><div class="refentry" id="SQL-PREPARE"><div class="titlepage"></div><a id="id-1.9.3.158.1" class="indexterm"></a><a id="id-1.9.3.158.2" class="indexterm"></a><div class="refnamediv"><h2><span class="refentrytitle">PREPARE</span></h2><p>PREPARE<span class="original">
   &lt;refpurpose&gt;prepare a statement for execution&lt;/refpurpose&gt;
 </span> — 実行する文を準備する</p></div><div class="refsynopsisdiv"><h2>概要</h2><pre class="synopsis">
@@ -107,17 +107,15 @@ PREPARE <em class="replaceable"><code>name</code></em> [ ( <em class="replaceabl
   &lt;title&gt;Notes&lt;/title&gt;
 </span><p>
 <span class="original">
-   Prepared statements can use generic plans rather than re-planning with
-   each set of supplied &lt;command&gt;EXECUTE&lt;/command&gt; values.  This occurs
-   immediately for prepared statements with no parameters; otherwise
-   it occurs only after five or more executions produce plans whose
-   estimated cost average (including planning overhead) is more expensive
-   than the generic plan cost estimate.  Once a generic plan is chosen,
-   it is used for the remaining lifetime of the prepared statement.
-   Using &lt;command&gt;EXECUTE&lt;/command&gt; values which are rare in columns with
-   many duplicates can generate custom plans that are so much cheaper
-   than the generic plan, even after adding planning overhead, that the
-   generic plan might never be used.
+   A prepared statement can be executed with either a &lt;firstterm&gt;generic
+   plan&lt;/firstterm&gt; or a &lt;firstterm&gt;custom plan&lt;/firstterm&gt;.  A generic
+   plan is the same across all executions, while a custom plan is generated
+   for a specific execution using the parameter values given in that call.
+   Use of a generic plan avoids planning overhead, but in some situations
+   a custom plan will be much more efficient to execute because the planner
+   can make use of knowledge of the parameter values.  (Of course, if the
+   prepared statement has no parameters, then this is moot and a generic
+   plan is always used.)
 </span>
 プリペアド文では、提供された<code class="command">EXECUTE</code>の値に対してそれぞれ再計画するのでなく、一般的な計画を利用することができます。
 プリペアド文がパラメータを持たない場合、これは即座に起こります。
@@ -125,31 +123,34 @@ PREPARE <em class="replaceable"><code>name</code></em> [ ( <em class="replaceabl
 ひと度、一般的な計画が選ばれれば、そのプリペアド文が存続する間は、それが利用されます。
 多くの重複する値がある列で、稀な値を指定した<code class="command">EXECUTE</code>を実行すると、計画のオーバーヘッドを加えた後でも、一般的な計画よりもずっと安価な独自計画が生成できるため、一般的な計画が決して使われなくなるかもしれません。
   </p><p>
-<span class="original">
-   A generic plan assumes that each value supplied to
-   &lt;command&gt;EXECUTE&lt;/command&gt; is one of the column's distinct values
-   and that column values are uniformly distributed.  For example,
-   if statistics record three distinct column values, a generic plan
-   assumes a column equality comparison will match 33% of processed rows.
-   Column statistics also allow generic plans to accurately compute the
-   selectivity of unique columns.  Comparisons on non-uniformly-distributed
-   columns and specification of non-existent values affects the average
-   plan cost, and hence if and when a generic plan is chosen.
-</span>
-一般的な計画では、<code class="command">EXECUTE</code>に提供される各値は、列の個別の値の1つで、列の値は均一に分散していることを仮定します。
-例えば、統計情報が列の3つの個別値を記録している場合、一般的な計画では列の同値比較において、処理される行の33%にマッチすると仮定します。
-列の統計について、一般的な計画では、一意列の選択性について正確に計算することも許しています。
-均一に分散していない列における比較や、存在しない値の指定は、平均的な計画のコストに影響を与えるため、一般的な計画が選択されるかどうか、また一般的な計画がいつ選択されるかにも影響します。
+   By default (that is, when <a class="xref" href="runtime-config-query.html#GUC-PLAN-CACHE_MODE">plan_cache_mode</a> is set
+   to <code class="literal">auto</code>), the server will automatically choose
+   whether to use a generic or custom plan for a prepared statement that
+   has parameters.  The current rule for this is that the first five
+   executions are done with custom plans and the average estimated cost of
+   those plans is calculated.  Then a generic plan is created and its
+   estimated cost is compared to the average custom-plan cost.  Subsequent
+   executions use the generic plan if its cost is not so much higher than
+   the average custom-plan cost as to make repeated replanning seem
+   preferable.
+  </p><p>
+   This heuristic can be overridden, forcing the server to use either
+   generic or custom plans, by setting <code class="varname">plan_cache_mode</code>
+   to <code class="literal">force_generic_plan</code>
+   or <code class="literal">force_custom_plan</code> respectively.
+   This setting is primarily useful if the generic plan's cost estimate
+   is badly off for some reason, allowing it to be chosen even though
+   its actual cost is much more than that of a custom plan.
   </p><p>
 <span class="original">
    To examine the query plan &lt;productname&gt;PostgreSQL&lt;/productname&gt; is using
-   for a prepared statement, use &lt;xref linkend="sql-explain"/&gt;, e.g.
-   &lt;command&gt;EXPLAIN EXECUTE&lt;/command&gt;.
+   for a prepared statement, use &lt;xref linkend="sql-explain"/&gt;, for example
+&lt;programlisting&gt;
+EXPLAIN EXECUTE &lt;replaceable&gt;stmt_name&lt;/replaceable&gt;(&lt;replaceable&gt;parameter_values&lt;/replaceable&gt;);
+&lt;/programlisting&gt;
    If a generic plan is in use, it will contain parameter symbols
-   &lt;literal&gt;$&lt;replaceable&gt;n&lt;/replaceable&gt;&lt;/literal&gt;, while a custom plan will have the
-   supplied parameter values substituted into it.
-   The row estimates in the generic plan reflect the selectivity
-   computed for the parameters.
+   &lt;literal&gt;$&lt;replaceable&gt;n&lt;/replaceable&gt;&lt;/literal&gt;, while a custom plan
+   will have the supplied parameter values substituted into it.
 </span>
 プリペアド文に対して<span class="productname">PostgreSQL</span>が使用する問い合わせ計画を検証するためには、<a class="xref" href="sql-explain.html" title="EXPLAIN"><span class="refentrytitle">EXPLAIN</span></a>、例えば<code class="command">EXPLAIN EXECUTE</code>を使用してください。
 一般的な計画が使用される場合には、<code class="literal">$<em class="replaceable"><code>n</code></em></code>というパラメータ記号が含まれ、独自計画が使用される場合は提供されたパラメータの値で置換されます。
@@ -198,7 +199,7 @@ PREPARE <em class="replaceable"><code>name</code></em> [ ( <em class="replaceabl
    &lt;link linkend="view-pg-prepared-statements"&gt;&lt;structname&gt;pg_prepared_statements&lt;/structname&gt;&lt;/link&gt;
    system view.
 </span>
-<a class="link" href="view-pg-prepared-statements.html" title="52.76. pg_prepared_statements"><code class="structname">pg_prepared_statements</code></a>システムビューを問い合わせることによりセッションで利用可能なプリペアド文をすべて確認することができます。
+<a class="link" href="view-pg-prepared-statements.html" title="51.77. pg_prepared_statements"><code class="structname">pg_prepared_statements</code></a>システムビューを問い合わせることによりセッションで利用可能なプリペアド文をすべて確認することができます。
   </p></div><div class="refsect1" id="SQL-PREPARE-EXAMPLES"><h2>例</h2><span class="original">
   &lt;title id="sql-prepare-examples-title"&gt;Examples&lt;/title&gt;
 </span><p>
@@ -226,7 +227,7 @@ EXECUTE usrrptplan(1, current_date);
 </pre><p>
 
 <span class="original">
-   Note that the data type of the second parameter is not specified,
+   In this example, the data type of the second parameter is not specified,
    so it is inferred from the context in which &lt;literal&gt;$2&lt;/literal&gt; is used.
 </span>
 第2パラメータのデータ型が指定されていないことに注目してください。

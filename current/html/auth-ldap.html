@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>20.10. LDAP認証</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="auth-peer.html" title="20.9. Peer認証" /><link rel="next" href="auth-radius.html" title="20.11. RADIUS認証" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.5文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="client-authentication.html" title="第20章 クライアント認証">第20章 クライアント認証</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 11.5 &#10;                      auth-ldap.html">誤訳等の報告
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>20.10. LDAP認証</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="auth-peer.html" title="20.9. Peer認証" /><link rel="next" href="auth-radius.html" title="20.11. RADIUS認証" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 12.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="client-authentication.html" title="第20章 クライアント認証">第20章 クライアント認証</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 12.0 &#10;                      auth-ldap.html">誤訳等の報告
                     </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="auth-peer.html" title="20.9. Peer認証">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="client-authentication.html" title="第20章 クライアント認証">上へ</a></td><td width="60%" align="center">20.10. LDAP認証</td><td width="20%" align="right"> <a accesskey="n" href="auth-radius.html" title="20.11. RADIUS認証">次へ</a></td></tr></table><hr /></div><div class="sect1" id="AUTH-LDAP"><div class="titlepage"><div><div><h2 class="title" style="clear: both">20.10. LDAP認証</h2></div></div></div><span class="original">
    &lt;title&gt;LDAP Authentication&lt;/title&gt;
 </span><a id="id-1.6.7.17.2" class="indexterm"></a><p>
@@ -212,7 +212,8 @@ ldap[s]://<em class="replaceable"><code>host</code></em>[:<em class="replaceable
 非匿名バインド（non-anonymous bind）に対し、<code class="literal">ldapbinddn</code>および<code class="literal">ldapbindpasswd</code>は個別のオプションとして指定されなければなりません。
         </p><p>
 <span class="original">
-         LDAP URLs are currently only supported with OpenLDAP, not on Windows.
+         LDAP URLs are currently only supported with
+         &lt;productname&gt;OpenLDAP&lt;/productname&gt;, not on Windows.
 </span>
 現在の所、LDAP URLはWindows上ではなく、OpenLDAPのみでサポートされています。
         </p></dd></dl></div><p>
@@ -236,6 +237,13 @@ seartch/bindオプションと単純バインドに対するオプションの�
 search/bindモードを使用するときは、<code class="literal">ldapsearchattribute</code>で指定される単一の属性を使って、あるいは<code class="literal">ldapsearchfilter</code>で指定されるカスタム検索フィルターを使って、検索を実行できます。
 <code class="literal">ldapsearchattribute=foo</code>の指定は、<code class="literal">ldapsearchfilter="(foo=$username)"</code>と同等です。
 どちらのオプションもない場合は、<code class="literal">ldapsearchattribute=uid</code>がデフォルトです。
+   </p><p>
+     If <span class="productname">PostgreSQL</span> was compiled with
+     <span class="productname">OpenLDAP</span> as the LDAP client library, the
+     <code class="literal">ldapserver</code> setting may be omitted.  In that case, a
+     list of host names and ports is looked up via RFC 2782 DNS SRV records.
+     The name <code class="literal">_ldap._tcp.DOMAIN</code> is looked up, where
+     <code class="literal">DOMAIN</code> is extracted from <code class="literal">ldapbasedn</code>.
    </p><p>
 <span class="original">
     Here is an example for a simple-bind LDAP configuration:
@@ -295,6 +303,13 @@ LDAPに対し認証をサポートする幾つかの他のソフトウェアは�
 <code class="literal">ldapsearchattribute</code>の代わりに<code class="literal">ldapsearchfilter</code>を使用してユーザーIDまたは電子メールアドレスによる認証を可能にするsearch/bind設定の例です。
 </p><pre class="programlisting">
 host ... ldap ldapserver=ldap.example.net ldapbasedn="dc=example, dc=net" ldapsearchfilter="(|(uid=$username)(mail=$username))"
+</pre><p>
+   </p><p>
+    Here is an example for a search+bind configuration that uses DNS SRV
+    discovery to find the host name(s) and port(s) for the LDAP service for the
+    domain name <code class="literal">example.net</code>:
+</p><pre class="programlisting">
+host ... ldap ldapbasedn="dc=example,dc=net"
 </pre><p>
    </p><div class="tip"><h3 class="title">ヒント</h3><p>
 <span class="original">

@@ -1,18 +1,21 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>20.6. GSSAPI認証</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="auth-password.html" title="20.5. パスワード認証" /><link rel="next" href="sspi-auth.html" title="20.7. SSPI認証" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.5文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="client-authentication.html" title="第20章 クライアント認証">第20章 クライアント認証</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 11.5 &#10;                      gssapi-auth.html">誤訳等の報告
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>20.6. GSSAPI認証</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="auth-password.html" title="20.5. パスワード認証" /><link rel="next" href="sspi-auth.html" title="20.7. SSPI認証" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 12.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="client-authentication.html" title="第20章 クライアント認証">第20章 クライアント認証</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 12.0 &#10;                      gssapi-auth.html">誤訳等の報告
                     </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="auth-password.html" title="20.5. パスワード認証">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="client-authentication.html" title="第20章 クライアント認証">上へ</a></td><td width="60%" align="center">20.6. GSSAPI認証</td><td width="20%" align="right"> <a accesskey="n" href="sspi-auth.html" title="20.7. SSPI認証">次へ</a></td></tr></table><hr /></div><div class="sect1" id="GSSAPI-AUTH"><div class="titlepage"><div><div><h2 class="title" style="clear: both">20.6. GSSAPI認証</h2></div></div></div><span class="original">
    &lt;title&gt;GSSAPI Authentication&lt;/title&gt;
 </span><a id="id-1.6.7.13.2" class="indexterm"></a><p>
 <span class="original">
     &lt;productname&gt;GSSAPI&lt;/productname&gt; is an industry-standard protocol
     for secure authentication defined in RFC 2743.
-    &lt;productname&gt;PostgreSQL&lt;/productname&gt; supports
-    &lt;productname&gt;GSSAPI&lt;/productname&gt; with &lt;productname&gt;Kerberos&lt;/productname&gt;
-    authentication according to RFC 1964. &lt;productname&gt;GSSAPI&lt;/productname&gt;
-    provides automatic authentication (single sign-on) for systems
-    that support it. The authentication itself is secure, but the
-    data sent over the database connection will be sent unencrypted unless
-    &lt;acronym&gt;SSL&lt;/acronym&gt; is used.
+
+    &lt;productname&gt;PostgreSQL&lt;/productname&gt;
+    supports &lt;productname&gt;GSSAPI&lt;/productname&gt; for use as either an encrypted,
+    authenticated layer, or for authentication only.
+    &lt;productname&gt;GSSAPI&lt;/productname&gt; provides automatic authentication
+    (single sign-on) for systems that support it. The authentication itself is
+    secure.  If &lt;productname&gt;GSSAPI&lt;/productname&gt; encryption
+    (see &lt;literal&gt;hostgssenc&lt;/literal&gt;) or &lt;acronym&gt;SSL&lt;/acronym&gt; encryption are
+    used, the data sent along the database connection will be encrypted;
+    otherwise, it will not.
 </span>
 <span class="productname">GSSAPI</span>は、RFC 2743で定義されている安全な認証のための業界標準のプロトコルです。
 <span class="productname">PostgreSQL</span>は、RFC 1964により<span class="productname">Kerberos</span>認証での<span class="productname">GSSAPI</span>をサポートします。
@@ -45,7 +48,7 @@ GSSAPIサポートは、<span class="productname">PostgreSQL</span>を構築す�
 <span class="productname">GSSAPI</span>が<span class="productname">Kerberos</span>を使用しているとき、<span class="productname">GSSAPI</span>は、<code class="literal"><em class="replaceable"><code>servicename</code></em>/<em class="replaceable"><code>hostname</code></em>@<em class="replaceable"><code>realm</code></em></code>という書式の標準のプリンシパルを使用します。
 [訳注：プリンシパルとは大雑把に2つのものを指します。1つはサービスを受けるクライアントで、もう1つはサービスを提供するサーバアプリケーションです。どちらも、認証に関してはKerberosのKDCから見るとクライアントになります]
 PostgreSQLサーバはサーバにより使われるkeytabに含まれるいかなるプリンシパルも受け付けますが、<code class="literal">krbsrvname</code>接続パラメータを使ってクライアントから接続する場合には、プリンシパルの詳細を正確に指定することに注意を払う必要があります。
-(<a class="xref" href="libpq-connect.html#LIBPQ-PARAMKEYWORDS" title="34.1.2. パラメータキーワード">34.1.2</a>も参照してください。)
+(<a class="xref" href="libpq-connect.html#LIBPQ-PARAMKEYWORDS" title="33.1.2. パラメータキーワード">33.1.2</a>も参照してください。)
 ビルド時に<code class="literal">./configure --with-krb-srvnam=whatever</code>を使用することで、インストール時のデフォルトはデフォルトの<code class="literal">postgres</code>から変更が可能です。
 多くの環境では、このパラメータは変更する必要はないでしょう。
 いくつかのKerberosの実装では、異なるサービス名が必要になります。Microsoftアクティブディレクトリではサービス名は（<code class="literal">POSTGRES</code>）のように大文字にする必要があります。

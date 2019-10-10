@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>ANALYZE</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="sql-alterview.html" title="ALTER VIEW" /><link rel="next" href="sql-begin.html" title="BEGIN" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.5文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="sql-commands.html" title="SQLコマンド">SQLコマンド</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 11.5 &#10;                      sql-analyze.html">誤訳等の報告
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>ANALYZE</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="sql-alterview.html" title="ALTER VIEW" /><link rel="next" href="sql-begin.html" title="BEGIN" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 12.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="sql-commands.html" title="SQLコマンド">SQLコマンド</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 12.0 &#10;                      sql-analyze.html">誤訳等の報告
                     </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="sql-alterview.html" title="ALTER VIEW">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="sql-commands.html" title="SQLコマンド">上へ</a></td><td width="60%" align="center">ANALYZE</td><td width="20%" align="right"> <a accesskey="n" href="sql-begin.html" title="BEGIN">次へ</a></td></tr></table><hr /></div><div class="refentry" id="SQL-ANALYZE"><div class="titlepage"></div><a id="id-1.9.3.46.1" class="indexterm"></a><div class="refnamediv"><h2><span class="refentrytitle">ANALYZE</span></h2><p>ANALYZE<span class="original">
   &lt;refpurpose&gt;collect statistics about a database&lt;/refpurpose&gt;
 </span> — データベースに関する統計を収集する</p></div><div class="refsynopsisdiv"><h2>概要</h2><pre class="synopsis">
@@ -11,7 +11,8 @@ ANALYZE [ VERBOSE ] [ <em class="replaceable"><code>table_and_columns</code></em
 </span>
 <span class="phrase"><em class="replaceable"><code>option</code></em>には以下のいずれかが入ります。</span>
 
-    VERBOSE
+    VERBOSE [ <em class="replaceable"><code>boolean</code></em> ]
+    SKIP_LOCKED [ <em class="replaceable"><code>boolean</code></em> ]
 
 <span class="original">
 &lt;phrase&gt;and &lt;replaceable class="parameter"&gt;table_and_columns&lt;/replaceable&gt; is:&lt;/phrase&gt;
@@ -30,7 +31,7 @@ ANALYZE [ VERBOSE ] [ <em class="replaceable"><code>table_and_columns</code></em
    statistics to help determine the most efficient execution plans for
    queries.
 </span>
-<code class="command">ANALYZE</code>はデータベース内のテーブルの内容に関する統計情報を収集し、その結果を<a class="link" href="catalog-pg-statistic.html" title="52.50. pg_statistic"><code class="structname">pg_statistic</code></a>システムカタログに保存します。
+<code class="command">ANALYZE</code>はデータベース内のテーブルの内容に関する統計情報を収集し、その結果を<a class="link" href="catalog-pg-statistic.html" title="51.50. pg_statistic"><code class="structname">pg_statistic</code></a>システムカタログに保存します。
 問い合わせプランナが最も効率の良い問い合わせの実行計画を決定する際、この統計情報が使用されます。
   </p><p>
 <span class="original">
@@ -61,6 +62,24 @@ ANALYZE [ VERBOSE ] [ <em class="replaceable"><code>table_and_columns</code></em
       Enables display of progress messages.
 </span>
 進行状況の表示を有効にします。
+     </p></dd><dt><span class="term"><code class="literal">SKIP_LOCKED</code></span></dt><dd><p>
+      Specifies that <code class="command">ANALYZE</code> should not wait for any
+      conflicting locks to be released when beginning work on a relation:
+      if a relation cannot be locked immediately without waiting, the relation
+      is skipped.  Note that even with this option, <code class="command">ANALYZE</code>
+      may still block when opening the relation's indexes or when acquiring
+      sample rows from partitions, table inheritance children, and some
+      types of foreign tables.  Also, while <code class="command">ANALYZE</code>
+      ordinarily processes all partitions of specified partitioned tables,
+      this option will cause <code class="command">ANALYZE</code> to skip all
+      partitions if there is a conflicting lock on the partitioned table.
+     </p></dd><dt><span class="term"><em class="replaceable"><code>boolean</code></em></span></dt><dd><p>
+      Specifies whether the selected option should be turned on or off.
+      You can write <code class="literal">TRUE</code>, <code class="literal">ON</code>, or
+      <code class="literal">1</code> to enable the option, and <code class="literal">FALSE</code>,
+      <code class="literal">OFF</code>, or <code class="literal">0</code> to disable it.  The
+      <em class="replaceable"><code>boolean</code></em> value can also
+      be omitted, in which case <code class="literal">TRUE</code> is assumed.
      </p></dd><dt><span class="term"><em class="replaceable"><code>table_name</code></em></span></dt><dd><p>
 <span class="original">
       The name (possibly schema-qualified) of a specific table to
@@ -92,6 +111,14 @@ ANALYZE [ VERBOSE ] [ <em class="replaceable"><code>table_and_columns</code></em
    </p></div><div class="refsect1" id="id-1.9.3.46.8"><h2>注釈</h2><span class="original">
   &lt;title&gt;Notes&lt;/title&gt;
 </span><p>
+   To analyze a table, one must ordinarily be the table's owner or a
+   superuser.  However, database owners are allowed to
+   analyze all tables in their databases, except shared catalogs.
+   (The restriction for shared catalogs means that a true database-wide
+   <code class="command">ANALYZE</code> can only be performed by a superuser.)
+   <code class="command">ANALYZE</code> will skip over any tables that the calling user
+   does not have permission to analyze.
+  </p><p>
 <span class="original">
    Foreign tables are analyzed only when explicitly selected.  Not all
    foreign data wrappers support &lt;command&gt;ANALYZE&lt;/command&gt;.  If the table's

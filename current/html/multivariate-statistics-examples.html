@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>70.2. 多変量統計の例</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="row-estimation-examples.html" title="70.1. 行数推定の例" /><link rel="next" href="planner-stats-security.html" title="70.3. プランナの統計情報とセキュリティ" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.5文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="planner-stats-details.html" title="第70章 プランナは統計情報をどのように使用するか">第70章 プランナは統計情報をどのように使用するか</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 11.5 &#10;                      multivariate-statistics-examples.html">誤訳等の報告
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>70.2. 多変量統計の例</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="row-estimation-examples.html" title="70.1. 行数推定の例" /><link rel="next" href="planner-stats-security.html" title="70.3. プランナの統計情報とセキュリティ" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 12.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="planner-stats-details.html" title="第70章 プランナは統計情報をどのように使用するか">第70章 プランナは統計情報をどのように使用するか</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 12.0 &#10;                      multivariate-statistics-examples.html">誤訳等の報告
                     </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="row-estimation-examples.html" title="70.1. 行数推定の例">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="planner-stats-details.html" title="第70章 プランナは統計情報をどのように使用するか">上へ</a></td><td width="60%" align="center">70.2. 多変量統計の例</td><td width="20%" align="right"> <a accesskey="n" href="planner-stats-security.html" title="70.3. プランナの統計情報とセキュリティ">次へ</a></td></tr></table><hr /></div><div class="sect1" id="MULTIVARIATE-STATISTICS-EXAMPLES"><div class="titlepage"><div><div><h2 class="title" style="clear: both">70.2. 多変量統計の例</h2></div></div></div><span class="original">
   &lt;title&gt;Multivariate Statistics Examples&lt;/title&gt;
-</span><a id="id-1.10.22.5.2" class="indexterm"></a><div class="sect2" id="id-1.10.22.5.3"><div class="titlepage"><div><div><h3 class="title">70.2.1. 関数従属性</h3></div></div></div><span class="original">
+</span><a id="id-1.10.23.5.2" class="indexterm"></a><div class="sect2" id="FUNCTIONAL-DEPENDENCIES"><div class="titlepage"><div><div><h3 class="title">70.2.1. 関数従属性</h3></div></div></div><span class="original">
    &lt;title&gt;Functional Dependencies&lt;/title&gt;
 </span><p>
 <span class="original">
@@ -11,6 +11,7 @@
 </span>
 非常に単純なデータ集合で、多変量相関係数の例を示すことができます。
 2つの列を持ち、両方の列が同じ値を持つテーブルです。
+
 </p><pre class="programlisting">
 CREATE TABLE t (a INT, b INT);
 INSERT INTO t SELECT i % 100, i % 100 FROM generate_series(1, 10000) s(i);
@@ -106,7 +107,7 @@ EXPLAIN (ANALYZE, TIMING OFF) SELECT * FROM t WHERE a = 1 AND b = 1;
    Filter: ((a = 1) AND (b = 1))
    Rows Removed by Filter: 9900
 </pre><p>
-   </p></div><div class="sect2" id="id-1.10.22.5.4"><div class="titlepage"><div><div><h3 class="title">70.2.2. 多変量N個別値計数</h3></div></div></div><span class="original">
+   </p></div><div class="sect2" id="MULTIVARIATE-NDISTINCT-COUNTS"><div class="titlepage"><div><div><h3 class="title">70.2.2. 多変量N個別値計数</h3></div></div></div><span class="original">
    &lt;title&gt;Multivariate N-Distinct Counts&lt;/title&gt;
 </span><p>
 <span class="original">
@@ -157,4 +158,98 @@ EXPLAIN (ANALYZE, TIMING OFF) SELECT COUNT(*) FROM t GROUP BY a, b;
    Group Key: a, b
    -&gt;  Seq Scan on t  (cost=0.00..145.00 rows=10000 width=8) (actual rows=10000 loops=1)
 </pre><p>
+   </p></div><div class="sect2" id="MCV-LISTS"><div class="titlepage"><div><div><h3 class="title">70.2.3. MCV Lists</h3></div></div></div><p>
+    As explained in <a class="xref" href="multivariate-statistics-examples.html#FUNCTIONAL-DEPENDENCIES" title="70.2.1. 関数従属性">70.2.1</a>, functional
+    dependencies are very cheap and efficient type of statistics, but their
+    main limitation is their global nature (only tracking dependencies at
+    the column level, not between individual column values).
+   </p><p>
+    This section introduces multivariate variant of <acronym class="acronym">MCV</acronym>
+    (most-common values) lists, a straightforward extension of the per-column
+    statistics described in <a class="xref" href="row-estimation-examples.html" title="70.1. 行数推定の例">70.1</a>.  These
+    statistics address the limitation by storing individual values, but it is
+    naturally more expensive, both in terms of building the statistics in
+    <code class="command">ANALYZE</code>, storage and planning time.
+   </p><p>
+    Let's look at the query from <a class="xref" href="multivariate-statistics-examples.html#FUNCTIONAL-DEPENDENCIES" title="70.2.1. 関数従属性">70.2.1</a>
+    again, but this time with a <acronym class="acronym">MCV</acronym> list created on the
+    same set of columns (be sure to drop the functional dependencies, to
+    make sure the planner uses the newly created statistics).
+
+</p><pre class="programlisting">
+DROP STATISTICS stts;
+CREATE STATISTICS stts2 (mcv) ON a, b FROM t;
+ANALYZE t;
+EXPLAIN (ANALYZE, TIMING OFF) SELECT * FROM t WHERE a = 1 AND b = 1;
+                                   QUERY PLAN
+-------------------------------------------------------------------------------
+ Seq Scan on t  (cost=0.00..195.00 rows=100 width=8) (actual rows=100 loops=1)
+   Filter: ((a = 1) AND (b = 1))
+   Rows Removed by Filter: 9900
+</pre><p>
+
+    The estimate is as accurate as with the functional dependencies, mostly
+    thanks to the table being fairly small and having a simple distribution
+    with a low number of distinct values. Before looking at the second query,
+    which was not handled by functional dependencies particularly well,
+    let's inspect the <acronym class="acronym">MCV</acronym> list a bit.
+   </p><p>
+    Inspecting the <acronym class="acronym">MCV</acronym> list is possible using
+    <code class="function">pg_mcv_list_items</code> set-returning function.
+
+</p><pre class="programlisting">
+SELECT m.* FROM pg_statistic_ext join pg_statistic_ext_data on (oid = stxoid),
+                pg_mcv_list_items(stxdmcv) m WHERE stxname = 'stts2';
+ index |  values  | nulls | frequency | base_frequency 
+-------+----------+-------+-----------+----------------
+     0 | {0, 0}   | {f,f} |      0.01 |         0.0001
+     1 | {1, 1}   | {f,f} |      0.01 |         0.0001
+   ...
+    49 | {49, 49} | {f,f} |      0.01 |         0.0001
+    50 | {50, 50} | {f,f} |      0.01 |         0.0001
+   ...
+    97 | {97, 97} | {f,f} |      0.01 |         0.0001
+    98 | {98, 98} | {f,f} |      0.01 |         0.0001
+    99 | {99, 99} | {f,f} |      0.01 |         0.0001
+(100 rows)
+</pre><p>
+
+    This confirms there are 100 distinct combinations in the two columns, and
+    all of them are about equally likely (1% frequency for each one).  The
+    base frequency is the frequency computed from per-column statistics, as if
+    there were no multi-column statistics. Had there been any null values in
+    either of the columns, this would be identified in the
+    <code class="structfield">nulls</code> column.
+   </p><p>
+    When estimating the selectivity, the planner applies all the conditions
+    on items in the <acronym class="acronym">MCV</acronym> list, and then sums the frequencies
+    of the matching ones. See <code class="function">mcv_clauselist_selectivity</code>
+    in <code class="filename">src/backend/statistics/mcv.c</code> for details.
+   </p><p>
+    Compared to functional dependencies, <acronym class="acronym">MCV</acronym> lists have two
+    major advantages. Firstly, the list stores actual values, making it possible
+    to decide which combinations are compatible.
+
+</p><pre class="programlisting">
+EXPLAIN (ANALYZE, TIMING OFF) SELECT * FROM t WHERE a = 1 AND b = 10;
+                                 QUERY PLAN
+---------------------------------------------------------------------------
+ Seq Scan on t  (cost=0.00..195.00 rows=1 width=8) (actual rows=0 loops=1)
+   Filter: ((a = 1) AND (b = 10))
+   Rows Removed by Filter: 10000
+</pre><p>
+
+    Secondly, <acronym class="acronym">MCV</acronym> lists handle a wider range of clause types,
+    not just equality clauses like functional dependencies. For example,
+    consider the following range query for the same table:
+
+</p><pre class="programlisting">
+EXPLAIN (ANALYZE, TIMING OFF) SELECT * FROM t WHERE a &lt;= 49 AND b &gt; 49;
+                                QUERY PLAN
+---------------------------------------------------------------------------
+ Seq Scan on t  (cost=0.00..195.00 rows=1 width=8) (actual rows=0 loops=1)
+   Filter: ((a &lt;= 49) AND (b &gt; 49))
+   Rows Removed by Filter: 10000
+</pre><p>
+
    </p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="row-estimation-examples.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="planner-stats-details.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="planner-stats-security.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">70.1. 行数推定の例 </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> 70.3. プランナの統計情報とセキュリティ</td></tr></table></div></body></html>

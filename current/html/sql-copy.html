@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>COPY</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="sql-commit-prepared.html" title="COMMIT PREPARED" /><link rel="next" href="sql-create-access-method.html" title="CREATE ACCESS METHOD" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.5文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="sql-commands.html" title="SQLコマンド">SQLコマンド</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 11.5 &#10;                      sql-copy.html">誤訳等の報告
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>COPY</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="sql-commit-prepared.html" title="COMMIT PREPARED" /><link rel="next" href="sql-create-access-method.html" title="CREATE ACCESS METHOD" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 12.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="sql-commands.html" title="SQLコマンド">SQLコマンド</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 12.0 &#10;                      sql-copy.html">誤訳等の報告
                     </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="sql-commit-prepared.html" title="COMMIT PREPARED">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="sql-commands.html" title="SQLコマンド">上へ</a></td><td width="60%" align="center">COPY</td><td width="20%" align="right"> <a accesskey="n" href="sql-create-access-method.html" title="CREATE ACCESS METHOD">次へ</a></td></tr></table><hr /></div><div class="refentry" id="SQL-COPY"><div class="titlepage"></div><a id="id-1.9.3.55.1" class="indexterm"></a><div class="refnamediv"><h2><span class="refentrytitle">COPY</span></h2><p>COPY<span class="original">
   &lt;refpurpose&gt;copy data between a file and a table&lt;/refpurpose&gt;
 </span> — ファイルとテーブルの間でデータをコピーする</p></div><div class="refsynopsisdiv"><h2>概要</h2><pre class="synopsis">
 COPY <em class="replaceable"><code>table_name</code></em> [ ( <em class="replaceable"><code>column_name</code></em> [, ...] ) ]
     FROM { '<em class="replaceable"><code>filename</code></em>' | PROGRAM '<em class="replaceable"><code>command</code></em>' | STDIN }
     [ [ WITH ] ( <em class="replaceable"><code>option</code></em> [, ...] ) ]
+    [ WHERE <em class="replaceable"><code>condition</code></em> ]
 
 COPY { <em class="replaceable"><code>table_name</code></em> [ ( <em class="replaceable"><code>column_name</code></em> [, ...] ) ] | ( <em class="replaceable"><code>query</code></em> ) }
     TO { '<em class="replaceable"><code>filename</code></em>' | PROGRAM '<em class="replaceable"><code>command</code></em>' | STDOUT }
@@ -17,7 +18,6 @@ COPY { <em class="replaceable"><code>table_name</code></em> [ ( <em class="repla
 <span class="phrase">ここで<em class="replaceable"><code>option</code></em>は以下のいずれかです。</span>
 
     FORMAT <em class="replaceable"><code>format_name</code></em>
-    OIDS [ <em class="replaceable"><code>boolean</code></em> ]
     FREEZE [ <em class="replaceable"><code>boolean</code></em> ]
     DELIMITER '<em class="replaceable"><code>delimiter_character</code></em>'
     NULL '<em class="replaceable"><code>null_string</code></em>'
@@ -86,7 +86,8 @@ COPY { <em class="replaceable"><code>table_name</code></em> [ ( <em class="repla
      </p></dd><dt><span class="term"><em class="replaceable"><code>column_name</code></em></span></dt><dd><p>
 <span class="original">
       An optional list of columns to be copied.  If no column list is
-      specified, all columns of the table will be copied.
+      specified, all columns of the table except generated columns will be
+      copied.
 </span>
 コピー対象の列リストで、省略可能です。
 列リストが指定されていない場合は、テーブルの全ての列がコピーされます。
@@ -171,15 +172,6 @@ Windowsユーザの場合、<code class="literal">E''</code>文字列を使用�
 読み取りまたは書き込みに使用するデータ形式を選択します。
 <code class="literal">text</code>、<code class="literal">csv</code>（カンマ区切り値）、または<code class="literal">binary</code>です。
 デフォルトは<code class="literal">text</code>です。
-     </p></dd><dt><span class="term"><code class="literal">OIDS</code></span></dt><dd><p>
-<span class="original">
-      Specifies copying the OID for each row.  (An error is raised if
-      &lt;literal&gt;OIDS&lt;/literal&gt; is specified for a table that does not
-      have OIDs, or in the case of copying a &lt;replaceable
-      class="parameter"&gt;query&lt;/replaceable&gt;.)
-</span>
-各行のOIDをコピーするよう指定します
-（OIDを持たないテーブルに<code class="literal">OIDS</code>を指定する場合、または、<em class="replaceable"><code>query</code></em>コピーの場合、エラーが発生します）。
      </p></dd><dt><span class="term"><code class="literal">FREEZE</code></span></dt><dd><p>
 <span class="original">
       Requests copying the data with rows already frozen, just as they
@@ -320,7 +312,23 @@ NULL文字列が空であるデフォルトでは、引用符付きの空文字�
 ファイルが<em class="replaceable"><code>encoding_name</code></em>で符号化されていることを指定します。
 このオプションが省略された場合、現在のクライアント符号化方式が使用されます。
 後述の注釈を参照してください。
-     </p></dd></dl></div></div><div class="refsect1" id="id-1.9.3.55.7"><h2>出力</h2><span class="original">
+     </p></dd><dt><span class="term"><code class="literal">WHERE</code></span></dt><dd><p>
+    The optional <code class="literal">WHERE</code> clause has the general form
+</p><pre class="synopsis">
+WHERE <em class="replaceable"><code>condition</code></em>
+</pre><p>
+    where <em class="replaceable"><code>condition</code></em> is
+    any expression that evaluates to a result of type
+    <code class="type">boolean</code>.  Any row that does not satisfy this
+    condition will not be inserted to the table.  A row satisfies the
+    condition if it returns true when the actual row values are
+    substituted for any variable references.
+   </p><p>
+    Currently, subqueries are not allowed in <code class="literal">WHERE</code>
+    expressions, and the evaluation does not see any changes made by the
+    <code class="command">COPY</code> itself (this matters when the expression
+    contains calls to <code class="literal">VOLATILE</code> functions).
+   </p></dd></dl></div></div><div class="refsect1" id="id-1.9.3.55.7"><h2>出力</h2><span class="original">
   &lt;title&gt;Outputs&lt;/title&gt;
 </span><p>
 <span class="original">
@@ -537,8 +545,6 @@ IDENTITY列については、<code class="command">COPY FROM</code>コマンド�
     place of columns that are null.
     &lt;command&gt;COPY FROM&lt;/command&gt; will raise an error if any line of the
     input file contains more or fewer columns than are expected.
-    If &lt;literal&gt;OIDS&lt;/literal&gt; is specified, the OID is read or written as the first column,
-    preceding the user data columns.
 </span>
 <code class="literal">text</code>形式を使用する場合、読み書きされるデータはテーブルの1つの行を1行で表したテキストファイルとなります。
 行内の列は区切り文字で区切られます。
@@ -823,7 +829,9 @@ only one flag bit is defined, and the rest must be zero:
 現在、1つのビットだけがフラグビットとして定義されており、残りは0でなければなりません。
         </p><div class="variablelist"><dl class="variablelist"><dt><span class="term">ビット16</span></dt><dd><p>
 <span class="original">
-            if 1, OIDs are included in the data; if 0, not
+            If 1, OIDs are included in the data; if 0, not. Oid system columns
+            are not supported in &lt;productname&gt;PostgreSQL&lt;/productname&gt;
+            anymore, but the format still contains the indicator.
 </span>
 1ならば、OIDがデータに含まれています。
 0ならば、含まれていません。
@@ -901,10 +909,9 @@ distribution).
     </p><p>
 <span class="original">
 If OIDs are included in the file, the OID field immediately follows the
-field-count word.  It is a normal field except that it's not included
-in the field-count.  In particular it has a length word &amp;mdash; this will allow
-handling of 4-byte vs. 8-byte OIDs without too much pain, and will allow
-OIDs to be shown as null if that ever proves desirable.
+field-count word.  It is a normal field except that it's not included in the
+field-count.  Note that oid system columns are not supported in current
+versions of &lt;productname&gt;PostgreSQL&lt;/productname&gt;.
 </span>
 このファイルにOIDが含まれる場合、OIDフィールドがフィールド数ワードの直後に続きます。
 これは、フィールド数に含まれない点を除いて、通常のフィールドです。
@@ -1022,7 +1029,6 @@ COPY <em class="replaceable"><code>table_name</code></em> [ ( <em class="replace
     FROM { '<em class="replaceable"><code>filename</code></em>' | STDIN }
     [ [ WITH ]
           [ BINARY ]
-          [ OIDS ]
           [ DELIMITER [ AS ] '<em class="replaceable"><code>delimiter</code></em>' ]
           [ NULL [ AS ] '<em class="replaceable"><code>null string</code></em>' ]
           [ CSV [ HEADER ]
@@ -1034,7 +1040,6 @@ COPY { <em class="replaceable"><code>table_name</code></em> [ ( <em class="repla
     TO { '<em class="replaceable"><code>filename</code></em>' | STDOUT }
     [ [ WITH ]
           [ BINARY ]
-          [ OIDS ]
           [ DELIMITER [ AS ] '<em class="replaceable"><code>delimiter</code></em>' ]
           [ NULL [ AS ] '<em class="replaceable"><code>null string</code></em>' ]
           [ CSV [ HEADER ]
@@ -1057,12 +1062,12 @@ COPY { <em class="replaceable"><code>table_name</code></em> [ ( <em class="repla
 以下の構文は、<span class="productname">PostgreSQL</span>バージョン7.3より前に使用されていたもので、まだサポートされています。
 
 </p><pre class="synopsis">
-COPY [ BINARY ] <em class="replaceable"><code>table_name</code></em> [ WITH OIDS ]
+COPY [ BINARY ] <em class="replaceable"><code>table_name</code></em>
     FROM { '<em class="replaceable"><code>filename</code></em>' | STDIN }
     [ [USING] DELIMITERS '<em class="replaceable"><code>delimiter</code></em>' ]
     [ WITH NULL AS '<em class="replaceable"><code>null string</code></em>' ]
 
-COPY [ BINARY ] <em class="replaceable"><code>table_name</code></em> [ WITH OIDS ]
+COPY [ BINARY ] <em class="replaceable"><code>table_name</code></em>
     TO { '<em class="replaceable"><code>filename</code></em>' | STDOUT }
     [ [USING] DELIMITERS '<em class="replaceable"><code>delimiter</code></em>' ]
     [ WITH NULL AS '<em class="replaceable"><code>null string</code></em>' ]

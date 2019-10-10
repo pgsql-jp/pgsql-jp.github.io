@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>CREATE TABLE AS</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="sql-createtable.html" title="CREATE TABLE" /><link rel="next" href="sql-createtablespace.html" title="CREATE TABLESPACE" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.5文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="sql-commands.html" title="SQLコマンド">SQLコマンド</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 11.5 &#10;                      sql-createtableas.html">誤訳等の報告
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>CREATE TABLE AS</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="sql-createtable.html" title="CREATE TABLE" /><link rel="next" href="sql-createtablespace.html" title="CREATE TABLESPACE" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 12.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="sql-commands.html" title="SQLコマンド">SQLコマンド</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 12.0 &#10;                      sql-createtableas.html">誤訳等の報告
                     </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="sql-createtable.html" title="CREATE TABLE">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="sql-commands.html" title="SQLコマンド">上へ</a></td><td width="60%" align="center">CREATE TABLE AS</td><td width="20%" align="right"> <a accesskey="n" href="sql-createtablespace.html" title="CREATE TABLESPACE">次へ</a></td></tr></table><hr /></div><div class="refentry" id="SQL-CREATETABLEAS"><div class="titlepage"></div><a id="id-1.9.3.86.1" class="indexterm"></a><div class="refnamediv"><h2><span class="refentrytitle">CREATE TABLE AS</span></h2><p>CREATE TABLE AS<span class="original">
   &lt;refpurpose&gt;define a new table from the results of a query&lt;/refpurpose&gt;
 </span> — 問い合わせの結果によって新しいテーブルを定義する</p></div><div class="refsynopsisdiv"><h2>概要</h2><pre class="synopsis">
 CREATE [ [ GLOBAL | LOCAL ] { TEMPORARY | TEMP } | UNLOGGED ] TABLE [ IF NOT EXISTS ] <em class="replaceable"><code>table_name</code></em>
     [ (<em class="replaceable"><code>column_name</code></em> [, ...] ) ]
-    [ WITH ( <em class="replaceable"><code>storage_parameter</code></em> [= <em class="replaceable"><code>value</code></em>] [, ... ] ) | WITH OIDS | WITHOUT OIDS ]
+    [ USING <em class="replaceable"><code>method</code></em> ]
+    [ WITH ( <em class="replaceable"><code>storage_parameter</code></em> [= <em class="replaceable"><code>value</code></em>] [, ... ] ) | WITHOUT OIDS ]
     [ ON COMMIT { PRESERVE ROWS | DELETE ROWS | DROP } ]
     [ TABLESPACE <em class="replaceable"><code>tablespace_name</code></em> ]
     AS <em class="replaceable"><code>query</code></em>
@@ -82,29 +83,32 @@ CREATE [ [ GLOBAL | LOCAL ] { TEMPORARY | TEMP } | UNLOGGED ] TABLE [ IF NOT EXI
 </span>
 新しいテーブルにおける列の名前です。
 列名を指定しない場合は、問い合わせの出力列名を利用します。
+     </p></dd><dt><span class="term"><code class="literal">USING <em class="replaceable"><code>method</code></em></code></span></dt><dd><p>
+      This optional clause specifies the table access method to use to store
+      the contents for the new table; the method needs be an access method of
+      type <code class="literal">TABLE</code>. See <a class="xref" href="tableam.html" title="第60章 Table Access Method Interface Definition">第60章</a> for more
+      information.  If this option is not specified, the default table access
+      method is chosen for the new table. See <a class="xref" href="runtime-config-client.html#GUC-DEFAULT-TABLE-ACCESS-METHOD">default_table_access_method</a> for more information.
      </p></dd><dt><span class="term"><code class="literal">WITH ( <em class="replaceable"><code>storage_parameter</code></em> [= <em class="replaceable"><code>value</code></em>] [, ... ] )</code></span></dt><dd><p>
 <span class="original">
       This clause specifies optional storage parameters for the new table;
       see &lt;xref linkend="sql-createtable-storage-parameters"
       endterm="sql-createtable-storage-parameters-title"/&gt; for more
-      information.  The &lt;literal&gt;WITH&lt;/literal&gt; clause
-      can also include &lt;literal&gt;OIDS=TRUE&lt;/literal&gt; (or just &lt;literal&gt;OIDS&lt;/literal&gt;)
-      to specify that rows of the new table
-      should have OIDs (object identifiers) assigned to them, or
-      &lt;literal&gt;OIDS=FALSE&lt;/literal&gt; to specify that the rows should not have OIDs.
-      See &lt;xref linkend="sql-createtable"/&gt; for more information.
+      information.   For backward-compatibility the &lt;literal&gt;WITH&lt;/literal&gt;
+      clause for a table can also include &lt;literal&gt;OIDS=FALSE&lt;/literal&gt; to
+      specify that rows of the new table should contain no OIDs (object
+      identifiers), &lt;literal&gt;OIDS=TRUE&lt;/literal&gt; is not supported anymore.
 </span>
 この句は、新しいテーブル用の格納パラメータ(省略可能)を指定します。
 詳細は<a class="xref" href="sql-createtable.html#SQL-CREATETABLE-STORAGE-PARAMETERS" title="格納パラメータ">格納パラメータ</a>を参照してください。
 <code class="literal">WITH</code>には、<code class="literal">OIDS=TRUE</code>（もしくは単なる<code class="literal">OIDS</code>）を含めて、新しいテーブルの行が行に割り当てられたOID（オブジェクト識別子）を持たなければならないことを指定することもできます。
 また、<code class="literal">OIDS=FALSE</code>を含めて、OIDを持たないことを指定することもできます。
 詳細は<a class="xref" href="sql-createtable.html" title="CREATE TABLE"><span class="refentrytitle">CREATE TABLE</span></a>を参照してください。
-     </p></dd><dt><span class="term"><code class="literal">WITH OIDS</code><br /></span><span class="term"><code class="literal">WITHOUT OIDS</code></span></dt><dd><p>
+     </p></dd><dt><span class="term"><code class="literal">WITHOUT OIDS</code></span></dt><dd><p>
 <span class="original">
-      These are obsolescent syntaxes equivalent to &lt;literal&gt;WITH (OIDS)&lt;/literal&gt;
-      and &lt;literal&gt;WITH (OIDS=FALSE)&lt;/literal&gt;, respectively.  If you wish to give
-      both an &lt;literal&gt;OIDS&lt;/literal&gt; setting and storage parameters, you must use
-      the &lt;literal&gt;WITH ( ... )&lt;/literal&gt; syntax; see above.
+      This is backward-compatible syntax for declaring a table
+      &lt;literal&gt;WITHOUT OIDS&lt;/literal&gt;, creating a table &lt;literal&gt;WITH
+      OIDS&lt;/literal&gt; is not supported anymore.
 </span>
 これらは古い構文で、それぞれ<code class="literal">WITH (OIDS)</code>と<code class="literal">WITH (OIDS=FALSE)</code>と同じです。
 <code class="literal">OIDS</code>と格納パラメータの設定の両方を指定したい場合、上記の<code class="literal">WITH ( ... )</code>構文を使用しなければなりません。
@@ -180,16 +184,6 @@ CREATE [ [ GLOBAL | LOCAL ] { TEMPORARY | TEMP } | UNLOGGED ] TABLE [ IF NOT EXI
 </span>
 このコマンドは、<a class="xref" href="sql-selectinto.html" title="SELECT INTO"><span class="refentrytitle">SELECT INTO</span></a>と同等の機能を持ちますが、<code class="command">SELECT INTO</code>構文の他の使用方法と混乱する可能性が少ないため、こちらを使用する方が良いでしょう。
 さらに、<code class="command">CREATE TABLE AS</code>は、<code class="command">SELECT INTO</code>が提供する機能のスーパーセットを提供します。
-  </p><p>
-<span class="original">
-   The &lt;command&gt;CREATE TABLE AS&lt;/command&gt; command allows the user to
-   explicitly specify whether OIDs should be included. If the
-   presence of OIDs is not explicitly specified,
-   the &lt;xref linkend="guc-default-with-oids"/&gt; configuration variable is
-   used.
-</span>
-<code class="command">CREATE TABLE AS</code>コマンドでは、OIDを含めるかどうかを明示的に指定できます。
-OIDの有無を明示していない場合、設定変数<a class="xref" href="runtime-config-compatible.html#GUC-DEFAULT-WITH-OIDS">default_with_oids</a>が使用されます。
   </p></div><div class="refsect1" id="id-1.9.3.86.8"><h2>例</h2><span class="original">
   &lt;title&gt;Examples&lt;/title&gt;
 </span><p>
@@ -218,7 +212,7 @@ CREATE TABLE films2 AS
 <span class="original">
    Create a new temporary table &lt;literal&gt;films_recent&lt;/literal&gt;, consisting of
    only recent entries from the table &lt;literal&gt;films&lt;/literal&gt;, using a
-   prepared statement.  The new table has OIDs and will be dropped at commit:
+   prepared statement.  The new table will be dropped at commit:
 </span>
 プリペアド文を使用して、<code class="literal">films</code>内の最近の項目のみから構成される一時テーブル<code class="literal">films_recent</code>を作成します。
 この新しいテーブルはOIDを持ち、コミット時に削除されます。
@@ -226,7 +220,7 @@ CREATE TABLE films2 AS
 </p><pre class="programlisting">
 PREPARE recentfilms(date) AS
   SELECT * FROM films WHERE date_prod &gt; $1;
-CREATE TEMP TABLE films_recent WITH (OIDS) ON COMMIT DROP AS
+CREATE TEMP TABLE films_recent ON COMMIT DROP AS
   EXECUTE recentfilms('2002-01-01');
 </pre></div><div class="refsect1" id="id-1.9.3.86.9"><h2>互換性</h2><span class="original">
   &lt;title&gt;Compatibility&lt;/title&gt;
@@ -261,7 +255,7 @@ CREATE TEMP TABLE films_recent WITH (OIDS) ON COMMIT DROP AS
      </p></li><li class="listitem"><p>
 <span class="original">
       The &lt;literal&gt;WITH&lt;/literal&gt; clause is a &lt;productname&gt;PostgreSQL&lt;/productname&gt;
-      extension; neither storage parameters nor OIDs are in the standard.
+      extension; storage parameters are not in the standard.
 </span>
 <code class="literal">WITH</code>句は<span class="productname">PostgreSQL</span>の拡張です。
 格納パラメータもOIDも標準にはありません。

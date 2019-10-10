@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>CREATE MATERIALIZED VIEW</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="sql-createlanguage.html" title="CREATE LANGUAGE" /><link rel="next" href="sql-createoperator.html" title="CREATE OPERATOR" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.5文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="sql-commands.html" title="SQLコマンド">SQLコマンド</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 11.5 &#10;                      sql-creatematerializedview.html">誤訳等の報告
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>CREATE MATERIALIZED VIEW</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="sql-createlanguage.html" title="CREATE LANGUAGE" /><link rel="next" href="sql-createoperator.html" title="CREATE OPERATOR" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 12.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="sql-commands.html" title="SQLコマンド">SQLコマンド</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 12.0 &#10;                      sql-creatematerializedview.html">誤訳等の報告
                     </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="sql-createlanguage.html" title="CREATE LANGUAGE">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="sql-commands.html" title="SQLコマンド">上へ</a></td><td width="60%" align="center">CREATE MATERIALIZED VIEW</td><td width="20%" align="right"> <a accesskey="n" href="sql-createoperator.html" title="CREATE OPERATOR">次へ</a></td></tr></table><hr /></div><div class="refentry" id="SQL-CREATEMATERIALIZEDVIEW"><div class="titlepage"></div><a id="id-1.9.3.71.1" class="indexterm"></a><div class="refnamediv"><h2><span class="refentrytitle">CREATE MATERIALIZED VIEW</span></h2><p>CREATE MATERIALIZED VIEW<span class="original">
   &lt;refpurpose&gt;define a new materialized view&lt;/refpurpose&gt;
 </span> — 新しいマテリアライズドビューを定義する</p></div><div class="refsynopsisdiv"><h2>概要</h2><pre class="synopsis">
 CREATE MATERIALIZED VIEW [ IF NOT EXISTS ] <em class="replaceable"><code>table_name</code></em>
     [ (<em class="replaceable"><code>column_name</code></em> [, ...] ) ]
+    [ USING <em class="replaceable"><code>method</code></em> ]
     [ WITH ( <em class="replaceable"><code>storage_parameter</code></em> [= <em class="replaceable"><code>value</code></em>] [, ... ] ) ]
     [ TABLESPACE <em class="replaceable"><code>tablespace_name</code></em> ]
     AS <em class="replaceable"><code>query</code></em>
@@ -27,8 +28,7 @@ CREATE MATERIALIZED VIEW [ IF NOT EXISTS ] <em class="replaceable"><code>table_n
    &lt;command&gt;CREATE TABLE AS&lt;/command&gt;, except that it also remembers the query used
    to initialize the view, so that it can be refreshed later upon demand.
    A materialized view has many of the same properties as a table, but there
-   is no support for temporary materialized views or automatic generation of
-   OIDs.
+   is no support for temporary materialized views.
 </span>
 <code class="command">CREATE MATERIALIZED VIEW</code>は<code class="command">CREATE TABLE AS</code>と似ていますが、必要に応じて後で更新できるように、ビューの初期化時に使用された問い合わせを記憶する点が異なります。
 マテリアライズドビューはテーブルと同じ属性を多く持ちますが、一時的なマテリアライズドビューやOIDの自動生成をサポートしていません。
@@ -57,6 +57,13 @@ CREATE MATERIALIZED VIEW [ IF NOT EXISTS ] <em class="replaceable"><code>table_n
 </span>
 新しいマテリアライズドビューの列の名前です。
 列名が提供されていない場合の列名は、問い合わせの出力列名から取られます。
+     </p></dd><dt><span class="term"><code class="literal">USING <em class="replaceable"><code>method</code></em></code></span></dt><dd><p>
+      This optional clause specifies the table access method to use to store
+      the contents for the new materialized view; the method needs be an
+      access method of type <code class="literal">TABLE</code>. See <a class="xref" href="tableam.html" title="第60章 Table Access Method Interface Definition">第60章</a> for more information.  If this option is not
+      specified, the default table access method is chosen for the new
+      materialized view. See <a class="xref" href="runtime-config-client.html#GUC-DEFAULT-TABLE-ACCESS-METHOD">default_table_access_method</a>
+      for more information.
      </p></dd><dt><span class="term"><code class="literal">WITH ( <em class="replaceable"><code>storage_parameter</code></em> [= <em class="replaceable"><code>value</code></em>] [, ... ] )</code></span></dt><dd><p>
 <span class="original">
       This clause specifies optional storage parameters for the new
@@ -64,7 +71,7 @@ CREATE MATERIALIZED VIEW [ IF NOT EXISTS ] <em class="replaceable"><code>table_n
       endterm="sql-createtable-storage-parameters-title"/&gt; for more
       information.  All parameters supported for &lt;literal&gt;CREATE
       TABLE&lt;/literal&gt; are also supported for &lt;literal&gt;CREATE MATERIALIZED
-      VIEW&lt;/literal&gt; with the exception of &lt;literal&gt;OIDS&lt;/literal&gt;.
+      VIEW&lt;/literal&gt;.
       See &lt;xref linkend="sql-createtable"/&gt; for more information.
 </span>
 この句は、新しいマテリアライズドビューの格納パラメータ(省略可能)を指定します。

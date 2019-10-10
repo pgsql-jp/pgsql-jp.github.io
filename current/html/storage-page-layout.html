@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>68.6. データベースページのレイアウト</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="storage-init.html" title="68.5. 初期化フォーク" /><link rel="next" href="bki.html" title="第69章 システムカタログの宣言と初期内容" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.5文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="storage.html" title="第68章 データベースの物理的な格納">第68章 データベースの物理的な格納</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 11.5 &#10;                      storage-page-layout.html">誤訳等の報告
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>68.6. データベースページのレイアウト</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="storage-init.html" title="68.5. 初期化フォーク" /><link rel="next" href="bki.html" title="第69章 システムカタログの宣言と初期内容" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 12.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="storage.html" title="第68章 データベースの物理的な格納">第68章 データベースの物理的な格納</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 12.0 &#10;                      storage-page-layout.html">誤訳等の報告
                     </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="storage-init.html" title="68.5. 初期化フォーク">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="storage.html" title="第68章 データベースの物理的な格納">上へ</a></td><td width="60%" align="center">68.6. データベースページのレイアウト</td><td width="20%" align="right"> <a accesskey="n" href="bki.html" title="第69章 システムカタログの宣言と初期内容">次へ</a></td></tr></table><hr /></div><div class="sect1" id="STORAGE-PAGE-LAYOUT"><div class="titlepage"><div><div><h2 class="title" style="clear: both">68.6. データベースページのレイアウト</h2></div></div></div><span class="original">
 &lt;title&gt;Database Page Layout&lt;/title&gt;
 </span><p>
@@ -7,16 +7,17 @@
 This section provides an overview of the page format used within
 &lt;productname&gt;PostgreSQL&lt;/productname&gt; tables and indexes.&lt;footnote&gt;
   &lt;para&gt;
-    Actually, index access methods need not use this page format.
-    All the existing index methods do use this basic format,
-    but the data kept on index metapages usually doesn't follow
+    Actually, use of this page format is not required for either table or
+    index access methods. The &lt;literal&gt;heap&lt;/literal&gt; table access method
+    always uses this format.  All the existing index methods also use the
+    basic format, but the data kept on index metapages usually doesn't follow
     the item layout rules.
   &lt;/para&gt;
 &lt;/footnote&gt;
 Sequences and &lt;acronym&gt;TOAST&lt;/acronym&gt; tables are formatted just like a regular table.
 </span>
 本節では<span class="productname">PostgreSQL</span>のテーブルおよびインデックスで使われるページ書式の概略について説明します。
-<a href="#ftn.id-1.10.20.8.2.2" class="footnote"><sup class="footnote" id="id-1.10.20.8.2.2">[14]</sup></a>
+<a href="#ftn.id-1.10.21.8.2.2" class="footnote"><sup class="footnote" id="id-1.10.21.8.2.2">[15]</sup></a>
 <acronym class="acronym">TOAST</acronym>のテーブルとシーケンスは、通常のテーブルと同様に整形されています。
 </p><p>
 <span class="original">
@@ -172,7 +173,10 @@ Item
 例えば、B-treeインデックスは、そのページの両隣のページへのリンク、ならびに、インデックス構造体に関連したその他の何らかのデータを持ちます。
 通常のテーブルではこれはまったく使用されません（ページサイズを同じにするために<code class="structfield">pd_special</code>を設定することで示されます）。
 
- </p><div class="sect2" id="STORAGE-TUPLE-LAYOUT"><div class="titlepage"><div><div><h3 class="title">68.6.1. テーブル行のレイアウト</h3></div></div></div><span class="original">
+ </p><p>
+  <a class="xref" href="storage-page-layout.html#STORAGE-PAGE-LAYOUT-FIGURE" title="図68.1 Page Layout">図 68.1</a> illustrates how these parts are
+  laid out in a page.
+ </p><div class="figure" id="STORAGE-PAGE-LAYOUT-FIGURE"><p class="title"><strong>図68.1 Page Layout</strong></p><div class="figure-contents"><div class="mediaobject"><object type="image/svg+xml" data="pagelayout.svg" width="100%"></object></div></div></div><br class="figure-break" /><div class="sect2" id="STORAGE-TUPLE-LAYOUT"><div class="titlepage"><div><div><h3 class="title">68.6.1. テーブル行のレイアウト</h3></div></div></div><span class="original">
  &lt;title&gt;Table Row Layout&lt;/title&gt;
 </span><p>
 
@@ -189,10 +193,11 @@ Item
   only present if the &lt;firstterm&gt;HEAP_HASNULL&lt;/firstterm&gt; bit is set in
   &lt;structfield&gt;t_infomask&lt;/structfield&gt;. If it is present it begins just after
   the fixed header and occupies enough bytes to have one bit per data column
-  (that is, &lt;structfield&gt;t_natts&lt;/structfield&gt; bits altogether). In this list of bits, a
+  (that is, the number of bits that equals the attribute count in
+  &lt;structfield&gt;t_infomask2&lt;/structfield&gt;). In this list of bits, a
   1 bit indicates not-null, a 0 bit is a null.  When the bitmap is not
   present, all columns are assumed not-null.
-  The object ID is only present if the &lt;firstterm&gt;HEAP_HASOID&lt;/firstterm&gt; bit
+  The object ID is only present if the &lt;firstterm&gt;HEAP_HASOID_OLD&lt;/firstterm&gt; bit
   is set in &lt;structfield&gt;t_infomask&lt;/structfield&gt;.  If present, it appears just
   before the &lt;structfield&gt;t_hoff&lt;/structfield&gt; boundary.  Any padding needed to make
   &lt;structfield&gt;t_hoff&lt;/structfield&gt; a MAXALIGN multiple will appear between the null
@@ -263,7 +268,7 @@ NULLビットマップは<em class="firstterm">HEAP_HASNULL</em>ビットが<cod
 フラグによって、データは行内、または別のテーブル（TOAST）のいずれかとなったり、圧縮済みとなったりします
 （<a class="xref" href="storage-toast.html" title="68.2. TOAST">68.2</a>を参照してください）。
 
- </p></div><div class="footnotes"><br /><hr style="width:100; text-align:left;margin-left: 0" /><div id="ftn.id-1.10.20.8.2.2" class="footnote"><p><a href="#id-1.10.20.8.2.2" class="para"><sup class="para">[14] </sup></a>
+ </p></div><div class="footnotes"><br /><hr style="width:100; text-align:left;margin-left: 0" /><div id="ftn.id-1.10.21.8.2.2" class="footnote"><p><a href="#id-1.10.21.8.2.2" class="para"><sup class="para">[15] </sup></a>
 実際にはインデックスアクセスメソッドはこのページ書式を使用する必要はありません。
 既存のすべてのインデックスメソッドがこの基本書式を使用しています。
 しかし、インデックスメタページに保持されるデータは通常、アイテムレイアウト規則に正確には従っていません。

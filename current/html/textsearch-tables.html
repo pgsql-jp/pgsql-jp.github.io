@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>12.2. テーブルとインデックス</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="textsearch-intro.html" title="12.1. 導入" /><link rel="next" href="textsearch-controls.html" title="12.3. テキスト検索の制御" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.5文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="textsearch.html" title="第12章 全文検索">第12章 全文検索</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 11.5 &#10;                      textsearch-tables.html">誤訳等の報告
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>12.2. テーブルとインデックス</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="textsearch-intro.html" title="12.1. 導入" /><link rel="next" href="textsearch-controls.html" title="12.3. テキスト検索の制御" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 12.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="textsearch.html" title="第12章 全文検索">第12章 全文検索</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 12.0 &#10;                      textsearch-tables.html">誤訳等の報告
                     </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="textsearch-intro.html" title="12.1. 導入">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="textsearch.html" title="第12章 全文検索">上へ</a></td><td width="60%" align="center">12.2. テーブルとインデックス</td><td width="20%" align="right"> <a accesskey="n" href="textsearch-controls.html" title="12.3. テキスト検索の制御">次へ</a></td></tr></table><hr /></div><div class="sect1" id="TEXTSEARCH-TABLES"><div class="titlepage"><div><div><h2 class="title" style="clear: both">12.2. テーブルとインデックス</h2></div></div></div><span class="original">
   &lt;title&gt;Tables and Indexes&lt;/title&gt;
 </span><p>
@@ -154,7 +154,9 @@ CREATE INDEX pgweb_idx ON pgweb USING GIN (to_tsvector('english', title || ' ' |
    </p><p>
 <span class="original">
     Another approach is to create a separate &lt;type&gt;tsvector&lt;/type&gt; column
-    to hold the output of &lt;function&gt;to_tsvector&lt;/function&gt;.  This example is a
+    to hold the output of &lt;function&gt;to_tsvector&lt;/function&gt;.  To keep this
+    column automatically up to date with its source data, use a stored
+    generated column.  This example is a
     concatenation of &lt;literal&gt;title&lt;/literal&gt; and &lt;literal&gt;body&lt;/literal&gt;,
     using &lt;function&gt;coalesce&lt;/function&gt; to ensure that one field will still be
     indexed when the other is &lt;literal&gt;NULL&lt;/literal&gt;:
@@ -162,9 +164,9 @@ CREATE INDEX pgweb_idx ON pgweb USING GIN (to_tsvector('english', title || ' ' |
 別の方法として、<code class="function">to_tsvector</code>の出力を保持する別の<code class="type">tsvector</code>列を作る方法があります。この例では、<code class="literal">title</code>と<code class="literal">body</code>を連結、<code class="function">coalesce</code>を使って、一つのフィールドが<code class="literal">NULL</code>であっても他のフィールドがインデックス付けされることを保証しています。
 
 </p><pre class="programlisting">
-ALTER TABLE pgweb ADD COLUMN textsearchable_index_col tsvector;
-UPDATE pgweb SET textsearchable_index_col =
-     to_tsvector('english', coalesce(title,'') || ' ' || coalesce(body,''));
+ALTER TABLE pgweb
+    ADD COLUMN textsearchable_index_col tsvector
+               GENERATED ALWAYS AS (to_tsvector('english', coalesce(title, '') || ' ' || coalesce(body, ''))) STORED;
 </pre><p>
 
 <span class="original">
@@ -188,15 +190,6 @@ WHERE textsearchable_index_col @@ to_tsquery('create &amp; table')
 ORDER BY last_mod_date DESC
 LIMIT 10;
 </pre><p>
-   </p><p>
-<span class="original">
-    When using a separate column to store the &lt;type&gt;tsvector&lt;/type&gt;
-    representation,
-    it is necessary to create a trigger to keep the &lt;type&gt;tsvector&lt;/type&gt;
-    column current anytime &lt;literal&gt;title&lt;/literal&gt; or &lt;literal&gt;body&lt;/literal&gt; changes.
-    &lt;xref linkend="textsearch-update-triggers"/&gt; explains how to do that.
-</span>
-<code class="type">tsvector</code>形式を保存するために別の列を使う場合、<code class="literal">title</code>あるいは<code class="literal">body</code>が変更されたら<code class="type">tsvector</code>列を最新の状態にいつでも維持するためにトリガを作る必要があります。<a class="xref" href="textsearch-features.html#TEXTSEARCH-UPDATE-TRIGGERS" title="12.4.3. 自動更新のためのトリガ">12.4.3</a>にその方法が説明されています。
    </p><p>
 <span class="original">
     One advantage of the separate-column approach over an expression index

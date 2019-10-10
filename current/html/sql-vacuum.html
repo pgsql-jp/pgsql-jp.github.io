@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>VACUUM</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="sql-update.html" title="UPDATE" /><link rel="next" href="sql-values.html" title="VALUES" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.5文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="sql-commands.html" title="SQLコマンド">SQLコマンド</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 11.5 &#10;                      sql-vacuum.html">誤訳等の報告
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>VACUUM</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="sql-update.html" title="UPDATE" /><link rel="next" href="sql-values.html" title="VALUES" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 12.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="sql-commands.html" title="SQLコマンド">SQLコマンド</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 12.0 &#10;                      sql-vacuum.html">誤訳等の報告
                     </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="sql-update.html" title="UPDATE">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="sql-commands.html" title="SQLコマンド">上へ</a></td><td width="60%" align="center">VACUUM</td><td width="20%" align="right"> <a accesskey="n" href="sql-values.html" title="VALUES">次へ</a></td></tr></table><hr /></div><div class="refentry" id="SQL-VACUUM"><div class="titlepage"></div><a id="id-1.9.3.183.1" class="indexterm"></a><div class="refnamediv"><h2><span class="refentrytitle">VACUUM</span></h2><p>VACUUM<span class="original">
   &lt;refpurpose&gt;garbage-collect and optionally analyze a database&lt;/refpurpose&gt;
 </span> — 
@@ -13,11 +13,14 @@ VACUUM [ FULL ] [ FREEZE ] [ VERBOSE ] [ ANALYZE ] [ <em class="replaceable"><co
 </span>
 <span class="phrase">ここで<em class="replaceable"><code>option</code></em>は以下の一つであり、</span>
 
-    FULL
-    FREEZE
-    VERBOSE
-    ANALYZE
-    DISABLE_PAGE_SKIPPING
+    FULL [ <em class="replaceable"><code>boolean</code></em> ]
+    FREEZE [ <em class="replaceable"><code>boolean</code></em> ]
+    VERBOSE [ <em class="replaceable"><code>boolean</code></em> ]
+    ANALYZE [ <em class="replaceable"><code>boolean</code></em> ]
+    DISABLE_PAGE_SKIPPING [ <em class="replaceable"><code>boolean</code></em> ]
+    SKIP_LOCKED [ <em class="replaceable"><code>boolean</code></em> ]
+    INDEX_CLEANUP [ <em class="replaceable"><code>boolean</code></em> ]
+    TRUNCATE [ <em class="replaceable"><code>boolean</code></em> ]
 
 <span class="original">
 &lt;phrase&gt;and &lt;replaceable class="parameter"&gt;table_and_columns&lt;/replaceable&gt; is:&lt;/phrase&gt;
@@ -153,6 +156,52 @@ VACUUM [ FULL ] [ FREEZE ] [ VERBOSE ] [ ANALYZE ] [ <em class="replaceable"><co
 さらに、積極的なバキュームを実行している場合を除き、一部のページは、他のセッションがその使用を終了するのを待つのを避けるため、スキップされます。
 このオプションは、ページをスキップする動作をすべて無効にします。
 これは可視性マップの内容が怪しいときにのみ使用されることを意図したもので、それはデータベースの破損を引き起こすようなハードウェアあるいはソフトウェアの障害がある場合にのみ発生します。
+     </p></dd><dt><span class="term"><code class="literal">SKIP_LOCKED</code></span></dt><dd><p>
+      Specifies that <code class="command">VACUUM</code> should not wait for any
+      conflicting locks to be released when beginning work on a relation:
+      if a relation cannot be locked immediately without waiting, the relation
+      is skipped.  Note that even with this option,
+      <code class="command">VACUUM</code> may still block when opening the relation's
+      indexes.  Additionally, <code class="command">VACUUM ANALYZE</code> may still
+      block when acquiring sample rows from partitions, table inheritance
+      children, and some types of foreign tables.  Also, while
+      <code class="command">VACUUM</code> ordinarily processes all partitions of
+      specified partitioned tables, this option will cause
+      <code class="command">VACUUM</code> to skip all partitions if there is a
+      conflicting lock on the partitioned table.
+     </p></dd><dt><span class="term"><code class="literal">INDEX_CLEANUP</code></span></dt><dd><p>
+      Specifies that <code class="command">VACUUM</code> should attempt to remove
+      index entries pointing to dead tuples.  This is normally the desired
+      behavior and is the default unless the
+      <code class="literal">vacuum_index_cleanup</code> option has been set to false
+      for the table to be vacuumed.  Setting this option to false may be
+      useful when it is necessary to make vacuum run as quickly as possible,
+      for example to avoid imminent transaction ID wraparound
+      (see <a class="xref" href="routine-vacuuming.html#VACUUM-FOR-WRAPAROUND" title="24.1.5. トランザクションIDの周回エラーの防止">24.1.5</a>).  However, if index
+      cleanup is not performed regularly, performance may suffer, because
+      as the table is modified, indexes will accumulate dead tuples
+      and the table itself will accumulate dead line pointers that cannot be
+      removed until index cleanup is completed.  This option has no effect
+      for tables that do not have an index and is ignored if the
+      <code class="literal">FULL</code> option is used.
+     </p></dd><dt><span class="term"><code class="literal">TRUNCATE</code></span></dt><dd><p>
+      Specifies that <code class="command">VACUUM</code> should attempt to
+      truncate off any empty pages at the end of the table and allow
+      the disk space for the truncated pages to be returned to
+      the operating system. This is normally the desired behavior
+      and is the default unless the <code class="literal">vacuum_truncate</code>
+      option has been set to false for the table to be vacuumed.
+      Setting this option to false may be useful to avoid
+      <code class="literal">ACCESS EXCLUSIVE</code> lock on the table that
+      the truncation requires. This option is ignored if the
+      <code class="literal">FULL</code> option is used.
+     </p></dd><dt><span class="term"><em class="replaceable"><code>boolean</code></em></span></dt><dd><p>
+      Specifies whether the selected option should be turned on or off.
+      You can write <code class="literal">TRUE</code>, <code class="literal">ON</code>, or
+      <code class="literal">1</code> to enable the option, and <code class="literal">FALSE</code>,
+      <code class="literal">OFF</code>, or <code class="literal">0</code> to disable it.  The
+      <em class="replaceable"><code>boolean</code></em> value can also
+      be omitted, in which case <code class="literal">TRUE</code> is assumed.
      </p></dd><dt><span class="term"><em class="replaceable"><code>table_name</code></em></span></dt><dd><p>
 <span class="original">
       The name (optionally schema-qualified) of a specific table or

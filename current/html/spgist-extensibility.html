@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>65.3. 拡張性</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="spgist-builtin-opclasses.html" title="65.2. 組み込み演算子クラス" /><link rel="next" href="spgist-implementation.html" title="65.4. 実装" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.5文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="spgist.html" title="第65章 SP-GiSTインデックス">第65章 SP-GiSTインデックス</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 11.5 &#10;                      spgist-extensibility.html">誤訳等の報告
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>65.3. 拡張性</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="spgist-builtin-opclasses.html" title="65.2. 組み込み演算子クラス" /><link rel="next" href="spgist-implementation.html" title="65.4. 実装" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 12.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="spgist.html" title="第65章 SP-GiSTインデックス">第65章 SP-GiSTインデックス</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 12.0 &#10;                      spgist-extensibility.html">誤訳等の報告
                     </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="spgist-builtin-opclasses.html" title="65.2. 組み込み演算子クラス">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="spgist.html" title="第65章 SP-GiSTインデックス">上へ</a></td><td width="60%" align="center">65.3. 拡張性</td><td width="20%" align="right"> <a accesskey="n" href="spgist-implementation.html" title="65.4. 実装">次へ</a></td></tr></table><hr /></div><div class="sect1" id="SPGIST-EXTENSIBILITY"><div class="titlepage"><div><div><h2 class="title" style="clear: both">65.3. 拡張性</h2></div></div></div><span class="original">
  &lt;title&gt;Extensibility&lt;/title&gt;
 </span><p>
@@ -616,7 +616,10 @@ typedef struct spgInnerConsistentIn
 {
 <span class="original">
     ScanKey     scankeys;       /* array of operators and comparison values */
-    int         nkeys;          /* length of array */
+    ScanKey     orderbys;       /* array of ordering operators and comparison
+                                 * values */
+    int         nkeys;          /* length of scankeys array */
+    int         norderbys;      /* length of orderbys array */
 </span>
     ScanKey     scankeys;       /* 演算子と比較する値の配列 */
     int         nkeys;          /* 配列の長さ */
@@ -658,6 +661,7 @@ typedef struct spgInnerConsistentOut
     int        *levelAdds;      /* increment level by this much for each */
     Datum      *reconstructedValues;    /* associated reconstructed values */
     void      **traversalValues;        /* opclass-specific traverse values */
+    double    **distances;              /* associated distances */
 </span>
     int         nNodes;         /* 訪れるべき子ノードの数 */
     int        *nodeNumbers;    /* ノードの配列でのそのインデックス */
@@ -679,6 +683,8 @@ typedef struct spgInnerConsistentOut
        In particular it is not necessary to check &lt;structfield&gt;sk_flags&lt;/structfield&gt; to
        see if the comparison value is NULL, because the SP-GiST core code
        will filter out such conditions.
+       The array &lt;structfield&gt;orderbys&lt;/structfield&gt;, of length &lt;structfield&gt;norderbys&lt;/structfield&gt;,
+       describes ordering operators (if any) in the same manner.
        &lt;structfield&gt;reconstructedValue&lt;/structfield&gt; is the value reconstructed for the
        parent tuple; it is &lt;literal&gt;(Datum) 0&lt;/literal&gt; at the root level or if the
        &lt;function&gt;inner_consistent&lt;/function&gt; function did not provide a value at the
@@ -735,6 +741,10 @@ typedef struct spgInnerConsistentOut
        of &lt;structname&gt;spgConfigOut&lt;/structname&gt;.&lt;structfield&gt;leafType&lt;/structfield&gt; type
        reconstructed for each child node to be visited; otherwise, leave
        &lt;structfield&gt;reconstructedValues&lt;/structfield&gt; as NULL.
+       If ordered search is performed, set &lt;structfield&gt;distances&lt;/structfield&gt;
+       to an array of distance values according to &lt;structfield&gt;orderbys&lt;/structfield&gt;
+       array (nodes with lowest distances will be processed first).  Leave it
+       NULL otherwise.
        If it is desired to pass down additional out-of-band information
        (&lt;quote&gt;traverse values&lt;/quote&gt;) to lower levels of the tree search,
        set &lt;structfield&gt;traversalValues&lt;/structfield&gt; to an array of the appropriate
@@ -743,6 +753,7 @@ typedef struct spgInnerConsistentOut
        Note that the &lt;function&gt;inner_consistent&lt;/function&gt; function is
        responsible for palloc'ing the
        &lt;structfield&gt;nodeNumbers&lt;/structfield&gt;, &lt;structfield&gt;levelAdds&lt;/structfield&gt;,
+       &lt;structfield&gt;distances&lt;/structfield&gt;,
        &lt;structfield&gt;reconstructedValues&lt;/structfield&gt;, and
        &lt;structfield&gt;traversalValues&lt;/structfield&gt; arrays in the current memory context.
        However, any output traverse values pointed to by
@@ -788,7 +799,10 @@ typedef struct spgLeafConsistentIn
 {
 <span class="original">
     ScanKey     scankeys;       /* array of operators and comparison values */
-    int         nkeys;          /* length of array */
+    ScanKey     orderbys;       /* array of ordering operators and comparison
+                                 * values */
+    int         nkeys;          /* length of scankeys array */
+    int         norderbys;      /* length of orderbys array */
 </span>
     ScanKey     scankeys;       /* 演算子と比較する値の配列 */
     int         nkeys;          /* 配列の長さ */
@@ -813,8 +827,10 @@ typedef struct spgLeafConsistentIn
 typedef struct spgLeafConsistentOut
 {
 <span class="original">
-    Datum       leafValue;      /* reconstructed original data, if any */
-    bool        recheck;        /* set true if operator must be rechecked */
+    Datum       leafValue;        /* reconstructed original data, if any */
+    bool        recheck;          /* set true if operator must be rechecked */
+    bool        recheckDistances; /* set true if distances must be rechecked */
+    double     *distances;        /* associated distances */
 </span>
     Datum       leafValue;      /* もしあれば、再構築された元のデータ */
     bool        recheck;        /* 演算子を再チェックする必要があればtrue */
@@ -833,6 +849,8 @@ typedef struct spgLeafConsistentOut
        In particular it is not necessary to check &lt;structfield&gt;sk_flags&lt;/structfield&gt; to
        see if the comparison value is NULL, because the SP-GiST core code
        will filter out such conditions.
+       The array &lt;structfield&gt;orderbys&lt;/structfield&gt;, of length &lt;structfield&gt;norderbys&lt;/structfield&gt;,
+       describes the ordering operators in the same manner.
        &lt;structfield&gt;reconstructedValue&lt;/structfield&gt; is the value reconstructed for the
        parent tuple; it is &lt;literal&gt;(Datum) 0&lt;/literal&gt; at the root level or if the
        &lt;function&gt;inner_consistent&lt;/function&gt; function did not provide a value at the
@@ -872,6 +890,12 @@ typedef struct spgLeafConsistentOut
        &lt;structfield&gt;recheck&lt;/structfield&gt; may be set to &lt;literal&gt;true&lt;/literal&gt; if the match
        is uncertain and so the operator(s) must be re-applied to the actual
        heap tuple to verify the match.
+       If ordered search is performed, set &lt;structfield&gt;distances&lt;/structfield&gt;
+       to an array of distance values according to &lt;structfield&gt;orderbys&lt;/structfield&gt;
+       array.  Leave it NULL otherwise.  If at least one of returned distances
+       is not exact, set &lt;structfield&gt;recheckDistances&lt;/structfield&gt; to true.
+       In this case, the executor will calculate the exact distances after
+       fetching the tuple from the heap, and will reorder the tuples if needed.
 </span>
 この関数は、リーフタプルが問い合わせにマッチすれば<code class="literal">true</code>を返し、マッチしなければ<code class="literal">false</code>を返します。
 <code class="literal">true</code>の場合、<code class="structfield">returnData</code>が<code class="literal">true</code>であれば、<code class="structfield">leafValue</code>は、このリーフタプルにインデックス付けするために元々提供された<code class="structname">spgConfigIn</code>.<code class="structfield">attType</code>型の値にセットされなければなりません。

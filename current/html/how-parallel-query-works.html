@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>15.1. パラレルクエリはどのように動くのか</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="parallel-query.html" title="第15章 パラレルクエリ" /><link rel="next" href="when-can-parallel-query-be-used.html" title="15.2. どのような時にパラレルクエリは使用できるのか？" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.5文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="parallel-query.html" title="第15章 パラレルクエリ">第15章 パラレルクエリ</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 11.5 &#10;                      how-parallel-query-works.html">誤訳等の報告
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>15.1. パラレルクエリはどのように動くのか</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="parallel-query.html" title="第15章 パラレルクエリ" /><link rel="next" href="when-can-parallel-query-be-used.html" title="15.2. どのような時にパラレルクエリは使用できるのか？" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 12.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="parallel-query.html" title="第15章 パラレルクエリ">第15章 パラレルクエリ</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 12.0 &#10;                      how-parallel-query-works.html">誤訳等の報告
                     </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="parallel-query.html" title="第15章 パラレルクエリ">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="parallel-query.html" title="第15章 パラレルクエリ">上へ</a></td><td width="60%" align="center">15.1. パラレルクエリはどのように動くのか</td><td width="20%" align="right"> <a accesskey="n" href="when-can-parallel-query-be-used.html" title="15.2. どのような時にパラレルクエリは使用できるのか？">次へ</a></td></tr></table><hr /></div><div class="sect1" id="HOW-PARALLEL-QUERY-WORKS"><div class="titlepage"><div><div><h2 class="title" style="clear: both">15.1. パラレルクエリはどのように動くのか</h2></div></div></div><span class="original">
   &lt;title&gt;How Parallel Query Works&lt;/title&gt;
 </span><p>
@@ -34,8 +34,6 @@ EXPLAIN SELECT * FROM pgbench_accounts WHERE filler LIKE '%x%';
     query accesses only one table, so there is only one plan node other than
     the &lt;literal&gt;Gather&lt;/literal&gt; node itself; since that plan node is a child of the
     &lt;literal&gt;Gather&lt;/literal&gt; node, it will run in parallel.
-   &lt;/para&gt;
-
 </span>
 どの場合でも、<code class="literal">Gather</code>または<code class="literal">Gather Merge</code>ノードは、正確に一つの子ノードを持ちます。
 子プランは、プランの中で並列に実行される部分です。
@@ -66,7 +64,7 @@ EXPLAIN SELECT * FROM pgbench_accounts WHERE filler LIKE '%x%';
     requests fewer workers.
 </span>
 <a class="link" href="using-explain.html" title="14.1. EXPLAINの利用">EXPLAINを使って</a>、プランナが選択したワーカーの数を見ることができます。
-クエリの実行中に<code class="literal">Gather</code>ノードに到達すると、ユーザのセッションに対応しているプロセスは、プランナが選択したワーカーと同じ数の<a class="link" href="bgworker.html" title="第48章 バックグラウンドワーカプロセス">バックグラウンドワーカープロセス</a>を要求します。
+クエリの実行中に<code class="literal">Gather</code>ノードに到達すると、ユーザのセッションに対応しているプロセスは、プランナが選択したワーカーと同じ数の<a class="link" href="bgworker.html" title="第47章 バックグラウンドワーカプロセス">バックグラウンドワーカープロセス</a>を要求します。
 プランナが使用を検討するバックグラウンドワーカーの数は、最大でも<a class="xref" href="runtime-config-resource.html#GUC-MAX-PARALLEL-WORKERS-PER-GATHER">max_parallel_workers_per_gather</a>に制限されます。
 ある時点で存在できるバックグラウンドワーカーの数は、<a class="xref" href="runtime-config-resource.html#GUC-MAX-WORKER-PROCESSES">max_worker_processes</a>と<a class="xref" href="runtime-config-resource.html#GUC-MAX-PARALLEL-WORKERS">max_parallel_workers</a>の両方を満たすように制限されます。
 ですから、あるパラレルクエリが、プラン時よりも少ない数のワーカープロセスによって実行されたり、まったくワーカープロセスなしに実行されることがあり得ます。

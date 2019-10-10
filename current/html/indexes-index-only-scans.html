@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>11.9. インデックスオンリースキャンとカバリングインデックス</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="indexes-partial.html" title="11.8. 部分インデックス" /><link rel="next" href="indexes-opclass.html" title="11.10. 演算子クラスと演算子族" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.5文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="indexes.html" title="第11章 インデックス">第11章 インデックス</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 11.5 &#10;                      indexes-index-only-scans.html">誤訳等の報告
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>11.9. インデックスオンリースキャンとカバリングインデックス</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="indexes-partial.html" title="11.8. 部分インデックス" /><link rel="next" href="indexes-opclass.html" title="11.10. 演算子クラスと演算子族" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 12.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="indexes.html" title="第11章 インデックス">第11章 インデックス</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 12.0 &#10;                      indexes-index-only-scans.html">誤訳等の報告
                     </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="indexes-partial.html" title="11.8. 部分インデックス">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="indexes.html" title="第11章 インデックス">上へ</a></td><td width="60%" align="center">11.9. インデックスオンリースキャンとカバリングインデックス</td><td width="20%" align="right"> <a accesskey="n" href="indexes-opclass.html" title="11.10. 演算子クラスと演算子族">次へ</a></td></tr></table><hr /></div><div class="sect1" id="INDEXES-INDEX-ONLY-SCANS"><div class="titlepage"><div><div><h2 class="title" style="clear: both">11.9. インデックスオンリースキャンとカバリングインデックス</h2></div></div></div><span class="original">
   &lt;title&gt;Index-Only Scans and Covering Indexes&lt;/title&gt;
 </span><a id="id-1.5.10.12.2" class="indexterm"></a><a id="id-1.5.10.12.3" class="indexterm"></a><a id="id-1.5.10.12.4" class="indexterm"></a><a id="id-1.5.10.12.5" class="indexterm"></a><p>
@@ -208,8 +208,8 @@ CREATE UNIQUE INDEX tab_x_y ON tab(x) INCLUDE (y);
    likely to not need to access the heap.  If the heap tuple must be visited
    anyway, it costs nothing more to get the column's value from there.
    Other restrictions are that expressions are not currently supported as
-   included columns, and that only B-tree indexes currently support included
-   columns.
+   included columns, and that only B-tree and GiST indexes currently support
+   included columns.
 </span>
 キー以外のペイロード列、特に幅の広い列をインデックスに追加することについては慎重になることが賢明です。
 インデックス型の最大サイズを超えるタプルをインサートしようとすると失敗します。
@@ -234,10 +234,7 @@ CREATE INDEX tab_x_y ON tab(x, y);
    the extra columns are trailing columns; making them be leading columns is
    unwise for the reasons explained in &lt;xref linkend="indexes-multicolumn"/&gt;.
    However, this method doesn't support the case where you want the index to
-   enforce uniqueness on the key column(s).  Also, explicitly marking
-   non-searchable columns as &lt;literal&gt;INCLUDE&lt;/literal&gt; columns makes the
-   index slightly smaller, because such columns need not be stored in upper
-   B-tree levels.
+   enforce uniqueness on the key column(s).
 </span>
 これは、<code class="literal">y</code>を<code class="literal">WHERE</code>句の一部で使用するつもりがなかったとしても書いています。
 余分な列が末尾の列である限り、これはうまく機能します。
@@ -245,6 +242,18 @@ CREATE INDEX tab_x_y ON tab(x, y);
 しかし、この方法では、キー列に一意性を強制するインデックスがサポートされません。
 また、検索列でない列を<code class="literal">INCLUDE</code>列として明示的にマークするとインデックスがわずかに小さくなります。
 これは、そのような列を上位B-treeレベルに格納する必要がないためです。
+  </p><p>
+   <em class="firstterm">Suffix truncation</em> always removes non-key
+   columns from upper B-Tree levels.  As payload columns, they are
+   never used to guide index scans.  The truncation process also
+   removes one or more trailing key column(s) when the remaining
+   prefix of key column(s) happens to be sufficient to describe tuples
+   on the lowest B-Tree level.  In practice, covering indexes without
+   an <code class="literal">INCLUDE</code> clause often avoid storing columns
+   that are effectively payload in the upper levels.  However,
+   explicitly defining payload columns as non-key columns
+   <span class="emphasis"><em>reliably</em></span> keeps the tuples in upper levels
+   small.
   </p><p>
 <span class="original">
    In principle, index-only scans can be used with expression indexes.

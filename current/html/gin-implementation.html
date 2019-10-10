@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>66.4. 実装</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="gin-extensibility.html" title="66.3. 拡張性" /><link rel="next" href="gin-tips.html" title="66.5. GINの小技" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.5文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="gin.html" title="第66章 GINインデックス">第66章 GINインデックス</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 11.5 &#10;                      gin-implementation.html">誤訳等の報告
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>66.4. 実装</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="gin-extensibility.html" title="66.3. 拡張性" /><link rel="next" href="gin-tips.html" title="66.5. GINの小技" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 12.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="gin.html" title="第66章 GINインデックス">第66章 GINインデックス</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 12.0 &#10;                      gin-implementation.html">誤訳等の報告
                     </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="gin-extensibility.html" title="66.3. 拡張性">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="gin.html" title="第66章 GINインデックス">上へ</a></td><td width="60%" align="center">66.4. 実装</td><td width="20%" align="right"> <a accesskey="n" href="gin-tips.html" title="66.5. GINの小技">次へ</a></td></tr></table><hr /></div><div class="sect1" id="GIN-IMPLEMENTATION"><div class="titlepage"><div><div><h2 class="title" style="clear: both">66.4. 実装</h2></div></div></div><span class="original">
  &lt;title&gt;Implementation&lt;/title&gt;
 </span><p>
@@ -10,7 +10,8 @@
   page contains either a pointer to a B-tree of heap pointers (a
   &lt;quote&gt;posting tree&lt;/quote&gt;), or a simple list of heap pointers (a &lt;quote&gt;posting
   list&lt;/quote&gt;) when the list is small enough to fit into a single index tuple along
-  with the key value.
+  with the key value.  &lt;xref linkend="gin-internals-figure"/&gt; illustrates
+  these components of a GIN index.
 </span>
 <acronym class="acronym">GIN</acronym>インデックスはキー全体に対するB-treeインデックスを持ちます。
 そのキーはそれぞれインデックス対象項目の要素（例えば配列のメンバ）であり、リーフページ内のタプルはそれぞれ、ヒープポインタのB-treeへのポインタ（<span class="quote">「<span class="quote">ポスティングツリー</span>」</span>）か、もしリストがキー値と共に単一インデックスタプルに合う程度十分に小さければヒープポインタの単純なリスト（<span class="quote">「<span class="quote">ポスティングリスト</span>」</span>）です。
@@ -33,7 +34,7 @@
 </span>
 複数列に対する<acronym class="acronym">GIN</acronym>インデックスは複合型の値（列番号、キー値）全体について単一のB-treeを構築することで実装されます。
 異なる列に対するキー値は別の型となるかもしれません。
- </p><div class="sect2" id="GIN-FAST-UPDATE"><div class="titlepage"><div><div><h3 class="title">66.4.1. GIN高速更新手法</h3></div></div></div><span class="original">
+ </p><div class="figure" id="GIN-INTERNALS-FIGURE"><p class="title"><strong>図66.1 GIN Internals</strong></p><div class="figure-contents"><div class="mediaobject"><object type="image/svg+xml" data="gin.svg" width="100%"></object></div></div></div><br class="figure-break" /><div class="sect2" id="GIN-FAST-UPDATE"><div class="titlepage"><div><div><h3 class="title">66.4.1. GIN高速更新手法</h3></div></div></div><span class="original">
   &lt;title&gt;GIN Fast Update Technique&lt;/title&gt;
 </span><p>
 <span class="original">

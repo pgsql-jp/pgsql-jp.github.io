@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>18.4. カーネルリソースの管理</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="server-start.html" title="18.3. データベースサーバの起動" /><link rel="next" href="server-shutdown.html" title="18.5. サーバのシャットダウン" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 11.5文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="runtime.html" title="第18章 サーバの準備と運用">第18章 サーバの準備と運用</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 11.5 &#10;                      kernel-resources.html">誤訳等の報告
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>18.4. カーネルリソースの管理</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="server-start.html" title="18.3. データベースサーバの起動" /><link rel="next" href="server-shutdown.html" title="18.5. サーバのシャットダウン" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 12.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="runtime.html" title="第18章 サーバの準備と運用">第18章 サーバの準備と運用</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 12.0 &#10;                      kernel-resources.html">誤訳等の報告
                     </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="server-start.html" title="18.3. データベースサーバの起動">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="runtime.html" title="第18章 サーバの準備と運用">上へ</a></td><td width="60%" align="center">18.4. カーネルリソースの管理</td><td width="20%" align="right"> <a accesskey="n" href="server-shutdown.html" title="18.5. サーバのシャットダウン">次へ</a></td></tr></table><hr /></div><div class="sect1" id="KERNEL-RESOURCES"><div class="titlepage"><div><div><h2 class="title" style="clear: both">18.4. カーネルリソースの管理</h2></div></div></div><span class="original">
   &lt;title&gt;Managing Kernel Resources&lt;/title&gt;
 </span><p>
@@ -41,9 +41,12 @@ Unix（派生）システムでは、<span class="quote">「<span class="quote">
 しかし最近のオペレーティングシステムではこうした状況はまれなものです。
    </p><p>
 <span class="original">
-    Upon starting the server, &lt;productname&gt;PostgreSQL&lt;/productname&gt; normally allocates
+    By default, &lt;productname&gt;PostgreSQL&lt;/productname&gt; allocates
     a very small amount of System V shared memory, as well as a much larger
-    amount of POSIX (&lt;function&gt;mmap&lt;/function&gt;) shared memory.
+    amount of anonymous &lt;function&gt;mmap&lt;/function&gt; shared memory.
+    Alternatively, a single large System V shared memory region can be used
+    (see &lt;xref linkend="guc-shared-memory-type"/&gt;).
+
     In addition a significant number of semaphores, which can be either
     System V or POSIX style, are created at server startup.  Currently,
     POSIX semaphores are used on Linux and FreeBSD systems while other
@@ -88,8 +91,10 @@ System V <acronym class="acronym">IPC</acronym>機能は、通常システム全
     &lt;productname&gt;PostgreSQL&lt;/productname&gt; requires a few bytes of System V shared memory
     (typically 48 bytes, on 64-bit platforms) for each copy of the server.
     On most modern operating systems, this amount can easily be allocated.
-    However, if you are running many copies of the server, or if other
-    applications are also using System V shared memory, it may be necessary to
+    However, if you are running many copies of the server or you explicitly
+    configure the server to use large amounts of System V shared memory (see
+    &lt;xref linkend="guc-shared-memory-type"/&gt; and &lt;xref
+    linkend="guc-dynamic-shared-memory-type"/&gt;), it may be necessary to
     increase &lt;varname&gt;SHMALL&lt;/varname&gt;, which is the total amount of System V shared
     memory system-wide.  Note that &lt;varname&gt;SHMALL&lt;/varname&gt; is measured in pages
     rather than bytes on many systems.
@@ -122,13 +127,13 @@ System V <acronym class="acronym">IPC</acronym>機能は、通常システム全
     other applications. The maximum number of semaphores in the system
     is set by &lt;varname&gt;SEMMNS&lt;/varname&gt;, which consequently must be at least
     as high as &lt;varname&gt;max_connections&lt;/varname&gt; plus
-    &lt;varname&gt;autovacuum_max_workers&lt;/varname&gt; plus &lt;varname&gt;max_worker_processes&lt;/varname&gt;,
-    plus one extra for each 16
+    &lt;varname&gt;autovacuum_max_workers&lt;/varname&gt; plus &lt;varname&gt;max_wal_senders&lt;/varname&gt;,
+    plus &lt;varname&gt;max_worker_processes&lt;/varname&gt;, plus one extra for each 16
     allowed connections plus workers (see the formula in &lt;xref
     linkend="sysvipc-parameters"/&gt;).  The parameter &lt;varname&gt;SEMMNI&lt;/varname&gt;
     determines the limit on the number of semaphore sets that can
     exist on the system at one time.  Hence this parameter must be at
-    least &lt;literal&gt;ceil((max_connections + autovacuum_max_workers + max_worker_processes + 5) / 16)&lt;/literal&gt;.
+    least &lt;literal&gt;ceil((max_connections + autovacuum_max_workers + max_wal_senders + max_worker_processes + 5) / 16)&lt;/literal&gt;.
     Lowering the number
     of allowed connections is a temporary workaround for failures,
     which are usually confusingly worded &lt;quote&gt;No space
@@ -246,7 +251,7 @@ kern.ipc.semmns=512
 それらのファイルを変更した後、新しい設定を有効にするためには再起動が必要です。
        </p><p>
 <span class="original">
-        You might also want to configure your kernel to lock shared
+        You might also want to configure your kernel to lock System V shared
         memory into RAM and prevent it from being paged out to swap.
         This can be accomplished using the &lt;command&gt;sysctl&lt;/command&gt;
         setting &lt;literal&gt;kern.ipc.shm_use_phys&lt;/literal&gt;.
@@ -305,7 +310,7 @@ kern.ipc.semmns=512
 <span class="systemitem">NetBSD</span>のデフォルト設定は不適切に小さいため、通常<code class="literal">kern.ipc.semmni</code>と<code class="literal">kern.ipc.semmns</code>を増加させたいと思うでしょう。
        </p><p>
 <span class="original">
-        You might also want to configure your kernel to lock shared
+        You might also want to configure your kernel to lock System V shared
         memory into RAM and prevent it from being paged out to swap.
         This can be accomplished using the &lt;command&gt;sysctl&lt;/command&gt;
         setting &lt;literal&gt;kern.ipc.shm_use_phys&lt;/literal&gt;.
