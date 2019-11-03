@@ -61,7 +61,7 @@ CREATE STATISTICS [ IF NOT EXISTS ] <em class="replaceable"><code>statistics_nam
       and &lt;xref linkend="multivariate-statistics-examples"/&gt;.
 </span>
 この統計オブジェクト内で計算する統計の種別です。
-現在サポートされる種別は、N個別値統計を有効にする<code class="literal">ndistinct</code>と、関数的依存統計を有効にする<code class="literal">dependencies</code>です。
+現在サポートされる種別は、N個別値統計を有効にする<code class="literal">ndistinct</code>、関数的依存統計を有効にする<code class="literal">dependencies</code>、最頻値の一覧を有効にする<code class="literal">mcv</code>です。
 この句を省略すると、統計オブジェクトのすべてのサポート対象の統計種別が含まれます。
 より詳細な情報は<a class="xref" href="planner-stats.html#PLANNER-STATS-EXTENDED" title="14.2.2. 拡張統計情報">14.2.2</a>および<a class="xref" href="multivariate-statistics-examples.html" title="70.2. 多変量統計の例">70.2</a>を参照してください。
      </p></dd><dt><span class="term"><em class="replaceable"><code>column_name</code></em></span></dt><dd><p>
@@ -71,7 +71,7 @@ CREATE STATISTICS [ IF NOT EXISTS ] <em class="replaceable"><code>statistics_nam
       is insignificant.
 </span>
 統計計算の対象となるテーブル列の名前です。
-少なくとも2つの列名を指定しなければなりません。
+少なくとも2つの列名を指定しなければなりません。列名の順序は重要ではありません。
      </p></dd><dt><span class="term"><em class="replaceable"><code>table_name</code></em></span></dt><dd><p>
 <span class="original">
       The name (optionally schema-qualified) of the table containing the
@@ -140,8 +140,11 @@ EXPLAIN ANALYZE SELECT * FROM t1 WHERE (a = 1) AND (b = 0);
 関数的依存統計がなければ、プランナは2つの<code class="literal">WHERE</code>条件を独立なものとみなすため、それらの選択性を掛け算して、非常に小さな行数見積もりを導きます。
 このような統計があれば、プランナは<code class="literal">WHERE</code>条件が冗長であることを認識し、行数を低く見積もりません。
   </p><p>
-   Create table <code class="structname">t2</code> with two perfectly correlated columns
+<span class="original">
+   Create table &lt;structname&gt;t2&lt;/structname&gt; with two perfectly correlated columns
    (containing identical data), and a MCV list on those columns:
+</span>
+(同一のデータの入った)完全に相関のある2つの列を持つテーブル<code class="structname">t2</code>を作成し、2つの列の最頻値(MCV)の一覧を作成します。
 
 </p><pre class="programlisting">
 CREATE TABLE t2 (
@@ -156,17 +159,27 @@ CREATE STATISTICS s2 (mcv) ON a, b FROM t2;
 
 ANALYZE t2;
 
--- valid combination (found in MCV)
+<span class="original">
+&amp;#045;- valid combination (found in MCV)
+</span>
+-- 有効な組み合わせ(MCV内で見つかる)
 EXPLAIN ANALYZE SELECT * FROM t2 WHERE (a = 1) AND (b = 1);
 
--- invalid combination (not found in MCV)
+
+<span class="original">
+&amp;#045;- invalid combination (not found in MCV)
+</span>
+-- 無効な組み合わせ(MCV内で見つからない)
 EXPLAIN ANALYZE SELECT * FROM t2 WHERE (a = 1) AND (b = 2);
 </pre><p>
 
+<span class="original">
    The MCV list gives the planner more detailed information about the
    specific values that commonly appear in the table, as well as an upper
    bound on the selectivities of combinations of values that do not appear
    in the table, allowing it to generate better estimates in both cases.
+</span>
+最頻値の一覧は、テーブルによく現れる特定の値に関するものだけでなく、テーブルに現れない値の組み合わせの選択の上限に関するより詳細な情報もプランナに与えますので、両方の場合に対してより良く見積もりができるようになります。
   </p></div><div class="refsect1" id="id-1.9.3.83.9"><h2>互換性</h2><span class="original">
   &lt;title&gt;Compatibility&lt;/title&gt;
 </span><p>
