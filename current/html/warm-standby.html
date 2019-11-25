@@ -179,7 +179,7 @@ WALファイル(16MB)は隣り合うシステム、同じサイトの別シス�
     any WAL immediately available in the archive or in &lt;filename&gt;pg_wal&lt;/filename&gt; will be
     restored, but no attempt is made to connect to the master.
 </span>
-<code class="command">pg_ctl promote</code>が実行された時またはトリガファイル(<code class="varname">trigger_file</code>)が存在する時、スタンバイモードは終了し、サーバは通常の動作に切り替わります。
+<code class="command">pg_ctl promote</code>が実行された時またはトリガファイル(<code class="varname">promote_trigger_file</code>)が存在する時、スタンバイモードは終了し、サーバは通常の動作に切り替わります。
 フェイルオーバーの前に、アーカイブまたは<code class="filename">pg_wal</code>内の即座に利用可能なWALをすべてリストアします。
 しかし、マスタへの接続を行おうとはしません。
    </p></div><div class="sect2" id="PREPARING-MASTER-FOR-STANDBY"><div class="titlepage"><div><div><h3 class="title">26.2.3. スタンバイサーバのためのマスタの準備</h3></div></div></div><span class="original">
@@ -232,9 +232,9 @@ WALファイル(16MB)は隣り合うシステム、同じサイトの別シス�
     that occurs at failover to another standby.
 </span>
 スタンバイサーバを設定するためには、プライマリサーバから取得したベースバックアップをリストアしてください(<a class="xref" href="continuous-archiving.html#BACKUP-PITR-RECOVERY" title="25.3.4. 継続的アーカイブによるバックアップを使用した復旧">25.3.4</a>参照)。
-スタンバイのクラスタデータディレクトリ内に<code class="filename">recovery.conf</code>リカバリコマンドファイルを作成し、<code class="varname">standby_mode</code>を有効にしてください。
-WALアーカイブからファイルをコピーする簡単なコマンドを<code class="varname">restore_command</code>に設定してください。
-高可用性のために複数のスタンバイサーバを持たせようとしている場合、<code class="varname">recovery_target_timeline</code>を<code class="literal">latest</code>に設定し、スタンバイサーバが他のスタンバイにフェイルオーバーする時に発生するタイムラインの変更に従うようにします。
+スタンバイのクラスタデータディレクトリ内に<code class="filename">standby.signal</code>ファイルを作成し、<code class="varname">standby_mode</code>を有効にしてください。
+WALアーカイブからファイルをコピーする簡単なコマンドを<a class="xref" href="runtime-config-wal.html#GUC-RESTORE-COMMAND">restore_command</a>に設定してください。
+高可用性のために複数のスタンバイサーバを持たせようとしている場合、<code class="varname">recovery_target_timeline</code>を<code class="literal">latest</code>に設定し（デフォルト）、スタンバイサーバが他のスタンバイにフェイルオーバーする時に発生するタイムラインの変更に従うようにします。
    </p><div class="note"><h3 class="title">注記</h3><p>
 <span class="original">
      Do not use pg_standby or similar tools with the built-in standby mode
@@ -244,7 +244,7 @@ WALアーカイブからファイルをコピーする簡単なコマンドを<c
      for using tools like pg_standby.
 </span>
 ここで説明した組み込みのスタンバイモードといっしょにpg_standbyや類似ツールを使用しないでください。
-<code class="varname">restore_command</code>はファイルが存在しない場合に即座に終了しなければなりません。
+<a class="xref" href="runtime-config-wal.html#GUC-RESTORE-COMMAND">restore_command</a>はファイルが存在しない場合に即座に終了しなければなりません。
 サーバが必要に応じてそのコマンドを再度実行します。
 pg_standbyのようなツールを使用するためには<a class="xref" href="log-shipping-alternative.html" title="26.4. この他のログシッピングの方法">26.4</a>を参照してください。
     </p></div><p>
@@ -256,8 +256,8 @@ pg_standbyのようなツールを使用するためには<a class="xref" href="
      authentication, the password needs to be specified in
      &lt;xref linkend="guc-primary-conninfo"/&gt; as well.
 </span>
-ストリーミングレプリケーションを使用したい場合には、ホスト名(またはIPアドレス)とプライマリサーバとの接続に必要な追加情報を含む、libpq接続文字列で<code class="varname">primary_conninfo</code>を記述してください。
-プライマリで認証用のパスワードが必要な場合は<code class="varname">primary_conninfo</code>にそのパスワードも指定する必要があります。
+ストリーミングレプリケーションを使用したい場合には、ホスト名(またはIPアドレス)とプライマリサーバとの接続に必要な追加情報を含む、libpq接続文字列で<a class="xref" href="runtime-config-replication.html#GUC-PRIMARY-CONNINFO">primary_conninfo</a>を記述してください。
+プライマリで認証用のパスワードが必要な場合は<a class="xref" href="runtime-config-replication.html#GUC-PRIMARY-CONNINFO">primary_conninfo</a>にそのパスワードも指定する必要があります。
    </p><p>
 <span class="original">
     If you're setting up the standby server for high availability purposes,
@@ -285,7 +285,7 @@ WALアーカイブを使用している場合、<a class="xref" href="runtime-co
 <span class="original">
     A simple example of configuration is:
 </span>
-<code class="filename">recovery.conf</code>の簡単な例を以下に示します。
+簡単な設定例を以下に示します。
 </p><pre class="programlisting">
 primary_conninfo = 'host=192.168.1.50 port=5432 user=foo password=foopass options=''-c wal_sender_timeout=5000'''
 restore_command = 'cp /path/to/archive/%f %p'
@@ -352,7 +352,7 @@ archive_cleanup_command = 'pg_archivecleanup /path/to/archive %r'
     server (see &lt;xref linkend="streaming-replication-authentication"/&gt;).
 </span>
 ストリーミングレプリケーションを使用するためには、<a class="xref" href="warm-standby.html" title="26.2. ログシッピングスタンバイサーバ">26.2</a>の説明のようにファイルベースのログシッピングを行うスタンバイサーバを設定してください。
-ファイルベースのログシッピングを行うスタンバイをストリーミングレプリケーションを行うスタンバイに切り替える手順は、<code class="filename">recovery.conf</code>内の<code class="varname">primary_conninfo</code>設定をプライマリサーバを指し示すように設定することです。
+ファイルベースのログシッピングを行うスタンバイをストリーミングレプリケーションを行うスタンバイに切り替える手順は、<code class="varname">primary_conninfo</code>設定をプライマリサーバを指し示すように設定することです。
 スタンバイサーバがプライマリサーバ上の<code class="literal">replication</code>疑似データベースに接続できる(<a class="xref" href="warm-standby.html#STREAMING-REPLICATION-AUTHENTICATION" title="26.2.5.1. 認証">26.2.5.1</a>参照)ように、プライマリで<a class="xref" href="runtime-config-connection.html#GUC-LISTEN-ADDRESSES">listen_addresses</a>と認証オプション(<code class="filename">pg_hba.conf</code>参照)を設定してください。
    </p><p>
 <span class="original">
@@ -434,9 +434,9 @@ host    replication     foo             192.168.1.100/32        md5
      can add the following line to the &lt;filename&gt;postgresql.conf&lt;/filename&gt; file on the
      standby:
 </span>
-プライマリサーバのホスト名とポート番号、接続する利用者名およびパスワードは、<code class="filename">recovery.conf</code>ファイルで指定します。
+プライマリサーバのホスト名とポート番号、接続する利用者名およびパスワードは、<a class="xref" href="runtime-config-replication.html#GUC-PRIMARY-CONNINFO">primary_conninfo</a>で指定します。
 パスワードはスタンバイサーバの<code class="filename">~/.pgpass</code>ファイルでも設定できます（<em class="replaceable"><code>database</code></em>フィールドの<code class="literal">replication</code>を指定します）。
-例えば、プライマリサーバが稼動するホストの IP アドレスが<code class="literal">192.168.1.50</code>でポート番号が<code class="literal">5432</code>であり、レプリケーションのアカウント名が<code class="literal">foo</code>であり、パスワードが<code class="literal">foopass</code>である場合、管理者はスタンバイサーバの<code class="filename">recovery.conf</code>ファイルに次行を追加できます。
+例えば、プライマリサーバが稼動するホストの IP アドレスが<code class="literal">192.168.1.50</code>でポート番号が<code class="literal">5432</code>であり、レプリケーションのアカウント名が<code class="literal">foo</code>であり、パスワードが<code class="literal">foopass</code>である場合、管理者はスタンバイサーバの<code class="filename">postgresql.conf</code>ファイルに次行を追加できます。
 
 </p><pre class="programlisting">
 <span class="original">
@@ -575,8 +575,8 @@ postgres=# SELECT slot_name, slot_type, active FROM pg_replication_slots;
      To configure the standby to use this slot, &lt;varname&gt;primary_slot_name&lt;/varname&gt;
      should be configured on the standby. Here is a simple example:
 </span>
-スタンバイのレプリケーションスロットを使用できるように設定するためには、<code class="varname">primary_slot_name</code>をスタンバイ側の<code class="filename">recovery.conf</code>に設定します。
-以下は設定例です。：
+スタンバイのレプリケーションスロットを使用できるように設定するためには、<code class="varname">primary_slot_name</code>をスタンバイ側で設定します。
+以下は単純な設定例です。：
 </p><pre class="programlisting">
 primary_conninfo = 'host=192.168.1.50 port=5432 user=foo password=foopass'
 primary_slot_name = 'node_a_slot'
@@ -633,7 +633,7 @@ primary_slot_name = 'node_a_slot'
     servers will continue to stream from the new master if
     &lt;varname&gt;recovery_target_timeline&lt;/varname&gt; is set to &lt;literal&gt;'latest'&lt;/literal&gt; (the default).
 </span>
-上流スタンバイサーバが昇格し、新しいマスターサーバになった場合、<code class="varname">recovery_target_timeline</code>が<code class="literal">'latest'</code>に設定されていれば、下流サーバは新マスターサーバからのストリーミングレプリケーションを継続します。
+上流スタンバイサーバが昇格し、新しいマスターサーバになった場合、<code class="varname">recovery_target_timeline</code>が<code class="literal">'latest'</code>に設定されていれば、下流サーバは新マスターサーバからのストリーミングレプリケーションを継続します（デフォルトです）。
    </p><p>
 <span class="original">
     To use cascading replication, set up the cascading standby so that it can
