@@ -49,17 +49,20 @@
         servers.
 </span>
 複数のスタンバイサーバあるいは、ストリーミングを使ったベースバックアップクライアントからの同時接続を受ける接続最大値を設定します（つまり、同時に稼動するWAL送信プロセスの最大値です）。
-デフォルトは10です。
-0ならば、レプリケーションは無効であるという意味になります。
-WAL送出プロセスは接続の総数カウントに考慮されるため、パラメータは<a class="xref" href="runtime-config-connection.html#GUC-MAX-CONNECTIONS">max_connections</a>から<a class="xref" href="runtime-config-connection.html#GUC-SUPERUSER-RESERVED-CONNECTIONS">superuser_reserved_connections</a>を引いたものより小さくなければなりません。
-クライアント接続が突然切断されると、タイムアウトするまで孤児接続スロットが残ってしまうかもしれません。
+デフォルトは<code class="literal">10</code>です。
+<code class="literal">0</code>ならば、レプリケーションは無効であるという意味になります。
+ストリーミングクライアントの突然の切断により、タイムアウトになるまで親のない接続スロットが残ることがあります。
 ですから、このパラメータは想定されるクライアント数の最大値よりも少し大きめにして、切断されたクライアントが直ちに再接続できるようにした方が良いでしょう。
 このパラメータはサーバ起動時のみ設定可能です。
 また、スタンバイサーバからの接続を許可するには、<code class="varname">wal_level</code>を<code class="literal">replica</code>以上に設定しておかなければなりません。
        </p><p>
+<span class="original">
          When running a standby server, you must set this parameter to the
          same or higher value than on the master server. Otherwise, queries
          will not be allowed in the standby server.
+</span>
+スタンバイサーバを実行する際は、このパラメータをマスタサーバと同じか高い値にしなければなりません。
+さもなければ、スタンバイサーバでクエリを実行できなくなります。
         </p></dd><dt id="GUC-MAX-REPLICATION-SLOTS"><span class="term"><code class="varname">max_replication_slots</code> (<code class="type">integer</code>)
        <a id="id-1.6.6.9.3.3.2.1.3" class="indexterm"></a>
        </span></dt><dd><p>
@@ -120,24 +123,34 @@ WAL送出プロセスは接続の総数カウントに考慮されるため、�
        </p></dd><dt id="GUC-WAL-INIT-ZERO"><span class="term"><code class="varname">wal_init_zero</code> (<code class="type">boolean</code>)
       <a id="id-1.6.6.9.3.3.4.1.3" class="indexterm"></a>
       </span></dt><dd><p>
-        If set to <code class="literal">on</code> (the default), this option causes new
+<span class="original">
+        If set to &lt;literal&gt;on&lt;/literal&gt; (the default), this option causes new
         WAL files to be filled with zeroes.  On some file systems, this ensures
         that space is allocated before we need to write WAL records.  However,
-        <em class="firstterm">Copy-On-Write</em> (COW) file systems may not benefit
+        &lt;firstterm&gt;Copy-On-Write&lt;/firstterm&gt; (COW) file systems may not benefit
         from this technique, so the option is given to skip the unnecessary
-        work.  If set to <code class="literal">off</code>, only the final byte is written
+        work.  If set to &lt;literal&gt;off&lt;/literal&gt;, only the final byte is written
         when the file is created so that it has the expected size.
+</span>
+このオプションが<code class="literal">on</code>（デフォルト）に設定されると、新しいWALファイルはゼロで初期化されます。
+システムによっては、このことによってWALレコードを書く必要が出てくる前にスペースが割り当てられることを保証します。
+しかし、<em class="firstterm">Copy-On-Write</em> (COW)ファイルシステムではこの技術は利点がないかもしれず、このオプションはスキップできるようになっています。
+<code class="literal">off</code>に設定すると、ファイルを作る時に期待する大きさになるように最後のバイトだけが書かれます。
        </p></dd><dt id="GUC-WAL-RECYCLE"><span class="term"><code class="varname">wal_recycle</code> (<code class="type">boolean</code>)
       <a id="id-1.6.6.9.3.3.5.1.3" class="indexterm"></a>
       </span></dt><dd><p>
-        If set to <code class="literal">on</code> (the default), this option causes WAL
+<span class="original">
+        If set to &lt;literal&gt;on&lt;/literal&gt; (the default), this option causes WAL
         files to be recycled by renaming them, avoiding the need to create new
         ones.  On COW file systems, it may be faster to create new ones, so the
         option is given to disable this behavior.
+</span>
+このオプションが<code class="literal">on</code>（デフォルト）に設定されると、新しくファイルを作るのを避けるために、名前を変えてWALファイルが再利用されます。
+COWファイルシステムでは、新しいファイルを作るほうが速いかも知れないので、この挙動を無効にできるようにオプションとなっています。
        </p></dd><dt id="GUC-WAL-SENDER-TIMEOUT"><span class="term"><code class="varname">wal_sender_timeout</code> (<code class="type">integer</code>)
       <a id="id-1.6.6.9.3.3.6.1.3" class="indexterm"></a>
       </span></dt><dd><p>
-       <span class="original">
+<span class="original">
         Terminate replication connections that are inactive longer
         than the specified number of milliseconds. This is useful for
         the sending server to detect a standby crash or network outage.
@@ -149,12 +162,14 @@ WAL送出プロセスは接続の総数カウントに考慮されるため、�
         connection, and a larger value helps in judging better the health
         of a standby if located on a remote location, with a high-latency
         network connection.
-       </span>
-       指定されたミリ秒単位の値より長く非活動のレプリケーション接続を停止します。
-       スタンバイサーバのクラッシュ、またはネットワークの停止を送出サーバが検出することにこれが役立ちます。
-       値ゼロはタイムアウト機能を無効にします。
-       このパラメータは、<code class="filename">postgresql.conf</code>ファイル、もしくはサーバコマンドラインでのみ設定可能です。
-       デフォルトの値は60秒です。
+</span>
+指定されたミリ秒単位の値より長く非活動のレプリケーション接続を停止します。
+スタンバイサーバのクラッシュ、またはネットワークの停止を送出サーバが検出することにこれが役立ちます。
+値ゼロはタイムアウト機能を無効にします。
+デフォルトの値は60秒です。
+地理的に複数の場所に分散したクラスタでは、場所によって異なる値を使うことでクラスタ管理がより柔軟にできるようになります。
+より小さな値は低遅延ネットワーク接続上のスタンバイの障害検知をより高速にするのに役立ちます。
+遅延の大きなネットワーク接続に設置されたスタンバイの健全性の判断にはより大きな値が助けになるでしょう。
        </p></dd><dt id="GUC-TRACK-COMMIT-TIMESTAMP"><span class="term"><code class="varname">track_commit_timestamp</code> (<code class="type">boolean</code>)
       <a id="id-1.6.6.9.3.3.7.1.3" class="indexterm"></a>
       </span></dt><dd><p>
@@ -223,8 +238,8 @@ WAL送出プロセスは接続の総数カウントに考慮されるため、�
         consult their documentation.
 </span>
 この目的のためのスタンバイサーバ名は、スタンバイの接続情報で指定された、スタンバイの<code class="varname">application_name</code>設定です。
-物理レプリケーションスタンバイでは、<code class="filename">recovery.conf</code>中の<code class="varname">primary_conninfo</code>設定です。
-デフォルトは<code class="literal">walreceiver</code>です。
+物理レプリケーションスタンバイでは、<code class="varname">primary_conninfo</code>設定です。
+デフォルトは<a class="xref" href="runtime-config-logging.html#GUC-CLUSTER-NAME">cluster_name</a>の設定で、さもなければ<code class="literal">walreceiver</code>です。
 論理レプリケーションでは、サブスクリプションの接続情報で設定でき、デフォルトはサブスクリプション名です。
 それ以外のレプリケーションストリームコンシューマーについては、それぞれのドキュメントをご覧ください。
        </p><p>
@@ -403,49 +418,76 @@ ANY <em class="replaceable"><code>num_sync</code></em> ( <em class="replaceable"
      </p><div class="variablelist"><dl class="variablelist"><dt id="GUC-PRIMARY-CONNINFO"><span class="term"><code class="varname">primary_conninfo</code> (<code class="type">string</code>)
         <a id="id-1.6.6.9.5.3.1.1.3" class="indexterm"></a>
         </span></dt><dd><p>
+<span class="original">
           Specifies a connection string to be used for the standby server
           to connect with a sending server. This string is in the format
-          described in <a class="xref" href="libpq-connect.html#LIBPQ-CONNSTRING" title="33.1.1. 接続文字列">33.1.1</a>. If any option is
+          described in &lt;xref linkend="libpq-connstring"/&gt;. If any option is
           unspecified in this string, then the corresponding environment
-          variable (see <a class="xref" href="libpq-envars.html" title="33.14. 環境変数">33.14</a>) is checked. If the
+          variable (see &lt;xref linkend="libpq-envars"/&gt;) is checked. If the
           environment variable is not set either, then
           defaults are used.
+</span>
+スタンバイサーバが送信サーバに接続するための接続文字列を指定します。
+この文字列は、<a class="xref" href="libpq-connect.html#LIBPQ-CONNSTRING" title="33.1.1. 接続文字列">33.1.1</a>で説明されている書式で記述されます。
+この文字列に何のオプションも指定されていない場合、これに対応する環境変数 (<a class="xref" href="libpq-envars.html" title="33.14. 環境変数">33.14</a> 参照) が確認されます。
+環境変数も設定されていなければデフォルトの値が使われます。
          </p><p>
+<span class="original">
           The connection string should specify the host name (or address)
           of the sending server, as well as the port number if it is not
           the same as the standby server's default.
           Also specify a user name corresponding to a suitably-privileged role
           on the sending server (see
-          <a class="xref" href="warm-standby.html#STREAMING-REPLICATION-AUTHENTICATION" title="26.2.5.1. 認証">26.2.5.1</a>).
+          &lt;xref linkend="streaming-replication-authentication"/&gt;).
           A password needs to be provided too, if the sender demands password
           authentication.  It can be provided in the
-          <code class="varname">primary_conninfo</code> string, or in a separate
-          <code class="filename">~/.pgpass</code> file on the standby server (use
-          <code class="literal">replication</code> as the database name).
+          &lt;varname&gt;primary_conninfo&lt;/varname&gt; string, or in a separate
+          &lt;filename&gt;~/.pgpass&lt;/filename&gt; file on the standby server (use
+          &lt;literal&gt;replication&lt;/literal&gt; as the database name).
           Do not specify a database name in the
-          <code class="varname">primary_conninfo</code> string.
+          &lt;varname&gt;primary_conninfo&lt;/varname&gt; string.
+</span>
+接続文字列では、プライマリサーバのホスト名（またはアドレス）、スタンバイサーバのデフォルトと異なるのであればポート番号も指定する必要があります。
+また、送信サーバ上で適切な権限を保有するロールのユーザを指定しなければなりません (<a class="xref" href="warm-standby.html#STREAMING-REPLICATION-AUTHENTICATION" title="26.2.5.1. 認証">26.2.5.1</a> 参照)。
+送信サーバが要求するのであれば、パスワードも記述される必要があります。
+パスワードは <code class="varname">primary_conninfo</code>に記述することもできますし、スタンバイサーバ上の分離されたファイル<code class="filename">~/.pgpass</code>に記述することもできます (データベース名には <code class="literal">replication</code> を使います)。
+<code class="varname">primary_conninfo</code>文字列の中には、データベース名を指定しないでください。
          </p><p>
+<span class="original">
           This parameter can only be set at server start.
           This setting has no effect if the server is not in standby mode.
+</span>
+このパラメータはサーバ起動時のみ設定可能です。
+サーバがスタンバイモードでなければこの設定は無効となります。
          </p></dd><dt id="GUC-PRIMARY-SLOT-NAME"><span class="term"><code class="varname">primary_slot_name</code> (<code class="type">string</code>)
         <a id="id-1.6.6.9.5.3.2.1.3" class="indexterm"></a>
         </span></dt><dd><p>
+<span class="original">
           Optionally specifies an existing replication slot to be used when
           connecting to the sending server via streaming replication to control
           resource removal on the upstream node
-          (see <a class="xref" href="warm-standby.html#STREAMING-REPLICATION-SLOTS" title="26.2.6. レプリケーションスロット">26.2.6</a>).
+          (see &lt;xref linkend="streaming-replication-slots"/&gt;).
           This parameter can only be set at server start.
-          This setting has no effect if <code class="varname">primary_conninfo</code> is not
+          This setting has no effect if &lt;varname&gt;primary_conninfo&lt;/varname&gt; is not
           set.
+</span>
+上流ノードのリソース削除を制御するためにストリーミングレプリケーション経由でプライマリに接続した場合、既存のレプリケーションスロットを使うように、必要に応じて指定します（<a class="xref" href="warm-standby.html#STREAMING-REPLICATION-SLOTS" title="26.2.6. レプリケーションスロット">26.2.6</a>を参照）。
+このパラメータはサーバ起動時のみ設定可能です。
+<code class="varname">primary_conninfo</code>が設定されていない場合、この設定は無効です。
          </p></dd><dt id="GUC-PROMOTE-TRIGGER-FILE"><span class="term"><code class="varname">promote_trigger_file</code> (<code class="type">string</code>)
         <a id="id-1.6.6.9.5.3.3.1.3" class="indexterm"></a>
         </span></dt><dd><p>
+<span class="original">
           Specifies a trigger file whose presence ends recovery in the
           standby.  Even if this value is not set, you can still promote
-          the standby using <code class="command">pg_ctl promote</code> or calling
-          <code class="function">pg_promote</code>.
-          This parameter can only be set in the <code class="filename">postgresql.conf</code>
+          the standby using &lt;command&gt;pg_ctl promote&lt;/command&gt; or calling
+          &lt;function&gt;pg_promote&lt;/function&gt;.
+          This parameter can only be set in the &lt;filename&gt;postgresql.conf&lt;/filename&gt;
           file or on the server command line.
+</span>
+スタンバイサーバにおいて、リカバリの完了を示すトリガファイルを指定します。
+この値が設定されていなくても、<code class="command">pg_ctl promote</code>あるいは<code class="function">pg_promote</code>を使ってスタンバイサーバを昇格させることができます。
+このパラメータは、<code class="filename">postgresql.conf</code>ファイル、もしくはサーバコマンドラインでのみ設定可能です。
          </p></dd><dt id="GUC-HOT-STANDBY"><span class="term"><code class="varname">hot_standby</code> (<code class="type">boolean</code>)
       <a id="id-1.6.6.9.5.3.4.1.3" class="indexterm"></a>
       </span></dt><dd><p>
@@ -651,15 +693,22 @@ WALの生成頻度が少ないシステムでは、この値を大きくする�
        </p></dd><dt id="GUC-RECOVERY-MIN-APPLY-DELAY"><span class="term"><code class="varname">recovery_min_apply_delay</code> (<code class="type">integer</code>)
       <a id="id-1.6.6.9.5.3.11.1.3" class="indexterm"></a>
       </span></dt><dd><p>
+<span class="original">
         By default, a standby server restores WAL records from the
         sending server as soon as possible. It may be useful to have a time-delayed
         copy of the data, offering opportunities to correct data loss errors.
         This parameter allows you to delay recovery by a fixed period of time,
         measured in milliseconds if no unit is specified.  For example, if
-        you set this parameter to <code class="literal">5min</code>, the standby will
+        you set this parameter to &lt;literal&gt;5min&lt;/literal&gt;, the standby will
         replay each transaction commit only when the system time on the standby
         is at least five minutes past the commit time reported by the master.
+</span>
+デフォルトでは、スタンバイサーバは可能な限り早くプライマリからWALレコードをリストアします。
+時間遅れのデータのコピーを持つことで、データ損失エラーを修正する機会を提供するのは有用かもしれません。
+このパラメータを使う事で、決まった時間だけリカバリを遅らせることができます。単位を指定しない場合、ミリ秒として扱われます。
+例えば、パラメータに<code class="literal">5min</code>と指定した場合、各トランザクションについて、スタンバイのシステム時刻が、マスターから報告されたコミット時刻より5分以上経過している場合のみ、スタンバイサーバはコミットを再生します。
        </p><p>
+<span class="original">
         It is possible that the replication delay between servers exceeds the
         value of this parameter, in which case no delay is added.
         Note that the delay is calculated between the WAL time stamp as written
@@ -670,30 +719,55 @@ WALの生成頻度が少ないシステムでは、この値を大きくする�
         recovery applying records earlier than expected; but that is not a
         major issue because useful settings of this parameter are much larger
         than typical time deviations between servers.
+</span>
+サーバ間のレプリケーション遅延はパラメータの値を上回る可能性があり、その場合には遅延は追加されません。
+遅延は、マスタサーバで書かれたWALのタイムスタンプと、スタンバイサーバの現在時刻を使って計算されていることに注意してください。
+ネットワークの遅延やカスケーディングレプリケーション構成によるデータ転送の遅延は、実際の待ち時間を大幅に減らすかもしれません。
+もし、マスタサーバとスタンバイサーバのシステムクロックが同期されていない場合、期待値よりも早くレコードのリカバリを始めるかもしれません。
+しかし、このパラメータの有用な設定値は典型的なサーバ間の時間のずれよりもずっと大きいので、それらは大きな問題ではありません。
        </p><p>
+<span class="original">
         The delay occurs only on WAL records for transaction commits.
         Other records are replayed as quickly as possible, which
         is not a problem because MVCC visibility rules ensure their effects
         are not visible until the corresponding commit record is applied.
+</span>
+遅延はトランザクションコミットのWALレコードだけで発生します。
+他のレコードは可能な限り早く再生されるでしょう。
+対応する（トランザクション）コミットレコードが適用されるまではその効果が不可視であることがMVCCの可視ルールによって保証されているため、他のレコードが可能な限り早く再生されることは問題にはなりません。
        </p><p>
+<span class="original">
         The delay occurs once the database in recovery has reached a consistent
         state, until the standby is promoted or triggered. After that the standby
         will end recovery without further waiting.
+</span>
+ひとたびリカバリ中のデータベースが整合性のとれた状態になれば、スタンバイサーバが昇格またはトリガーになるまで、遅延が発生します。
+その後、スタンバイサーバはそれ以上待たずにリカバリを終了します。
        </p><p>
+<span class="original">
         This parameter is intended for use with streaming replication deployments;
         however, if the parameter is specified it will be honored in all cases.
 
-        <code class="varname">hot_standby_feedback</code> will be delayed by use of this feature
+        &lt;varname&gt;hot_standby_feedback&lt;/varname&gt; will be delayed by use of this feature
         which could lead to bloat on the master; use both together with care.
+</span>
+このパラメータはストリーミングレプリケーション配信で使われることを目的としていますが、パラメータが指定されていると、すべてのケースで使用されます。
+この機能を使うことによって<code class="varname">hot_standby_feedback</code>が遅延され、マスタサーバの肥大化に繋がる可能性があります。両方同時に使う場合には注意して使ってください。
 
         </p><div class="warning"><h3 class="title">警告</h3><p>
-          Synchronous replication is affected by this setting when <code class="varname">synchronous_commit</code>
-          is set to <code class="literal">remote_apply</code>; every <code class="literal">COMMIT</code>
+<span class="original">
+          Synchronous replication is affected by this setting when &lt;varname&gt;synchronous_commit&lt;/varname&gt;
+          is set to &lt;literal&gt;remote_apply&lt;/literal&gt;; every &lt;literal&gt;COMMIT&lt;/literal&gt;
           will need to wait to be applied.
+</span>
+<code class="varname">synchronous_commit</code>が<code class="literal">remote_apply</code>に設定されていれば、同期レプリケーションは、この設定に影響を受けます。各<code class="literal">COMMIT</code>は適用されるのを待つことが必要です。
          </p></div><p>
        </p><p>
-        This parameter can only be set in the <code class="filename">postgresql.conf</code>
+<span class="original">
+        This parameter can only be set in the &lt;filename&gt;postgresql.conf&lt;/filename&gt;
         file or on the server command line.
+</span>
+このパラメータは、<code class="filename">postgresql.conf</code>ファイル、もしくはサーバコマンドラインでのみ設定可能です。
        </p></dd></dl></div></div><div class="sect2" id="RUNTIME-CONFIG-REPLICATION-SUBSCRIBER"><div class="titlepage"><div><div><h3 class="title">19.6.4. サブスクライバー</h3></div></div></div><span class="original">
      &lt;title&gt;Subscribers&lt;/title&gt;
 </span><p>

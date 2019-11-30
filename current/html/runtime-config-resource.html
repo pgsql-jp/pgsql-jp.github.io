@@ -261,9 +261,9 @@ Linuxでは、これは<span class="quote">「<span class="quote">transparent hu
         Only superusers can change this setting.
        </span>
 サーバの実行スタックの最大安全深度を指定します。
-このパラメータの理想的な設定はカーネルにより強要される実際のスタック容量の（<code class="literal">ulimit -s</code>もしくはそれと同等の機能で設定された）限界から、1メガバイト程度の安全余地を差し引いたものです。
-安全余地は、サーバがすべてのルーチンではスタック深度を検査をせず、式評価などの主要な潜在的に再帰的なルーチンでのみ検査をするために必要となるものです。
-デフォルト設定は2メガバイト（<code class="literal">2MB</code>）で、かなり控え目で、クラッシュの危険はなさそうです。
+このパラメータの理想的な設定はカーネルにより強要される実際のスタック容量の（<code class="literal">ulimit -s</code>もしくはそれと同等の機能で設定された）限界から、1メガバイト程度の安全余裕度を差し引いたものです。
+この安全余裕度は、サーバがすべてのルーチンではスタック深度を検査をせず、再帰を行う可能性のある重要なルーチンでのみ検査をするために必要となるものです。
+デフォルト設定は2メガバイト（<code class="literal">2MB</code>）で、かなり控え目、かつクラッシュの危険がなさそうな設定です。
 しかし、複雑な関数の実行を許容するには小さ過ぎるかも知れません。
 スーパーユーザのみがこの設定を変更することができます。
        </p><p>
@@ -283,18 +283,28 @@ Linuxでは、これは<span class="quote">「<span class="quote">transparent hu
        </p></dd><dt id="GUC-SHARED-MEMORY-TYPE"><span class="term"><code class="varname">shared_memory_type</code> (<code class="type">enum</code>)
       <a id="id-1.6.6.7.2.2.9.1.3" class="indexterm"></a>
       </span></dt><dd><p>
+<span class="original">
         Specifies the shared memory implementation that the server
         should use for the main shared memory region that holds
-        <span class="productname">PostgreSQL</span>'s shared buffers and other
-        shared data.  Possible values are <code class="literal">mmap</code> (for
-        anonymous shared memory allocated using <code class="function">mmap</code>),
-        <code class="literal">sysv</code> (for System V shared memory allocated via
-        <code class="function">shmget</code>) and <code class="literal">windows</code> (for Windows
+        &lt;productname&gt;PostgreSQL&lt;/productname&gt;'s shared buffers and other
+        shared data.  Possible values are &lt;literal&gt;mmap&lt;/literal&gt; (for
+        anonymous shared memory allocated using &lt;function&gt;mmap&lt;/function&gt;),
+        &lt;literal&gt;sysv&lt;/literal&gt; (for System V shared memory allocated via
+        &lt;function&gt;shmget&lt;/function&gt;) and &lt;literal&gt;windows&lt;/literal&gt; (for Windows
         shared memory).  Not all values are supported on all platforms; the
         first supported option is the default for that platform.  The use of
-        the <code class="literal">sysv</code> option, which is not the default on any
+        the &lt;literal&gt;sysv&lt;/literal&gt; option, which is not the default on any
         platform, is generally discouraged because it typically requires
-        non-default kernel settings to allow for large allocations (see <a class="xref" href="kernel-resources.html#SYSVIPC" title="18.4.1. 共有メモリとセマフォ">18.4.1</a>).
+        non-default kernel settings to allow for large allocations (see &lt;xref
+        linkend="sysvipc"/&gt;).
+</span>
+<span class="productname">PostgreSQL</span>の共有バッファおよび他の共有データを保持する主共有メモリ領域のためにサーバが使用すべき共有メモリの実装を指定します。
+可能な値は<code class="literal">mmap</code>（<code class="function">mmap</code>を使って獲得した無名共有メモリ）、<code class="literal">sysv</code> （<code class="function">shmget</code>を使って獲得したSystem V共有メモリ）、<code class="literal">windows</code> （Windows共有メモリ）です。
+すべての値がすべてのプラットフォームでサポートされているわけではありません。
+サポートされている最初のオプションがそのプラットフォームのデフォルトです。
+どのプラットフォームでもデフォルトになっていない<code class="literal">sysv</code>オプションの利用は一般に推奨されません。
+通常、デフォルトではないカーネルの設定が大きなアロケーションでは必要になるからです。
+（<a class="xref" href="kernel-resources.html#SYSVIPC" title="18.4.1. 共有メモリとセマフォ">18.4.1</a>参照。）
        </p></dd><dt id="GUC-DYNAMIC-SHARED-MEMORY-TYPE"><span class="term"><code class="varname">dynamic_shared_memory_type</code> (<code class="type">enum</code>)
       <a id="id-1.6.6.7.2.2.10.1.3" class="indexterm"></a>
       </span></dt><dd><p>
@@ -315,17 +325,11 @@ Linuxでは、これは<span class="quote">「<span class="quote">transparent hu
         &lt;literal&gt;pg_dynshmem&lt;/literal&gt; directory is stored on a RAM disk, or when
         other shared memory facilities are not available.
 </span>
-        サーバが使う動的共有メモリの実装を指定します。可能な値は
-        <code class="literal">posix</code> (<code class="literal">shm_open</code>で獲得するPOSIX共有メモリ)、
-         <code class="literal">sysv</code>
-        (<code class="literal">shmget</code>で獲得するSystem V共有メモリ)、
-        <code class="literal">windows</code> (Windows共有メモリ)、 <code class="literal">mmap</code>
-        (データディレクトリ内のメモリマップファイルを使ってシミュレートする共有メモリ)、
-<code class="literal">none</code> (この機能を使用しない)です。
-       すべての値がすべてのプラットフォームでサポートされているわけではありません。
-       そのプラットフォームでの推奨実装がデフォルトになります。
-       どのプラットフォームでもデフォルトになっていない<code class="literal">mmap</code>は、オペレーティングシステムが変更されたページをディスクに継続的に書き込み、I/O負荷を増加させるので一般的には利用が推奨されていません。
-       しかし、デバッグ目的のために<code class="literal">pg_dynshmem</code>ディスクがRAMディスク上にある場合や、他の共有メモリ機能が使えない場合は有用かもしれません。
+サーバが使う動的共有メモリの実装を指定します。可能な値は<code class="literal">posix</code> (<code class="literal">shm_open</code>で獲得するPOSIX共有メモリ)、<code class="literal">sysv</code>(<code class="literal">shmget</code>で獲得するSystem V共有メモリ)、<code class="literal">windows</code> (Windows共有メモリ)、 <code class="literal">mmap</code>(データディレクトリ内のメモリマップファイルを使ってシミュレートする共有メモリ)です。
+すべての値がすべてのプラットフォームでサポートされているわけではありません。
+そのプラットフォームでの推奨実装がデフォルトになります。
+どのプラットフォームでもデフォルトになっていない<code class="literal">mmap</code>は、オペレーティングシステムが変更されたページをディスクに継続的に書き込み、I/O負荷を増加させるので一般的には利用が推奨されていません。
+しかし、デバッグ目的のために<code class="literal">pg_dynshmem</code>ディスクがRAMディスク上にある場合や、他の共有メモリ機能が使えない場合は有用かもしれません。
        </p></dd></dl></div></div><div class="sect2" id="RUNTIME-CONFIG-RESOURCE-DISK"><div class="titlepage"><div><div><h3 class="title">19.4.2. ディスク</h3></div></div></div><span class="original">
      &lt;title&gt;Disk&lt;/title&gt;
      </span><div class="variablelist"><dl class="variablelist"><dt id="GUC-TEMP-FILE-LIMIT"><span class="term"><code class="varname">temp_file_limit</code> (<code class="type">integer</code>)
@@ -427,11 +431,9 @@ Linuxでは、これは<span class="quote">「<span class="quote">transparent hu
          The default value is zero, which disables the cost-based vacuum
          delay feature.  Positive values enable cost-based vacuuming.
         </span>
-        コストの限度を越えた場合、プロセスがスリープするミリ秒単位の時間の長さです。
+コストの限度を越えた場合、プロセスがスリープするミリ秒単位の時間の長さです。
 デフォルトの値は0で、コストに基づいたvacuum遅延機能を無効にします。
 正の整数はコストに基づいたvacuumを有効にします。
-多くのシステムで、スリープ遅延の有効な分解能は10ミリ秒です。
-<code class="varname">vacuum_cost_delay</code>の値の設定を10の倍数としない場合、次に大きい10の倍数に設定した結果と同一になるかもしれないことを覚えておいてください。
         </p><p>
        <span class="original">
          When using cost-based vacuuming, appropriate values for
@@ -445,8 +447,12 @@ Linuxでは、これは<span class="quote">「<span class="quote">transparent hu
          keep &lt;varname&gt;vacuum_cost_delay&lt;/varname&gt; as small as your platform
          will consistently measure; large delays are not helpful.
         </span>
-        コストに基づいたバキューム処理を使用する場合、<code class="varname">vacuum_cost_delay</code>の適切な値は通常かなり小さくなり、たいていは10または20ミリ秒になります。
-        バキュームによるリソース消費の調整は、他のバキュームのコストパラメータを変更して行うことが最善です。
+コストに基づいたバキューム処理を使用する場合、<code class="varname">vacuum_cost_delay</code>の適切な値は通常かなり小さくなり、おそらく1ミリ秒以下になります。
+バキュームによるリソース消費の調整は、他のバキュームのコストパラメータを変更して行うことが最善です。
+<code class="varname">vacuum_cost_delay</code>を1ミリ秒以下に設定することは可能ですが、そうした遅延は古いプラットフォームでは正確には計測されないかも知れません。
+そうしたプラットフォームでは、<code class="command">VACUUM</code>のリソース消費制限を1ミリ秒のときに得られる値以上にするには、他のVACUUMコストパラメータの変更が必要となるでしょう。
+とは言うものの、使用するプラットフォームで常に計測できる範囲で<code class="varname">vacuum_cost_delay</code>をできるだけ小さくするようにしてください。
+大きな遅延は助けになりません。
         </p></dd><dt id="GUC-VACUUM-COST-PAGE-HIT"><span class="term"><code class="varname">vacuum_cost_page_hit</code> (<code class="type">integer</code>)
        <a id="id-1.6.6.7.5.5.2.1.3" class="indexterm"></a>
        </span></dt><dd><p>
@@ -456,7 +462,7 @@ Linuxでは、これは<span class="quote">「<span class="quote">transparent hu
          the shared hash table and scan the content of the page. The
          default value is one.
         </span>
-        共有バッファキャッシュの中のバッファにvacuumを掛ける予測コストです。バッファプールのロック、共有ハッシュテーブルの検索、およびページ内容走査のコストを示します。デフォルトの値は1です。
+共有バッファキャッシュの中のバッファにvacuumを掛ける予測コストです。バッファプールのロック、共有ハッシュテーブルの検索、およびページ内容走査のコストを示します。デフォルトの値は1です。
         </p></dd><dt id="GUC-VACUUM-COST-PAGE-MISS"><span class="term"><code class="varname">vacuum_cost_page_miss</code> (<code class="type">integer</code>)
        <a id="id-1.6.6.7.5.5.3.1.3" class="indexterm"></a>
        </span></dt><dd><p>
@@ -466,7 +472,7 @@ Linuxでは、これは<span class="quote">「<span class="quote">transparent hu
          lookup the shared hash table, read the desired block in from
          the disk and scan its content. The default value is 10.
         </span>
-        ディスクから読み込まれなければならないバッファにvacuumを掛ける予測コストです。これが示すものは、バッファプールロックの試み、共有ハッシュテーブルの参照、ディスクから目的ブロックの読み込み、そしてその内容走査です。デフォルトの値は10です。
+ディスクから読み込まれなければならないバッファにvacuumを掛ける予測コストです。これが示すものは、バッファプールロックの試み、共有ハッシュテーブルの参照、ディスクから目的ブロックの読み込み、そしてその内容走査です。デフォルトの値は10です。
         </p></dd><dt id="GUC-VACUUM-COST-PAGE-DIRTY"><span class="term"><code class="varname">vacuum_cost_page_dirty</code> (<code class="type">integer</code>)
        <a id="id-1.6.6.7.5.5.4.1.3" class="indexterm"></a>
        </span></dt><dd><p>
@@ -476,8 +482,8 @@ Linuxでは、これは<span class="quote">「<span class="quote">transparent hu
          flush the dirty block out to disk again. The default value is
          20.
         </span>
-        vacuumが、先だって掃除したブロックを変更する時に果たされた予測コストです。
-        ダーティブロックを再度ディスクに吐き出すのに必要な余分なI/Oを表します。デフォルトの値は20です。
+vacuumが、先だって掃除したブロックを変更するのに必要な見積コストです。
+ダーティブロックを再度ディスクに吐き出すのに必要な余分なI/Oを表します。デフォルトの値は20です。
         </p></dd><dt id="GUC-VACUUM-COST-LIMIT"><span class="term"><code class="varname">vacuum_cost_limit</code> (<code class="type">integer</code>)
        <a id="id-1.6.6.7.5.5.5.1.3" class="indexterm"></a>
        </span></dt><dd><p>
@@ -485,8 +491,8 @@ Linuxでは、これは<span class="quote">「<span class="quote">transparent hu
          The accumulated cost that will cause the vacuuming process to sleep.
          The default value is 200.
         </span>
-        vacuumを掛けるプロセスをスリープさせることになる累計されたコストです。
-        デフォルトの値は200です。
+vacuumを掛けるプロセスをスリープさせることになる累計されたコストです。
+デフォルトの値は200です。
         </p></dd></dl></div><div class="note"><h3 class="title">注記</h3><p>
       <span class="original">
        There are certain operations that hold critical locks and should

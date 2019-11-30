@@ -42,6 +42,7 @@
 一般に、単一引用符の中に値を入れます。
 単一引用符を値に含める場合は単一引用符を２つ続けます。
 なお、値が単純な数字や識別子である場合は、通常は引用符を省略できます。
+（使用する場所によっては、SQLキーワードと一致する値に引用符が必要になることがあります。）
       </p></li><li class="listitem"><p>
 <span class="original">
        &lt;emphasis&gt;Numeric (integer and floating point):&lt;/emphasis&gt;
@@ -55,9 +56,12 @@
        Quotes are not required, except for hexadecimal input.
 </span>
 <span class="emphasis"><em>数値型(整数型と浮動小数点型):</em></span>
-小数点は浮動小数点型のパラメータでのみ使用できます。
+数値パラメータには通常の整数と浮動小数点型が使用できます。
+パラメータが整数型なら、小数値はもっとも近い整数に丸められます。
+加えて整数型パラメータは16進数入力（<code class="literal">0x</code>で始まります）と8進数入力（<code class="literal">0</code>で始まります）を受け付けます。
+しかし、これらの形式では小数点以下は使えません。
 1000の位取りの区切り文字は使わないでください。
-引用符は必要ありません。
+16進数入力を除き引用符は必要ありません。
       </p></li><li class="listitem"><p>
 <span class="original">
        &lt;emphasis&gt;Numeric with Unit:&lt;/emphasis&gt;
@@ -103,15 +107,20 @@
           &lt;literal&gt;s&lt;/literal&gt; (seconds), &lt;literal&gt;min&lt;/literal&gt; (minutes),
           &lt;literal&gt;h&lt;/literal&gt; (hours), and &lt;literal&gt;d&lt;/literal&gt; (days).
 </span>
-有効な時間の単位は <code class="literal">ms</code> (ミリ秒)、<code class="literal">s</code> (秒)、<code class="literal">min</code> (分)、<code class="literal">h</code> (時間)、<code class="literal">d</code> (日数) です。
+有効な時間の単位は <code class="literal">us</code> (マイクロ秒)、<code class="literal">ms</code> (ミリ秒)、<code class="literal">s</code> (秒)、<code class="literal">min</code> (分)、<code class="literal">h</code> (時間)、<code class="literal">d</code> (日数) です。
          </p></li></ul></div><p>
 
+<span class="original">
        If a fractional value is specified with a unit, it will be rounded
        to a multiple of the next smaller unit if there is one.
-       For example, <code class="literal">30.1 GB</code> will be converted
-       to <code class="literal">30822 MB</code> not <code class="literal">32319628902 B</code>.
+       For example, &lt;literal&gt;30.1 GB&lt;/literal&gt; will be converted
+       to &lt;literal&gt;30822 MB&lt;/literal&gt; not &lt;literal&gt;32319628902 B&lt;/literal&gt;.
        If the parameter is of integer type, a final rounding to integer
        occurs after any units conversion.
+</span>
+単位に添えて小数点以下が指定された場合、より小さな単位が存在すれば、値はその小さな単位の積に丸められます。
+たとえば、<code class="literal">30.1 GB</code>は<code class="literal">32319628902 B</code>ではなく<code class="literal">30822 MB</code>に変換されます。
+整数型のパラメータでは、単位変換の後で最終的な整数への丸めが行われます。
       </p></li><li class="listitem"><p>
 <span class="original">
        &lt;emphasis&gt;Enumerated:&lt;/emphasis&gt;
@@ -163,6 +172,7 @@ shared_buffers = 128MB
 ハッシュ記号（<code class="literal">#</code>）はその行の後の表記がコメントであることを意味します。
 単純でない識別子、または数値でないパラメータ値は単一引用符で括られなければなりません。
 パラメータ値の中に単一引用符を埋め込むには、引用符を2つ（推奨）もしくはバックスラッシュ-引用符を使います。
+ファイル中、同じパラメータに対して複数のエントリが指定されている場合は、最後のエントリ以外は無視されます。
     </p><p>
 <span class="original">
      Parameters set in this way provide default values for the cluster.
@@ -210,18 +220,23 @@ shared_buffers = 128MB
      in &lt;filename&gt;postgresql.conf&lt;/filename&gt;.
 </span>
 <code class="filename">postgresql.conf</code>に加え、<span class="productname">PostgreSQL</span>のデータディレクトリには <code class="filename">postgresql.auto.conf</code><a id="id-1.6.6.4.3.5.4" class="indexterm"></a>というファイルがあります。
-このファイルは <code class="filename">postgresql.conf</code> と同じフォーマットですが、決して手動で編集してはいけません。
+このファイルは <code class="filename">postgresql.conf</code> と同じフォーマットですが、手動ではなく自動で編集されることを意図しています。
 このファイルは <a class="xref" href="sql-altersystem.html" title="ALTER SYSTEM"><span class="refentrytitle">ALTER SYSTEM</span></a> コマンドを使った設定値を保存します。
 このファイルは<code class="filename">postgresql.conf</code> が読み込まれるときはいつでも自動的に読み込まれ、同じように設定が反映されます。
 <code class="filename">postgresql.auto.conf</code>は、<code class="filename">postgresql.conf</code>の設定を上書きします。
     </p><p>
+<span class="original">
      External tools may also
-     modify <code class="filename">postgresql.auto.conf</code>.  It is not
+     modify &lt;filename&gt;postgresql.auto.conf&lt;/filename&gt;.  It is not
      recommended to do this while the server is running, since a
-     concurrent <code class="command">ALTER SYSTEM</code> command could overwrite
+     concurrent &lt;command&gt;ALTER SYSTEM&lt;/command&gt; command could overwrite
      such changes.  Such tools might simply append new settings to the end,
      or they might choose to remove duplicate settings and/or comments
-     (as <code class="command">ALTER SYSTEM</code> will).
+     (as &lt;command&gt;ALTER SYSTEM&lt;/command&gt; will).
+</span>
+外部ツールも<code class="filename">postgresql.auto.conf</code>を変更するかも知れません。
+<code class="command">ALTER SYSTEM</code>が変更を上書きする可能性があるので、サーバが稼働中は外部ツールによる変更は推奨されません。
+そのようなツールは、単に新しい設定を最後に追加するか、重複した設定あるいはコメント(<code class="command">ALTER SYSTEM</code>が行います)を削除することを選択するかも知れません。
     </p><p>
 <span class="original">
      The system view
