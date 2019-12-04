@@ -213,8 +213,8 @@ WALファイルの転送については、収集方法が<code class="literal">f
         that &lt;application&gt;pg_basebackup&lt;/application&gt; is using, so that the
         streaming replication will use the same settings later on.
 </span>
-スタンバイサーバの設定を容易にするために、出力ディレクトリ（tar形式の場合はベースアーカイブファイルの中）に最低限の<code class="filename">recovery.conf</code>を書き出します。
-<code class="filename">recovery.conf</code>ファイルは接続設定の情報、また、指定があれば<span class="application">pg_basebackup</span>が使用しているレプリケーションスロットの情報を記録するので、ストリーミングレプリケーションは後で同じ設定を使用します。
+スタンバイサーバの設定を容易にするために、<code class="filename">standby.signal</code>を作成し、出力ディレクトリ（tar形式の場合はベースアーカイブファイルの中）にある<code class="filename">postgresql.auto.conf</code>に接続設定を追加します。
+<code class="filename">postgresql.auto.conf</code>ファイルは接続設定の情報、また、指定があれば<span class="application">pg_basebackup</span>が使用しているレプリケーションスロットの情報を記録するので、ストリーミングレプリケーションは後で同じ設定を使用します。
        </p></dd><dt><span class="term"><code class="option">-T <em class="replaceable"><code>olddir</code></em>=<em class="replaceable"><code>newdir</code></em></code><br /></span><span class="term"><code class="option">--tablespace-mapping=<em class="replaceable"><code>olddir</code></em>=<em class="replaceable"><code>newdir</code></em></code></span></dt><dd><p>
 <span class="original">
         Relocate the tablespace in directory &lt;replaceable&gt;olddir&lt;/replaceable&gt;
@@ -434,7 +434,7 @@ tarファイルを生成する場合のみ圧縮を利用することができ�
 </span>
 このオプションは<code class="literal">-X stream</code>と一緒でのみ使用できます。
 これはWALストリーミングに指定したレプリケーションスロットを使用させます。
-ベースバックアップをストリーミングレプリケーションのスタンバイとして使用するつもりであるなら、その後、<code class="filename">recovery.conf</code>でも同じレプリケーションスロット名を使うべきです。
+ベースバックアップをストリーミングレプリケーションのスタンバイとして使用するつもりであるなら、その後、<a class="xref" href="runtime-config-replication.html#GUC-PRIMARY-SLOT-NAME">primary_slot_name</a>でも同じレプリケーションスロット名を使うべきです。
 その方が、ベースバックアップ終了とストリーミングレプリケーション開始の間の時間にサーバが必要なWALデータを削除しないことを確実にします。
        </p><p>
 <span class="original">
@@ -495,6 +495,7 @@ tarファイルを生成する場合のみ圧縮を利用することができ�
 </span>
 デフォルトでは、チェックサムは検証され、チェックサムエラーは非ゼロの終了ステータスをもたらします。
 とはいえ、このような場合には、<code class="option">--no-clean</code>オプションが使われていたかのように、ベースバックアップは削除されません。
+チェックサム検証の失敗は<a class="xref" href="monitoring-stats.html#PG-STAT-DATABASE-VIEW" title="表27.12 pg_stat_databaseビュー">pg_stat_database</a>ビューでも報告されます。
        </p></dd></dl></div><p>
    </p><p>
 <span class="original">
@@ -617,10 +618,14 @@ tarファイルを生成する場合のみ圧縮を利用することができ�
 </span>
 他のほとんどの<span class="productname">PostgreSQL</span>ユーティリティと同様このユーティリティは<span class="application">libpq</span>でサポートされる環境変数（<a class="xref" href="libpq-envars.html" title="33.14. 環境変数">33.14</a>参照）を使用します。
   </p><p>
-   The environment variable <code class="envar">PG_COLOR</code> specifies whether to use
+<span class="original">
+   The environment variable &lt;envar&gt;PG_COLOR&lt;/envar&gt; specifies whether to use
    color in diagnostics messages.  Possible values are
-   <code class="literal">always</code>, <code class="literal">auto</code>,
-   <code class="literal">never</code>.
+   &lt;literal&gt;always&lt;/literal&gt;, &lt;literal&gt;auto&lt;/literal&gt;,
+   &lt;literal&gt;never&lt;/literal&gt;.
+</span>
+環境変数<code class="envar">PG_COLOR</code>は診断メッセージで色を使うかどうかを指定します。
+可能な値は<code class="literal">always</code>、<code class="literal">auto</code>、<code class="literal">never</code>です。
   </p></div><div class="refsect1" id="id-1.9.4.9.8"><h2>注意</h2><span class="original">
   &lt;title&gt;Notes&lt;/title&gt;
 </span><p>

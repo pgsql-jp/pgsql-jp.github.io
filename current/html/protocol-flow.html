@@ -1458,59 +1458,92 @@ CancelRequestメッセージは、接続開始段階でフロントエンドに�
     of authentication checking.
 </span>
 プロトコル自体には、サーバに<acronym class="acronym">SSL</acronym>暗号化を強制する方法は用意されていませんが、管理者は認証検査の一方法として、暗号化されていないセッションを拒否するようにサーバを設定することができます。
-   </p></div><div class="sect2" id="id-1.10.5.7.12"><div class="titlepage"><div><div><h3 class="title">52.2.10. <acronym class="acronym">GSSAPI</acronym> Session Encryption</h3></div></div></div><p>
-    If <span class="productname">PostgreSQL</span> was built with
-    <acronym class="acronym">GSSAPI</acronym> support, frontend/backend communications
-    can be encrypted using <acronym class="acronym">GSSAPI</acronym>.  This provides
+   </p></div><div class="sect2" id="id-1.10.5.7.12"><div class="titlepage"><div><div><h3 class="title">52.2.10. <acronym class="acronym">GSSAPI</acronym>セッション暗号化</h3></div></div></div><span class="original">
+   &lt;title&gt;&lt;acronym&gt;GSSAPI&lt;/acronym&gt; Session Encryption&lt;/title&gt;
+</span><p>
+<span class="original">
+    If &lt;productname&gt;PostgreSQL&lt;/productname&gt; was built with
+    &lt;acronym&gt;GSSAPI&lt;/acronym&gt; support, frontend/backend communications
+    can be encrypted using &lt;acronym&gt;GSSAPI&lt;/acronym&gt;.  This provides
     communication security in environments where attackers might be
     able to capture the session traffic. For more information on
-    encrypting <span class="productname">PostgreSQL</span> sessions with
-    <acronym class="acronym">GSSAPI</acronym>, see <a class="xref" href="gssapi-enc.html" title="18.10. Secure TCP/IP Connections with GSSAPI Encryption">18.10</a>.
+    encrypting &lt;productname&gt;PostgreSQL&lt;/productname&gt; sessions with
+    &lt;acronym&gt;GSSAPI&lt;/acronym&gt;, see &lt;xref linkend="gssapi-enc"/&gt;.
+</span>
+<span class="productname">PostgreSQL</span>が<acronym class="acronym">GSSAPI</acronym>サポートを有効にして構築されていれば、<acronym class="acronym">GSSAPI</acronym>を使ってフロントエンド/バックエンド通信を暗号化できます。
+これにより、攻撃者がセッションのやり取りを読み取れるかもしれない環境における通信のセキュリティが提供されます。
+<span class="productname">PostgreSQL</span>での通信を<acronym class="acronym">GSSAPI</acronym>で暗号化するための情報に関しては、<a class="xref" href="gssapi-enc.html" title="18.10. Secure TCP/IP Connections with GSSAPI Encryption">18.10</a>をご覧ください。
    </p><p>
-    To initiate a <acronym class="acronym">GSSAPI</acronym>-encrypted connection, the
+<span class="original">
+    To initiate a &lt;acronym&gt;GSSAPI&lt;/acronym&gt;-encrypted connection, the
     frontend initially sends a GSSENCRequest message rather than a
     StartupMessage.  The server then responds with a single byte
-    containing <code class="literal">G</code> or <code class="literal">N</code>, indicating that it
-    is willing or unwilling to perform <acronym class="acronym">GSSAPI</acronym> encryption,
+    containing &lt;literal&gt;G&lt;/literal&gt; or &lt;literal&gt;N&lt;/literal&gt;, indicating that it
+    is willing or unwilling to perform &lt;acronym&gt;GSSAPI&lt;/acronym&gt; encryption,
     respectively.  The frontend might close the connection at this point
     if it is dissatisfied with the response.  To continue after
-    <code class="literal">G</code>, using the GSSAPI C bindings as discussed in RFC2744
-    or equivalent, perform a <acronym class="acronym">GSSAPI</acronym> initialization by
-    calling <code class="function">gss_init_sec_context()</code> in a loop and sending
+    &lt;literal&gt;G&lt;/literal&gt;, using the GSSAPI C bindings as discussed in RFC2744
+    or equivalent, perform a &lt;acronym&gt;GSSAPI&lt;/acronym&gt; initialization by
+    calling &lt;function&gt;gss_init_sec_context()&lt;/function&gt; in a loop and sending
     the result to the server, starting with an empty input and then with each
     result from the server, until it returns no output.  When sending the
-    results of <code class="function">gss_init_sec_context()</code> to the server,
+    results of &lt;function&gt;gss_init_sec_context()&lt;/function&gt; to the server,
     prepend the length of the message as a four byte integer in network byte
-    order.  If this is successful, then use <code class="function">gss_wrap()</code> to
+    order.  If this is successful, then use &lt;function&gt;gss_wrap()&lt;/function&gt; to
     encrypt the usual StartupMessage and all subsequent data, prepending the
-    length of the result from <code class="function">gss_wrap()</code> as a four byte
+    length of the result from &lt;function&gt;gss_wrap()&lt;/function&gt; as a four byte
     integer in network byte order to the actual encrypted payload.  Note that
     the server will only accept encrypted packets from the client which are less
-    than 16kB; <code class="function">gss_wrap_size_limit()</code> should be used by the
+    than 16kB; &lt;function&gt;gss_wrap_size_limit()&lt;/function&gt; should be used by the
     client to determine the size of the unencrypted message which will fit
     within this limit and larger messages should be broken up into multiple
-    <code class="function">gss_wrap()</code> calls.  Typical segments are 8kB of
+    &lt;function&gt;gss_wrap()&lt;/function&gt; calls.  Typical segments are 8kB of
     unencrypted data, resulting in encrypted packets of slightly larger than 8kB
     but well within the 16kB maximum.  The server can be expected to not send
     encrypted packets of larger than 16kB to the client.  To continue after
-    <code class="literal">N</code>, send the usual StartupMessage and proceed without
+    &lt;literal&gt;N&lt;/literal&gt;, send the usual StartupMessage and proceed without
     encryption.
+</span>
+<acronym class="acronym">GSSAPI</acronym>暗号化接続を開始するには、フロントエンドは最初にStartupMessageではなく、GSSENCRequestメッセージを送ります。
+次にサーバは、それぞれ<acronym class="acronym">GSSAPI</acronym>暗号化を希望する、しないを意味する<code class="literal">G</code>または<code class="literal">N</code>を含む1バイトを送信します。
+このレスポンスに満足できなければ、この時点でフロントエンドは接続を打ち切って構いません。
+<code class="literal">G</code>の受信後継続するには、RFC2744あるいは同様の文書で議論されているGSSAPI Cバインディングを使い、ループの中で<code class="function">gss_init_sec_context()</code>を呼び出して<acronym class="acronym">GSSAPI</acronym>を初期化し、結果をサーバに送信し、空の入力を受け取ることから始めて、サーバが出力を返さなくなるまでサーバからの出力を受け取ります。
+<code class="function">gss_init_sec_context()</code>の結果をサーバに送る際には、ネットワークバイトオーダーで4バイトの整数にメッセージ長を先頭に付与します。
+これに成功したら、<code class="function">gss_wrap()</code>を使って通常のStartupMessageと後続のすべてのメッセージを暗号化します。
+実際に暗号化した送信データの前に、<code class="function">gss_wrap()</code>の結果をネットワークバイトオーダーで4バイトの整数にしたものを付与します。
+サーバは16kB未満のクライアントからの暗号化パケットだけを受け付けることに注意してください。
+クライアントは<code class="function">gss_wrap_size_limit()</code>を使って暗号化前のメッセージの大きさがこの制限に収まるかどうかを確認し、それより大きなメッセージは複数の<code class="function">gss_wrap()</code>呼び出しに分解すべきです。
+典型的なセグメントは暗号化前で8kBのデータで、暗号化後のパケットは8kBより少し大きくなりますが、最大長の16kB以内には問題なく収まります。
+サーバは16kBよりも大きな暗号化パケットをクライアントに送らないものと期待することができます。
+<code class="literal">N</code>の後継続するには、通常のStartupMessageを送信し、暗号化せずに続けてください。
    </p><p>
+<span class="original">
     The frontend should also be prepared to handle an ErrorMessage
     response to GSSENCRequest from the server.  This would only occur if
-    the server predates the addition of <acronym class="acronym">GSSAPI</acronym> encryption
-    support to <span class="productname">PostgreSQL</span>.  In this case the
+    the server predates the addition of &lt;acronym&gt;GSSAPI&lt;/acronym&gt; encryption
+    support to &lt;productname&gt;PostgreSQL&lt;/productname&gt;.  In this case the
     connection must be closed, but the frontend might choose to open a fresh
-    connection and proceed without requesting <acronym class="acronym">GSSAPI</acronym>
+    connection and proceed without requesting &lt;acronym&gt;GSSAPI&lt;/acronym&gt;
     encryption.  Given the length limits specified above, the ErrorMessage can
     not be confused with a proper response from the server with an appropriate
     length.
+</span>
+また、フロントエンドはサーバからのGSSENCRequestへのErrorMessage応答に備えるべきです。
+これはサーバが<span class="productname">PostgreSQL</span>への<acronym class="acronym">GSSAPI</acronym>暗号化サポートを追加する以前だったときにのみ発生します。
+この場合は接続を切断しなければなりませんが、フロントエンドは新しい接続を開いて<acronym class="acronym">GSSAPI</acronym>暗号化を要求せずに進めることを選択するかもしれません。
+上述の長さ制限により、ErrorMessageがサーバからの適切な長さを持つ正しい応答と混同されることはありません。
    </p><p>
+<span class="original">
     An initial GSSENCRequest can also be used in a connection that is being
     opened to send a CancelRequest message.
+</span>
+最初のGSSENCRequestは、CancelRequestメッセージを送信するために開いている接続でも利用できます。
    </p><p>
+<span class="original">
     While the protocol itself does not provide a way for the server to
-    force <acronym class="acronym">GSSAPI</acronym> encryption, the administrator can
+    force &lt;acronym&gt;GSSAPI&lt;/acronym&gt; encryption, the administrator can
     configure the server to reject unencrypted sessions as a byproduct
     of authentication checking.
+</span>
+プロトコル自身はサーバに<acronym class="acronym">GSSAPI</acronym>暗号化を強制する方法を提供していませんが、管理者は認証チェックの副次的効果として暗号化されていないセッションをサーバが拒否するように設定できます。
    </p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="protocol-overview.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="protocol.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="sasl-authentication.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">52.1. 概要 </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> 52.3. SASL認証</td></tr></table></div></body></html>
