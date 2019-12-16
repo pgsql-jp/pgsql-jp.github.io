@@ -53,7 +53,7 @@
 分岐点のあと間をおかずシャットダウンされたような典型的なフェイルオーバーのシナリオにおいては、これは特に問題になりません。
 しかし、分岐点の後にターゲットクラスタが長時間運用されていた場合には、古いWALファイルはもう存在しないかもしれません。
 この場合は、WALアーカイブから手動で<code class="filename">pg_wal</code>ディレクトリにコピーすることができます。
-あるいは、<code class="filename">recovery.conf</code>を設定することにより、起動時に取得できます。
+あるいは、<a class="xref" href="runtime-config-replication.html#GUC-PRIMARY-CONNINFO">primary_conninfo</a>や<a class="xref" href="runtime-config-wal.html#GUC-RESTORE-COMMAND">restore_command</a>を設定することにより、起動時に取得できます。
 <span class="application">pg_rewind</span>の利用は、フェイルオーバーに留まりません。
 たとえば、スタンバイサーバは昇格してから書き込みトランザクションを実行し、再びスタンバイになるために巻き戻すこともできます。
   </p><p>
@@ -71,7 +71,7 @@
 </span>
 <span class="application">pg_rewind</span>を実行した後、最初にターゲットサーバを起動すると、そのサーバはリカバリモードに入り、分岐点以降ソースサーバで生成されたWALをすべてリプレイします。
 <span class="application">pg_rewind</span>が実行された時にWALがソースサーバになくて<span class="application">pg_rewind</span>のセッションではコピーできなかった場合は、ターゲットサーバが起動した時にWALを読む込めるようになっていなければなりません。
-適切な<code class="varname">restore_command</code>を設定した<code class="filename">recovery.conf</code>ファイルをターゲットデータディレクトリに置くことで、これを達成できます。
+<code class="filename">recovery.signal</code>ファイルをターゲットデータディレクトリに置き、<code class="filename">postgresql.conf</code>に適切な<a class="xref" href="runtime-config-wal.html#GUC-RESTORE-COMMAND">restore_command</a>を設定することで、これを達成できます。
   </p><p>
 <span class="original">
    &lt;application&gt;pg_rewind&lt;/application&gt; requires that the target server either has
@@ -93,16 +93,17 @@
 処理中に<span class="application">pg_rewind</span>が失敗した場合、ターゲットのデータフォルダーはリカバリ可能な状態でない可能性があります。
 このような場合は、最新のバックアップを取ることをお勧めします。
    </p><p>
-    <span class="application">pg_rewind</span> will fail immediately if it finds
+<span class="original">
+    &lt;application&gt;pg_rewind&lt;/application&gt; will fail immediately if it finds
     files it cannot write directly to.  This can happen for example when
     the source and the target server use the same file mapping for read-only
     SSL keys and certificates.  If such files are present on the target server
     it is recommended to remove them before running
-    <span class="application">pg_rewind</span>.  After doing the rewind, some of
+    &lt;application&gt;pg_rewind&lt;/application&gt;.  After doing the rewind, some of
     those files may have been copied from the source, in which case it may
     be necessary to remove the data copied and restore back the set of links
     used before the rewind.
---&gt;
+</span>
 <span class="application">pg_rewind</span>は直接書き込めないファイルが見つかるとすぐに失敗します。
 たとえば、ソースサーバとターゲットサーバが読み取り専用のSSLキーと証明書に同じファイルマッピングを使用する場合に発生します。
 そのようなファイルがターゲットサーバ上に存在する場合、それらを削除してから<span class="application">pg_rewind</span>を実行することをお勧めします。
@@ -152,13 +153,18 @@
 </span>
 ターゲットディレクトリを実際に更新する以外はすべてのことを行います。
        </p></dd><dt><span class="term"><code class="option">-N</code><br /></span><span class="term"><code class="option">--no-sync</code></span></dt><dd><p>
-        By default, <code class="command">pg_rewind</code> will wait for all files
+<span class="original">
+        By default, &lt;command&gt;pg_rewind&lt;/command&gt; will wait for all files
         to be written safely to disk.  This option causes
-        <code class="command">pg_rewind</code> to return without waiting, which is
+        &lt;command&gt;pg_rewind&lt;/command&gt; to return without waiting, which is
         faster, but means that a subsequent operating system crash can leave
         the synchronized data directory corrupt.  Generally, this option is
         useful for testing but should not be used when creating a production
         installation.
+</span>
+デフォルトでは、<code class="command">pg_rewind</code>はファイルがすべて安全にディスクに書き込まれるのを待ちます。
+このオプションにより、<code class="command">pg_rewind</code>は待つことなく戻るようになります。これは速いのですが、直後にオペレーティングシステムがクラッシュした場合、同期データディレクトリの破損が残るかもしれません。
+一般に、このオプションはテストするためには有用ですが、稼働用のインストレーションを作成する時には使うべきではありません。
        </p></dd><dt><span class="term"><code class="option">-P</code><br /></span><span class="term"><code class="option">--progress</code></span></dt><dd><p>
 <span class="original">
         Enables progress reporting. Turning this on will deliver an approximate
@@ -183,10 +189,14 @@
 <code class="option">--source-server</code>オプションを使用する場合、<span class="application">pg_rewind</span>は
 <span class="application">libpq</span>で利用できる環境変数を使用します(<a class="xref" href="libpq-envars.html" title="33.14. 環境変数">33.14</a>を参照)。
   </p><p>
-   The environment variable <code class="envar">PG_COLOR</code> specifies whether to use
+<span class="original">
+   The environment variable &lt;envar&gt;PG_COLOR&lt;/envar&gt; specifies whether to use
    color in diagnostics messages.  Possible values are
-   <code class="literal">always</code>, <code class="literal">auto</code>,
-   <code class="literal">never</code>.
+   &lt;literal&gt;always&lt;/literal&gt;, &lt;literal&gt;auto&lt;/literal&gt;,
+   &lt;literal&gt;never&lt;/literal&gt;.
+</span>
+環境変数<code class="envar">PG_COLOR</code>は診断メッセージで色を使うかどうかを指定します。
+可能な値は<code class="literal">always</code>、<code class="literal">auto</code>、<code class="literal">never</code>です。
   </p></div><div class="refsect1" id="id-1.9.5.9.8"><h2>注釈</h2><span class="original">
   &lt;title&gt;Notes&lt;/title&gt;
 </span><p>
