@@ -421,7 +421,7 @@ WALアーカイブによって<span class="productname">PostgreSQL</span>デー�
 このファイルにはファイルシステムのバックアップに最初に必要とされるWALセグメントの名前が付けられます。
 例えば、最初のWALファイルが <code class="literal">0000000100001234000055CD</code>である場合、バックアップ履歴ファイルは<code class="literal">0000000100001234000055CD.007C9330.backup</code>というように名付けられます。
 (ファイル名の2番目のパートはWALファイルの厳密な位置が記載されます。通常は無視することができます。)
-一旦、安全にファイルシステムのバックアップとそのバックアップ中に使用されたWALセグメントファイル(バックアップ履歴ファイルから特定できます)を取得すると、それより数値の小さな全てのWALアーカイブセグメントはファイルシステムのリカバリには必要が無く、削除することができます。
+一旦、安全にファイルシステムのバックアップとそのバックアップ中に使用されたWALセグメントファイル(バックアップ履歴ファイルから特定できます)を取得すると、それより数値の小さな全てのWALアーカイブセグメントはファイルシステムの復旧には必要が無く、削除することができます。
 しかし、データを確実に復旧させるためには数世代のバックアップセットを保持することを考慮すべきです。
 
    </p><p>
@@ -447,7 +447,7 @@ WALアーカイブによって<span class="productname">PostgreSQL</span>デー�
     been a long time since the last base backup.
 </span>
 最後のベースバックアップ以降のWALアーカイブを保持し続ける必要があるため、通常、ベースバックアップを取得すべき期間は、WALアーカイブを保持するためにどのくらいのストレージを拡張できるかによって決定されます。
-また、リカバリが必要になった場合に、どのくらいの時間をリカバリに使うと覚悟するのかも考慮すべきです。—
+また、復旧が必要になった場合に、どのくらいの時間を復旧に使うと覚悟するのかも考慮すべきです。—
 システムは全てのWALセグメントを適用する必要があるため、もし、最後のベースバックアップを取得してから長い時間が経過している場合、適用に時間を要する可能性があります。
    </p></div><div class="sect2" id="BACKUP-LOWLEVEL-BASE-BACKUP"><div class="titlepage"><div><div><h3 class="title">25.3.3. 低レベルAPIを使用したベースバックアップの作成</h3></div></div></div><span class="original">
    &lt;title&gt;Making a Base Backup Using the Low Level API&lt;/title&gt;
@@ -628,10 +628,14 @@ WALのアーカイブを適切に監視していない場合、バックアッ�
     </p></div><div class="sect3" id="BACKUP-LOWLEVEL-BASE-BACKUP-EXCLUSIVE"><div class="titlepage"><div><div><h4 class="title">25.3.3.2. 排他的低レベルバックアップの作成</h4></div></div></div><span class="original">
     &lt;title&gt;Making an Exclusive Low-Level Backup&lt;/title&gt;
 </span><div class="note"><h3 class="title">注記</h3><p>
+<span class="original">
       The exclusive backup method is deprecated and should be avoided.
-      Prior to <span class="productname">PostgreSQL</span> 9.6, this was the only
+      Prior to &lt;productname&gt;PostgreSQL&lt;/productname&gt; 9.6, this was the only
       low-level method available, but it is now recommended that all users
       upgrade their scripts to use non-exclusive backups.
+</span>
+排他的バックアップ方式は非推奨であり避けるべきです。
+これはPostgreSQL 9.6より前では唯一利用可能な低レベル手法でしたが、今日ではすべてのユーザが自身のスクリプトを非排他的バックアップを使用するようにアップグレードすることが推奨されています。
      </p></div><p>
 <span class="original">
      The process for an exclusive backup is mostly the same as for a
@@ -645,8 +649,10 @@ WALのアーカイブを適切に監視していない場合、バックアッ�
      the following steps may be used.
 </span>
 排他的バックアップの手順は、ほぼ非排他的バックアップのものと同様ですが、いくつかのキーとなる手順に違いがあります。
-バックアップの複数同時実行を許可せず、バックアップ中にクラッシュした場合、サーバ上にいくつかの問題が残ります。
-PostgreSQL 9.6より前では唯一利用可能な低レベル手法でしたが、今日では可能であればすべてのユーザが自身のスクリプトを非排他的バックアップを使用するようにアップグレードすることが推奨されています。
+このバックアップ方式は、プライマリからしか取得できず、バックアップの複数同時実行を許可しません。
+さらに、後述するようにバックアップラベルファイルを作るため、マスターサーバのクラッシュ後の自動再起動をブロックする可能性があります。
+一方でバックアップラベルファイルのバックアップやスタンバイからの誤った削除はよくあるミスで、これは深刻なデータ破壊をもたらすおそれがあります。
+この方式を使う必要があるのであれば、以下の手順を用いてください。
     </p><p>
   </p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p>
 <span class="original">
@@ -731,7 +737,10 @@ SELECT pg_start_backup('label', true);
      you are building a standby that will subsequently be promoted to a new
      master.
 </span>
-バックアップ中にサーバがクラッシュした場合は、<code class="envar">PGDATA</code>ディレクトリから手動で<code class="literal">backup_label</code>ファイルを削除するまで再起動できない可能性があることに注意してください。
+上記のように、バックアップ中にサーバがクラッシュした場合、<code class="filename">backup_label</code>ファイルが<code class="envar">PGDATA</code>ディレクトリから手動で削除されない限り、再起動できないかもしれません。
+破損をもたらすため、バックアップをリストアするときに<code class="filename">backup_label</code>ファイルを決して削除しないことは重要である点に注意してください。
+このファイルをいつ削除するのが適切かに関する混乱は、この方式を使ったときのデータ破損のよくある原因です。
+確実に、本ファイルは既存マスタでのみ削除して、スタンバイの構築やバックアップのリストアでは決して削除しないでください。たとえ次に新マスタに昇格させるつもりのスタンバイを構築している場合であってもです。
     </p></li><li class="listitem"><p>
 <span class="original">
      Again connect to the database as a user with rights to run
@@ -773,15 +782,18 @@ SELECT pg_stop_backup();
 ほとんどの場合、これは瞬時に行われます。
 しかし、バックアップの完了を確認できるよう、アーカイブシステムを監視し、遅延が無いことの確認をお勧めします。
 アーカイブコマンドの失敗によりアーカイブ処理が遅れてしまったとしても、アーカイブが成功し、そしてバックアップが完了するまで再試行を繰り返すようになっています。
-<code class="function">pg_stop_backup</code>実行においての時間期限を設けたい場合、適切な<code class="varname">statement_timeout</code>の値を設定できますが、この設定値によって<code class="function">pg_stop_backup</code>が中断したときにバックアップが正当ではない可能性があるということを肝に銘じてください。
     </p><p>
+<span class="original">
      When using exclusive backup mode, it is absolutely imperative to ensure
-     that <code class="function">pg_stop_backup</code> completes successfully at the
+     that &lt;function&gt;pg_stop_backup&lt;/function&gt; completes successfully at the
      end of the backup.  Even if the backup itself fails, for example due to
-     lack of disk space, failure to call <code class="function">pg_stop_backup</code>
+     lack of disk space, failure to call &lt;function&gt;pg_stop_backup&lt;/function&gt;
      will leave the server in backup mode indefinitely, causing future backups
      to fail and increasing the risk of a restart failure during the time that
-     <code class="filename">backup_label</code> exists.
+     &lt;filename&gt;backup_label&lt;/filename&gt; exists.
+</span>
+排他的バックアップモードを使ったときは、バックアップ終了時に確実に<code class="function">pg_stop_backup</code>を正常に完了することが絶対的に必要です。
+バックアップ自体が、例えばディスク領域不足で、失敗した場合であっても、<code class="function">pg_stop_backup</code>を実行しそこなうと、サーバが無期限にバックアップモードのままになってしまい、将来のバックアップ失敗と<code class="filename">backup_label</code>がある間の再起動失敗のリスクの増大を引き起こします。
     </p></li></ol></div><p>
     </p></div><div class="sect3" id="BACKUP-LOWLEVEL-BASE-BACKUP-DATA"><div class="titlepage"><div><div><h4 class="title">25.3.3.3. データディレクトリのバックアップ</h4></div></div></div><span class="original">
    &lt;title&gt;Backing Up the Data Directory&lt;/title&gt;
@@ -995,12 +1007,17 @@ GNUの <span class="application">tar</span>で1.23以降のバージョンを使
 手順2で退避させた未アーカイブのWALセグメントファイルがあるのであれば、<code class="filename">pg_wal/</code>にコピーしてください。
 （問題が発生し、初めからやり直さなければならない場合に未変更のファイルが残るように、移動させるのではなくコピーすることが最善です。）
     </p></li><li class="listitem"><p>
+<span class="original">
      Set recovery configuration settings in
-     <code class="filename">postgresql.conf</code> (see <a class="xref" href="runtime-config-wal.html#RUNTIME-CONFIG-WAL-ARCHIVE-RECOVERY" title="19.5.4. Archive Recovery">19.5.4</a>) and create a file
-     <code class="filename">recovery.signal</code> in the cluster
+     &lt;filename&gt;postgresql.conf&lt;/filename&gt; (see &lt;xref
+     linkend="runtime-config-wal-archive-recovery"/&gt;) and create a file
+     &lt;filename&gt;recovery.signal&lt;/filename&gt; in the cluster
      data directory. You might
-     also want to temporarily modify <code class="filename">pg_hba.conf</code> to prevent
+     also want to temporarily modify &lt;filename&gt;pg_hba.conf&lt;/filename&gt; to prevent
      ordinary users from connecting until you are sure the recovery was successful.
+</span>
+<code class="filename">postgresql.conf</code>（<a class="xref" href="runtime-config-wal.html#RUNTIME-CONFIG-WAL-ARCHIVE-RECOVERY" title="19.5.4. Archive Recovery">19.5.4</a>を参照してください）に復旧の設定を記述し、クラスタデータディレクトリに<code class="filename">recovery.signal</code>ファイルを作成します。
+また、一時的に<code class="filename">pg_hba.conf</code>を変更し、復旧の成功を確認できるまで一般ユーザが接続できないようにする必要があるかもしれません。
     </p></li><li class="listitem"><p>
 <span class="original">
      Start the server.  The server will go into recovery mode and
@@ -1015,7 +1032,7 @@ GNUの <span class="application">tar</span>で1.23以降のバージョンを使
 サーバを起動してください。
 サーバは復旧モードに入り、必要なアーカイブ済みWALファイル群の読み込みを行います。
 外部的なエラーにより復旧が中断したら、サーバを単に再起動させて、復旧処理を継続してください。
-復旧処理が完了したら、（誤って後で復旧モードに再度入らないように）postmasterは<code class="filename">recovery.conf</code>の名前を<code class="filename">recovery.done</code>に変更します。
+復旧処理が完了したら、（誤って後で復旧モードに再度入らないように）サーバは<code class="filename">recovery.signal</code>を削除します。
 その後通常のデータベース操作を開始します。
     </p></li><li class="listitem"><p>
 <span class="original">
@@ -1043,10 +1060,8 @@ GNUの <span class="application">tar</span>で1.23以降のバージョンを使
     character in the command.  The simplest useful command is
     something like:
 </span>
-ここで重要となるのは、復旧設定ファイルを設定することです。
-このファイルで、どのように復旧させたいのかやどこまで復旧させたいかを記述します。
-<code class="filename">recovery.conf.sample</code>（通常はインストレーションの<code class="filename">share/</code>ディレクトリに格納されています）を手本として使用することができます。
-<code class="filename">recovery.conf</code>で絶対に指定しなければならないことは、アーカイブ済みWALファイルセグメントをどのように戻すかを<span class="productname">PostgreSQL</span>に通知する<code class="varname">restore_command</code>です。
+ここで重要となるのは、どのように復旧させたいのかやどこまで復旧させたいかを記述する復旧設定を設定することです。
+絶対に指定しなければならないことは、アーカイブ済みWALファイルセグメントをどのように戻すかを<span class="productname">PostgreSQL</span>に通知する<code class="varname">restore_command</code>です。
 <code class="varname">archive_command</code>同様、これはシェルコマンド文字列です。
 ここには、対象のログファイルの名前で置換される<code class="literal">%f</code>やログファイルのコピー先を示すパスで置換される<code class="literal">%p</code>を含めることができます。
 （パス名は現在の作業用ディレクトリ、つまり、クラスタのデータディレクトリから見た相対パスです。）
@@ -1078,7 +1093,7 @@ restore_command = 'cp /mnt/server/archivedir/%f %p'
 このコマンドが失敗した時に非ゼロの終了ステータスを返すことが重要です。
 このコマンドは、アーカイブに存在しないファイルを要求する<span class="emphasis"><em>かもしれません</em></span>が、その場合でも非ゼロを返さなければなりません。
 これはエラー状態ではありません。
-例外は、コマンドがシグナルによって中断された場合(データベースの停止に使用される<span class="systemitem">SIGTERM</span>以外)か、シェルによるエラー(コマンドが見つかりませんなど)でリカバリが中断され、サーバが起動しない場合です。
+例外は、コマンドがシグナルによって中断された場合(データベースの停止に使用される<span class="systemitem">SIGTERM</span>以外)か、シェルによるエラー(コマンドが見つかりませんなど)で復旧が中断され、サーバが起動しない場合です。
    </p><p>
 <span class="original">
     Not all of the requested files will be WAL segment
@@ -1132,7 +1147,7 @@ restore_command = 'cp /mnt/server/archivedir/%f %p'
     are very usable, since there are no tools to help you identify with any
     accuracy which transaction ID to use.
 </span>
-もし以前のある時点まで復旧させたい場合（例えば、経験不足のデータベース管理者が主トランザクションテーブルを消去した直前）、<code class="filename">recovery.conf</code>に要求する<a class="link" href="runtime-config-wal.html#RUNTIME-CONFIG-WAL-RECOVERY-TARGET" title="19.5.5. リカバリターゲット">停止時点</a>を指定するだけです。
+もし以前のある時点まで復旧させたい場合（例えば、経験不足のデータベース管理者が主トランザクションテーブルを消去した直前）、要求する<a class="link" href="runtime-config-wal.html#RUNTIME-CONFIG-WAL-RECOVERY-TARGET" title="19.5.5. リカバリターゲット">停止時点</a>を指定するだけです。
 停止時点は、<span class="quote">「<span class="quote">recovery target</span>」</span>として既知の停止時点で指定することも、日付と時刻で指定することも、リストアポイントか完了した特定のトランザクションIDで指定することもできます。
 本ドキュメントの執筆時点では使用するトランザクションIDの識別を補助するツールがありませんので、ほとんどの場合は日付と時刻による指定のみを使用することになるでしょう。
    </p><div class="note"><h3 class="title">注記</h3><p>
@@ -1253,7 +1268,7 @@ restore_command = 'cp /mnt/server/archivedir/%f %p'
     timelines that branched off earlier than the base backup.
 </span>
 復旧処理のデフォルトは、ベースバックアップが取得された時点のタイムラインと同一のタイムラインに沿った復旧です。
-別の子タイムラインに沿って復旧させたい（つまり、復旧試行以降に生成されたある状態に戻りたい）場合は<code class="filename">recovery.conf</code>で対象のタイムラインIDを指定しなければなりません。
+別の子タイムラインに沿って復旧させたい（つまり、復旧試行以降に生成されたある状態に戻りたい）場合は、対象のタイムラインIDを指定しなければなりません。
 ベースバックアップより前に分岐したタイムラインに沿って復旧することはできません。
    </p></div><div class="sect2" id="BACKUP-TIPS"><div class="titlepage"><div><div><h3 class="title">25.3.6. ヒントと例</h3></div></div></div><span class="original">
    &lt;title&gt;Tips and Examples&lt;/title&gt;
@@ -1352,7 +1367,7 @@ archive_command = 'gzip &lt; %p &gt; /var/lib/pgsql/archive/%f'
 <span class="original">
       You will then need to use &lt;application&gt;gunzip&lt;/application&gt; during recovery:
 </span>
-リカバリ中は <span class="application">gunzip</span>を使う必要があります。
+復旧時は <span class="application">gunzip</span>を使う必要があります。
 </p><pre class="programlisting">
 restore_command = 'gunzip &lt; /mnt/server/archivedir/%f &gt; %p'
 </pre><p>
@@ -1398,7 +1413,7 @@ archive_command = 'local_backup_script.sh "%p" "%f"'
 <span class="original">
          Interfacing with other backup and recovery software
 </span>
-その他のバックアップとリカバリーソフトウェアとのインタフェース
+その他のバックアップとリカバリのソフトウェアとのインタフェース
         </p></li><li class="listitem"><p>
 <span class="original">
          Interfacing with monitoring software to report errors

@@ -12,13 +12,15 @@
    type &lt;type&gt;xml&lt;/type&gt; are documented there, not in this section.
 </span>
 この節で説明される関数および擬似関数式は、<code class="type">xml</code>型の値に対して機能します。
-<code class="type">xml</code>型についての情報は<a class="xref" href="datatype-xml.html" title="8.13. XML型">8.13</a>を点検してください。
-<code class="type">xml</code>型のやりとりを変換する<code class="function">xmlparse</code>および<code class="function">xmlserialize</code>擬似関数式はここでは繰り返しません。
-これらの多くの関数を使用するには、インストレーションの際<code class="command">configure --with-libxml</code>付きでビルドされていることが必要です。
+<code class="type">xml</code>型についての情報は<a class="xref" href="datatype-xml.html" title="8.13. XML型">8.13</a>を参照してください。
+<code class="type">xml</code>型のやりとりを変換する<code class="function">xmlparse</code>および<code class="function">xmlserialize</code>擬似関数式はこの節ではなく、そこに記載されています。
   </p><p>
+<span class="original">
    Use of most of these functions
-   requires <span class="productname">PostgreSQL</span> to have been built
-   with <code class="command">configure --with-libxml</code>.
+   requires &lt;productname&gt;PostgreSQL&lt;/productname&gt; to have been built
+   with &lt;command&gt;configure &amp;#045;&amp;#045;with-libxml&lt;/command&gt;.
+</span>
+これらの関数の大半は<span class="productname">PostgreSQL</span>が<code class="command">configure --with-libxml</code>でビルドされていることを必要としています。
   </p><div class="sect2" id="FUNCTIONS-PRODUCING-XML"><div class="titlepage"><div><div><h3 class="title">9.14.1. XML内容の生成</h3></div></div></div><span class="original">
    &lt;title&gt;Producing XML Content&lt;/title&gt;
 </span><p>
@@ -422,8 +424,10 @@ SELECT xmlagg(x) FROM (SELECT * FROM test ORDER BY y DESC) AS tab;
      passed as the context item must be an XML document, not a content
      fragment or any non-XML value.
 </span>
-関数<code class="function">xmlexists</code>は第一引数のXPath式が何かしらのノードであれば真を返し、そうでなければ偽を返します。
-(もしいずれの引数もNULLであった場合はNULLを返します。)
+関数<code class="function">xmlexists</code>は渡されたXML値をコンテキスト項目としてXPath 1.0式（第一引数）を評価します。
+この関数は評価が空のノード集合を生成する場合には偽を返し、それ以外の値を返すならば真を返します。
+もしどれかの引数がNULLであった場合はNULLを返します。
+コンテキスト項目として渡される非NULLの値は、内容の断片や非XML値ではなく、XML文書でなければなりません。
     </p><p>
 <span class="original">
      Example:
@@ -448,9 +452,8 @@ SELECT xmlexists('//town[text() = ''Toronto'']' PASSING BY VALUE '&lt;towns&gt;&
      expression, as discussed in
      &lt;xref linkend="functions-xml-limits-xpath1"/&gt;.
 </span>
-<code class="literal">BY REF</code>句は、PostgreSQLには何の影響も与えませんが、他の実装とのSQL互換性や順応性のため、付与することができます。
-SQL標準では1つ目の<code class="literal">BY REF</code>を必要としており、2つ目はオプショナルです。
-加えてSQL標準では<code class="function">xmlexists</code>はXQuery式を第一引数として取る構成としていますが、PostgreSQLでは現在XQueryのサブセットにあたるXPathのみサポートしていることに注意してください。
+<span class="productname">PostgreSQL</span>は<code class="literal">BY REF</code>句と<code class="literal">BY VALUE</code>句を受け付けますが、<a class="xref" href="xml-limits-conformance.html#FUNCTIONS-XML-LIMITS-POSTGRESQL" title="D.3.2. Incidental limits of the implementation">D.3.2</a>で議論されているように無視します。
+SQL標準では<code class="function">xmlexists</code>関数はXML問い合わせ言語における式を評価しますが、<a class="xref" href="xml-limits-conformance.html#FUNCTIONS-XML-LIMITS-XPATH1" title="D.3.1. Queries Are Restricted to XPath 1.0">D.3.1</a>で議論されているように、<span class="productname">PostgreSQL</span>はXPath 1.0の式だけを受け付けます。
     </p></div><div class="sect3" id="XML-IS-WELL-FORMED"><div class="titlepage"><div><div><h4 class="title">9.14.2.4. <code class="literal">xml_is_well_formed</code></h4></div></div></div><a id="id-1.5.8.19.6.6.2" class="indexterm"></a><a id="id-1.5.8.19.6.6.3" class="indexterm"></a><a id="id-1.5.8.19.6.6.4" class="indexterm"></a><pre class="synopsis">
 <code class="function">xml_is_well_formed</code>(<em class="replaceable"><code>text</code></em>)
 <code class="function">xml_is_well_formed_document</code>(<em class="replaceable"><code>text</code></em>)
@@ -542,8 +545,9 @@ SELECT xml_is_well_formed_document('&lt;pg:foo xmlns:pg="http://postgresql.org/s
      If the XPath expression returns a scalar value rather than a node-set,
      a single-element array is returned.
 </span>
-関数<code class="function">xpath</code>は、XML値<em class="replaceable"><code>xml</code></em>に対し、XPath式<em class="replaceable"><code>xpath</code></em>(ひとつの<code class="type">text</code>値)を評価します。そして、XPath式で作成されたノードセットに対応するXML値の配列を返します。
-もし、XPath式がノードセットではなくスカラー値を返す場合、単一要素の配列が返されます。
+関数<code class="function">xpath</code>は、XML値<em class="replaceable"><code>xml</code></em>に対し、XPath 1.0式<em class="replaceable"><code>xpath</code></em>(ひとつの<code class="type">text</code>値)を評価します。
+そして、XPath式で作成されたノード集合に対応するXML値の配列を返します。
+もし、XPath式がノード集合ではなくスカラー値を返す場合、単一要素の配列が返されます。
     </p><p>
 <span class="original">
      The second argument must be a well formed XML document. In particular,
@@ -606,7 +610,8 @@ SELECT xpath('//mydefns:b/text()', '&lt;a xmlns="http://example.com"&gt;&lt;b&gt
      This function is equivalent to the &lt;literal&gt;XMLEXISTS&lt;/literal&gt; predicate,
      except that it also offers support for a namespace mapping argument.
 </span>
-関数<code class="function">xpath_exists</code>は、<code class="function">xpath</code>関数の特別な形式です。この関数は、XPathを満足する個別のXML値を返す代わりに、問い合わせがそれを満足するかどうかを論理値で返します。
+関数<code class="function">xpath_exists</code>は、<code class="function">xpath</code>関数の特別な形式です。
+この関数は、XPath 1.0を満足する個別のXML値を返す代わりに、問い合わせがそれを満足するかどうか（具体的には空のノード集合以外の値を返すかどうか）を論理値で返します。
 この関数は、名前空間にマッピングされた引数をもサポートする点を除き、標準の<code class="literal">XMLEXISTS</code>述語と同じです。
     </p><p>
 <span class="original">
@@ -657,8 +662,9 @@ SELECT xpath_exists('/my:a/text()', '&lt;my:a xmlns:my="http://example.com"&gt;t
      is null, nor if the &lt;replaceable&gt;row_expression&lt;/replaceable&gt; produces
      an empty node-set or any value other than a node-set.
 </span>
-必須の<em class="replaceable"><code>row_expression</code></em>引数はXPath式で、指定のXML文書に対して評価され、XMLノードの順序付きシーケンスが取得されます。
-このシーケンスが<code class="function">xmltable</code>により出力行に変換されます。
+必須の<em class="replaceable"><code>row_expression</code></em>引数は評価されるXPath 1.0式で、XMLノード集合を得るために<em class="replaceable"><code>document_expression</code></em>をそのコンテキスト項目として渡します。
+このノードは<code class="function">xmltable</code>が出力行に変換します。
+<em class="replaceable"><code>document_expression</code></em>がNULLであるか、<em class="replaceable"><code>row_expression</code></em>が空のノード集合あるいはノード集合以外の値を生成するなら行は出力されません。
     </p><p>
 <span class="original">
      &lt;replaceable&gt;document_expression&lt;/replaceable&gt; provides the context
@@ -673,9 +679,10 @@ SELECT xpath_exists('/my:a/text()', '&lt;my:a xmlns:my="http://example.com"&gt;t
      expressions, as discussed in
      &lt;xref linkend="functions-xml-limits-xpath1"/&gt;.
 </span>
-<em class="replaceable"><code>document_expression</code></em>は演算の対象となるXML文書を提供します。
-<code class="literal">BY REF</code>句はPostgreSQLでは何の効果もありませんが、SQL準拠および他の実装との互換性のために受け入れられます。
-引数は整形されたXMLドキュメントでなければならず、フラグメントやフォレストは受け付けられません。
+<em class="replaceable"><code>document_expression</code></em>は<em class="replaceable"><code>row_expression</code></em>のためのコンテキスト項目を提供します。
+それは整形式XMLの文書でなければならず、フラグメントやフォレストは受け付けられません。
+<a class="xref" href="xml-limits-conformance.html#FUNCTIONS-XML-LIMITS-POSTGRESQL" title="D.3.2. Incidental limits of the implementation">D.3.2</a>で議論されているように、<code class="literal">BY REF</code>句と<code class="literal">BY VALUE</code>句は受け付けられますが、無視されます。
+SQL標準では<code class="function">xmltable</code>関数はXML問い合わせ言語の式を評価しますが、<a class="xref" href="xml-limits-conformance.html#FUNCTIONS-XML-LIMITS-XPATH1" title="D.3.1. Queries Are Restricted to XPath 1.0">D.3.1</a>で議論されているように<span class="productname">PostgreSQL</span>ではXPath 1.0式だけを受け付けます。
     </p><p>
 <span class="original">
      The mandatory &lt;literal&gt;COLUMNS&lt;/literal&gt; clause specifies the list
@@ -697,13 +704,17 @@ SELECT xpath_exists('/my:a/text()', '&lt;my:a xmlns:my="http://example.com"&gt;t
      the &lt;replaceable&gt;row_expression&lt;/replaceable&gt;'s result node-set.
      At most one column may be marked &lt;literal&gt;FOR ORDINALITY&lt;/literal&gt;.
 </span>
-<code class="literal">FOR ORDINALITY</code>と印がつけられた列には、元の入力XMLドキュメントの中に現れた出力行の順序に対応する行番号が入ります。
+<code class="literal">FOR ORDINALITY</code>と印がつけられた列には、<em class="replaceable"><code>row_expression</code></em>の結果ノード集合から取得されたノードの順序に対応する1から始まる行番号が入ります。
 <code class="literal">FOR ORDINALITY</code>の印が付けられるのは最大でも1列です。
     </p><div class="note"><h3 class="title">注記</h3><p>
+<span class="original">
       XPath 1.0 does not specify an order for nodes in a node-set, so code
       that relies on a particular order of the results will be
       implementation-dependent.  Details can be found in
-      <a class="xref" href="xml-limits-conformance.html#XML-XPATH-1-SPECIFICS" title="D.3.1.2. Restriction of XPath to 1.0">D.3.1.2</a>.
+      &lt;xref linkend="xml-xpath-1-specifics"/&gt;.
+</span>
+XPath 1.0はノード集合内のノードの順序を指定しません。ですから、結果が特定の順序になっていることに依存するコードは実装依存となります。
+詳細は<a class="xref" href="xml-limits-conformance.html#XML-XPATH-1-SPECIFICS" title="D.3.1.2. Restriction of XPath to 1.0">D.3.1.2</a>をご覧ください。
      </p></div><p>
 <span class="original">
      The &lt;replaceable&gt;column_expression&lt;/replaceable&gt; for a column is an
@@ -713,8 +724,8 @@ SELECT xpath_exists('/my:a/text()', '&lt;my:a xmlns:my="http://example.com"&gt;t
      no &lt;replaceable&gt;column_expression&lt;/replaceable&gt; is given, then the
      column name is used as an implicit path.
 </span>
-列の<code class="literal">column_expression</code>はXPath式で、<em class="replaceable"><code>row_expression</code></em>の結果に対応する各行について評価されて、列の値を得ます。
-<code class="literal">column_expression</code>が与えられなかった場合は、暗示的なパスとして列名が使用されます。
+列の<code class="literal">column_expression</code>はXPath 1.0式で、<em class="replaceable"><code>row_expression</code></em>の結果における現在のノードをそのコンテキスト項目として<em class="replaceable"><code>row_expression</code></em>の結果に対応する各行について評価されて、列の値を得ます。
+<code class="literal">column_expression</code>が与えられなかった場合は、暗黙的なパスとして列名が使用されます。
     </p><p>
 <span class="original">
      If a column's XPath expression returns a non-XML value (limited to
@@ -726,23 +737,30 @@ SELECT xpath_exists('/my:a/text()', '&lt;my:a xmlns:my="http://example.com"&gt;t
      column's type category is numeric, otherwise &lt;literal&gt;true&lt;/literal&gt; or
      &lt;literal&gt;false&lt;/literal&gt;.)
 </span>
-列のXPath式が複数の要素を戻した場合、エラーが発生します。
-式が空のタグとマッチした場合、結果は空文字列となります（<code class="literal">NULL</code>ではありません）。
-<code class="literal">xsi:nil</code>の属性はすべて無視されます。
+列のXPath式が非XML値（XPath 1.0における文字列、真偽値、倍精度浮動小数点数に限られます）を返し、その列が<code class="type">xml</code>以外のPostgreSQL型なら、あたかも値の文字列表現をPostgreSQL型にアサインしたように列に値がセットされます。
+（値が真偽値の場合、出力列型が数値カテゴリに属するならその文字列表現は<code class="literal">1</code>または<code class="literal">0</code>になり、それ外なら<code class="literal">true</code>または<code class="literal">false</code>になります。）
     </p><p>
+<span class="original">
      If a column's XPath expression returns a non-empty set of XML nodes
-     and the column's PostgreSQL type is <code class="type">xml</code>, the column will
+     and the column's PostgreSQL type is &lt;type&gt;xml&lt;/type&gt;, the column will
      be assigned the expression result exactly, if it is of document or
      content form.
+</span>
+列のXPath表現が空ではないXMLノードの集合を返し、列のPostgreSQL型が<code class="type">xml</code>である場合には、式が文書あるいはフォームの内容なら、列には正確に式の結果がアサインされます。
      <a href="#ftn.id-1.5.8.19.7.5.14.2" class="footnote"><sup class="footnote" id="id-1.5.8.19.7.5.14.2">[8]</sup></a>
     </p><p>
-     A non-XML result assigned to an <code class="type">xml</code> output column produces
+<span class="original">
+     A non-XML result assigned to an &lt;type&gt;xml&lt;/type&gt; output column produces
      content, a single text node with the string value of the result.
      An XML result assigned to a column of any other type may not have more than
      one node, or an error is raised. If there is exactly one node, the column
      will be set as if by assigning the node's string
-     value (as defined for the XPath 1.0 <code class="function">string</code> function)
+     value (as defined for the XPath 1.0 &lt;function&gt;string&lt;/function&gt; function)
      to the PostgreSQL type.
+</span>
+<code class="type">xml</code>出力列にアサインされた非XMLの結果は、結果の値が文字列値となる単一のテキストノードであるコンテントを生成します。
+それ以外の型の列にアサインされたXMLの結果は複数のノードを持たないかも知れませんし、エラーを生じするかも知れません。
+正確に一つのノードだけが存在するなら、列にはあたかもノードの文字列値（XPath 1.0 <code class="function">string</code>関数の定義されているように） がPostgreSQL型にアサインされたように設定されます。
     </p><p>
 <span class="original">
      The string value of an XML element is the concatenation, in document order,
@@ -756,13 +774,17 @@ SELECT xpath_exists('/my:a/text()', '&lt;my:a xmlns:my="http://example.com"&gt;t
      The XPath 1.0 &lt;function&gt;string&lt;/function&gt; function may be consulted for the
      rules defining the string value of other XML node types and non-XML values.
 </span>
-<em class="replaceable"><code>column_expression</code></em>にマッチしたXMLのテキスト本体が列の値として使用されます。
-要素内の複数の<code class="literal">text()</code>ノードは順番に結合されます。
-子要素、処理命令、コメントはすべて無視されますが、子要素のテキストコンテンツは結果に結合されます。
-2つの非テキスト要素間にある空白文字のみの<code class="literal">text()</code>ノードは保存されること、また<code class="literal">text()</code>ノードの先頭にある空白文字は削られないことに注意してください。
+ある要素と、その子孫に含まれるすべてのテキストノードをドキュメントの順に結合したものがXML要素の文字列値です。
+テキストノードの子孫を持たない要素の文字列値は空文字列です。（ <code class="literal">NULL</code>ではありません。）
+すべての<code class="literal">xsi:nil</code>属性は無視されます。
+非テキスト要素の間にある空白のみからなる<code class="literal">text()</code>2つのノードは保存され、<code class="literal">text()</code>の先頭の空白は平坦化されないことに注意してください。
+XPath 1.0 <code class="function">string</code>関数が、他のXMLノード型と非XML値の文字列値を定義するルールのために参照されるかも知れません。
     </p><p>
+<span class="original">
      The conversion rules presented here are not exactly those of the SQL
-     standard, as discussed in <a class="xref" href="xml-limits-conformance.html#FUNCTIONS-XML-LIMITS-CASTS" title="D.3.1.3. Mappings between SQL and XML Data Types and Values">D.3.1.3</a>.
+     standard, as discussed in &lt;xref linkend="functions-xml-limits-casts"/&gt;.
+</span>
+ここで示した変換ルールは、<a class="xref" href="xml-limits-conformance.html#FUNCTIONS-XML-LIMITS-CASTS" title="D.3.1.3. Mappings between SQL and XML Data Types and Values">D.3.1.3</a>で議論されているように、正確にSQL標準に従っているわけではありません。
     </p><p>
 <span class="original">
      If the path expression returns an empty node-set
@@ -771,9 +793,8 @@ SELECT xpath_exists('/my:a/text()', '&lt;my:a xmlns:my="http://example.com"&gt;t
      a &lt;replaceable&gt;default_expression&lt;/replaceable&gt; is specified; then the
      value resulting from evaluating that expression is used.
 </span>
-パス式が行とマッチせず、<em class="replaceable"><code>default_expression</code></em>が指定されている場合は、その式を評価した結果の値が使用されます。
-その列に<code class="literal">DEFAULT</code>句が指定されていない場合は、そのフィールドは<code class="literal">NULL</code>に設定されます。
-<em class="replaceable"><code>default_expression</code></em>は列リスト内でそれより前に現れる出力列の値を参照して、ある列のデフォルト値を他の列の値に基づくものにすることができます。
+パス式がある行に対して空のノード集合（典型的にはマッチしなかった場合）を返した時は、<em class="replaceable"><code>default_expression</code></em>が指定されている場合を除き、列には<code class="literal">NULL</code>が設定されます。
+そしてその式を評価した結果から生じる値が使用されます。
     </p><p>
 <span class="original">
      Columns may be marked &lt;literal&gt;NOT NULL&lt;/literal&gt;. If the
@@ -795,11 +816,9 @@ SELECT xpath_exists('/my:a/text()', '&lt;my:a xmlns:my="http://example.com"&gt;t
      &lt;function&gt;nextval&lt;/function&gt; in
      &lt;replaceable&gt;default_expression&lt;/replaceable&gt;.
 </span>
-PostgreSQLの通常の関数とは異なり、<em class="replaceable"><code>column_expression</code></em>と<em class="replaceable"><code>default_expression</code></em>は関数を呼び出す前には単純な値に評価されません。
-<em class="replaceable"><code>column_expression</code></em>は通常は一つの入力行に対してちょうど一度だけ評価され、<em class="replaceable"><code>default_expression</code></em>はフィールドにデフォルト値が必要になる度に評価されます。
+<code class="function">xmltable</code>が呼び出されて直ちに評価されるのと異なり、<em class="replaceable"><code>default_expression</code></em>はその列に対してデフォルトが必要になるたびに評価されます。
 式が安定（stable）または不変（immutable）とみなされる場合、評価は繰り返し行われないかもしれません。
-実際上、<code class="function">xmltable</code>は関数呼び出しとしてよりも、副問合せのように動作します。
-これは<em class="replaceable"><code>default_expression</code></em>の中で<code class="function">nextval</code>のような揮発性（volatile）の関数を有効に使用できること、また<em class="replaceable"><code>column_expression</code></em>はXML文書の他の部分に依存するかもしれないということを意味します。
+これは<em class="replaceable"><code>default_expression</code></em>の中で<code class="function">nextval</code>のような揮発性関数を使用できることを意味します。
     </p><p>
 <span class="original">
      Examples:
@@ -1193,11 +1212,17 @@ table2-mapping
 
 &lt;/xsl:stylesheet&gt;
 </pre></div></div><br class="figure-break" /></div><div class="footnotes"><br /><hr style="width:100; text-align:left;margin-left: 0" /><div id="ftn.id-1.5.8.19.7.5.14.2" class="footnote"><p><a href="#id-1.5.8.19.7.5.14.2" class="para"><sup class="para">[8] </sup></a>
+<span class="original">
        A result containing more than one element node at the top level, or
        non-whitespace text outside of an element, is an example of content form.
        An XPath result can be of neither form, for example if it returns an
        attribute node selected from the element that contains it. Such a result
        will be put into content form with each such disallowed node replaced by
        its string value, as defined for the XPath 1.0
-       <code class="function">string</code> function.
+       &lt;function&gt;string&lt;/function&gt; function.
+</span>
+トップレベルにおいて複数の要素ノードを含むか、あるいは要素の外側の非空白テキストであるような結果は、コンテントフォームの例です。
+XPathの結果はそのどちらでもないフォームであることがあり得ます。
+たとえば、それを含む要素から選択された属性ノードを返す場合です。
+XPath 1.0の<code class="function">string</code>関数で定義されているように、そうした結果は、許可されないノードを文字列値で置き換えたコンテントフォームに設定されます。
       </p></div></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="functions-textsearch.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="functions.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="functions-json.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">9.13. テキスト検索関数と演算子 </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> 9.15. JSON関数と演算子</td></tr></table></div></body></html>

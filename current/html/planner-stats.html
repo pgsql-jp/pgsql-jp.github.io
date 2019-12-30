@@ -181,7 +181,7 @@ WHERE tablename = 'road';
     such information.
 </span>
 問い合わせ句で使われている複数列に相関性があることにより、悪い実行計画を実行する遅いクエリがしばしば観察されます。
-プランナは通常複数の条件がお互いに独立あるとみなしますが、列の値に相関性がある場合はそれは成り立ちません。
+プランナは通常複数の条件がお互いに独立であるとみなしますが、列の値に相関性がある場合はそれは成り立ちません。
 通常の列ごとの統計情報は、それが個々の列ごとであるという性質上、列をまたがる相関性に関する知識を把握することはできません。
 しかしながら、<span class="productname">PostgreSQL</span>は、<em class="firstterm">多変量統計情報</em>を計算することができ、それによってそうした情報を把握することができます。
    </p><p>
@@ -208,7 +208,7 @@ WHERE tablename = 'road';
 統計情報オブジェクトは<a class="xref" href="sql-createstatistics.html" title="CREATE STATISTICS"><span class="refentrytitle">CREATE STATISTICS</span></a>で作成します。
 そうしたオブジェクトを作っても、単に統計情報として興味があることを示すカタログエントリが作られるだけです。
 実際のデータ収集は、<code class="command">ANALYZE</code> （手動のコマンドを起動あるいはバックグラウンドでの自動ANALYZE）が行います。
-収集したデータは、<a class="link" href="catalog-pg-statistic-ext.html" title="51.51. pg_statistic_ext"><code class="structname">pg_statistic_ext</code></a>カタログで参照することができます。
+収集したデータは、<a class="link" href="catalog-pg-statistic-ext-data.html" title="51.52. pg_statistic_ext_data"><code class="structname">pg_statistic_ext_data</code></a>カタログで参照することができます。
    </p><p>
 <span class="original">
     &lt;command&gt;ANALYZE&lt;/command&gt; computes extended statistics based on the same
@@ -434,24 +434,39 @@ ZIP codeとstate、ZIP codeとcity、cityとstateです。（これらが等し�
 </span>
 グループ化で実際に使用する列の組み合わせで、かつグループ数の見積もり間違いによって悪いプランをもたらすものに対してだけ、<code class="literal">ndistinct</code>統計情報オブジェクトを作ることをお勧めします。
 さもないと、<code class="command">ANALYZE</code>サイクルは単に無駄になります。
-    </p></div><div class="sect3" id="id-1.5.13.5.4.13"><div class="titlepage"><div><div><h4 class="title">14.2.2.3. Multivariate MCV Lists</h4></div></div></div><p>
+    </p></div><div class="sect3" id="id-1.5.13.5.4.13"><div class="titlepage"><div><div><h4 class="title">14.2.2.3. 多変量MCVリスト</h4></div></div></div><span class="original">
+    &lt;title&gt;Multivariate MCV Lists&lt;/title&gt;
+</span><p>
+<span class="original">
      Another type of statistics stored for each column are most-common value
      lists.  This allows very accurate estimates for individual columns, but
      may result in significant misestimates for queries with conditions on
      multiple columns.
+</span>
+列ごとに格納される別なタイプの統計情報は最頻値リスト(most-common value list)です。
+個々の列ごとには非常に正確な推測を可能にしますが、複数列に渡る条件を持つ問い合わせについては重大な誤った推定をもたらすことがあります。
     </p><p>
-     To improve such estimates, <code class="command">ANALYZE</code> can collect MCV
+<span class="original">
+     To improve such estimates, &lt;command&gt;ANALYZE&lt;/command&gt; can collect MCV
      lists on combinations of columns.  Similarly to functional dependencies
      and n-distinct coefficients, it's impractical to do this for every
      possible column grouping.  Even more so in this case, as the MCV list
      (unlike functional dependencies and n-distinct coefficients) does store
      the common column values.  So data is collected only for those groups
      of columns appearing together in a statistics object defined with the
-     <code class="literal">mcv</code> option.
+     &lt;literal&gt;mcv&lt;/literal&gt; option.
+</span>
+こうした推定を改善するために、列の組み合わせのMCVリストを<code class="command">ANALYZE</code>で収集することができます。
+関数従属性とN個別値係数同様、考えられるすべての列のグループに対してこれを行うのは実用的ではありません。
+MCVリストでは（関数従属性とN個別値係数と違って）列の頻値を格納するのでなおさらです。
+ですから<code class="literal">mcv</code>オプションで定義された統計情報オブジェクト中に共通して現れる列のグループのデータだけが収集されます。
     </p><p>
+<span class="original">
      Continuing the previous example, the MCV list for a table of ZIP codes
      might look like the following (unlike for simpler types of statistics,
      a function is required for inspection of MCV contents):
+</span>
+前述の例を続けましょう。ZIPコードのテーブルのMCVリストは次のようになるでしょう。（単純な形式の統計情報とは違って、MCVの内容を解析する関数が必要になります）
 
 </p><pre class="programlisting">
 CREATE STATISTICS stts3 (mcv) ON city, state FROM zipcodes;
@@ -476,15 +491,23 @@ SELECT m.* FROM pg_statistic_ext join pg_statistic_ext_data on (oid = stxoid),
    ...
 (99 rows)
 </pre><p>
+<span class="original">
      This indicates that the most common combination of city and state is
      Washington in DC, with actual frequency (in the sample) about 0.35%.
      The base frequency of the combination (as computed from the simple
      per-column frequencies) is only 0.0027%, resulting in two orders of
      magnitude under-estimates.
+</span>
+これによると市と州のもっとも頻度の高い組み合わせはDCのWashingtonで、（サンプルにおける）実際の頻度は約0.35%でした。
+比較の基準となる組み合わせの頻度（単純な列ごとの頻度から計算されたもの）はたった0.0027%で、2桁の過少見積になっています。
     </p><p>
-     It's advisable to create <acronym class="acronym">MCV</acronym> statistics objects only
+<span class="original">
+     It's advisable to create &lt;acronym&gt;MCV&lt;/acronym&gt; statistics objects only
      on combinations of columns that are actually used in conditions together,
      and for which misestimation of the number of groups is resulting in bad
-     plans.  Otherwise, the <code class="command">ANALYZE</code> and planning cycles
+     plans.  Otherwise, the &lt;command&gt;ANALYZE&lt;/command&gt; and planning cycles
      are just wasted.
+</span>
+そのグループの誤推定値が間違った計画をもたらしてしまうような、条件の中で実際に一緒に使われる列の組み合わせについてのみ<acronym class="acronym">MCV</acronym>統計情報オブジェクトを作成することが望ましいです。
+さもないと、<code class="command">ANALYZE</code>とプラン処理は単に無駄になってしまいます。
     </p></div></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="using-explain.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="performance-tips.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="explicit-joins.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">14.1. <code class="command">EXPLAIN</code>の利用 </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> 14.3. 明示的な<code class="literal">JOIN</code>句でプランナを制御する</td></tr></table></div></body></html>
