@@ -367,7 +367,7 @@ typedef struct spgChooseOut
 <code class="structfield">leafDatum</code>は、<code class="function">choose</code>や<code class="function">picksplit</code>メソッドがこれを変更すると、ツリーのより低いレベルで変化することがあります。
 挿入の探索がリーフページに到達するとき、<code class="structfield">leafDatum</code>の現在値は、新しく作成されるリーフタプルに格納される値です。
 <code class="structfield">level</code>は、ルートレベルを0として、現在の内部タプルのレベルを示します。
-現在の内部タプルが複数の同等なノードを含むとして印を付けられているとき、<code class="structfield">allTheSame</code>をtrueにします(<a class="xref" href="spgist-implementation.html#SPGIST-ALL-THE-SAME" title="65.4.3. 「All-the-same」内部タプル">65.4.3</a>参照)。
+現在の内部タプルが複数の同等なノードを含むとして印を付けられているとき、<code class="structfield">allTheSame</code>をtrueにします(<a class="xref" href="spgist-implementation.html#SPGIST-ALL-THE-SAME" title="65.4.3. 「All-the-Same」内部タプル">65.4.3</a>参照)。
 現在の内部タプルが接頭辞を含むとき、<code class="structfield">hasPrefix</code>をtrueにします。
 このとき、<code class="structfield">prefixDatum</code>がその値になります。
 <code class="structfield">nNodes</code>は内部タプルが含む子ノードの数で、<code class="structfield">nodeLabels</code>はそれらのラベル値の配列、あるいはラベルがなければNULLになります。
@@ -573,7 +573,7 @@ typedef struct spgPickSplitOut
 従って、<code class="function">picksplit</code>がすべてのリーフタプルを同じノードに置くことになった場合には、SP-GiSTのコアのコードがその決定を覆して内部タプルを生成し、その中の複数の同一のラベルが付けられたノードに、リーフタプルが無作為に割り当てられます。
 そのようなタプルは、このことが発生したことを明示するため、<code class="literal">allTheSame</code>と印がつけられます。
 <code class="function">choose</code>関数と<code class="function">inner_consistent</code>関数は、これらの内部タプルについて、適切な注意をして取り扱わなければなりません。
-詳細な情報は<a class="xref" href="spgist-implementation.html#SPGIST-ALL-THE-SAME" title="65.4.3. 「All-the-same」内部タプル">65.4.3</a>を参照してください。
+詳細な情報は<a class="xref" href="spgist-implementation.html#SPGIST-ALL-THE-SAME" title="65.4.3. 「All-the-Same」内部タプル">65.4.3</a>を参照してください。
       </p><p>
 <span class="original">
        &lt;function&gt;picksplit&lt;/function&gt; can be applied to a single leaf tuple only
@@ -622,7 +622,9 @@ typedef struct spgInnerConsistentIn
     int         norderbys;      /* length of orderbys array */
 </span>
     ScanKey     scankeys;       /* 演算子と比較する値の配列 */
-    int         nkeys;          /* 配列の長さ */
+    ScanKey     orderbys;       /* 順序付け演算子と比較する値の配列 */
+    int         nkeys;          /* scankeys配列の長さ */
+    int         norderbys;      /* orderbys配列の長さ */
 
 <span class="original">
     Datum       reconstructedValue;     /* value reconstructed at parent */
@@ -668,6 +670,7 @@ typedef struct spgInnerConsistentOut
     int        *levelAdds;      /* この分だけそれぞれレベルを挙げる */
     Datum      *reconstructedValues;    /* 関連する再構築された値 */
     void      **traversalValues;        /* 演算子クラスに固有の探索値 */
+    double    **distances;              /* 関連する距離 */
 } spgInnerConsistentOut;
 </pre><p>
 
@@ -717,13 +720,14 @@ typedef struct spgInnerConsistentOut
 (<code class="structfield">nkeys</code> = 0 は全インデックスエントリが問い合わせを満たす意味になる、ということに注意してください。)
 通常、consistent関数では、配列のそれぞれのエントリの<code class="structfield">sk_strategy</code>および<code class="structfield">sk_argument</code>フィールドのみが問題となります。これらのフィールドにはそれぞれインデックス付け可能な演算子と比較値が入ります。
 とりわけ、比較値がNULLかどうかを確認するために<code class="structfield">sk_flags</code>を検査する必要はありません。なぜならSP-GiSTのコアのコードがそのような条件を除外するからです。
+配列<code class="structfield">orderbys</code>は長さが<code class="structfield">norderbys</code>で、(もしあれば)順序付け演算子を同じように記述します。
 <code class="structfield">reconstructedValue</code>は親タプルのために再構築された値で、ルートレベルの場合、あるいは親レベルの<code class="function">inner_consistent</code>関数が値を返さなかった場合は<code class="literal">(Datum) 0</code>となります。
 <code class="structfield">reconstructedValue</code>は常に<code class="structname">spgConfigOut</code>.<code class="structfield">leafType</code>型です。
 <code class="structfield">traversalValue</code>は親インデックスのタプルの<code class="function">inner_consistent</code>の前の呼び出しから渡された探索データへのポインタで、ルートレベルならNULLです。
 <code class="structfield">traversalMemoryContext</code>は出力探索値が格納されるメモリコンテキストです（以下を参照）。
 <code class="structfield">level</code>は現在の内部タプルのレベルを、ルートレベルを0として数えたものです。
 <code class="structfield">returnData</code>は、この問い合わせで再構築されたデータが必要な場合に<code class="literal">true</code>となりますが、これは<code class="function">config</code>関数が<code class="structfield">canReturnData</code>であると主張した場合にのみ、そうなります。
-現在の内部タプルが<span class="quote">「<span class="quote">all-the-same</span>」</span>と印付けされているなら、<code class="structfield">allTheSame</code>は真になります。この場合、（もしあるなら）全てのノードが同じラベルを持ち、問い合わせに全てが一致するか、全く一致しないかのいずれかになります（<a class="xref" href="spgist-implementation.html#SPGIST-ALL-THE-SAME" title="65.4.3. 「All-the-same」内部タプル">65.4.3</a>を参照）。
+現在の内部タプルが<span class="quote">「<span class="quote">all-the-same</span>」</span>と印付けされているなら、<code class="structfield">allTheSame</code>は真になります。この場合、（もしあるなら）全てのノードが同じラベルを持ち、問い合わせに全てが一致するか、全く一致しないかのいずれかになります（<a class="xref" href="spgist-implementation.html#SPGIST-ALL-THE-SAME" title="65.4.3. 「All-the-Same」内部タプル">65.4.3</a>を参照）。
 現在の内部タプルがプレフィックスを含んでいるなら<code class="structfield">hasPrefix</code>は真になります。その場合、<code class="structfield">prefixDatum</code>がその値です。
 <code class="structfield">nNodes</code>は内部タプルに含まれる子ノードの数で、<code class="structfield">nodeLabels</code>はそれらのラベル値の配列、あるいは、ノードがラベルを持たないならNULLです。
       </p><p>
@@ -765,9 +769,11 @@ typedef struct spgInnerConsistentOut
 演算子クラスがレベルを監視しているときは、それぞれのノードへと下って訪れるときに必要なレベルの増分の配列を<code class="structfield">levelAdds</code>にセットします。
 (この増分はすべてのノードについて同じになることも多いですが、必ずしもそうなるとは限らないので配列が使われます。)
 値の再構築が必要なときには、訪れるそれぞれの子ノードについて再構築された値の配列を<code class="structfield">reconstructedValues</code>にセットします。再構築が必要でなければ、<code class="structfield">reconstructedValues</code>をNULLのままにします。
+順序付け検索を実行するなら、<code class="structfield">orderbys</code>配列に従って<code class="structfield">distances</code>に距離の値の配列を設定します(距離の最も近いノードが最初に処理されます)。
+そうでなければNULLのままにします。
 追加の外部情報（<span class="quote">「<span class="quote">探索値</span>」</span>）をツリー探索の下位レベルに渡したい場合は、<code class="structfield">traversalValues</code>を適切な探索値、訪れるそれぞれの子ノードについて1つの配列にセットします。
 それ以外の場合は<code class="structfield">traversalValues</code>をNULLのままにします。
-<code class="function">inner_consistent</code>関数は、現在のメモリコンテキスト内の<code class="structfield">nodeNumbers</code>、<code class="structfield">levelAdds</code>、<code class="structfield">reconstructedValues</code>、<code class="structfield">traversalValues</code>の配列についてpallocしなければならないことに注意してください。
+<code class="function">inner_consistent</code>関数は、現在のメモリコンテキスト内の<code class="structfield">nodeNumbers</code>、<code class="structfield">levelAdds</code>、<code class="structfield">distances</code>、<code class="structfield">reconstructedValues</code>、<code class="structfield">traversalValues</code>の配列についてpallocしなければならないことに注意してください。
 ただし、<code class="structfield">traversalValues</code>配列が指すすべての出力探索値は<code class="structfield">traversalMemoryContext</code>内に割り当てられます。
 それぞれの探索値は1つのpallocされた塊でなければなりません。
       </p></dd><dt><span class="term"><code class="function">leaf_consistent</code></span></dt><dd><p>
@@ -805,7 +811,9 @@ typedef struct spgLeafConsistentIn
     int         norderbys;      /* length of orderbys array */
 </span>
     ScanKey     scankeys;       /* 演算子と比較する値の配列 */
-    int         nkeys;          /* 配列の長さ */
+    ScanKey     orderbys;       /* 順序付け演算子と比較する値の配列 */
+    int         nkeys;          /* scankeys配列の長さ */
+    int         norderbys;      /* orderbys配列の長さ */
 
 <span class="original">
     Datum       reconstructedValue;     /* value reconstructed at parent */
@@ -832,8 +840,10 @@ typedef struct spgLeafConsistentOut
     bool        recheckDistances; /* set true if distances must be rechecked */
     double     *distances;        /* associated distances */
 </span>
-    Datum       leafValue;      /* もしあれば、再構築された元のデータ */
-    bool        recheck;        /* 演算子を再チェックする必要があればtrue */
+    Datum       leafValue;        /* もしあれば、再構築された元のデータ */
+    bool        recheck;          /* 演算子を再チェックする必要があればtrue */
+    bool        recheckDistances; /* 距離を再チェックする必要があればtrue */
+    double     *distances;        /* 関連する距離 */
 } spgLeafConsistentOut;
 </pre><p>
 
@@ -873,6 +883,7 @@ typedef struct spgLeafConsistentOut
 (<code class="structfield">nkeys</code>が0ならば、すべてのエントリが検索条件を満たすことになる、ということに注意してください。)
 通常、consistent関数では、配列のそれぞれのエントリの<code class="structfield">sk_strategy</code>および<code class="structfield">sk_argument</code>フィールドのみが問題となります。これらのフィールドにはそれぞれインデックス付け可能な演算子と比較値が入ります。
 なお、比較値がNULLかどうかを確認するために<code class="structfield">sk_flags</code>を検査する必要はありません。なぜならSP-GiSTのコアのコードがそのような条件を除外するからです。
+配列<code class="structfield">orderbys</code>は長さが<code class="structfield">norderbys</code>で、順序付け演算子を同じように記述します。
 <code class="structfield">reconstructedValue</code>は親タプルのために再構築された値で、ルートレベルの場合、あるいは親レベルの<code class="function">inner_consistent</code>関数が値を返さなかった場合は<code class="literal">(Datum) 0</code>となります。
 <code class="structfield">reconstructedValue</code>は常に<code class="structname">spgConfigOut</code>.<code class="structfield">leafType</code>型です。
 <code class="structfield">traversalValue</code>は親インデックスのタプルの<code class="function">inner_consistent</code>の前の呼び出しから渡された探索データへのポインタで、ルートレベルならNULLです。
@@ -900,6 +911,10 @@ typedef struct spgLeafConsistentOut
 この関数は、リーフタプルが問い合わせにマッチすれば<code class="literal">true</code>を返し、マッチしなければ<code class="literal">false</code>を返します。
 <code class="literal">true</code>の場合、<code class="structfield">returnData</code>が<code class="literal">true</code>であれば、<code class="structfield">leafValue</code>は、このリーフタプルにインデックス付けするために元々提供された<code class="structname">spgConfigIn</code>.<code class="structfield">attType</code>型の値にセットされなければなりません。
 また、マッチするかどうかが不確実で、マッチするかの確認のために実際のヒープタプルに演算子を再適用しなければならないときは、<code class="structfield">recheck</code>が<code class="literal">true</code>にセットされることがあります。
+順序付け検索を実行するなら、<code class="structfield">orderbys</code>配列に従って<code class="structfield">distances</code>に距離の値の配列を設定します。
+そうでなければNULLのままにします。
+返される距離の少なくとも1つが正確でないのなら、<code class="structfield">recheckDistances</code>にtrueを設定します。
+この場合、エクゼキュータはヒープからタプルを取得した後正確な距離を計算し、必要ならタプルを並べ替えます。
       </p></dd></dl></div><p>
 <span class="original">
   The optional user-defined method is:
