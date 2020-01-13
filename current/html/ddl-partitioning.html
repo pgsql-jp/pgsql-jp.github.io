@@ -221,7 +221,7 @@
 </span>
 パーティションは親に存在しない列を持つことができません。
 パーティションを<code class="command">CREATE TABLE</code>で作成する時に列を指定することはできませんし、作成後に<code class="command">ALTER TABLE</code>でパーティションに列を追加することもできません。
-テーブルを<code class="command">ALTER TABLE ... ATTACH PARTITION</code>でパーティションとして追加できるのは、その列がすべての<code class="literal">oid</code>列も含めて完全に親と一致している場合のみです。
+テーブルを<code class="command">ALTER TABLE ... ATTACH PARTITION</code>でパーティションとして追加できるのは、その列が完全に親と一致している場合のみです。
       </p></li><li class="listitem"><p>
 <span class="original">
        You cannot drop the &lt;literal&gt;NOT NULL&lt;/literal&gt; constraint on a
@@ -545,7 +545,7 @@ ALTER TABLE measurement ATTACH PARTITION measurement_y2008m02
 </span>
 <code class="command">ATTACH PARTITION</code>コマンドを実行する前に、求められるパーティション制約を記述する<code class="literal">CHECK</code>制約を、パーティションに追加するテーブルに作成することを推奨します。
 こうすることで、システムは暗示的なパーティション制約を検証するための走査を省略することができます。
-このような制約がなければ、親テーブルに<code class="literal">ACCESS EXCLUSIVE</code>ロックを保持したままで、パーティション制約を検証するためにテーブルを走査することになります。
+このような制約がなければ、そのパーティションに<code class="literal">ACCESS EXCLUSIVE</code>ロック、親テーブルに<code class="literal">SHARE UPDATE EXCLUSIVE</code>を保持したままで、パーティション制約を検証するためにテーブルを走査することになります。
 この制約は<code class="command">ATTACH PARTITION</code>が終わった後は不要ですので削除することができます。
     </p><p>
 <span class="original">
@@ -1050,9 +1050,12 @@ ALTER TABLE measurement_y2008m02 INHERIT measurement;
 すべての<code class="literal">CHECK</code>制約が相互に排他的であることを自動的に確認する手段はありません。
 各子テーブルを手作業で作成するよりも、子テーブルを生成し、関連オブジェクトを作成、更新するコードを作成するのが安全でしょう。
        </p></li><li class="listitem"><p>
+<span class="original">
         Indexes and foreign key constraints apply to single tables and not
         to their inheritance children, hence they have some
-        <a class="link" href="ddl-inherit.html#DDL-INHERIT-CAVEATS" title="5.10.1. 警告">caveats</a> to be aware of.
+        &lt;link linkend="ddl-inherit-caveats"&gt;caveats&lt;/link&gt; to be aware of.
+</span>
+インデックスと外部キー制約は継承上の子ではなく、単一テーブルに適用されます。したがってそれらは<a class="link" href="ddl-inherit.html#DDL-INHERIT-CAVEATS" title="5.10.1. 警告">警告</a>に気を付ける必要があります。
        </p></li><li class="listitem"><p>
 <span class="original">
         The schemes shown here assume that the values of a row's key column(s)
@@ -1265,7 +1268,8 @@ EXPLAIN SELECT count(*) FROM measurement WHERE logdate &gt;= DATE '2008-01-01';
      type, but that is likely to be changed in a future release of
      &lt;productname&gt;PostgreSQL&lt;/productname&gt;.
 </span>
-実行時のパーティション除去は現在<code class="literal">MergeAppend</code>や<code class="literal">ModifyTable</code>ではなく<code class="literal">Append</code>ノードタイプに対してのみ発生します。
+実行時のパーティション除去は現在<code class="literal">Append</code>と<code class="literal">MergeAppend</code>ノードタイプに対してのみ発生します。
+<code class="literal">ModifyTable</code>ノードタイプについてはまだ実装されていません。
 これは<span class="productname">PostgreSQL</span>の将来のリリースで変更される可能性があります。
     </p></div></div><div class="sect2" id="DDL-PARTITIONING-CONSTRAINT-EXCLUSION"><div class="titlepage"><div><div><h3 class="title">5.11.5. パーティショニングと制約による除外</h3></div></div></div><span class="original">
    &lt;title&gt;Partitioning and Constraint Exclusion&lt;/title&gt;
@@ -1449,8 +1453,8 @@ EXPLAIN SELECT count(*) FROM measurement WHERE logdate &gt;= DATE '2008-01-01';
     local memory of each session that touches it.
 </span>
 クエリの計画および実行時のパーティショニングのオーバーヘッドを考慮することもまた重要です。
-典型的なクエリではクエリプランナが少数のパーティションを除いて残り全てのパーティションを除外できるという前提に立てば、クエリプランナは通常最大数百パーティションのパーティション階層を適切に操作することができます。
-パーティションが追加されることにより、計画時間は長くなりメモリ消費は高くなります。
+典型的なクエリではクエリプランナが少数のパーティションを除いて残り全てのパーティションを除外できるという前提に立てば、クエリプランナは通常最大数千パーティションのパーティション階層を適切に操作することができます。
+プランナがパーティション除去を行った後に多くのパーティションが残るほど、計画時間は長くなりメモリ消費は高くなります。
 これは<code class="command">UPDATE</code>と<code class="command">DELETE</code>コマンドに特に当てはまります。
 大量のパーティションを持っていることについて考慮するもうひとつの理由は、特に多くのセッションが大量のパーティションを参照する場合、ある期間にサーバのメモリ消費が著しく増加するかもしれないことです。
 その理由は、各パーティションは参照される各セッションのローカルメモリにメタデータを読み込む必要があるためです。

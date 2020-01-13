@@ -61,36 +61,50 @@
 </span>
 また、既に他のサーバソフトウェアで使用している外部のログ回転プログラムがあるのであれば、それを使用したいと考えるでしょう。
 例えば、<span class="productname">Apache</span>配布物に含まれる<span class="application">rotatelogs</span>を<span class="productname">PostgreSQL</span>で使用することができます。
-これを行うには、単にサーバの<span class="systemitem">stderr</span>を目的のプログラムにパイプで渡してください。
+これを行う一つの方法は、単にサーバの<span class="systemitem">stderr</span>を目的のプログラムにパイプで渡すことです。
 <code class="command">pg_ctl</code>を使用してサーバを起動している場合は<span class="systemitem">stderr</span>は既に<span class="systemitem">stdout</span>にリダイレクトされていますので、以下の例のようにコマンドをパイプする必要があるだけです。
 
 </p><pre class="programlisting">
 pg_ctl start | rotatelogs /var/log/pgsql_log 86400
 </pre><p>
   </p><p>
-   You can combine these approaches by setting up <span class="application">logrotate</span>
-   to collect log files produced by <span class="productname">PostgreSQL</span> built-in
+<span class="original">
+   You can combine these approaches by setting up &lt;application&gt;logrotate&lt;/application&gt;
+   to collect log files produced by &lt;productname&gt;PostgreSQL&lt;/productname&gt; built-in
    logging collector.  In this case, the logging collector defines the names and
-   location of the log files, while <span class="application">logrotate</span>
+   location of the log files, while &lt;application&gt;logrotate&lt;/application&gt;
    periodically archives these files.  When initiating log rotation,
-   <span class="application">logrotate</span> must ensure that the application
+   &lt;application&gt;logrotate&lt;/application&gt; must ensure that the application
    sends further output to the new file.  This is commonly done with a
-   <code class="literal">postrotate</code> script that sends a <code class="literal">SIGHUP</code>
+   &lt;literal&gt;postrotate&lt;/literal&gt; script that sends a &lt;literal&gt;SIGHUP&lt;/literal&gt;
    signal to the application, which then reopens the log file.
-   In <span class="productname">PostgreSQL</span>, you can run <code class="command">pg_ctl</code>
-   with the <code class="literal">logrotate</code> option instead.  When the server receives
+   In &lt;productname&gt;PostgreSQL&lt;/productname&gt;, you can run &lt;command&gt;pg_ctl&lt;/command&gt;
+   with the &lt;literal&gt;logrotate&lt;/literal&gt; option instead.  When the server receives
    this command, the server either switches to a new log file or reopens the
    existing file, depending on the logging configuration
-   (see <a class="xref" href="runtime-config-logging.html#RUNTIME-CONFIG-LOGGING-WHERE" title="19.8.1. ログの出力先">19.8.1</a>).
+   (see &lt;xref linkend="runtime-config-logging-where"/&gt;).
+</span>
+<span class="productname">PostgreSQL</span>組み込みのログ収集機構により生成されるログファイルを集めるのに<span class="application">logrotate</span>を設定することで、上の方法を組み合わせることができます。
+この場合、ログ収集機構はログファイルの名前と位置を定義する一方、<span class="application">logrotate</span>は周期的にそのファイルをアーカイブします。
+ログ回転を開始する時に、<span class="application">logrotate</span>はアプリケーションが以降の出力を新しいファイルに送ることを確実にしなければなりません。
+通常これは、アプリケーションに<code class="literal">SIGHUP</code>シグナルを送る<code class="literal">postrotate</code>スクリプトにより行なわれ、アプリケーションはその後ログファイルを再度開きます。
+<span class="productname">PostgreSQL</span>では、その代わりに<code class="command">pg_ctl</code>に<code class="literal">logrotate</code>オプションを付けて実行できます。
+サーバはこのコマンドを受け取ると、ログ収集の設定に応じて新しいログファイルに切り替えるか、既存のファイルを再度開くかします(<a class="xref" href="runtime-config-logging.html#RUNTIME-CONFIG-LOGGING-WHERE" title="19.8.1. ログの出力先">19.8.1</a>を参照してください)。
   </p><div class="note"><h3 class="title">注記</h3><p>
+<span class="original">
     When using static log file names, the server might fail to reopen the log
     file if the max open file limit is reached or a file table overflow occurs.
     In this case, log messages are sent to the old log file until a
-    successful log rotation. If <span class="application">logrotate</span> is
+    successful log rotation. If &lt;application&gt;logrotate&lt;/application&gt; is
     configured to compress the log file and delete it, the server may lose
     the messages logged in this timeframe. To avoid this issue, you can
     configure the logging collector to dynamically assign log file names
-    and use a <code class="literal">prerotate</code> script to ignore open log files.
+    and use a &lt;literal&gt;prerotate&lt;/literal&gt; script to ignore open log files.
+</span>
+静的なログファイル名を使う場合には、開けるファイルの最大数に達したりファイルテーブルのオーバーフローが起きた場合に、サーバがログファイルを再度開くのに失敗するかもしれません。
+この場合には、ログ回転が成功するまでログメッセージは古いログファイルに送られます。
+<span class="application">logrotate</span>がログファイルを圧縮して削除するよう設定されていれば、サーバはこの期間にログに残そうとしたメッセージを失うかもしれません。
+この問題を避けるため、ログファイル名を動的に割り当てて、開いているログファイルを無視する<code class="literal">prerotate</code>スクリプトを使うようにログ収集機構を設定できます。
     </p></div><p>
 <span class="original">
    Another production-grade approach to managing log output is to
