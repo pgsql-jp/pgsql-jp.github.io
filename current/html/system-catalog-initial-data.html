@@ -72,10 +72,11 @@
       suitable default value for it.)
 </span>
 各々のカタログ行にカンマ区切りで<em class="replaceable"><code>key</code></em><code class="literal">=&gt;</code><em class="replaceable"><code>value</code></em>ペアを書きます。
-記述可能な<em class="replaceable"><code>key</code></em>は、カタログのカラムに加えてメタデータキーである<code class="literal">oid</code>、<code class="literal">oid_symbol</code>、<code class="literal">descr</code>です。
-（<code class="literal">oid</code>と<code class="literal">oid_symbol</code>の使い方は後述の<a class="xref" href="system-catalog-initial-data.html#SYSTEM-CATALOG-OID-ASSIGNMENT" title="69.2.2. OIDの割当">69.2.2</a>に説明されています。
+記述可能な<em class="replaceable"><code>key</code></em>は、カタログのカラムに加えてメタデータキーである<code class="literal">oid</code>、<code class="literal">oid_symbol</code>、<code class="literal">array_type_oid</code>、<code class="literal">descr</code>です。
+（<code class="literal">oid</code>と<code class="literal">oid_symbol</code>の使い方は後述の<a class="xref" href="system-catalog-initial-data.html#SYSTEM-CATALOG-OID-ASSIGNMENT" title="69.2.2. OIDの割当">69.2.2</a>で説明されていて、一方、<code class="literal">array_type_oid</code>は<a class="xref" href="system-catalog-initial-data.html#SYSTEM-CATALOG-AUTO-ARRAY-TYPES" title="69.2.4. 配列型の自動作成">69.2.4</a>で説明されています。
 <code class="literal">descr</code>はオブジェクトの説明文字列に使用し、<code class="structname">pg_description</code>か<code class="structname">pg_shdescription</code>の適切な方に挿入されます。）
 メタデータキーは省略可能であるのに対し、カタログの<code class="literal">.h</code>ファイルがカラムのデフォルト値を指定する場合を除いてカタログの定義済みカラムはすべて提供されなければなりません。
+（上記の例では<code class="filename">pg_database.h</code>が適切なデフォルト値を供するので<code class="structfield">datdba</code>フィールドは省略されました。）
      </p></li><li class="listitem"><p>
 <span class="original">
       All values must be single-quoted.  Escape single quotes used within a
@@ -120,7 +121,8 @@ NULL値は<code class="literal">_null_</code>で表します。
       This is described in &lt;xref linkend="system-catalog-oid-references"/&gt;
       below.
 </span>
-読みやすくするために、他のカタログエントリのOIDであるフィールド値は数字のOIDではなく、名前で表すことができます。
+他のカタログエントリのOIDであるフィールド値は、実際の数値のOIDではなくシンボル名で記述されるべきです。
+（上記の例では<code class="structfield">dattablespace</code>がこのような参照を含みます。）
 これは後述の<a class="xref" href="system-catalog-initial-data.html#SYSTEM-CATALOG-OID-REFERENCES" title="69.2.3. OID参照検索">69.2.3</a>で説明します。
      </p></li><li class="listitem"><p>
 <span class="original">
@@ -140,8 +142,8 @@ NULL値は<code class="literal">_null_</code>で表します。
          (if present) come first, in that order, then the catalog's own
          fields appear in their defined order.
 </span>
-中括弧のペアの中で、メタデータフィールドの<code class="literal">oid</code>、<code class="literal">oid_symbol</code>、（もし存在するなら）<code class="literal">descr</code>がこの順で最初に来ます。
-そして、定義された順にカタログ自身のフィールドが表れます。
+中括弧のペアの中で、メタデータフィールドの<code class="literal">oid</code>、<code class="literal">oid_symbol</code>、<code class="literal">array_type_oid</code>、および、（もし存在するなら）<code class="literal">descr</code>がこの順で最初に来ます。
+そして、定義された順にカタログ自身のフィールドが現れます。
         </p></li><li class="listitem"><p>
 <span class="original">
          Newlines are inserted between fields as needed to limit line length
@@ -214,7 +216,7 @@ NULL値は<code class="literal">_null_</code>で表します。
 他のプリロードカタログ行の中にそのOIDへの参照がある場合には、プリロードカタログ行は割当済みのOIDを持たなければなりません。
 Cコードから行OIDが参照されるときにも割当済みのOIDは必要です。
 どちらも当てはまらない場合は、<code class="literal">oid</code>メタデータフィールドは省略可能です。
-その場合、ブートストラップコードが自動的にOIDを割り当てるか、OIDを持たないカタログでは0のままになります。
+その場合、ブートストラップコードが自動的にOIDを割り当てます。
 実用的には、カタログの一部のみが実際に相互参照されている場合でも、与えられたプリロードカタログ行のOIDをすべて割当済みにするか、一つも割当済みにしないかのどちらかに通常します。
    </p><p>
 <span class="original">
@@ -261,42 +263,64 @@ Cコード中でOIDの実際の数値を書くのは非常に良くないと考�
 今の所OID 1-9999 は手動での割当のために予約されています。
 <code class="filename">unused_oids</code>スクリプトは、単にカタログヘッダーと<code class="filename">.dat</code>を見てそこに出現していないOIDを探しているだけです。
 間違い見つけるために<code class="filename">duplicate_oids</code>を利用することもできます。
-（<code class="filename">genbki.pl</code>もコンパイル時に重複OIDを検出します。）
+（<code class="filename">genbki.pl</code>は手動アサインされていない全ての行にOIDを割り当て、また、コンパイル時に重複OIDを検出します。）
    </p><p>
+<span class="original">
     When choosing OIDs for a patch that is not expected to be committed
     immediately, best practice is to use a group of more-or-less
     consecutive OIDs starting with some random choice in the range
-    8000—9999.  This minimizes the risk of OID collisions with other
-    patches being developed concurrently.  To keep the 8000—9999
+    8000&amp;mdash;9999.  This minimizes the risk of OID collisions with other
+    patches being developed concurrently.  To keep the 8000&amp;mdash;9999
     range free for development purposes, after a patch has been committed
     to the master git repository its OIDs should be renumbered into
     available space below that range.  Typically, this will be done
     near the end of each development cycle, moving all OIDs consumed by
     patches committed in that cycle at the same time.  The script
-    <code class="filename">renumber_oids.pl</code> can be used for this purpose.
+    &lt;filename&gt;renumber_oids.pl&lt;/filename&gt; can be used for this purpose.
     If an uncommitted patch is found to have OID conflicts with some
-    recently-committed patch, <code class="filename">renumber_oids.pl</code> may
+    recently-committed patch, &lt;filename&gt;renumber_oids.pl&lt;/filename&gt; may
     also be useful for recovering from that situation.
+</span>
+即座にコミットされるとは期待できないパッチ用にOIDを選ぶときの最良の手法は、8000—9999の範囲でランダムに選択したところから始まるおおむね連続したOIDのグループを使うことです。
+これは同時に開発されている他のパッチとのOID衝突の危険を最小化します。
+8000—9999の範囲を開発目的に空けておくため、パッチがマスタgitリポジトリにコミットされた後、そのOIDはこの範囲の下位の使用可能な場所に番号の振り直しをすべきです。
+通例これは各開発サイクルの終わり近くに行われ、同時にそのサイクルでコミットされたパッチで消費された全てのOIDを移動するでしょう。
+スクリプト<code class="filename">renumber_oids.pl</code>はこの目的に使用できます。
+コミットされていないパッチが最近コミットされたパッチとOID衝突していることに気づいた場合に、このような状況から回復するのにも<code class="filename">renumber_oids.pl</code>がおそらく役立つでしょう。
    </p><p>
+<span class="original">
     Because of this convention of possibly renumbering OIDs assigned by
     patches, the OIDs assigned by a patch should not be considered stable
     until the patch has been included in an official release.  We do not
     change manually-assigned object OIDs once released, however, as that
     would create assorted compatibility problems.
+</span>
+パッチに割り当てられたOIDを番号付け替えすることがあるこの慣習のため、パッチに割り当てられたOIDはそのパッチが正式リリースに含まれるまでは永続的と考えるべきではありません。
+さまざまな互換性の問題を生み出すかもしれないため、一度リリースされた手動でアサインされたオブジェクトのOIDは変更しません。
    </p><p>
-    If <code class="filename">genbki.pl</code> needs to assign an OID to a catalog
+<span class="original">
+    If &lt;filename&gt;genbki.pl&lt;/filename&gt; needs to assign an OID to a catalog
     entry that does not have a manually-assigned OID, it will use a value in
-    the range 10000—11999.  The server's OID counter is set to 12000
+    the range 10000&amp;mdash;11999.  The server's OID counter is set to 12000
     at the start of a bootstrap run.  Thus objects created by regular SQL
     commands during the later phases of bootstrap, such as objects created
-    while running the <code class="filename">information_schema.sql</code> script,
+    while running the &lt;filename&gt;information_schema.sql&lt;/filename&gt; script,
     receive OIDs of 12000 or above.
+</span>
+<code class="filename">genbki.pl</code>は、手動アサインされたOIDを持たないカタログエントリにOIDを割り当てる必要がある場合、10000—11999範囲の値を使います。
+ブートストラップ実行開始の際にはサーバのOIDカウンタは12000に設定されます。
+したがって、<code class="filename">information_schema.sql</code>スクリプトを実行して作られるオブジェクトなど、ブートストラップ後の段階において通常のSQLコマンドで作られたオブジェクトは12000以上のOIDを受け取ります。
    </p><p>
+<span class="original">
     OIDs assigned during normal database operation are constrained to be
-    16384 or higher.  This ensures that the range 10000—16383 is free
-    for OIDs assigned automatically by <code class="filename">genbki.pl</code> or
+    16384 or higher.  This ensures that the range 10000&amp;mdash;16383 is free
+    for OIDs assigned automatically by &lt;filename&gt;genbki.pl&lt;/filename&gt; or
     during bootstrap.  These automatically-assigned OIDs are not considered
     stable, and may change from one installation to another.
+</span>
+通常のデータベース操作で割り当てられたOIDは16384以上に限定されます。
+これは<code class="filename">genbki.pl</code>やブートストラップの中で自動的に割り当てられたOIDに対して10000—16383の範囲が空いていること保証します。
+これらの自動割り当てされたOIDは永続的とはいえず、あるインストレーションから他のインストレーションで変更されるかもしれません。
    </p></div><div class="sect2" id="SYSTEM-CATALOG-OID-REFERENCES"><div class="titlepage"><div><div><h3 class="title">69.2.3. OID参照検索</h3></div></div></div><span class="original">
    &lt;title&gt;OID Reference Lookup&lt;/title&gt;
 </span><p>
@@ -310,10 +334,9 @@ Cコード中でOIDの実際の数値を書くのは非常に良くないと考�
     symbolic references instead.
     The rules are as follows:
 </span>
-初期カタログ行間の相互参照は、参照する行の割当済みOIDを記述するだけで可能です。
-しかしこれは間違いやすく、また読みにくくなります。
-そのため、頻繁に参照されるカタログでは、<code class="filename">genbki.pl</code>が代わりにシンボル参照を記述する機構を提供しています。
-今の所、アクセスメソッド、関数、演算子、演算子クラス、演算子ファミリー、型で参照アクセスが可能です。
+原則としては、ある初期カタログ行から他への相互参照は、参照しているフィールドで参照されている行の事前割り当てされたOIDを書くことだけで記述できます。
+しかしながら、間違いやすく、読みにくく、また、新たに割り当てられたOIDが番号付け直しされたときに破損しやすいため、これはプロジェクト方針に反します。
+そのため、<code class="filename">genbki.pl</code>が代わりにシンボル参照を記述する機構を提供しています。
 そのルールは以下のとおりです。
    </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>
 <span class="original">
@@ -327,14 +350,17 @@ Cコード中でOIDの実際の数値を書くのは非常に良くないと考�
       lookup on each element of the array.
 </span>
 <code class="literal">BKI_LOOKUP(<em class="replaceable"><code>lookuprule</code></em>)</code>をカラム定義に加えることで、特定のカタログカラムでのシンボル参照が利用可能になります。
-ここで<em class="replaceable"><code>lookuprule</code></em>は、<code class="literal">pg_am</code>、<code class="literal">pg_proc</code>、<code class="literal">pg_operator</code>、<code class="literal">pg_opclass</code>、<code class="literal">pg_opfamily</code>、<code class="literal">pg_type</code>のどれかです。
+ここで<em class="replaceable"><code>lookuprule</code></em>は参照されているカタログ名で、例えば<code class="literal">pg_proc</code>です。
 <code class="literal">BKI_LOOKUP</code>を、<code class="type">Oid</code>、<code class="type">regproc</code>、<code class="type">oidvector</code>、<code class="type">Oid[]</code>のカラムに加えることができます。
 最後の２つにおいては、配列の個々の要素を検索することを暗に意味します。
      </p></li><li class="listitem"><p>
-      It's also permissible to attach <code class="literal">BKI_LOOKUP(encoding)</code>
+<span class="original">
+      It's also permissible to attach &lt;literal&gt;BKI_LOOKUP(encoding)&lt;/literal&gt;
       to integer columns to reference character set encodings, which are
       not currently represented as catalog OIDs, but have a set of values
-      known to <code class="filename">genbki.pl</code>.
+      known to &lt;filename&gt;genbki.pl&lt;/filename&gt;.
+</span>
+文字セット符号化方式を参照する整数の列に<code class="literal">BKI_LOOKUP(encoding)</code>を加えることも許容されます。これは今のところカタログのOIDとして現れませんが、値の集合を<code class="filename">genbki.pl</code>に知らせます。
      </p></li><li class="listitem"><p>
 <span class="original">
       In such a column, all entries must use the symbolic format except
@@ -355,9 +381,8 @@ Cコード中でOIDの実際の数値を書くのは非常に良くないと考�
       any aliases such as &lt;literal&gt;integer&lt;/literal&gt;
       for &lt;literal&gt;int4&lt;/literal&gt;.
 </span>
-アクセスメソッドは単にその名前で表現されます。型も同様です。
-型名は<code class="structname">pg_type</code>エントリの<code class="structfield">typname</code>に一致しなければなりません。
-<code class="literal">int4</code>に対する<code class="literal">integer</code>のような別名は利用できません。
+たいていのカタログオブジェクト類は単純にその名前で参照されます。
+型名は参照されている<code class="structname">pg_type</code>のエントリの<code class="structfield">typname</code>と正確に一致しなければならないことに注意してください。<code class="literal">int4</code>に対する<code class="literal">integer</code>などの別名は使えません。
      </p></li><li class="listitem"><p>
 <span class="original">
       A function can be represented by
@@ -403,14 +428,18 @@ opclassesとopfamiliesの名前はアクセスメソッド内でのみユニー�
       expected to be in the &lt;literal&gt;pg_catalog&lt;/literal&gt; schema.
 </span>
 以上のいずれの場合にもスキーマ修飾の規定はありません。
-ブートストラップ中に作成されるすべてのオブジェクトは、pg_catalogスキーマにあると期待されます。
+ブートストラップ中に作成されるすべてのオブジェクトは、<code class="literal">pg_catalog</code>スキーマにあると期待されます。
      </p></li><li class="listitem"><p>
+<span class="original">
       In addition to the generic lookup mechanisms, there is a special
-      convention that <code class="literal">PGNSP</code> is replaced by the OID of
-      the <code class="literal">pg_catalog</code> schema,
-      and <code class="literal">PGUID</code> is replaced by the OID of the bootstrap
+      convention that &lt;literal&gt;PGNSP&lt;/literal&gt; is replaced by the OID of
+      the &lt;literal&gt;pg_catalog&lt;/literal&gt; schema,
+      and &lt;literal&gt;PGUID&lt;/literal&gt; is replaced by the OID of the bootstrap
       superuser role.  These usages are somewhat historical but so far
       there hasn't been a need to generalize them.
+</span>
+一般的な検索の仕組みに加えて、<code class="literal">PGNSP</code>が<code class="literal">pg_catalog</code>スキーマのOIDで置換され、<code class="literal">PGUID</code>がブートストラップのスーパーユーザロールのOIDで置換されるという特別な習慣があります。
+これらの使用方法はやや歴史的なものですが今のところ、これらを一般化する必要はありませんでした。
      </p></li></ul></div><p>
 <span class="original">
     &lt;filename&gt;genbki.pl&lt;/filename&gt; resolves all symbolic references while it
@@ -420,31 +449,47 @@ opclassesとopfamiliesの名前はアクセスメソッド内でのみユニー�
 </span>
 <code class="filename">genbki.pl</code>は実行中にすべてのシンボル参照を解決し、生成したBKIファイルの中に単純な数字のOIDを設定します。
 ですから、ブートストラップバックエンドはシンボル参照にかかわる必要はありません。
-   </p></div><div class="sect2" id="SYSTEM-CATALOG-AUTO-ARRAY-TYPES"><div class="titlepage"><div><div><h3 class="title">69.2.4. Automatic Creation of Array Types</h3></div></div></div><p>
+   </p></div><div class="sect2" id="SYSTEM-CATALOG-AUTO-ARRAY-TYPES"><div class="titlepage"><div><div><h3 class="title">69.2.4. 配列型の自動作成</h3></div></div></div><span class="original">
+   &lt;title&gt;Automatic Creation of Array Types&lt;/title&gt;
+</span><p>
+<span class="original">
     Most scalar data types should have a corresponding array type (that is,
     a standard varlena array type whose element type is the scalar type, and
-    which is referenced by the <code class="structfield">typarray</code> field of
-    the scalar type's <code class="structname">pg_type</code>
-    entry).  <code class="filename">genbki.pl</code> is able to generate
-    the <code class="structname">pg_type</code> entry for the array type
+    which is referenced by the &lt;structfield&gt;typarray&lt;/structfield&gt; field of
+    the scalar type's &lt;structname&gt;pg_type&lt;/structname&gt;
+    entry).  &lt;filename&gt;genbki.pl&lt;/filename&gt; is able to generate
+    the &lt;structname&gt;pg_type&lt;/structname&gt; entry for the array type
     automatically in most cases.
+</span>
+たいていのスカラデータ型は対応する配列型を持つはずです（すなわち、要素がスカラ型の標準varlena配列型で、スカラ型の<code class="structname">pg_type</code>エントリの<code class="structfield">typarray</code>フィールドから参照されているもの）。
+<code class="filename">genbki.pl</code>はたいていの場合に配列型に対する<code class="structname">pg_type</code>エントリも自動的に生成できます。
    </p><p>
-    To use this facility, just write an <code class="literal">array_type_oid
-    =&gt; <em class="replaceable"><code>nnnn</code></em></code> metadata field in the
-    scalar type's <code class="structname">pg_type</code> entry, specifying the OID
+<span class="original">
+    To use this facility, just write an &lt;literal&gt;array_type_oid
+    =&amp;gt; &lt;replaceable&gt;nnnn&lt;/replaceable&gt;&lt;/literal&gt; metadata field in the
+    scalar type's &lt;structname&gt;pg_type&lt;/structname&gt; entry, specifying the OID
     to use for the array type.  You may then omit
-    the <code class="structfield">typarray</code> field, since it will be filled
+    the &lt;structfield&gt;typarray&lt;/structfield&gt; field, since it will be filled
     automatically with that OID.
+</span>
+この機能を使うには、スカラ型の<code class="structname">pg_type</code>エントリに<code class="literal">array_type_oid =&gt; <em class="replaceable"><code>nnnn</code></em></code>というメタデータフィールドを記述して、配列型に使用するOIDを指定します。
+自動的にそのOIDが書かれるため、このとき<code class="structfield">typarray</code>フィールドを省いてもよいです。
    </p><p>
+<span class="original">
     The generated array type's name is the scalar type's name with an
     underscore prepended.  The array entry's other fields are filled from
-    <code class="literal">BKI_ARRAY_DEFAULT(<em class="replaceable"><code>value</code></em>)</code>
-    annotations in <code class="filename">pg_type.h</code>, or if there isn't one,
+    &lt;literal&gt;BKI_ARRAY_DEFAULT(&lt;replaceable&gt;value&lt;/replaceable&gt;)&lt;/literal&gt;
+    annotations in &lt;filename&gt;pg_type.h&lt;/filename&gt;, or if there isn't one,
     copied from the scalar type.  (There's also a special case
-    for <code class="structfield">typalign</code>.)  Then
-    the <code class="structfield">typelem</code>
-    and <code class="structfield">typarray</code> fields of the two entries are
+    for &lt;structfield&gt;typalign&lt;/structfield&gt;.)  Then
+    the &lt;structfield&gt;typelem&lt;/structfield&gt;
+    and &lt;structfield&gt;typarray&lt;/structfield&gt; fields of the two entries are
     set to cross-reference each other.
+</span>
+生成された配列型の名前は、スカラ型の名前の手前にアンダースコアを付けたものです。
+配列エントリの他のフィールドは、<code class="filename">pg_type.h</code>で<code class="literal">BKI_ARRAY_DEFAULT(<em class="replaceable"><code>value</code></em>)</code>注釈から充当され、もし無ければスカラ型からコピーされます。
+（<code class="structfield">typalign</code>に対する特別な場合もあります。）
+さらに両エントリの<code class="structfield">typelem</code>および<code class="structfield">typarray</code>フィールドは相互参照するように設定されます。
    </p></div><div class="sect2" id="SYSTEM-CATALOG-RECIPES"><div class="titlepage"><div><div><h3 class="title">69.2.5. データファイルの編集方法</h3></div></div></div><span class="original">
    &lt;title&gt;Recipes for Editing Data Files&lt;/title&gt;
 </span><p>
