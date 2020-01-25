@@ -52,7 +52,10 @@ Unix（派生）システムでは、<span class="quote">「<span class="quote">
     POSIX semaphores are used on Linux and FreeBSD systems while other
     platforms use System V semaphores.
 </span>
-サーバの起動時、<span class="productname">PostgreSQL</span>は通常、非常に少量のSystem V共有メモリと、もっと大量のPOSIX (<code class="function">mmap</code>)共有メモリを持ちます。
+デフォルトでは<span class="productname">PostgreSQL</span>は通常、非常に少量のSystem V共有メモリと、もっと大量の無名<code class="function">mmap</code>共有メモリを持ちます。
+代替方法として、単一の大きなSystem Vメモリリージョンも利用できます
+（<a class="xref" href="runtime-config-resource.html#GUC-SHARED-MEMORY-TYPE">shared_memory_type</a>参照。）
+
 さらに、System V又はPOSIXスタイルのどちらかのセマフォがサーバの起動時に作成されます。
 現在、LinuxとFreeBSDシステムではPOSIXセマフォが使用され、それ以外のプラットフォームではSystem Vセマフォが使用されます。
    </p><div class="note"><h3 class="title">注記</h3><p>
@@ -160,7 +163,7 @@ System V セマフォを使用している場合、<span class="productname">Pos
     should be.
 </span>
 場合によっては<code class="varname">SEMMAP</code>を少なくとも<code class="varname">SEMMNS</code>と同程度に増やすことが必要になる場合があるかもしれません。
-このパラメータはセマフォリソースマップのサイズを定義し、その中では有効なセマフォのそれぞれの隣接したブロックの項目が必要です。
+システムにこのパラメータがあるなら（ないかもしれません）、このパラメータはセマフォリソースマップのサイズを定義し、その中では有効なセマフォのそれぞれの隣接したブロックの項目が必要です。
 セマフォ集合が解放されると、解放されたブロックに隣接する既に存在する項目に追加されるか、もしくは新しいマップの項目の下に登録されます。
 もしマップが一杯だった場合、解放されたセマフォは（再起動するまで）失われます。
 セマフォ空間の断片化により時間が経つごとに、有効なセマフォがあるべき量よりも少なくなる可能性があります。
@@ -222,7 +225,7 @@ POSIXセマフォを使用している場合、System Vと同じ数のセマフ�
         &lt;command&gt;loader&lt;/command&gt; interfaces.  The following
         parameters can be set using &lt;command&gt;sysctl&lt;/command&gt;:
 </span>
-デフォルトの設定は<code class="command">sysctl</code>または<code class="command">loader</code>インタフェースを使用して変更を行うことができます。
+デフォルトのIPC設定は<code class="command">sysctl</code>または<code class="command">loader</code>インタフェースを使用して変更を行うことができます。
 以下では<code class="command">sysctl</code>を使用してパラメータを変更しています。
 </p><pre class="screen">
 <code class="prompt">#</code> <strong class="userinput"><code>sysctl kern.ipc.shmall=32768</code></strong>
@@ -248,7 +251,7 @@ kern.ipc.semmns=512
         After modifying that file, a reboot is required for the new
         settings to take effect.
 </span>
-それらのファイルを変更した後、新しい設定を有効にするためには再起動が必要です。
+そのファイルを変更した後、新しい設定を有効にするためには再起動が必要です。
        </p><p>
 <span class="original">
         You might also want to configure your kernel to lock System V shared
@@ -256,7 +259,7 @@ kern.ipc.semmns=512
         This can be accomplished using the &lt;command&gt;sysctl&lt;/command&gt;
         setting &lt;literal&gt;kern.ipc.shm_use_phys&lt;/literal&gt;.
 </span>
-また、共有メモリをRAM上に固定して、スワップによってページアウトされるのを避けるために、カーネルを設定したいと考えるかもしれません。
+また、System V共有メモリをRAM上に固定して、スワップによってページアウトされるのを避けるために、カーネルを設定したいと考えるかもしれません。
 これは<code class="command">sysctl</code>を使用して<code class="literal">kern.ipc.shm_use_phys</code>を設定することで実現できます。
        </p><p>
 <span class="original">
@@ -315,7 +318,7 @@ kern.ipc.semmns=512
         This can be accomplished using the &lt;command&gt;sysctl&lt;/command&gt;
         setting &lt;literal&gt;kern.ipc.shm_use_phys&lt;/literal&gt;.
 </span>
-また、共有メモリをRAM上に固定して、スワップによってページアウトされるのを避けるために、カーネルを設定したいと考えるかもしれません。
+また、System V共有メモリをRAM上に固定して、スワップによってページアウトされるのを避けるために、カーネルを設定したいと考えるかもしれません。
 これは<code class="command">sysctl</code>を使用して<code class="literal">kern.ipc.shm_use_phys</code>を設定することで実現できます。
        </p><p>
 <span class="original">

@@ -99,11 +99,14 @@
        while the view remains.  Dependencies of the rule (such as tables it
        refers to) act as if they were dependencies of the view.
 </span>
-依存するオブジェクトは参照されるオブジェクトの作成時に作成されたもので、実際に内部実装の一部に過ぎません。
+依存するオブジェクトは参照されるオブジェクトの作成時に作成されたもので、実際には内部実装の一部に過ぎません。
 依存するオブジェクトに対して<code class="command">DROP</code>コマンドを直接的に実行できません
 （その代わりに、参照されるオブジェクトに対して<code class="command">DROP</code>を実行するように指示されます）。
 参照されるオブジェクトに<code class="command">DROP</code>を実行すると、<code class="command">CASCADE</code>が指定されているかどうかに関わらず、依存するオブジェクトも削除されます。
-例：外部キー制約を強制するために作成されたトリガは内部的に制約の<code class="structname">pg_constraint</code>項目に依存しています。
+削除されるオブジェクトへの依存関係で依存しているオブジェクトを削除しなければらない場合、その削除は参照されるオブジェクトの削除に変換されます。
+ですから依存しているオブジェクトの<code class="literal">NORMAL</code>と<code class="literal">AUTO</code>依存関係は、参照されるオブジェクトの依存関係に非常に似通った振る舞いをします。
+例：ビューの<code class="literal">ON SELECT</code>ルールがビューに依存して内部的に作られ、ビューが存在する限り削除されることを防ぎます。
+ルールの依存関係（たとえばそれが参照するテーブル）はビューの依存関係であるかのように振る舞います。
       </p></dd><dt><span class="term"><code class="symbol">DEPENDENCY_PARTITION_PRI</code> (<code class="literal">P</code>)<br /></span><span class="term"><code class="symbol">DEPENDENCY_PARTITION_SEC</code> (<code class="literal">S</code>)</span></dt><dd><p>
 <span class="original">
        The dependent object was created as part of creation of the
@@ -139,12 +142,20 @@
        (not the table).
 </span>
 依存するオブジェクトは参照されるオブジェクトの生成の一環で作成され、実際にはこれは内部的な実装の一部に過ぎません。
-依存するオブジェクトの<code class="command">DROP</code>は全面的に禁止されます。
-（その代わり参照されるオブジェクトに対して<code class="command">DROP</code>を発行するようにユーザに通告します。）
-通常の内部的な依存関係のもとでは、依存するオブジェクトは依存性が残っている限りは削除されませんが、<code class="literal">DEPENDENCY_INTERNAL_AUTO</code>は依存性を追跡する中でそうしたオブジェクトが見つかった場合には削除を許容します。
-例をあげます。
-パーティション上のインデックスは、パーティション自身とその親パーティションテーブルの両方で内部的自動依存(internal-auto-dependent)となります。
-したがって、そのパーティションインデックスは、インデックスが付与されているパーティション自身または付与されている親インデックスのどちらかが削除される際に同時に削除されます。
+しかし、<code class="literal">INTERNAL</code>とは違って複数の参照されるオブジェクトが存在します。
+参照されているオブジェクトの少なくとも１つが削除されない限り、依存するオブジェクトは削除されてはいけません。
+もし参照されているオブジェクトの一つが削除されたら、<code class="literal">CASCADE</code>が指定されているかどうかに関わらず、依存しているオブジェクトは削除されるべきです。
+また、<code class="literal">INTERNAL</code>とは違って、依存オブジェクトが依存しているオブジェクトを削除してもパーティション参照オブジェクトを自動的に削除することにはなりません。
+ですからその削除処理によって他の経路でこれらのオブジェクトの少なくとも１つに連鎖波及しない限り、削除は拒否されます。
+（たいていの場合、依存するオブジェクトはすべての非パーティション依存関係を、少なくとも１つのパーティション参照オブジェクトと共有するので、この制限によって連鎖削除をブロックすることにはなりません。）
+エラーメッセージで優先的に主パーティションが使われることを除くと、主および二次パーティション依存関係は同じように振る舞います。
+よって、パーティション依存オブジェクトは一つの主パーティション依存関係と1つ以上の二次パーティション依存関係を持つはずです。
+パーティション依存関係は、オブジェクトが通常持っている依存関係に加えて作成されるのであり、それを置き換えるものではないことに注意してください。
+これによって<code class="command">ATTACH/DETACH PARTITION</code>操作が簡単になります。
+パーティション依存関係は追加されるか削除されるかのどちらかになります。
+例：子パーティション化インデックスは、それが作成されているパーティションテーブルと親パーティション化インデックスの両方にパーティション依存します。
+ですから、このどちらかが削除されると削除されますが、それ以外の場合には削除されません。
+親インデックスへの依存関係は主なので、ユーザが子パーティション化インデックスを削除しようとすると、エラーメッセージは（テーブルではなく）親インデックスを削除するように示唆します。
       </p></dd><dt><span class="term"><code class="symbol">DEPENDENCY_EXTENSION</code> (<code class="literal">e</code>)</span></dt><dd><p>
 <span class="original">
        The dependent object is a member of the &lt;firstterm&gt;extension&lt;/firstterm&gt; that is
@@ -158,7 +169,7 @@
 </span>
 依存するオブジェクトは参照されるオブジェクトの<em class="firstterm">拡張</em>のメンバです（<a class="link" href="catalog-pg-extension.html" title="51.22. pg_extension"><code class="structname">pg_extension</code></a>参照）。
 依存するオブジェクトは参照されるオブジェクトに対する<code class="command">DROP EXTENSION</code>経由でのみ削除することができます。
-機能的にはこの種類の依存関係は内部依存関係と同様に動作しますが、明確さと<span class="application">pg_dump</span>を単純化するために別々に保持されます。
+機能的にはこの種類の依存関係は<code class="literal">INTERNAL</code>依存関係と同様に動作しますが、明確さと<span class="application">pg_dump</span>を単純化するために別々に保持されます。
       </p></dd><dt><span class="term"><code class="symbol">DEPENDENCY_AUTO_EXTENSION</code> (<code class="literal">x</code>)</span></dt><dd><p>
 <span class="original">
        The dependent object is not a member of the extension that is the
@@ -170,8 +181,9 @@
        an &lt;literal&gt;AUTO&lt;/literal&gt; dependency, but it's kept separate for
        clarity and to simplify &lt;application&gt;pg_dump&lt;/application&gt;.
 </span>
-依存するオブジェクトは参照されるオブジェクトの拡張のメンバではありません（そしてそれゆえpg_dumpによって無視されません）が、参照されるオブジェクトなしに機能することが出来ず、拡張自体が削除される時に削除されるでしょう。
+依存するオブジェクトは参照されるオブジェクトの拡張のメンバではありません（そしてそれゆえ<span class="application">pg_dump</span>によって無視されません）が、拡張なしに機能することが出来ず、拡張自体が削除される時に自動的に削除されるでしょう。
 依存するオブジェクトは、同様にそれ自身で削除されるかもしれません。
+機能的にはこの種類の依存関係は<code class="literal">AUTO</code>依存関係と同様に動作しますが、明確さと<span class="application">pg_dump</span>を単純化するために別々に保持されます。
       </p></dd><dt><span class="term"><code class="symbol">DEPENDENCY_PIN</code> (<code class="literal">p</code>)</span></dt><dd><p>
 <span class="original">
        There is no dependent object; this type of entry is a signal
@@ -191,14 +203,21 @@
 </span>
 将来的に、他の依存関係のオプションが必要になる可能性があります。
   </p><p>
+<span class="original">
    Note that it's quite possible for two objects to be linked by more than
-   one <code class="structname">pg_depend</code> entry.  For example, a child
+   one &lt;structname&gt;pg_depend&lt;/structname&gt; entry.  For example, a child
    partitioned index would have both a partition-type dependency on its
    associated partition table, and an auto dependency on each column of
    that table that it indexes.  This sort of situation expresses the union
    of multiple dependency semantics.  A dependent object can be dropped
-   without <code class="literal">CASCADE</code> if any of its dependencies satisfies
+   without &lt;literal&gt;CASCADE&lt;/literal&gt; if any of its dependencies satisfies
    its condition for automatic dropping.  Conversely, all the
    dependencies' restrictions about which objects must be dropped together
    must be satisfied.
+</span>
+2つのオブジェクトが複数の<code class="structname">pg_depend</code>エントリでリンクされていることは十分ありえます。
+たとえば子パーティション化インデックスは、パーティションテーブルに対してパーティション型依存関係を持ち、更にインデックスが貼ってあるテーブルの列に自動依存関係を持ちます。
+この種の状況は、複数の依存関係セマンティクスの和で表現されます。
+自動削除の条件をこの依存関係の一つが満たすならば依存するオブジェクトは<code class="literal">CASCADE</code>なしに削除できます。
+逆に、どのオブジェクトが一緒に削除されなければならないかに関するすべての依存関係の制限は満足されなければなりません。
   </p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="catalog-pg-default-acl.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="catalogs.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="catalog-pg-description.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">51.17. <code class="structname">pg_default_acl</code> </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> 51.19. <code class="structname">pg_description</code></td></tr></table></div></body></html>
