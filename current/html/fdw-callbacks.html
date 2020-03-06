@@ -285,7 +285,7 @@ GetForeignJoinPaths(PlannerInfo *root,
 </span>
 同じ外部サーバにある2つ（またはそれ以上）の外部テーブルの結合のための可能なアクセスパスを作成します。
 このオプション関数は、問い合わせの計画時に呼び出されます。
-<code class="function">GetForeignPaths</code>と同じく、この関数は提供された<code class="literal">joinrel</code>のための<code class="structname">ForeignPath</code>パスを生成し、<code class="function">add_path</code>を呼んで、それらのパスを結合のために考慮されるパスの集合に追加します。
+<code class="function">GetForeignPaths</code>と同じく、この関数は提供された<code class="literal">joinrel</code>のための<code class="structname">ForeignPath</code>パスを生成し（そのために<code class="function">create_foreign_join_path</code>を使用します）、<code class="function">add_path</code>を呼んで、それらのパスを結合のために考慮されるパスの集合に追加します。
 しかし、<code class="function">GetForeignPaths</code>とは異なり、この関数が少なくとも1つのパスの作成に成功することは必要ではありません。
 なぜなら、ローカルの結合を含んだパスはいつでも可能だからです。
     </p><p>
@@ -360,7 +360,7 @@ GetForeignUpperPaths(PlannerInfo *root,
 <em class="firstterm">上位リレーション</em>処理のための、ありうるアクセスパスを作成します。上位リレーションはプランナ用語で、ウィンドウ関数、ソート、テーブル更新など、全てのスキャン/結合後の問い合わせのことです。
 この省略可能な関数は問い合わせのプラン作成時に呼ばれます。
 今のところ、これは問い合わせに含まれる全てのベースリレーションが同じFDWに属する場合だけ呼ばれます。
-この関数では、FDWがどのようにリモートで実行するか分かっている全てのスキャン/結合後の処理に<code class="structname">ForeignPath</code>パスを生成し、それらパスを指定された上位リレーションに加えるために<code class="function">add_path</code>を呼び出してください。
+この関数では、FDWがどのようにリモートで実行するか分かっている全てのスキャン/結合後の処理に<code class="structname">ForeignPath</code>パスを生成し（そのために<code class="function">create_foreign_upper_path</code>を使用します）、それらパスを指定された上位リレーションに加えるために<code class="function">add_path</code>を呼び出してください。
 <code class="function">GetForeignJoinPaths</code>の時と同様に、この関数が何らかのパス作成に成功する必要はありません。なぜなら、ローカル処理を含んでいるパスはいつでも可能だからです。
     </p><p>
 <span class="original">
@@ -383,7 +383,8 @@ GetForeignUpperPaths(PlannerInfo *root,
 </span>
 <code class="literal">stage</code>パラメータはどのスキャン/結合後の処理が現在考慮されているかを定めます。
 <code class="literal">output_rel</code>は本処理の計算方法をあらわすパスを受け取るであろう上位リレーションで、<code class="literal">input_rel</code>は本処理への入力をあらわすリレーションです。
-<code class="literal">extra</code>パラメータは追加の詳細を指定し、今のところ<code class="literal">UPPERREL_PARTIAL_GROUP_AGG</code>か<code class="literal">UPPERREL_GROUP_AGG</code>が指定でき、<code class="literal">GroupPathExtraData</code>構造体へのポインタになります。
+<code class="literal">extra</code>パラメータは追加の詳細を指定し、今のところ<code class="literal">UPPERREL_PARTIAL_GROUP_AGG</code>と<code class="literal">UPPERREL_GROUP_AGG</code>に対して指定できて、この場合は<code class="literal">GroupPathExtraData</code>構造体へのポインタです。
+さらに<code class="literal">UPPERREL_FINAL</code>に対しても指定できて、この場合は<code class="literal">FinalPathExtraData</code>構造体へのポインタです。
 （注意：これらの処理は外部で実行されると考えられるため、<code class="literal">output_rel</code>に加えられる<code class="structname">ForeignPath</code>パスは、一般的に<code class="literal">input_rel</code>のパスへの直接の依存を全く持たないでしょう。
 しかしながら、手前の処理段階のために以前に生成されたパスを検査することは、冗長なプラン作成活動を回避するのに役立ちます。）
     </p><p>
@@ -619,8 +620,8 @@ ExecForeignInsert(EState *estate,
      must be returned to indicate success, or the query's reported row count
      will be wrong.
 </span>
-返却されたスロット内のデータは<code class="command">INSERT</code>クエリが<code class="literal">RETURNING</code>句を持っていた場合もしくは外部テーブルが<code class="literal">AFTER ROW</code>トリガを持っていた場合にのみ使われます。
-トリガは全列を必要としますが、FDWは<code class="literal">RETURNING</code>句の内容に応じて返却する列を一部にするかすべてにするかを最適化する余地があります。
+返却されたスロット内のデータは<code class="command">INSERT</code>文が<code class="literal">RETURNING</code>句を持っているか、<code class="literal">WITH CHECK OPTION</code>を伴うビューに影響を及ぼす場合、もしくは、外部テーブルが<code class="literal">AFTER ROW</code>トリガを持っていた場合にのみ使われます。
+トリガは全列を必要としますが、FDWは<code class="literal">RETURNING</code>句や<code class="literal">WITH CHECK OPTION</code>の制約の内容に応じて、返却する列を一部にするかすべてにするかを最適化する余地があります。
 それとは関係なく、処理成功を表すためになんらかのスロットは返却しなければなりません。さもないと、報告されるクエリの結果行数が誤った値になってしまいます。
     </p><p>
 <span class="original">
@@ -689,8 +690,8 @@ ExecForeignUpdate(EState *estate,
      must be returned to indicate success, or the query's reported row count
      will be wrong.
 </span>
-返却されたスロット内のデータは<code class="command">UPDATE</code>クエリが<code class="literal">RETURNING</code>句を持っていた場合もしくは外部テーブルが<code class="literal">AFTER ROW</code>トリガを持っていた場合にのみ使われます。
-トリガは全列を必要としますが、FDWは<code class="literal">RETURNING</code>句の内容に応じて返却する列を一部にするか全てにするかを最適化する余地があります。
+返却されたスロット内のデータは<code class="command">UPDATE</code>文が<code class="literal">RETURNING</code>句を持っているか、<code class="literal">WITH CHECK OPTION</code>を伴うビューに影響を及ぼす場合、もしくは外部テーブルが<code class="literal">AFTER ROW</code>トリガを持っていた場合にのみ使われます。
+トリガは全列を必要としますが、FDWは<code class="literal">RETURNING</code>句や<code class="literal">WITH CHECK OPTION</code>の制約の内容に応じて返却する列を一部にするか全てにするかを最適化する余地があります。
 それとは関係なく、処理成功を表すためになんらかのスロットは返却しなければなりません。さもないと、報告されるクエリの結果行数が誤った値になってしまいます。
     </p><p>
 <span class="original">
@@ -915,7 +916,7 @@ IsForeignRelUpdatable(Relation rel);
 外部テーブルへの挿入、更新、削除は、代替インタフェース一式を実装することで最適化できます。
 通常の挿入、更新、削除のインタフェースは行をリモートサーバから取得し、その後、それらの行を一つずつ変更します。
 一部の場合にはこの一行ごとのやり方は必要ですが、非効率とも言えます。
-外部サーバについて行が本当はそれらを引き出すことなしに変更されるべきと判断できて、操作に影響を与えるローカルトリガーが無いならば、操作全体がリモートサーバで実行されるように計画することができます。
+外部サーバについて行が本当はそれらを引き出すことなしに変更されるべきと判断できて、操作に影響を与える仕組み（行レベルのローカルトリガ、格納生成列、あるいは、親ビューからの<code class="literal">WITH CHECK OPTION</code>の制約）が無いならば、操作全体がリモートサーバで実行されるように計画することができます。
 以下に示すインタフェースはこれを可能にします。
     </p><p>
 </p><pre class="programlisting">
@@ -1158,10 +1159,11 @@ RefetchForeignRow(EState *estate,
      &lt;literal&gt;slot&lt;/literal&gt; contains nothing useful upon call, but can be used to
      hold the returned tuple. &lt;literal&gt;updated&lt;/literal&gt; is an output parameter.
 </span>
-必要ならロックした後で、外部テーブルから1つのタプルを再フェッチします。
+必要ならロックした後で、外部テーブルから1つのタプルスロットを再フェッチします。
 <code class="literal">estate</code>は問い合わせのグローバルな実行状態です。
 <code class="literal">erm</code>は対象の外部テーブルおよび獲得する行ロックの種別（あれば）を記述する<code class="structname">ExecRowMark</code>構造体です。
 <code class="literal">rowid</code>はフェッチするタプルを特定するものです。
+<code class="literal">slot</code>は呼び出しで役立つ内容は含みませんが、返されたタプルを保持するために使用できます。
 <code class="literal">updated</code>は出力パラメータです。
     </p><p>
 <span class="original">
@@ -1173,8 +1175,8 @@ RefetchForeignRow(EState *estate,
      without acquiring any lock, and &lt;literal&gt;ROW_MARK_COPY&lt;/literal&gt; will
      never be seen by this routine.)
 </span>
-この関数は、フェッチしたタプルをpallocして複製したものを返すか、あるいは行ロックが取得できなければ<code class="literal">NULL</code>を返します。
-獲得する行ロックの種別は<code class="literal">erm-&gt;markType</code>で指定されますが、この値は事前に<code class="function">GetForeignRowMarkType</code>から返されたものです。
+この関数はタプルを与えられたスロットに格納するか、あるいは行ロックが取得できなければタプルをクリアします。
+獲得する行ロックの種別は<code class="literal">erm-&gt;markType</code>で指定されます。この値は事前に<code class="function">GetForeignRowMarkType</code>から返されたものです。
 （<code class="literal">ROW_MARK_REFERENCE</code>は行のロックを獲得せずに、単にタプルを再フェッチすることを意味し、また、<code class="literal">ROW_MARK_COPY</code>はこのルーチンで使われることはありません。）
     </p><p>
 <span class="original">
@@ -1193,7 +1195,7 @@ RefetchForeignRow(EState *estate,
      by &lt;literal&gt;erm-&amp;gt;waitPolicy&lt;/literal&gt;.
 </span>
 デフォルトでは、行ロックの獲得に失敗したときはエラーを発生させるべきであることに注意してください。
-<code class="literal">NULL</code>を返すのが適切なのは、<code class="literal">erm-&gt;waitPolicy</code>で<code class="literal">SKIP LOCKED</code>オプションが指定されている場合だけです。
+空スロットを返すのが適切なのは、<code class="literal">erm-&gt;waitPolicy</code>で<code class="literal">SKIP LOCKED</code>オプションが指定されている場合だけです。
     </p><p>
 <span class="original">
      The &lt;literal&gt;rowid&lt;/literal&gt; is the &lt;structfield&gt;ctid&lt;/structfield&gt; value previously read
