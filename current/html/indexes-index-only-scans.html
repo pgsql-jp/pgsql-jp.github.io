@@ -216,7 +216,7 @@ CREATE UNIQUE INDEX tab_x_y ON tab(x) INCLUDE (y);
 いかなる場合でもキー以外の列が重複データだったり、インデックスサイズが膨張すると、検索が遅くなる可能性があります。
 それから、覚えておくべきもう一つの小さなポイントは、インデックスオンリースキャンがヒープへのアクセスが必要がないほどテーブルがゆっくり変化しない限り、インデックスにペイロード列を含めることにほとんど意味が無いことです。
 とにかくヒープタプルを訪れなければならなくなった場合は、そこから列値を取得するためにそれ以上のコストはかかりません。
-他の制限は、式を列に含めることは、現在のところサポートされていません。また、列を含めるサポートは現在のところB-treeインデックスのみサポートされています。
+他の制限は、式を列に含めることは、現在のところサポートされていません。また、列を含めるサポートは現在のところB-treeとGiSTインデックスのみサポートされています。
   </p><p>
 <span class="original">
    Before &lt;productname&gt;PostgreSQL&lt;/productname&gt; had
@@ -240,20 +240,25 @@ CREATE INDEX tab_x_y ON tab(x, y);
 余分な列が末尾の列である限り、これはうまく機能します。
 それらを先頭側の列にすることは、<a class="xref" href="indexes-multicolumn.html" title="11.3. 複数列インデックス">11.3</a>で説明されている理由から賢明ではありません。
 しかし、この方法では、キー列に一意性を強制するインデックスがサポートされません。
-また、検索列でない列を<code class="literal">INCLUDE</code>列として明示的にマークするとインデックスがわずかに小さくなります。
-これは、そのような列を上位B-treeレベルに格納する必要がないためです。
   </p><p>
-   <em class="firstterm">Suffix truncation</em> always removes non-key
+<span class="original">
+   &lt;firstterm&gt;Suffix truncation&lt;/firstterm&gt; always removes non-key
    columns from upper B-Tree levels.  As payload columns, they are
    never used to guide index scans.  The truncation process also
    removes one or more trailing key column(s) when the remaining
    prefix of key column(s) happens to be sufficient to describe tuples
    on the lowest B-Tree level.  In practice, covering indexes without
-   an <code class="literal">INCLUDE</code> clause often avoid storing columns
+   an &lt;literal&gt;INCLUDE&lt;/literal&gt; clause often avoid storing columns
    that are effectively payload in the upper levels.  However,
    explicitly defining payload columns as non-key columns
-   <span class="emphasis"><em>reliably</em></span> keeps the tuples in upper levels
+   &lt;emphasis&gt;reliably&lt;/emphasis&gt; keeps the tuples in upper levels
    small.
+</span>
+<em class="firstterm">末尾消去</em>は、常に上位のB-treeレベルから非キーの列を削除します。
+ペイロード列として、それらはインデックススキャンを導くためには使われません。
+また、この消去プロセスは、キー列の残りのプレフィックスが、最下位のB-treeレベルのタプルを記述するのに十分である場合、１つ以上の後続キー列も削除します。
+実際上、<code class="literal">INCLUDE</code>句を使用しないカバリングインデックスは、実質的に上位レベルにペイロードが含まれるカラムの格納を避けられます。
+ただし、ペイロード列を非キー列として明示的に定義すると<span class="emphasis"><em>確実に</em></span>上位レベルのタプルが小さくなります。
   </p><p>
 <span class="original">
    In principle, index-only scans can be used with expression indexes.
