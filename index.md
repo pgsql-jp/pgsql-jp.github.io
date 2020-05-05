@@ -13,6 +13,12 @@ last-updated: 2020-05-05 03:49:51 JST
 |:---------------------------|:-------------------:|
 | [html](current/html) | [PDF](current/postgres-A4.pdf) |
 
+### PostgreSQL 12
+
+| HTML （オンライン）           | PDF                                           | EPUB                                         | man | 更新日     |
+|:---------------------------|:---------------------------------------------:|:--------------------------------------------:|:---:|:----------:|
+| [12.0](jpug-doc/12.0/html/) | [PDF](jpug-doc/12.0/postgresql-12.0-A4.pdf) | [EPUB](jpug-doc/12.0/postgresql-12.0.epub) | [man.tar.gz](jpug-doc/12.0/man.tar.gz) | 2020-05-05 |
+
 ### PostgreSQL 11
 
 | HTML （オンライン）           | PDF                                           | EPUB                                         | man | 更新日     |
