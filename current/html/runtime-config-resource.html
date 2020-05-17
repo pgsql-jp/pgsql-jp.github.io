@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>19.4. 資源の消費</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="runtime-config-connection.html" title="19.3. 接続と認証" /><link rel="next" href="runtime-config-wal.html" title="19.5. ログ先行書き込み（WAL）" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 12.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="runtime-config.html" title="第19章 サーバの設定">第19章 サーバの設定</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 12.0 &#10;                      runtime-config-resource.html">誤訳等の報告
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>19.4. 資源の消費</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="runtime-config-connection.html" title="19.3. 接続と認証" /><link rel="next" href="runtime-config-wal.html" title="19.5. ログ先行書き込み（WAL）" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 12.3文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="runtime-config.html" title="第19章 サーバの設定">第19章 サーバの設定</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 12.3 &#10;                      runtime-config-resource.html">誤訳等の報告
                     </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="runtime-config-connection.html" title="19.3. 接続と認証">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="runtime-config.html" title="第19章 サーバの設定">上へ</a></td><td width="60%" align="center">19.4. 資源の消費</td><td width="20%" align="right"> <a accesskey="n" href="runtime-config-wal.html" title="19.5. ログ先行書き込み（WAL）">次へ</a></td></tr></table><hr /></div><div class="sect1" id="RUNTIME-CONFIG-RESOURCE"><div class="titlepage"><div><div><h2 class="title" style="clear: both">19.4. 資源の消費</h2></div></div></div><span class="original">
     &lt;title&gt;Resource Consumption&lt;/title&gt;
     </span><div class="sect2" id="RUNTIME-CONFIG-RESOURCE-MEMORY"><div class="titlepage"><div><div><h3 class="title">19.4.1. メモリ</h3></div></div></div><span class="original">
@@ -12,10 +12,14 @@
         memory buffers.  The default is typically 128 megabytes
         (&lt;literal&gt;128MB&lt;/literal&gt;), but might be less if your kernel settings will
         not support it (as determined during &lt;application&gt;initdb&lt;/application&gt;).
-        This setting must be at least 128 kilobytes.  (Non-default
-        values of &lt;symbol&gt;BLCKSZ&lt;/symbol&gt; change the minimum.)  However,
+        This setting must be at least 128 kilobytes.  However,
         settings significantly higher than the minimum are usually needed
-        for good performance.  This parameter can only be set at server start.
+        for good performance.
+        If this value is specified without units, it is taken as blocks,
+        that is &lt;symbol&gt;BLCKSZ&lt;/symbol&gt; bytes, typically 8kB.
+        (Non-default values of &lt;symbol&gt;BLCKSZ&lt;/symbol&gt; change the minimum
+        value.)
+        This parameter can only be set at server start.
        </span>
 データベースサーバが共有メモリバッファのために使用するメモリ量を設定します。
 デフォルトは一般的に128メガバイト(<code class="literal">128MB</code>)です。
@@ -124,10 +128,15 @@ Linuxでは、これは<span class="quote">「<span class="quote">transparent hu
       <a id="id-1.6.6.7.2.2.3.1.3" class="indexterm"></a>
       </span></dt><dd><p>
        <span class="original">
-        Sets the maximum number of temporary buffers used by each database
-        session.  These are session-local buffers used only for access to
-        temporary tables.  The default is eight megabytes
-        (&lt;literal&gt;8MB&lt;/literal&gt;).  The setting can be changed within individual
+        Sets the maximum amount of memory used for temporary buffers within
+        each database session.  These are session-local buffers used only
+        for access to temporary tables.
+        If this value is specified without units, it is taken as blocks,
+        that is &lt;symbol&gt;BLCKSZ&lt;/symbol&gt; bytes, typically 8kB.
+        The default is eight megabytes (&lt;literal&gt;8MB&lt;/literal&gt;).
+        (If &lt;symbol&gt;BLCKSZ&lt;/symbol&gt; is not 8kB, the default value scales
+        proportionally to it.)
+        This setting can be changed within individual
         sessions, but only before the first use of temporary tables
         within the session; subsequent attempts to change the value will
         have no effect on that session.
@@ -185,9 +194,10 @@ Linuxでは、これは<span class="quote">「<span class="quote">transparent hu
       <a id="id-1.6.6.7.2.2.5.1.3" class="indexterm"></a>
       </span></dt><dd><p>
        <span class="original">
-        Specifies the amount of memory to be used by internal sort operations
-        and hash tables before writing to temporary disk files. The value
-        defaults to four megabytes (&lt;literal&gt;4MB&lt;/literal&gt;).
+        Sets the maximum amount of memory to be used by a query operation
+        (such as a sort or hash table) before writing to temporary disk files.
+        If this value is specified without units, it is taken as kilobytes.
+        The default value is four megabytes (&lt;literal&gt;4MB&lt;/literal&gt;).
         Note that for a complex query, several sort or hash operations might be
         running in parallel; each operation will be allowed to use as much memory
         as this value specifies before it starts to write data into temporary
@@ -210,7 +220,9 @@ Linuxでは、これは<span class="quote">「<span class="quote">transparent hu
        <span class="original">
         Specifies the maximum amount of memory to be used by maintenance
         operations, such as &lt;command&gt;VACUUM&lt;/command&gt;, &lt;command&gt;CREATE
-        INDEX&lt;/command&gt;, and &lt;command&gt;ALTER TABLE ADD FOREIGN KEY&lt;/command&gt;.  It defaults
+        INDEX&lt;/command&gt;, and &lt;command&gt;ALTER TABLE ADD FOREIGN KEY&lt;/command&gt;.
+        If this value is specified without units, it is taken as kilobytes.
+        It defaults
         to 64 megabytes (&lt;literal&gt;64MB&lt;/literal&gt;).  Since only one of these
         operations can be executed at a time by a database session, and
         an installation normally doesn't have many of them running
@@ -237,7 +249,9 @@ Linuxでは、これは<span class="quote">「<span class="quote">transparent hu
       </span></dt><dd><p>
 <span class="original">
         Specifies the maximum amount of memory to be used by each
-        autovacuum worker process.  It defaults to -1, indicating that
+        autovacuum worker process.
+        If this value is specified without units, it is taken as kilobytes.
+        It defaults to -1, indicating that
         the value of &lt;xref linkend="guc-maintenance-work-mem"/&gt; should
         be used instead.  The setting has no effect on the behavior of
         &lt;command&gt;VACUUM&lt;/command&gt; when run in other contexts.
@@ -255,6 +269,7 @@ Linuxでは、これは<span class="quote">「<span class="quote">transparent hu
         equivalent), less a safety margin of a megabyte or so.  The safety
         margin is needed because the stack depth is not checked in every
         routine in the server, but only in key potentially-recursive routines.
+        If this value is specified without units, it is taken as kilobytes.
         The default setting is two megabytes (&lt;literal&gt;2MB&lt;/literal&gt;), which
         is conservatively small and unlikely to risk crashes.  However,
         it might be too small to allow execution of complex functions.
@@ -340,8 +355,8 @@ Linuxでは、これは<span class="quote">「<span class="quote">transparent hu
         for temporary files, such as sort and hash temporary files, or the
         storage file for a held cursor.  A transaction attempting to exceed
         this limit will be canceled.
-        The value is specified in kilobytes, and &lt;literal&gt;-1&lt;/literal&gt; (the
-        default) means no limit.
+        If this value is specified without units, it is taken as kilobytes.
+        &lt;literal&gt;-1&lt;/literal&gt; (the default) means no limit.
         Only superusers can change this setting.
        </span>
 あるプロセスが一時ファイルとして使用できるディスクの最大容量を設定します。
@@ -426,8 +441,9 @@ Linuxでは、これは<span class="quote">「<span class="quote">transparent hu
        <a id="id-1.6.6.7.5.5.1.1.3" class="indexterm"></a>
        </span></dt><dd><p>
        <span class="original">
-         The length of time, in milliseconds, that the process will sleep
+         The amount of time that the process will sleep
          when the cost limit has been exceeded.
+         If this value is specified without units, it is taken as milliseconds.
          The default value is zero, which disables the cost-based vacuum
          delay feature.  Positive values enable cost-based vacuuming.
         </span>
@@ -537,10 +553,13 @@ vacuumを掛けるプロセスをスリープさせることになる累計さ�
          Specifies the delay between activity rounds for the
          background writer.  In each round the writer issues writes
          for some number of dirty buffers (controllable by the
-         following parameters).  It then sleeps for &lt;varname&gt;bgwriter_delay&lt;/varname&gt;
-         milliseconds, and repeats.  When there are no dirty buffers in the
+         following parameters).  It then sleeps for
+         the length of &lt;varname&gt;bgwriter_delay&lt;/varname&gt;, and repeats.
+         When there are no dirty buffers in the
          buffer pool, though, it goes into a longer sleep regardless of
-         &lt;varname&gt;bgwriter_delay&lt;/varname&gt;.  The default value is 200
+         &lt;varname&gt;bgwriter_delay&lt;/varname&gt;.
+         If this value is specified without units, it is taken as milliseconds.
+         The default value is 200
          milliseconds (&lt;literal&gt;200ms&lt;/literal&gt;). Note that on many systems, the
          effective resolution of sleep delays is 10 milliseconds; setting
          &lt;varname&gt;bgwriter_delay&lt;/varname&gt; to a value that is not a multiple of 10
@@ -607,7 +626,7 @@ vacuumを掛けるプロセスをスリープさせることになる累計さ�
        <a id="id-1.6.6.7.6.3.4.1.3" class="indexterm"></a>
        </span></dt><dd><p>
 <span class="original">
-         Whenever more than &lt;varname&gt;bgwriter_flush_after&lt;/varname&gt; bytes have
+         Whenever more than this amount of data has
          been written by the background writer, attempt to force the OS to issue these
          writes to the underlying storage.  Doing so will limit the amount of
          dirty data in the kernel's page cache, reducing the likelihood of
@@ -617,7 +636,10 @@ vacuumを掛けるプロセスをスリープさせることになる累計さ�
          also are some cases, especially with workloads that are bigger than
          &lt;xref linkend="guc-shared-buffers"/&gt;, but smaller than the OS's page
          cache, where performance might degrade.  This setting may have no
-         effect on some platforms.  The valid range is between
+         effect on some platforms.
+         If this value is specified without units, it is taken as blocks,
+         that is &lt;symbol&gt;BLCKSZ&lt;/symbol&gt; bytes, typically 8kB.
+         The valid range is between
          &lt;literal&gt;0&lt;/literal&gt;, which disables forced writeback, and
          &lt;literal&gt;2MB&lt;/literal&gt;.  The default is &lt;literal&gt;512kB&lt;/literal&gt; on Linux,
          &lt;literal&gt;0&lt;/literal&gt; elsewhere.  (If &lt;symbol&gt;BLCKSZ&lt;/symbol&gt; is not 8kB,
@@ -839,7 +861,7 @@ SSDやそれ以外のメモリーベースの記憶装置は、多くの同時�
        <a id="id-1.6.6.7.7.2.6.1.3" class="indexterm"></a>
        </span></dt><dd><p>
 <span class="original">
-         Whenever more than &lt;varname&gt;backend_flush_after&lt;/varname&gt; bytes have
+         Whenever more than this amount of data has
          been written by a single backend, attempt to force the OS to issue
          these writes to the underlying storage.  Doing so will limit the
          amount of dirty data in the kernel's page cache, reducing the
@@ -849,7 +871,10 @@ SSDやそれ以外のメモリーベースの記憶装置は、多くの同時�
          latency, but there also are some cases, especially with workloads
          that are bigger than &lt;xref linkend="guc-shared-buffers"/&gt;, but smaller
          than the OS's page cache, where performance might degrade.  This
-         setting may have no effect on some platforms.  The valid range is
+         setting may have no effect on some platforms.
+         If this value is specified without units, it is taken as blocks,
+         that is &lt;symbol&gt;BLCKSZ&lt;/symbol&gt; bytes, typically 8kB.
+         The valid range is
          between &lt;literal&gt;0&lt;/literal&gt;, which disables forced writeback,
          and &lt;literal&gt;2MB&lt;/literal&gt;.  The default is &lt;literal&gt;0&lt;/literal&gt;, i.e., no
          forced writeback.  (If &lt;symbol&gt;BLCKSZ&lt;/symbol&gt; is not 8kB,
@@ -866,15 +891,10 @@ SSDやそれ以外のメモリーベースの記憶装置は、多くの同時�
        <a id="id-1.6.6.7.7.2.7.1.3" class="indexterm"></a>
        </span></dt><dd><p>
 <span class="original">
-         Sets the minimum time that a snapshot can be used without risk of a
-         &lt;literal&gt;snapshot too old&lt;/literal&gt; error occurring when using the snapshot.
-         This parameter can only be set at server start.
-</span>
-スナップショットが使用されるときに、<code class="literal">snapshot too old</code>エラーを引き起こす危険性なしにスナップショットを利用できる最小時間を設定します。
-このパラメータはサーバ起動時にのみ設定できます。
-        </p><p>
-<span class="original">
-         Beyond the threshold, old data may be vacuumed away.  This can help
+         Sets the minimum amount of time that a query snapshot can be used
+         without risk of a &lt;quote&gt;snapshot too old&lt;/quote&gt; error occurring
+         when using the snapshot.  Data that has been dead for longer than
+         this threshold is allowed to be vacuumed away.  This can help
          prevent bloat in the face of snapshots which remain in use for a
          long time.  To prevent incorrect results due to cleanup of data which
          would otherwise be visible to the snapshot, an error is generated
@@ -886,11 +906,14 @@ SSDやそれ以外のメモリーベースの記憶装置は、多くの同時�
 これにより、長い間残っていたスナップショットによりデータが溢れてしまうのを防ぐことができます。
 スナップショットから見えるデータが消えることによる不正な結果を防ぐため、スナップショットがこの制限値よりも古く、かつこのスナップショットが作られた以降に変更されたページを読むためにスナップショットが使用されるときはエラーが発生します。
         </p><p>
+         If this value is specified without units, it is taken as minutes.
+         A value of <code class="literal">-1</code> (the default) disables this feature,
+         effectively setting the snapshot age limit to infinity.
+         This parameter can only be set at server start.
+        </p><p>
 <span class="original">
-         A value of &lt;literal&gt;-1&lt;/literal&gt; disables this feature, and is the default.
          Useful values for production work probably range from a small number
-         of hours to a few days.  The setting will be coerced to a granularity
-         of minutes, and small numbers (such as &lt;literal&gt;0&lt;/literal&gt; or
+         of hours to a few days.  Small values (such as &lt;literal&gt;0&lt;/literal&gt; or
          &lt;literal&gt;1min&lt;/literal&gt;) are only allowed because they may sometimes be
          useful for testing.  While a setting as high as &lt;literal&gt;60d&lt;/literal&gt; is
          allowed, please note that in many workloads extreme bloat or
@@ -906,7 +929,7 @@ SSDやそれ以外のメモリーベースの記憶装置は、多くの同時�
 <span class="original">
          When this feature is enabled, freed space at the end of a relation
          cannot be released to the operating system, since that could remove
-         information needed to detect the &lt;literal&gt;snapshot too old&lt;/literal&gt;
+         information needed to detect the &lt;quote&gt;snapshot too old&lt;/quote&gt;
          condition.  All space allocated to a relation remains associated with
          that relation for reuse only within that relation unless explicitly
          freed (for example, with &lt;command&gt;VACUUM FULL&lt;/command&gt;).
@@ -924,7 +947,7 @@ SSDやそれ以外のメモリーベースの記憶装置は、多くの同時�
          Some tables cannot safely be vacuumed early, and so will not be
          affected by this setting, such as system catalogs.  For such tables
          this setting will neither reduce bloat nor create a possibility
-         of a &lt;literal&gt;snapshot too old&lt;/literal&gt; error on scanning.
+         of a &lt;quote&gt;snapshot too old&lt;/quote&gt; error on scanning.
 </span>
 この設定は、どのような状況でもエラーが検出されることを保証するものではありません。
 （たとえば）マテリアライズされた結果集合を持つカーソルから正しい結果を得ることができるのであれば、たとえ参照している元のテーブルからVACUUMによって行が削除されたとしてもエラーにはなりません。

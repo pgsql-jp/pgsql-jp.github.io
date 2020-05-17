@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>8.17. 範囲型</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="rowtypes.html" title="8.16. 複合型" /><link rel="next" href="domains.html" title="8.18. ドメイン型" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 12.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="datatype.html" title="第8章 データ型">第8章 データ型</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 12.0 &#10;                      rangetypes.html">誤訳等の報告
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>8.17. 範囲型</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="rowtypes.html" title="8.16. 複合型" /><link rel="next" href="domains.html" title="8.18. ドメイン型" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 12.3文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="datatype.html" title="第8章 データ型">第8章 データ型</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 12.3 &#10;                      rangetypes.html">誤訳等の報告
                     </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="rowtypes.html" title="8.16. 複合型">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="datatype.html" title="第8章 データ型">上へ</a></td><td width="60%" align="center">8.17. 範囲型</td><td width="20%" align="right"> <a accesskey="n" href="domains.html" title="8.18. ドメイン型">次へ</a></td></tr></table><hr /></div><div class="sect1" id="RANGETYPES"><div class="titlepage"><div><div><h2 class="title" style="clear: both">8.17. 範囲型</h2></div></div></div><span class="original">
  &lt;title&gt;Range Types&lt;/title&gt;
 </span><a id="id-1.5.7.25.2" class="indexterm"></a><p>
@@ -152,35 +152,29 @@ SELECT isempty(numrange(1, 5));
   &lt;title&gt;Infinite (Unbounded) Ranges&lt;/title&gt;
 </span><p>
 <span class="original">
-   The lower bound of a range can be omitted, meaning that all points less
-   than the upper bound are included in the range. Likewise, if the upper
-   bound of the range is omitted, then all points greater than the lower bound
-   are included in the range. If both lower and upper bounds are omitted, all
-   values of the element type are considered to be in the range.
+   The lower bound of a range can be omitted, meaning that all
+   values less than the upper bound are included in the range, e.g.,
+   &lt;literal&gt;(,3]&lt;/literal&gt;. Likewise, if the upper bound of the range
+   is omitted, then all values greater than the lower bound are included
+   in the range. If both lower and upper bounds are omitted, all values
+   of the element type are considered to be in the range.  Specifying a
+   missing bound as inclusive is automatically converted to exclusive,
+   e.g., &lt;literal&gt;[,]&lt;/literal&gt; is converted to &lt;literal&gt;(,)&lt;/literal&gt;.
+   You can think of these missing values as +/-infinity, but they are
+   special range type values and are considered to be beyond any range
+   element type's +/-infinity values.
 </span>
 範囲の下限値は省略することができ、このとき、上限値より小さいすべての値はその範囲に含まれることになります。
 同じように、範囲の上限値も省略することができ、このときは、下限値より大きいすべての値がその範囲に含まれることになります。
 下限値と上限値が両方とも省略されたときは、その要素型のすべての値がその範囲に含まれるとみなされます。
   </p><p>
 <span class="original">
-   This is equivalent to considering that the lower bound is &lt;quote&gt;minus
-   infinity&lt;/quote&gt;, or the upper bound is &lt;quote&gt;plus infinity&lt;/quote&gt;,
-   respectively.  But note that these infinite values are never values of
-   the range's element type, and can never be part of the range.  (So there
-   is no such thing as an inclusive infinite bound &amp;mdash; if you try to
-   write one, it will automatically be converted to an exclusive bound.)
-</span>
-これは、それぞれ、下限値が<span class="quote">「<span class="quote">マイナス無限大</span>」</span>である、あるいは、上限値が<span class="quote">「<span class="quote">プラス無限大</span>」</span>である、と見なすことと同等です。
-ただし、これらの無限大の値は範囲型の値にはならない、ということ、そして範囲の一部になることはできない、ということに注意してください。
-(つまり、閉じた無限大の境界などといったものはありません — そのように書いてもそれは自動的に開いた境界に変換されます。)
-  </p><p>
-<span class="original">
-   Also, some element types have a notion of &lt;quote&gt;infinity&lt;/quote&gt;, but that
-   is just another value so far as the range type mechanisms are concerned.
-   For example, in timestamp ranges, &lt;literal&gt;[today,]&lt;/literal&gt; means the same
-   thing as &lt;literal&gt;[today,)&lt;/literal&gt;.  But &lt;literal&gt;[today,infinity]&lt;/literal&gt; means
-   something different from &lt;literal&gt;[today,infinity)&lt;/literal&gt; &amp;mdash; the latter
-   excludes the special &lt;type&gt;timestamp&lt;/type&gt; value &lt;literal&gt;infinity&lt;/literal&gt;.
+   Element types that have the notion of &lt;quote&gt;infinity&lt;/quote&gt; can
+   use them as explicit bound values.  For example, with timestamp
+   ranges, &lt;literal&gt;[today,infinity)&lt;/literal&gt; excludes the special
+   &lt;type&gt;timestamp&lt;/type&gt; value &lt;literal&gt;infinity&lt;/literal&gt;,
+   while &lt;literal&gt;[today,infinity]&lt;/literal&gt; include it, as does
+   &lt;literal&gt;[today,)&lt;/literal&gt; and &lt;literal&gt;[today,]&lt;/literal&gt;.
 </span>
 いくつかの要素型には<span class="quote">「<span class="quote">無限大</span>」</span>の概念がありますが、範囲型の機能に関する限り、これは一つの値として扱われます。
 例えばtimestampの範囲で<code class="literal">[today,]</code>の意味は<code class="literal">[today,)</code>と同じです。

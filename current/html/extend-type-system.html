@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>37.2. PostgreSQLの型システム</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="extend-how.html" title="37.1. 拡張の作用法" /><link rel="next" href="xfunc.html" title="37.3. ユーザ定義関数" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 12.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="extend.html" title="第37章 SQLの拡張">第37章 <acronym class="acronym">SQL</acronym>の拡張</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 12.0 &#10;                      extend-type-system.html">誤訳等の報告
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>37.2. PostgreSQLの型システム</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="extend-how.html" title="37.1. 拡張の作用法" /><link rel="next" href="xfunc.html" title="37.3. ユーザ定義関数" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 12.3文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="extend.html" title="第37章 SQLの拡張">第37章 <acronym class="acronym">SQL</acronym>の拡張</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 12.3 &#10;                      extend-type-system.html">誤訳等の報告
                     </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="extend-how.html" title="37.1. 拡張の作用法">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="extend.html" title="第37章 SQLの拡張">上へ</a></td><td width="60%" align="center">37.2. <span class="productname">PostgreSQL</span>の型システム</td><td width="20%" align="right"> <a accesskey="n" href="xfunc.html" title="37.3. ユーザ定義関数">次へ</a></td></tr></table><hr /></div><div class="sect1" id="EXTEND-TYPE-SYSTEM"><div class="titlepage"><div><div><h2 class="title" style="clear: both">37.2. <span class="productname">PostgreSQL</span>の型システム</h2></div></div></div><span class="original">
    &lt;title&gt;The &lt;productname&gt;PostgreSQL&lt;/productname&gt; Type System&lt;/title&gt;
 </span><a id="id-1.8.3.5.2" class="indexterm"></a><a id="id-1.8.3.5.3" class="indexterm"></a><a id="id-1.8.3.5.4" class="indexterm"></a><a id="id-1.8.3.5.5" class="indexterm"></a><a id="id-1.8.3.5.6" class="indexterm"></a><a id="id-1.8.3.5.7" class="indexterm"></a><p>
@@ -155,9 +155,11 @@
      &lt;type&gt;anyarray&lt;/type&gt; positions must be an array whose elements are
      the same type appearing in the &lt;type&gt;anyelement&lt;/type&gt; positions.
      Similarly, if there are positions declared &lt;type&gt;anyrange&lt;/type&gt;
-     and others declared &lt;type&gt;anyelement&lt;/type&gt;, the actual range type in
-     the &lt;type&gt;anyrange&lt;/type&gt; positions must be a range whose subtype is
-     the same type appearing in the &lt;type&gt;anyelement&lt;/type&gt; positions.
+     and others declared &lt;type&gt;anyelement&lt;/type&gt; or &lt;type&gt;anyarray&lt;/type&gt;,
+     the actual range type in the &lt;type&gt;anyrange&lt;/type&gt; positions must be a
+     range whose subtype is the same type appearing in
+     the &lt;type&gt;anyelement&lt;/type&gt; positions and the same as the element type
+     of the &lt;type&gt;anyarray&lt;/type&gt; positions.
      &lt;type&gt;anynonarray&lt;/type&gt; is treated exactly the same as &lt;type&gt;anyelement&lt;/type&gt;,
      but adds the additional constraint that the actual type must not be
      an array type.
@@ -203,6 +205,15 @@
 例えば、配列添字機構がなかったとすると、<code class="literal">subscript(anyarray, integer) returns anyelement</code>として添字機構を実装する関数を定義できます。
 この宣言には、最初の実引数は配列型になり、パーサはこの最初の実引数の型より正しい結果型を推論することができます。
 他にも例えば、<code class="literal">f(anyarray) returns anyenum</code>と宣言された関数は列挙型の配列のみを受け付けます。
+    </p><p>
+     In most cases, the parser can infer the actual data type for a
+     polymorphic result type from arguments that are of a different
+     polymorphic type; for example <code class="type">anyarray</code> can be deduced
+     from <code class="type">anyelement</code> or vice versa.  The exception is that a
+     polymorphic result of type <code class="type">anyrange</code> requires an argument
+     of type <code class="type">anyrange</code>; it cannot be deduced
+     from <code class="type">anyarray</code> or <code class="type">anyelement</code> arguments.  This
+     is because there could be multiple range types with the same subtype.
     </p><p>
 <span class="original">
      Note that &lt;type&gt;anynonarray&lt;/type&gt; and &lt;type&gt;anyenum&lt;/type&gt; do not represent

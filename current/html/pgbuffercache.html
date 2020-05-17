@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>F.24. pg_buffercache</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="passwordcheck.html" title="F.23. passwordcheck" /><link rel="next" href="pgcrypto.html" title="F.25. pgcrypto" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 12.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="contrib.html" title="付録F 追加で提供されるモジュール">付録F 追加で提供されるモジュール</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 12.0 &#10;                      pgbuffercache.html">誤訳等の報告
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>F.24. pg_buffercache</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="passwordcheck.html" title="F.23. passwordcheck" /><link rel="next" href="pgcrypto.html" title="F.25. pgcrypto" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 12.3文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="contrib.html" title="付録F 追加で提供されるモジュール">付録F 追加で提供されるモジュール</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 12.3 &#10;                      pgbuffercache.html">誤訳等の報告
                     </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="passwordcheck.html" title="F.23. passwordcheck">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="contrib.html" title="付録F 追加で提供されるモジュール">上へ</a></td><td width="60%" align="center">F.24. pg_buffercache</td><td width="20%" align="right"> <a accesskey="n" href="pgcrypto.html" title="F.25. pgcrypto">次へ</a></td></tr></table><hr /></div><div class="sect1" id="PGBUFFERCACHE"><div class="titlepage"><div><div><h2 class="title" style="clear: both">F.24. pg_buffercache</h2></div></div></div><a id="id-1.11.7.33.2" class="indexterm"></a><p>
 <span class="original">
   The &lt;filename&gt;pg_buffercache&lt;/filename&gt; module provides a means for
@@ -16,8 +16,8 @@
 このモジュールはレコード集合を返す<code class="function">pg_buffercache_pages</code> C関数と、簡単に利用できるようにこの関数を隠蔽する<code class="structname">pg_buffercache</code>ビューを提供します。
  </p><p>
 <span class="original">
-  By default use is restricted to superusers and members of the
-  &lt;literal&gt;pg_read_all_stats&lt;/literal&gt; role. Access may be granted to others
+  By default, use is restricted to superusers and members of the
+  &lt;literal&gt;pg_monitor&lt;/literal&gt; role. Access may be granted to others
   using &lt;command&gt;GRANT&lt;/command&gt;.
 </span>
 デフォルトでは、使用はスーパーユーザと<code class="literal">pg_read_all_stats</code>ロールのメンバに限定されています。
@@ -55,12 +55,11 @@
 <code class="structname">pg_class</code>に対して結合しようとする場合、現在のデータベースのOIDまたは0と等しい<code class="structfield">reldatabase</code>を持つ行に限定して結合することをお勧めします。
   </p><p>
 <span class="original">
-   When the &lt;structname&gt;pg_buffercache&lt;/structname&gt; view is accessed, internal buffer
-   manager locks are taken for long enough to copy all the buffer state
-   data that the view will display.
-   This ensures that the view produces a consistent set of results, while not
-   blocking normal buffer activity longer than necessary.  Nonetheless there
-   could be some impact on database performance if this view is read often.
+   Since buffer manager locks are not taken to copy the buffer state data that
+   the view will display, accessing &lt;structname&gt;pg_buffercache&lt;/structname&gt; view
+   has less impact on normal buffer activity but it doesn't provide a consistent
+   set of results across all buffers.  However, we ensure that the information of
+   each buffer is self-consistent.
 </span>
 <code class="structname">pg_buffercache</code>ビューにアクセスがあると、ビューが表示するすべてのバッファ状態をコピーするために十分な期間、内部バッファマネージャはロックを取得します。
 これにより、一貫した結果集合が生成されること、また、必要以上に長く通常のバッファ操作がブロックされないことが保証されます。
@@ -68,27 +67,28 @@
   </p></div><div class="sect2" id="id-1.11.7.33.8"><div class="titlepage"><div><div><h3 class="title">F.24.2. サンプル出力</h3></div></div></div><span class="original">
   &lt;title&gt;Sample Output&lt;/title&gt;
 </span><pre class="screen">
-regression=# SELECT c.relname, count(*) AS buffers
-             FROM pg_buffercache b INNER JOIN pg_class c
+regression=# SELECT n.nspname, c.relname, count(*) AS buffers
+             FROM pg_buffercache b JOIN pg_class c
              ON b.relfilenode = pg_relation_filenode(c.oid) AND
                 b.reldatabase IN (0, (SELECT oid FROM pg_database
                                       WHERE datname = current_database()))
-             GROUP BY c.relname
-             ORDER BY 2 DESC
+             JOIN pg_namespace n ON n.oid = c.relnamespace
+             GROUP BY n.nspname, c.relname
+             ORDER BY 3 DESC
              LIMIT 10;
 
-             relname             | buffers
----------------------------------+---------
- tenk2                           |     345
- tenk1                           |     141
- pg_proc                         |      46
- pg_class                        |      45
- pg_attribute                    |      43
- pg_class_relname_nsp_index      |      30
- pg_proc_proname_args_nsp_index  |      28
- pg_attribute_relid_attnam_index |      26
- pg_depend                       |      22
- pg_depend_reference_index       |      20
+  nspname   |        relname         | buffers
+------------+------------------------+---------
+ public     | delete_test_table      |     593
+ public     | delete_test_table_pkey |     494
+ pg_catalog | pg_attribute           |     472
+ public     | quad_poly_tbl          |     353
+ public     | tenk2                  |     349
+ public     | tenk1                  |     349
+ public     | gin_test_idx           |     306
+ pg_catalog | pg_largeobject         |     206
+ public     | gin_test_tbl           |     188
+ public     | spgist_text_tbl        |     182
 (10 rows)
 </pre></div><div class="sect2" id="id-1.11.7.33.9"><div class="titlepage"><div><div><h3 class="title">F.24.3. 作者</h3></div></div></div><span class="original">
   &lt;title&gt;Authors&lt;/title&gt;

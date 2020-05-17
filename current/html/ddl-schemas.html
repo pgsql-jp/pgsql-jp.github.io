@@ -1,15 +1,14 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>5.9. スキーマ</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="ddl-rowsecurity.html" title="5.8. 行セキュリティポリシー" /><link rel="next" href="ddl-inherit.html" title="5.10. 継承" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 12.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="ddl.html" title="第5章 データ定義">第5章 データ定義</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 12.0 &#10;                      ddl-schemas.html">誤訳等の報告
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>5.9. スキーマ</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="ddl-rowsecurity.html" title="5.8. 行セキュリティポリシー" /><link rel="next" href="ddl-inherit.html" title="5.10. 継承" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 12.3文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="ddl.html" title="第5章 データ定義">第5章 データ定義</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 12.3 &#10;                      ddl-schemas.html">誤訳等の報告
                     </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="ddl-rowsecurity.html" title="5.8. 行セキュリティポリシー">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="ddl.html" title="第5章 データ定義">上へ</a></td><td width="60%" align="center">5.9. スキーマ</td><td width="20%" align="right"> <a accesskey="n" href="ddl-inherit.html" title="5.10. 継承">次へ</a></td></tr></table><hr /></div><div class="sect1" id="DDL-SCHEMAS"><div class="titlepage"><div><div><h2 class="title" style="clear: both">5.9. スキーマ</h2></div></div></div><span class="original">
   &lt;title&gt;Schemas&lt;/title&gt;
 </span><a id="id-1.5.4.11.2" class="indexterm"></a><p>
 <span class="original">
-   A &lt;productname&gt;PostgreSQL&lt;/productname&gt; database cluster
-   contains one or more named databases.  Users and groups of users are
-   shared across the entire cluster, but no other data is shared across
-   databases.  Any given client connection to the server can access
-   only the data in a single database, the one specified in the connection
-   request.
+   A &lt;productname&gt;PostgreSQL&lt;/productname&gt; database cluster contains
+   one or more named databases.  Roles and a few other object types are
+   shared across the entire cluster.  A client connection to the server
+   can only access data in a single database, the one specified in the
+   connection request.
 </span>
 <span class="productname">PostgreSQL</span>データベースクラスタには、1つ以上の名前付きデータベースが含まれます。
 ユーザおよびユーザのグループはクラスタ全体で共有されますが、他のデータは複数のデータベース間で共有されません。
@@ -17,8 +16,8 @@
   </p><div class="note"><h3 class="title">注記</h3><p>
 <span class="original">
     Users of a cluster do not necessarily have the privilege to access every
-    database in the cluster.  Sharing of user names means that there
-    cannot be different users named, say, &lt;literal&gt;joe&lt;/literal&gt; in two databases
+    database in the cluster.  Sharing of role names means that there
+    cannot be different roles named, say, &lt;literal&gt;joe&lt;/literal&gt; in two databases
     in the same cluster; but the system can be configured to allow
     &lt;literal&gt;joe&lt;/literal&gt; access to only some of the databases.
 </span>
@@ -444,24 +443,40 @@ REVOKE CREATE ON SCHEMA public FROM PUBLIC;
    &lt;title&gt;Usage Patterns&lt;/title&gt;
 </span><p>
 <span class="original">
-    Schemas can be used to organize your data in many ways.  There are a few
-    usage patterns easily supported by the default configuration, only one of
-    which suffices when database users mistrust other database users:
+    Schemas can be used to organize your data in many ways.
+    A &lt;firstterm&gt;secure schema usage pattern&lt;/firstterm&gt; prevents untrusted
+    users from changing the behavior of other users' queries.  When a database
+    does not use a secure schema usage pattern, users wishing to securely
+    query that database would take protective action at the beginning of each
+    session.  Specifically, they would begin each session by
+    setting &lt;varname&gt;search_path&lt;/varname&gt; to the empty string or otherwise
+    removing non-superuser-writable schemas
+    from &lt;varname&gt;search_path&lt;/varname&gt;.  There are a few usage patterns
+    easily supported by the default configuration:
 </span>
 スキーマは様々な方法でデータの編成に使用できます。
 デフォルト構成で簡単にサポートできるお勧めの使用パターンがいくつかあります。
     </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><span class="original"> "DROP SCHEMA public" is inferior to this REVOKE, because pg_dump
-           doesn't preserve that DROP. </span><p>
+           doesn't preserve that DROP.
+
+           A database owner can attack the database's users via "CREATE SCHEMA
+           trojan; ALTER DATABASE $mydb SET search_path = trojan, public;".  A
+           CREATEROLE user can issue "GRANT $dbowner TO $me" and then use the
+           database owner attack. </span><p>
 <span class="original">
        Constrain ordinary users to user-private schemas.  To implement this,
        issue &lt;literal&gt;REVOKE CREATE ON SCHEMA public FROM PUBLIC&lt;/literal&gt;,
-       and create a schema for each user with the same name as that user.  If
-       affected users had logged in before this, consider auditing the public
+       and create a schema for each user with the same name as that user.
+       Recall that the default search path starts
+       with &lt;literal&gt;$user&lt;/literal&gt;, which resolves to the user name.
+       Therefore, if each user has a separate schema, they access their own
+       schemas by default.  After adopting this pattern in a database where
+       untrusted users had already logged in, consider auditing the public
        schema for objects named like objects in
-       schema &lt;literal&gt;pg_catalog&lt;/literal&gt;.  Recall that the default search
-       path starts with &lt;literal&gt;$user&lt;/literal&gt;, which resolves to the user
-       name.  Therefore, if each user has a separate schema, they access their
-       own schemas by default.
+       schema &lt;literal&gt;pg_catalog&lt;/literal&gt;.  This pattern is a secure schema
+       usage pattern unless an untrusted user is the database owner or holds
+       the &lt;literal&gt;CREATEROLE&lt;/literal&gt; privilege, in which case no secure
+       schema usage pattern exists.
 </span>
 一般ユーザに、ユーザ個人用のスキーマだけを使わせます。
 これを実現するには、<code class="literal">REVOKE CREATE ON SCHEMA public FROM PUBLIC</code>を発行し、個々のユーザにユーザと同じ名前でスキーマを作成してください。
@@ -470,37 +485,17 @@ REVOKE CREATE ON SCHEMA public FROM PUBLIC;
 ですから、デフォルトではユーザは別々のスキーマを所有し、自身のスキーマにアクセスします。
       </p></li><li class="listitem"><p>
 <span class="original">
-       Remove the public schema from each user's default search path
-       using &lt;literal&gt;ALTER ROLE &lt;replaceable&gt;user&lt;/replaceable&gt; SET
-       search_path = "$user"&lt;/literal&gt;.  Everyone retains the ability to
-       create objects in the public schema, but only qualified names will
-       choose those objects.  While qualified table references are fine, calls
-       to functions in the public schema &lt;link linkend="typeconv-func"&gt;will be
-       unsafe or unreliable&lt;/link&gt;.  Also, a user holding
-       the &lt;literal&gt;CREATEROLE&lt;/literal&gt; privilege can undo this setting and
-       issue arbitrary queries under the identity of users relying on the
-       setting.  If you create functions or extensions in the public schema or
-       grant &lt;literal&gt;CREATEROLE&lt;/literal&gt; to users not warranting this
-       almost-superuser ability, use the first pattern instead.
-</span>
-<code class="literal">ALTER ROLE <em class="replaceable"><code>user</code></em> SET search_path = "$user"</code>を使って個々のユーザのデフォルトサーチパスからpublicスキーマを削除します。
-すべてのユーザは依然としてpublicスキーマにオブジェクトを作ることはできますが、修飾名を使わなければそのオブジェクトを選択できません。
-修飾してテーブルを参照するのは問題ありませんが、publicスキーマ中の関数の呼び出しは<a class="link" href="typeconv-func.html" title="10.3. 関数">安全ではないか、あるいは信頼できません</a>。
-また、<code class="literal">CREATEROLE</code>権限を保持するユーザは、この設定を元に戻して、この設定に依存しているユーザの資格で任意の問合せを発行できます。
-この、ほとんどスーパユーザと言える能力を与えずに関数や拡張をpublicスキーマに作成する、あるいは<code class="literal">CREATEROLE</code>をユーザに許可したいのであれば、最初に述べたパターンを代わりに使用してください。
-      </p></li><li class="listitem"><p>
-<span class="original">
-       Remove the public schema from &lt;varname&gt;search_path&lt;/varname&gt; in
-       &lt;link linkend="config-setting-configuration-file"&gt;&lt;filename&gt;postgresql.conf&lt;/filename&gt;&lt;/link&gt;.
-       The ensuing user experience matches the previous pattern.  In addition
-       to that pattern's implications for functions
-       and &lt;literal&gt;CREATEROLE&lt;/literal&gt;, this trusts database owners
-       like &lt;literal&gt;CREATEROLE&lt;/literal&gt;.  If you create functions or
-       extensions in the public schema or assign
-       the &lt;literal&gt;CREATEROLE&lt;/literal&gt;
-       privilege, &lt;literal&gt;CREATEDB&lt;/literal&gt; privilege or individual database
-       ownership to users not warranting almost-superuser access, use the
-       first pattern instead.
+       Remove the public schema from the default search path, by modifying
+       &lt;link linkend="config-setting-configuration-file"&gt;&lt;filename&gt;postgresql.conf&lt;/filename&gt;&lt;/link&gt;
+       or by issuing &lt;literal&gt;ALTER ROLE ALL SET search_path =
+       "$user"&lt;/literal&gt;.  Everyone retains the ability to create objects in
+       the public schema, but only qualified names will choose those objects.
+       While qualified table references are fine, calls to functions in the
+       public schema &lt;link linkend="typeconv-func"&gt;will be unsafe or
+       unreliable&lt;/link&gt;.  If you create functions or extensions in the public
+       schema, use the first pattern instead.  Otherwise, like the first
+       pattern, this is secure unless an untrusted user is the database owner
+       or holds the &lt;literal&gt;CREATEROLE&lt;/literal&gt; privilege.
 </span>
 <a class="link" href="config-setting.html#CONFIG-SETTING-CONFIGURATION-FILE" title="19.1.2. 設定ファイルによるパラメータ操作"><code class="filename">postgresql.conf</code></a>の<code class="varname">search_path</code>からpublicスキーマを削除します。
 これによるユーザ体験は一つ前のパターンと合致します。
@@ -510,10 +505,9 @@ REVOKE CREATE ON SCHEMA public FROM PUBLIC;
 <span class="original">
        Keep the default.  All users access the public schema implicitly.  This
        simulates the situation where schemas are not available at all, giving
-       a smooth transition from the non-schema-aware world.  However, any user
-       can issue arbitrary queries under the identity of any user not electing
-       to protect itself individually.  This pattern is acceptable only when
-       the database has a single user or a few mutually-trusting users.
+       a smooth transition from the non-schema-aware world.  However, this is
+       never a secure pattern.  It is acceptable only when the database has a
+       single user or a few mutually-trusting users.
 </span>
 デフォルトを維持します。
 すべてのユーザがpublicスキーマに暗黙的にアクセスします。
