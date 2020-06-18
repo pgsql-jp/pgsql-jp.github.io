@@ -375,7 +375,7 @@ WITH ( MODULUS <em class="replaceable"><code>numeric_literal</code></em>, REMAIN
       VALID&lt;/literal&gt;, which is currently only allowed for foreign key
       and CHECK constraints.
 </span>
-この構文は、<a class="xref" href="sql-createtable.html" title="CREATE TABLE"><span class="refentrytitle">CREATE TABLE</span></a>と同じ構文に加え、現時点では外部キー制約と検査制約でのみ許される<code class="literal">NOT VALID</code>オプションを使って新しい制約をテーブルに追加します。
+この構文は、<a class="xref" href="sql-createtable.html" title="CREATE TABLE"><span class="refentrytitle">CREATE TABLE</span></a>と同じ制約構文に加え、現時点では外部キー制約と検査制約でのみ許される<code class="literal">NOT VALID</code>オプションを使って新しい制約をテーブルに追加します。
      </p><p>
 <span class="original">
       Normally, this form will cause a scan of the table to verify that all
@@ -409,7 +409,8 @@ WITH ( MODULUS <em class="replaceable"><code>numeric_literal</code></em>, REMAIN
       referenced table, in addition to the lock on the table on which the
       constraint is declared.
 </span>
-外部キー制約の追加には、制約を受け取るテーブルでのロックに加えて、被参照テーブルに<code class="literal">SHARE ROW EXCLUSIVE</code>ロックが必要です。
+<code class="literal">ADD <em class="replaceable"><code>table_constraint</code></em></code>のほとんどの構文では<code class="literal">ACCESS EXCLUSIVE</code>ロックが必要ですが、<code class="literal">ADD FOREIGN KEY</code>では<code class="literal">SHARE ROW EXCLUSIVE</code>ロックだけが必要です。
+<code class="literal">ADD FOREIGN KEY</code>は、制約を宣言したテーブルでのロックに加えて、被参照テーブルの<code class="literal">SHARE ROW EXCLUSIVE</code>ロックも取得することに注意してください。
      </p><p>
 <span class="original">
       Additional restrictions apply when unique or primary key constraints
@@ -730,7 +731,7 @@ clusterオプションの変更は<code class="literal">SHARE UPDATE EXCLUSIVE</
       fillfactor, toast and autovacuum storage parameters, as well as the
       planner parameter &lt;varname&gt;parallel_workers&lt;/varname&gt;.
 </span>
-fillfactor、TOAST、およびautovacuumのストレージパラメータおよびプランナに関連するパラメータ<code class="varname">effective_io_concurrency</code>、<code class="varname">parallel_workers</code>、<code class="varname">seq_page_cost</code>、<code class="varname">random_page_cost</code>、<code class="varname">n_distinct</code>、<code class="varname">n_distinct_inherited</code>については<code class="literal">SHARE UPDATE EXCLUSIVE</code>ロックが獲得されます。
+fillfactor、TOAST、およびautovacuumのストレージパラメータおよびプランナに関連するパラメータ<code class="varname">parallel_workers</code>については<code class="literal">SHARE UPDATE EXCLUSIVE</code>ロックが獲得されます。
      </p></dd><dt><span class="term"><code class="literal">RESET ( <em class="replaceable"><code>storage_parameter</code></em> [, ... ] )</code></span></dt><dd><p>
 <span class="original">
       This form resets one or more storage parameters to their
@@ -867,6 +868,7 @@ fillfactor、TOAST、およびautovacuumのストレージパラメータおよ�
 対象テーブルの各インデックスについて、対応するインデックスが付加されるテーブルに作られます。
 また、同等のインデックスが既にある場合には、そのインデックスが、<code class="command">ALTER INDEX ATTACH PARTITION</code>が実行された場合と同様に、対象テーブルのインデックスに付加されます。
 既存のテーブルが外部テーブルの場合、今のところ対象テーブルに<code class="literal">UNIQUE</code>インデックスがあるときにはテーブルを対象テーブルのパーティションとして追加することはできない点に注意してください（<a class="xref" href="sql-createforeigntable.html" title="CREATE FOREIGN TABLE"><span class="refentrytitle">CREATE FOREIGN TABLE</span></a>も参照してください）。
+対象テーブルにある各ユーザ定義の行レベルのトリガに対しては、対応するものが付加されるテーブルに作られます。
      </p><p>
 <span class="original">
       A partition using &lt;literal&gt;FOR VALUES&lt;/literal&gt; uses same syntax for
@@ -910,10 +912,10 @@ fillfactor、TOAST、およびautovacuumのストレージパラメータおよ�
       &lt;literal&gt;NOT NULL&lt;/literal&gt; constraint to the partition key column,
       unless it's an expression.
 </span>
-新しいパーティションが通常のテーブルの場合、パーティションの制約に違反する行がテーブルに存在しないことを確認するため、テーブルの全件走査が行われます。
+新しいパーティションが通常のテーブルの場合、テーブルに存在する行がパーティションの制約に違反しないことを確認するため、テーブルの全件走査が行われます。
 このコマンドを実行するより前に、望まれるパーティションの制約を満たす行だけしか許さないような有効な<code class="literal">CHECK</code>制約をテーブルに追加すれば、この全件走査を避けることができます。
-パーティションの制約を確認するためにテーブルをスキャンしなくても良いことは、そのような制約を使って決定されます。
-しかし、パーティションキーに式が一つでもあり、それが<code class="literal">NULL</code>値を受け付けないときは、この仕組みは機能しません。
+<code class="literal">CHECK</code>制約は、パーティションの制約を確認するためにテーブルをスキャンする必要がないか決めるために使われます。
+しかし、パーティションキーに式が一つでもあり、パーティションが<code class="literal">NULL</code>値を受け付けないときは、この仕組みは機能しません。
 <code class="literal">NULL</code>値を受け付けないリストパーティションに追加するときも、それが式でないなら、パーティションキーの列に<code class="literal">NOT NULL</code>制約を追加してください。
      </p><p>
 <span class="original">
@@ -940,10 +942,13 @@ fillfactor、TOAST、およびautovacuumのストレージパラメータおよ�
 このスキャンは、新パーティションのスキャンと同様に、適切な<code class="literal">CHECK</code>制約があれば回避できます。
 やはり、新パーティションのスキャンと同様に、デフォルトパーティションが外部テーブルであるときは、このスキャンは常に省略されます。
      </p><p>
+<span class="original">
       Attaching a partition acquires a
-      <code class="literal">SHARE UPDATE EXCLUSIVE</code> lock on the parent table,
-      in addition to <code class="literal">ACCESS EXCLUSIVE</code> locks on the table
+      &lt;literal&gt;SHARE UPDATE EXCLUSIVE&lt;/literal&gt; lock on the parent table,
+      in addition to &lt;literal&gt;ACCESS EXCLUSIVE&lt;/literal&gt; locks on the table
       to be attached and on the default partition (if any).
+</span>
+パーティションの追加は、追加されるテーブルと（もしあれば）デフォルトパーティションでの<code class="literal">ACCESS EXCLUSIVE</code>ロックに加えて、親テーブルで<code class="literal">SHARE UPDATE EXCLUSIVE</code>ロックを取得します。
      </p></dd><dt><span class="term"><code class="literal">DETACH PARTITION</code> <em class="replaceable"><code>partition_name</code></em></span></dt><dd><p>
 <span class="original">
       This form detaches the specified partition of the target table.  The detached
@@ -955,6 +960,7 @@ fillfactor、TOAST、およびautovacuumのストレージパラメータおよ�
 この構文は、指定したパーティションを対象のテーブルから切り離します。
 切り離されたパーティションは単独のテーブルとして存在し続けますが、切り離される前のテーブルとの紐付けはなくなります。
 対象テーブルのインデックスに付加されていた全てのインデックスも切り離されます。
+対象テーブルのものの複製として作られたトリガは削除されます。
      </p></dd></dl></div><p>
   </p><p>
 <span class="original">
