@@ -100,7 +100,6 @@ PostgreSQLの以前のリリースでは<code class="literal">FUNCTIONS</code>�
 </span>
 ユーザ自身あるいは、ユーザがメンバとして属するロールにより作成されるオブジェクトについてのみ、デフォルト権限を変更することができます。
 権限は大域的に（つまり現在のデータベース内に作成されるすべてのオブジェクトに対して）設定することも、指定したスキーマ内に作成されるオブジェクトのみに対して設定することもできます。
-スキーマ単位で指定されるデフォルト権限は、大域的な個々の種類のオブジェクト用のデフォルト権限に追加されます。
   </p><p>
 <span class="original">
    As explained in &lt;xref linkend="ddl-priv"/&gt;,
@@ -114,13 +113,18 @@ PostgreSQLの以前のリリースでは<code class="literal">FUNCTIONS</code>�
 さらに、<code class="literal">PUBLIC</code>に対して一部の権限を付与することがあります。
 しかし<code class="command">ALTER DEFAULT PRIVILEGES</code>を用いて大域デフォルト権限を変更することで、この動作を変更できます。
   </p><p>
+<span class="original">
    Default privileges that are specified per-schema are added to whatever
    the global default privileges are for the particular object type.
    This means you cannot revoke privileges per-schema if they are granted
-   globally (either by default, or according to a previous <code class="command">ALTER
-   DEFAULT PRIVILEGES</code> command that did not specify a schema).
-   Per-schema <code class="literal">REVOKE</code> is only useful to reverse the
-   effects of a previous per-schema <code class="literal">GRANT</code>.
+   globally (either by default, or according to a previous &lt;command&gt;ALTER
+   DEFAULT PRIVILEGES&lt;/command&gt; command that did not specify a schema).
+   Per-schema &lt;literal&gt;REVOKE&lt;/literal&gt; is only useful to reverse the
+   effects of a previous per-schema &lt;literal&gt;GRANT&lt;/literal&gt;.
+</span>
+スキーマ単位で指定されるデフォルト権限は、大域的な個々の種類のオブジェクト用のデフォルト権限に追加されます。
+これは、スキーマ単位の権限が(デフォルトであれ、以前のスキーマを指定しない<code class="command">ALTER DEFAULT PRIVILEGES</code>コマンドよってであれ)大域的に付与されているのなら、それを取り消せないことを意味します。
+スキーマ単位の<code class="literal">REVOKE</code>は、以前のスキーマ単位の<code class="literal">GRANT</code>の効果を取り消すのにのみ有用です。
   </p><div class="refsect2" id="id-1.9.3.8.5.6"><h3>パラメータ</h3><span class="original">
   &lt;title&gt;Parameters&lt;/title&gt;
 </span><div class="variablelist"><dl class="variablelist"><dt><span class="term"><em class="replaceable"><code>target_role</code></em></span></dt><dd><p>
@@ -142,7 +146,7 @@ PostgreSQLの以前のリリースでは<code class="literal">FUNCTIONS</code>�
 既存のスキーマの名前です。
 指定された場合、そのスキーマ内で後に作成されるオブジェクトに対するデフォルト権限が変更されます。
 <code class="literal">IN SCHEMA</code>を省略した場合、大域的なデフォルト権限が変更されます。
-スキーマはネストできないため、<code class="literal">ON SCHEMAS</code>を使用するときは、<code class="literal">IN SCHEMA</code>を指定することはできません。
+スキーマはネストできないため、スキーマに対する権限を設定する場合には<code class="literal">IN SCHEMA</code>を指定できません。
      </p></dd><dt><span class="term"><em class="replaceable"><code>role_name</code></em></span></dt><dd><p>
 <span class="original">
       The name of an existing role to grant or revoke privileges for.
@@ -212,14 +216,21 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA myschema REVOKE INSERT ON TABLES FROM webuser
 </p><pre class="programlisting">
 ALTER DEFAULT PRIVILEGES FOR ROLE admin REVOKE EXECUTE ON FUNCTIONS FROM PUBLIC;
 </pre><p>
-   Note however that you <span class="emphasis"><em>cannot</em></span> accomplish that effect
+<span class="original">
+   Note however that you &lt;emphasis&gt;cannot&lt;/emphasis&gt; accomplish that effect
    with a command limited to a single schema.  This command has no effect,
-   unless it is undoing a matching <code class="literal">GRANT</code>:
+   unless it is undoing a matching &lt;literal&gt;GRANT&lt;/literal&gt;:
+</span>
+しかしながら、スキーマ1つに限定されたコマンドではそのような効果は達成<span class="emphasis"><em>できない</em></span>ということに注意してください。
+対応する<code class="literal">GRANT</code>を取り消さない限り、以下のコマンドは効果がありません。
 </p><pre class="programlisting">
 ALTER DEFAULT PRIVILEGES IN SCHEMA public REVOKE EXECUTE ON FUNCTIONS FROM PUBLIC;
 </pre><p>
+<span class="original">
    That's because per-schema default privileges can only add privileges to
    the global setting, not remove privileges granted by it.
+</span>
+スキーマ単位のデフォルト権限は、大域的な設定に権限を追加できるだけで、付与された権限を削除することはできないからです。
   </p></div><div class="refsect1" id="id-1.9.3.8.8"><h2>互換性</h2><span class="original">
   &lt;title&gt;Compatibility&lt;/title&gt;
 </span><p>
