@@ -25,8 +25,9 @@
 デフォルトは一般的に128メガバイト(<code class="literal">128MB</code>)です。
 しかし、稼働中のカーネルの設定がこの値をサポートしていない場合、より少なくなることがあります（<span class="application">initdb</span>の過程で決定されます）。
 この設定は最低限128キロバイトなければなりません。
-（<code class="symbol">BLCKSZ</code>がデフォルト値と異なる場合、この最小値も異なる値になります。）
 しかし、良い性能を引き出すためには、最小値よりかなり高い値の設定が通例必要です。
+この値が単位なしで指定された場合は、ブロック単位であるとみなします。すなわち、<code class="symbol">BLCKSZ</code>バイト、一般的には8kBです。
+（<code class="symbol">BLCKSZ</code>がデフォルト値と異なる場合、この最小値も異なる値になります。）
 このパラメータはサーバ起動時にのみ設定可能です。
        </p><p>
        <span class="original">
@@ -141,9 +142,11 @@ Linuxでは、これは<span class="quote">「<span class="quote">transparent hu
         within the session; subsequent attempts to change the value will
         have no effect on that session.
        </span>
-それぞれのデータベースセッションが使用する一時バッファの最大数を設定します。
+それぞれのデータベースセッションが使用する一時バッファの最大メモリ量を設定します。
 一時バッファは、一時テーブルにアクセスする時にのみ使用されるセッションローカルのバッファです。
+この値が単位なしで指定された場合は、ブロック単位であるとみなします。すなわち、<code class="symbol">BLCKSZ</code>バイト、一般的には8kBです。
 デフォルトは8メガバイト（<code class="literal">8MB</code>）です。
+（<code class="symbol">BLCKSZ</code>が8kBでなければ、それに比例して増減します。）
 設定はそれぞれのセッション内で変更できますが、そのセッション内で一時テーブルが最初に使用されるまでになります。それより後に値の変更を試みても、そのセッションでは効果がありません。
        </p><p>
        <span class="original">
@@ -210,10 +213,15 @@ Linuxでは、これは<span class="quote">「<span class="quote">transparent hu
         Hash tables are used in hash joins, hash-based aggregation, and
         hash-based processing of &lt;literal&gt;IN&lt;/literal&gt; subqueries.
        </span>
-       一時ディスクファイルに書き込む前に、内部並べ替えとハッシュテーブル操作が使用するメモリ容量を指定します。
+一時ディスクファイルに書き込むようになる前に、クエリ操作（たとえば並べ替えとハッシュテーブル操作）が使用する最大のメモリ容量を指定します。
+この値が単位なしで指定された場合は、キロバイト単位であるとみなします。
 デフォルト値は4メガバイト（<code class="literal">4MB</code>）です。
-        複雑な問い合わせの場合、いくつかの並び替えもしくはハッシュ操作が並行して実行されることに注意してください。
-        それぞれの操作による一時メモリへの書き込み開始の前に、この値が指定するのと同じメモリ容量の使用をそれらの操作に許容します。さらに、いくつかの実行中のセッションはこれらの動作を同時に行います。したがって、使用されるメモリの合計は、<code class="varname">work_mem</code>の数倍になります。値を選択する時には、この事実に留意することが必要です。並び替え操作は<code class="literal">ORDER BY</code>、<code class="literal">DISTINCT</code>、およびマージ結合に対して使われます。ハッシュテーブルはハッシュ結合、ハッシュに基づいた集約、および<code class="literal">IN</code>副問い合わせのハッシュに基づいた処理で使用されます。
+複雑な問い合わせの場合、いくつかの並び替えもしくはハッシュ操作が並行して実行されることに注意してください。
+それぞれの操作による一時メモリへの書き込み開始の前に、この値が指定するのと同じメモリ容量の使用をそれらの操作に許容します。
+さらに、いくつかの実行中のセッションはこれらの動作を同時に行います。
+したがって、使用されるメモリの合計は、<code class="varname">work_mem</code>の数倍になります。値を選択する時には、この事実に留意することが必要です。
+並び替え操作は<code class="literal">ORDER BY</code>、<code class="literal">DISTINCT</code>、およびマージ結合に対して使われます。
+ハッシュテーブルはハッシュ結合、ハッシュに基づいた集約、および<code class="literal">IN</code>副問い合わせのハッシュに基づいた処理で使用されます。
        </p></dd><dt id="GUC-MAINTENANCE-WORK-MEM"><span class="term"><code class="varname">maintenance_work_mem</code> (<code class="type">integer</code>)
       <a id="id-1.6.6.7.2.2.6.1.3" class="indexterm"></a>
       </span></dt><dd><p>
@@ -230,7 +238,8 @@ Linuxでは、これは<span class="quote">「<span class="quote">transparent hu
         than &lt;varname&gt;work_mem&lt;/varname&gt;.  Larger settings might improve
         performance for vacuuming and for restoring database dumps.
        </span>
-       <code class="command">VACUUM</code>、<code class="command">CREATE INDEX</code>、および<code class="command">ALTER TABLE ADD FOREIGN KEY</code>の様な保守操作で使用されるメモリの最大容量を指定します。
+<code class="command">VACUUM</code>、<code class="command">CREATE INDEX</code>、および<code class="command">ALTER TABLE ADD FOREIGN KEY</code>の様な保守操作で使用されるメモリの最大容量を指定します。
+この値が単位なしで指定された場合は、キロバイト単位であるとみなします。
 デフォルト値は64メガバイト（<code class="literal">64MB</code>）です。
 1つのデータベースセッションでは、一度に1つしか上記操作はできませんし、通常インストレーションでこうした操作が同時に非常に多く発生することはありませんので、これを<code class="varname">work_mem</code>よりもかなり多めの値にしても安全です。
 大きい値を設定することでvacuum処理と、ダンプしたデータベースのリストア性能が向上します。
@@ -256,9 +265,10 @@ Linuxでは、これは<span class="quote">「<span class="quote">transparent hu
         be used instead.  The setting has no effect on the behavior of
         &lt;command&gt;VACUUM&lt;/command&gt; when run in other contexts.
        </span>
-        個々の自動バキュームワーカプロセスが使用する最大のメモリ量を指定します。
+個々の自動バキュームワーカプロセスが使用する最大のメモリ量を指定します。
+この値が単位なしで指定された場合は、キロバイト単位であるとみなします。
 デフォルトは-1で、<a class="xref" href="runtime-config-resource.html#GUC-MAINTENANCE-WORK-MEM">maintenance_work_mem</a>が代わりに使われる設定になります。
-       別の文脈で実行される<code class="command">VACUUM</code>にはこの設定は影響しません。
+別の文脈で実行される<code class="command">VACUUM</code>にはこの設定は影響しません。
        </p></dd><dt id="GUC-MAX-STACK-DEPTH"><span class="term"><code class="varname">max_stack_depth</code> (<code class="type">integer</code>)
       <a id="id-1.6.6.7.2.2.8.1.3" class="indexterm"></a>
       </span></dt><dd><p>
@@ -278,6 +288,7 @@ Linuxでは、これは<span class="quote">「<span class="quote">transparent hu
 サーバの実行スタックの最大安全深度を指定します。
 このパラメータの理想的な設定はカーネルにより強要される実際のスタック容量の（<code class="literal">ulimit -s</code>もしくはそれと同等の機能で設定された）限界から、1メガバイト程度の安全余裕度を差し引いたものです。
 この安全余裕度は、サーバがすべてのルーチンではスタック深度を検査をせず、再帰を行う可能性のある重要なルーチンでのみ検査をするために必要となるものです。
+この値が単位なしで指定された場合は、キロバイト単位であるとみなします。
 デフォルト設定は2メガバイト（<code class="literal">2MB</code>）で、かなり控え目、かつクラッシュの危険がなさそうな設定です。
 しかし、複雑な関数の実行を許容するには小さ過ぎるかも知れません。
 スーパーユーザのみがこの設定を変更することができます。
@@ -291,7 +302,7 @@ Linuxでは、これは<span class="quote">「<span class="quote">transparent hu
         value.  However, not all platforms provide the information,
         so caution is recommended in selecting a value.
        </span>
-       <code class="varname">max_stack_depth</code>を実際のカーネルの制限よりも高い値に設定した場合、暴走した再帰関数により、個々のバックエンドプロセスがクラッシュするかもしれません。
+<code class="varname">max_stack_depth</code>を実際のカーネルの制限よりも高い値に設定した場合、暴走した再帰関数により、個々のバックエンドプロセスがクラッシュするかもしれません。
 <span class="productname">PostgreSQL</span>がカーネルの制限を決定することができるプラットフォームでは、この変数を危険な値に設定させません。
 しかし、すべてのプラットフォームがこの情報を提供できるわけではありません。
 このため、値を選ぶ時には注意が必要です。
@@ -362,7 +373,8 @@ Linuxでは、これは<span class="quote">「<span class="quote">transparent hu
 あるプロセスが一時ファイルとして使用できるディスクの最大容量を設定します。
 例えば、ソートやハッシュの一時ファイルであったり、カーソルを保持する格納ファイルです。
 この制限値を超えようとするトランザクションはキャンセルされます。
-値はキロバイト単位で指定され、（デフォルトである） <code class="literal">-1</code> の場合は制限がありません。
+この値が単位なしで指定された場合は、キロバイト単位であるとみなします。
+<code class="literal">-1</code>（デフォルトです）の場合は制限がありません。
 この設定はスーパーユーザのみ変更可能です。
        </p><p>
        <span class="original">
@@ -447,7 +459,8 @@ Linuxでは、これは<span class="quote">「<span class="quote">transparent hu
          The default value is zero, which disables the cost-based vacuum
          delay feature.  Positive values enable cost-based vacuuming.
         </span>
-コストの限度を越えた場合、プロセスがスリープするミリ秒単位の時間の長さです。
+コストの限度を越えた場合、プロセスがスリープする時間の長さです。
+この値が単位なしで指定された場合は、ミリ秒単位であるとみなします。
 デフォルトの値は0で、コストに基づいたvacuum遅延機能を無効にします。
 正の整数はコストに基づいたvacuumを有効にします。
         </p><p>
@@ -567,10 +580,11 @@ vacuumを掛けるプロセスをスリープさせることになる累計さ�
          of 10.  This parameter can only be set in the
          &lt;filename&gt;postgresql.conf&lt;/filename&gt; file or on the server command line.
         </span>
-        バックグラウンドライタの動作周期間の遅延を指定します。
+バックグラウンドライタの動作周期間の遅延を指定します。
 それぞれの周期でライタは、（以下のパラメータで管理される）一部のダーティバッファの書き込みを行います。
-そして<code class="varname">bgwriter_delay</code>ミリ秒スリープした後、これを繰りかえします。
+そして<code class="varname">bgwriter_delay</code>の長さスリープした後、これを繰りかえします。
 しかし、バッファプールにダーティバッファが存在しない場合、<code class="varname">bgwriter_delay</code>に係わらずより長くスリープします。
+この値が単位なしで指定された場合は、ミリ秒単位であるとみなします。
 デフォルトの値は200ミリ秒（<code class="literal">200ms</code>）です。
 多くのシステムで、スリープ遅延の実精度は10ミリ秒です。
 <code class="varname">bgwriter_delay</code>の値の設定を10の倍数としない場合、次に大きい10の倍数に設定した結果と同一になるかもしれないことを覚えておいてください。
@@ -647,10 +661,11 @@ vacuumを掛けるプロセスをスリープさせることになる累計さ�
          This parameter can only be set in the &lt;filename&gt;postgresql.conf&lt;/filename&gt;
          file or on the server command line.
 </span>
-バックグラウンドライターが<code class="varname">bgwriter_flush_after</code>バイトより多く書く度に、OSが記憶装置に書き込むことを強制しようとします。
+バックグラウンドライターがこの値より多く書く度に、OSが記憶装置に書き込むことを強制しようとします。
 このことにより、カーネルのページキャッシュが持つダーティデータの量を一定量に制限し、チェックポイントの最後に<code class="function">fsync</code>が実行される際、あるいはOSがバックグラウンドでデータを大きな塊で書き出す際に性能の急激な低下を招く可能性を減らします。
 多くの場合これによってトランザクションの遅延が大幅に少なくなりますが、あるケース、特にワークロードが<a class="xref" href="runtime-config-resource.html#GUC-SHARED-BUFFERS">shared_buffers</a>よりも大きく、OSのページキャッシュよりも小さい時には性能が低下するかもしれません。
 この設定が無効なプラットフォームがあります。
+この値が単位なしで指定された場合は、ブロック単位であるとみなします。すなわち、<code class="symbol">BLCKSZ</code>バイト、一般的には8kBです。
 有効な設定値は、この強制書き込み機能が無効になる<code class="literal">0</code>から、<code class="literal">2MB</code>までです。
 デフォルト値は、Linuxでは<code class="literal">512kB</code>で、それ以外は<code class="literal">0</code>です。
 (<code class="symbol">BLCKSZ</code>が8kBでなければ、この設定のデフォルト値と最大値が<code class="symbol">BLCKSZ</code>に比例して変更されます。)
@@ -884,6 +899,7 @@ SSDやそれ以外のメモリーベースの記憶装置は、多くの同時�
 このことにより、カーネルのページキャッシュが持つダーティデータの量を一定量に制限し、チェックポイントの最後に<code class="function">fsync</code>が実行される際、あるいはバックグラウンドで実行される大きなバッチの中でOSがデータを書き出す際に性能の急激な低下を招く可能性を減らします。
 多くの場合これによってトランザクションの遅延を大幅に少なくなりますが、あるケース、特にワークロードが<a class="xref" href="runtime-config-resource.html#GUC-SHARED-BUFFERS">shared_buffers</a>よりも大きく、OSのページキャッシュよりも小さい時には性能が低下するかもしれません。
 この設定が無効なプラットフォームがあります。
+この値が単位なしで指定された場合は、ブロック単位であるとみなします。すなわち、<code class="symbol">BLCKSZ</code>バイト、一般的には8kBです。
 有効な設定値は、この強制書き込み機能が無効になる<code class="literal">0</code>から、<code class="literal">2MB</code>までです。
 デフォルト値は<code class="literal">0</code>です(すなわち書き出し制御を行いません)。
 (<code class="symbol">BLCKSZ</code>が8kbでなければ、最大値が<code class="symbol">BLCKSZ</code>に比例して変更されます。)
@@ -902,14 +918,20 @@ SSDやそれ以外のメモリーベースの記憶装置は、多くの同時�
          used to read a page which has been modified since the snapshot was
          built.
 </span>
-この制限値を越えると、古いデータはバキュームされます。
+スナップショットを使用する際に、<span class="quote">「<span class="quote">snapshot too old</span>」</span>エラーが起こるリスク無しに問い合わせスナップショットが利用できる最小の期間を設定します。
+この制限値を越えてデッド状態のままになったデータはバキュームしてしまうことが許可されます。
 これにより、長い間残っていたスナップショットによりデータが溢れてしまうのを防ぐことができます。
 スナップショットから見えるデータが消えることによる不正な結果を防ぐため、スナップショットがこの制限値よりも古く、かつこのスナップショットが作られた以降に変更されたページを読むためにスナップショットが使用されるときはエラーが発生します。
         </p><p>
+<span class="original">
          If this value is specified without units, it is taken as minutes.
-         A value of <code class="literal">-1</code> (the default) disables this feature,
+         A value of &lt;literal&gt;-1&lt;/literal&gt; (the default) disables this feature,
          effectively setting the snapshot age limit to infinity.
          This parameter can only be set at server start.
+</span>
+この値が単位なしで指定された場合は、分単位であるとみなします。
+<code class="literal">-1</code>（デフォルトです）を設定するとこの機能が無効になり、実質的にスナップショットの寿命を無限にします。
+このパラメータはサーバ起動時にのみ設定可能です。
         </p><p>
 <span class="original">
          Useful values for production work probably range from a small number
@@ -919,10 +941,7 @@ SSDやそれ以外のメモリーベースの記憶装置は、多くの同時�
          allowed, please note that in many workloads extreme bloat or
          transaction ID wraparound may occur in much shorter time frames.
 </span>
-<code class="literal">-1</code>を設定するとこの機能が無効になります。
-これがデフォルトです。
 実際の環境でのおすすめの値はおそらく数時間から2, 3日の間となるでしょう。
-設定値は、分の粒度に書き換えられます。
 小さな値(たとえば<code class="literal">0</code>や<code class="literal">1min</code>)は、テストの際に有用だということで許可されています。
 <code class="literal">60d</code>のような大きな値の設定もできますが、多くのワークロードにおいて、大きなデータ溢れやトランザクションIDの周回がそれよりはずっと短い期間で起こる可能性があることに注意してください。
         </p><p>
@@ -935,7 +954,7 @@ SSDやそれ以外のメモリーベースの記憶装置は、多くの同時�
          freed (for example, with &lt;command&gt;VACUUM FULL&lt;/command&gt;).
 </span>
 この機能が有効であると、リレーションの終端部にあるフリースペースはオペレーティングシステムには返却されません。
-そうしないと、<code class="literal">snapshot too old</code>の条件の検出に必要な情報を削除してしまうことになるからです。
+そうしないと、<span class="quote">「<span class="quote">snapshot too old</span>」</span>の条件の検出に必要な情報を削除してしまうことになるからです。
 明示的に解放されない限り（たとえば<code class="command">VACUUM FULL</code>によって）、リレーションに割り当てられた領域は、そのリレーションの中での再利用に限定して紐付けられます。
         </p><p>
 <span class="original">
@@ -953,5 +972,5 @@ SSDやそれ以外のメモリーベースの記憶装置は、多くの同時�
 （たとえば）マテリアライズされた結果集合を持つカーソルから正しい結果を得ることができるのであれば、たとえ参照している元のテーブルからVACUUMによって行が削除されたとしてもエラーにはなりません。
 ある種のテーブルでは、早期にVACUUMできないので、この設定の影響を受けません。
 例としては、システムカタログが挙げられます。
-このようなテーブルにおいては、この設定によってデータ溢れを防ぐことも、スキャンの際に<code class="literal">snapshot too old</code>エラーを起こす可能性を作り出すこともできません。
+このようなテーブルにおいては、この設定によってデータ溢れを防ぐことも、スキャンの際に<span class="quote">「<span class="quote">snapshot too old</span>」</span>エラーを起こす可能性を作り出すこともできません。
         </p></dd></dl></div></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="runtime-config-connection.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="runtime-config.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="runtime-config-wal.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">19.3. 接続と認証 </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> 19.5. ログ先行書き込み（WAL）</td></tr></table></div></body></html>

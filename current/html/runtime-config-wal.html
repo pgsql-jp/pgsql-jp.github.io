@@ -406,12 +406,12 @@
         that is &lt;symbol&gt;XLOG_BLCKSZ&lt;/symbol&gt; bytes, typically 8kB.
         This parameter can only be set at server start.
        </span>
-       未だディスクに書き込まれていないWALデータに対して使用される共有メモリ容量です。
-       デフォルトの設定である-1は、<a class="xref" href="runtime-config-resource.html#GUC-SHARED-BUFFERS">shared_buffers</a>の1/32（約3%）の容量に等しい大きさを選択します。
-       しかし、<code class="literal">64kB</code>未満ではなく、かつ典型的に<code class="literal">16MB</code>であるWALセグメントの大きさを越えることはありません。
-       もし、自動設定による選択が大きすぎたり、小さすぎる場合この値は手作業で設定可能です。
-       しかし、<code class="literal">32kB</code>未満のどんな正の値であっても、<code class="literal">32kB</code>
-として取り扱われます。
+未だディスクに書き込まれていないWALデータに対して使用される共有メモリ容量です。
+デフォルトの設定である-1は、<a class="xref" href="runtime-config-resource.html#GUC-SHARED-BUFFERS">shared_buffers</a>の1/32（約3%）の容量に等しい大きさを選択します。
+しかし、<code class="literal">64kB</code>未満ではなく、かつ典型的に<code class="literal">16MB</code>であるWALセグメントの大きさを越えることはありません。
+もし、自動設定による選択が大きすぎたり、小さすぎる場合この値は手作業で設定可能です。
+しかし、<code class="literal">32kB</code>未満のどんな正の値であっても、<code class="literal">32kB</code>として取り扱われます。
+この値が単位なしで指定された場合は、WALブロック単位であるとみなします。すなわち、<code class="symbol">XLOG_BLCKSZ</code>バイト、一般的には8kBです。
 このパラメータはサーバ起動時のみ設定可能です。
        </p><p>
        <span class="original">
@@ -447,9 +447,10 @@
         next higher multiple of 10. This parameter can only be set in the
         &lt;filename&gt;postgresql.conf&lt;/filename&gt; file or on the server command line.
 </span>
-WALライタがWALを吐き出す頻度を指定します。
+WALライタがWALを吐き出す頻度を時間で指定します。
 WALを吐き出したとあと、非同期コミットしているトランザクションに起こされない限り、<code class="varname">wal_writer_delay</code>ミリ秒待機します。
-最後の吐き出しが過去<code class="varname">wal_writer_delay</code>ミリ秒以内に起こなわれ、かつそれ以降<code class="varname">wal_writer_flush_after</code>バイト以内のWALが生成されている場合は、WALはオペレーティングシステムに書き込まれますが、ディスクには吐出されません。
+最後の吐き出しが過去<code class="varname">wal_writer_delay</code>以内に行われ、かつそれ以降<code class="varname">wal_writer_flush_after</code>相当のWALが生成されている場合は、WALはオペレーティングシステムに書き込まれますが、ディスクには吐出されません。
+この値が単位なしで指定された場合は、ミリ秒単位であるとみなします。
 デフォルト値は200ミリ秒（<code class="literal">200ms</code>）です。
 多くのシステムでは、待機間隔の実質的な分解能は10ミリ秒です。
 10の倍数以外の値を<code class="varname">wal_writer_delay</code>に設定しても、その次に大きい10の倍数を設定した場合と同じ結果となります。
@@ -471,9 +472,10 @@ WALを吐き出したとあと、非同期コミットしているトランザ�
         This parameter can only be set in the
         &lt;filename&gt;postgresql.conf&lt;/filename&gt; file or on the server command line.
 </span>
-WALライタがWALを吐き出す頻度を指定します。
-最後の吐き出しが過去<code class="varname">wal_writer_delay</code>ミリ秒以内に起こなわれ、かつそれ以降<code class="varname">wal_writer_flush_after</code>バイト以内のWALが生成されている場合は、WALはオペレーティングシステムに書き込まれますが、ディスクには吐出されません。
+WALライタがWALを吐き出す頻度を量で指定します。
+最後の吐き出しが過去<code class="varname">wal_writer_delay</code>以内に起こなわれ、かつそれ以降<code class="varname">wal_writer_flush_after</code>相当のWALが生成されている場合は、WALはオペレーティングシステムに書き込まれますが、ディスクには吐出されません。
 <code class="varname">wal_writer_flush_after</code>が<code class="literal">0</code>に設定されている場合は、WALが書かれるたびにWALが吐出されます。
+この値が単位なしで指定された場合は、WALブロック単位であるとみなします。すなわち、<code class="symbol">XLOG_BLCKSZ</code>バイト、一般的には8kBです。
 デフォルト値は<code class="literal">1MB</code>です。
 このパラメータは<code class="filename">postgresql.conf</code>ファイル内またはサーバのコマンドラインでのみ設定可能です。
        </p></dd><dt id="GUC-COMMIT-DELAY"><span class="term"><code class="varname">commit_delay</code> (<code class="type">integer</code>)
@@ -496,11 +498,12 @@ WALライタがWALを吐き出す頻度を指定します。
         The default &lt;varname&gt;commit_delay&lt;/varname&gt; is zero (no delay).
         Only superusers can change this setting.
 </span>
-<code class="varname">commit_delay</code>は、WALフラッシュを開始する前の時間遅延を追加します。単位はマイクロ秒です。
+<code class="varname">commit_delay</code>を設定することにより、WALフラッシュを開始する前の時間遅延が追加されます。
 このことにより、もし追加のトランザクションが与えられた時間間隔内でコミットが可能になるほどシステム負荷が充分に高い場合、一回のWALフラッシュでより多くの数のトランザクションをコミットできるようになり、コミット群のスループットを改善できます。
-とは言っても、それぞれのWALフラッシュに対して最大<code class="varname">commit_delay</code>マイクロ秒の待ち時間の増加をきたします。
+とは言っても、それぞれのWALフラッシュに対して最大<code class="varname">commit_delay</code>の待ち時間の増加をきたします。
 コミットの準備が完了したトランザクションが他に存在しない場合、遅延は無駄になるため、遅延はフラッシュが開始されようとしている時点で少なくとも<code class="varname">commit_siblings</code>だけのトランザクションが活動している場合にだけ機能します。
 同様に、<code class="varname">fsync</code>が無効の場合も遅延は機能しません。
+この値が単位なしで指定された場合は、マイクロ秒単位であるとみなします。
 デフォルトの<code class="varname">commit_delay</code>はゼロ（遅延無し）です。
 この設定はスーパーユーザのみ変更可能です。
        </p><p>
@@ -545,7 +548,8 @@ WALライタがWALを吐き出す頻度を指定します。
         This parameter can only be set in the &lt;filename&gt;postgresql.conf&lt;/filename&gt;
         file or on the server command line.
        </span>
-自動的WALチェックポイント間の最大間隔を秒単位で指定します。
+自動的WALチェックポイント間の最大間隔を指定します。
+この値が単位なしで指定された場合は、秒単位であるとみなします。
 有効な範囲は、30秒から1日の間です。
 デフォルトは5分（<code class="literal">5min</code>）です。
 このパラメータを増やすと、クラッシュリカバリで必要となる時間が増加します。
@@ -587,10 +591,11 @@ WALライタがWALを吐き出す頻度を指定します。
         This parameter can only be set in the &lt;filename&gt;postgresql.conf&lt;/filename&gt;
         file or on the server command line.
 </span>
-チェックポイント実行中に<code class="varname">checkpoint_flush_after</code>バイトより多く書く度に、OSが記憶装置に書き込むことを強制しようとします。
+チェックポイント実行中にこのデータ量よりも多く書く度に、OSが記憶装置に書き込むことを強制しようとします。
 このことにより、カーネルのページキャッシュが持つダーティデータの量を一定量に制限し、チェックポイントの最後に<code class="function">fsync</code>が実行される際、あるいはOSがバックグラウンドでデータを大きな塊で書き出す際に性能の急激な低下を招く可能性を減らします。
 多くの場合これによってトランザクションの遅延が大幅に少なくなりますが、あるケース、特にワークロードが<a class="xref" href="runtime-config-resource.html#GUC-SHARED-BUFFERS">shared_buffers</a>よりも大きく、OSのページキャッシュよりも小さい時には性能が低下するかもしれません。
 この設定が無効なプラットフォームがあります。
+この値が単位なしで指定された場合は、ブロック単位であるとみなします。すなわち、<code class="symbol">BLCKSZ</code>バイト、一般的には8kBです。
 有効な設定値は、この強制書き込み機能が無効になる<code class="literal">0</code>から、<code class="literal">2MB</code>までです。
 デフォルト値は、Linuxでは<code class="literal">256kB</code>で、それ以外は<code class="literal">0</code>です。
 (<code class="symbol">BLCKSZ</code>が8kbでなければ、この設定のデフォルト値と最大値が<code class="symbol">BLCKSZ</code>に比例して変更されます。)
@@ -611,8 +616,9 @@ WALライタがWALを吐き出す頻度を指定します。
         This parameter can only be set in the &lt;filename&gt;postgresql.conf&lt;/filename&gt;
         file or on the server command line.
        </span>
-WALセグメントファイルが溢れることが原因で起きるチェックポイントが、ここで指定した秒数よりも短い間隔で発生したとき、サーバログにメッセージを書き出します
+WALセグメントファイルが溢れることが原因で起きるチェックポイントが、ここで指定した時間よりも短い間隔で発生したとき、サーバログにメッセージを書き出します
 （これは、<code class="varname">max_wal_size</code>を増やす必要があることを示唆しています）。
+この値が単位なしで指定された場合は、秒単位であるとみなします。
 デフォルトは30秒（<code class="literal">30s</code>）です。
 零の場合は警告を出しません。
 <code class="varname">checkpoint_timeout</code>が<code class="varname">checkpoint_warning</code>より小さい場合は警告を出しません。
@@ -635,6 +641,7 @@ WALセグメントファイルが溢れることが原因で起きるチェッ�
 </span>
 自動WALチェックポイントの間にWALが増加する最大サイズです。
 これはソフトリミットです。特別な状況下、たとえば高負荷、<code class="varname">archive_command</code>の失敗、<code class="varname">wal_keep_segments</code>が大きな値に設定されている、などの時には、WALサイズは<code class="varname">max_wal_size</code>を超えることがあります。
+この値が単位なしで指定された場合は、メガバイト単位であるとみなします。
 デフォルトは1GBです。
 このパラメータを大きくすると、クラッシュリカバリに必要な時間が長くなります。
 このパラメータは、<code class="filename">postgresql.conf</code>ファイルで設定するか、サーバのコマンドラインでのみ指定できます。
@@ -654,6 +661,7 @@ WALセグメントファイルが溢れることが原因で起きるチェッ�
 </span>
 この設定以下にWALのディスク使用量が保たれる限り、古いWALファイルは、消去されることなく今後のチェックポイントで使用するために常にリサイクルされます。
 この設定は、たとえば大きなバッチジョブを走らせる際のWALの利用スパイクを取り扱うために、十分なWALのスペースが予約されていることを保証するために使用できます。
+この値が単位なしで指定された場合は、メガバイト単位であるとみなします。
 デフォルトは80MBです。
 このパラメータは、<code class="filename">postgresql.conf</code>ファイルで設定するか、サーバのコマンドラインでのみ指定できます。
        </p></dd></dl></div></div><div class="sect2" id="RUNTIME-CONFIG-WAL-ARCHIVING"><div class="titlepage"><div><div><h3 class="title">19.5.3. アーカイビング</h3></div></div></div><span class="original">
@@ -761,12 +769,13 @@ WALセグメントファイルが溢れることが原因で起きるチェッ�
 <a class="xref" href="runtime-config-wal.html#GUC-ARCHIVE-COMMAND">archive_command</a>は完了したWALセグメントに対してのみ呼び出されます。
 従って、サーバのWAL転送量が少ししかない（あるいは処理が少ないなぎの期間がある）場合、トランザクションの完了とアーカイブ格納領域への安全な記録との間に長期にわたる遅延があることになります。
 データが未アーカイブのままでいられる期間を制限するために、<code class="varname">archive_timeout</code>を設定して、強制的にサーバを新しいWALセグメントに定期的に切り替えるようにすることができます。
-このパラメータが0より大きければ、サーバは前回のセグメントファイル切り替えから指定秒数経過し、かつ単一のチェックポイントを含む何らかのデータベース操作が行われた場合、新しいセグメントファイルに切り替えます。
+このパラメータが0より大きければ、サーバは前回のセグメントファイル切り替えから指定時間経過し、かつ単一のチェックポイントを含む何らかのデータベース操作が行われた場合、新しいセグメントファイルに切り替えます。
 （データベースが活動していなければ、チェックポイントはスキップされます。）
 強制切り替えにより早期にクローズされたアーカイブ済みファイルは、完全に完了したファイルと同じ大きさを持つことに注意してください。
 そのため、非常に小さな<code class="varname">archive_timeout</code>を使用することは賢明ではなく、格納領域を膨張させてしまいます。
 １分程度の<code class="varname">archive_timeout</code>設定が通常は妥当です。
 もしそれより高速にデータをマスターサーバからコピーをしてしまいたいのであれば、アーカイブするよりストリーミングレプリケーションの選択を検討すべきです。
+この値が単位なしで指定された場合は、秒単位であるとみなします。
 このパラメータは <code class="filename">postgresql.conf</code>ファイル、または、サーバのコマンドラインでのみで設定可能です。
        </p></dd></dl></div></div><div class="sect2" id="RUNTIME-CONFIG-WAL-ARCHIVE-RECOVERY"><div class="titlepage"><div><div><h3 class="title">19.5.4. Archive Recovery</h3></div></div></div><span class="original">
     &lt;title&gt;アーカイブからのリカバリ&lt;/title&gt;
@@ -821,7 +830,6 @@ WALセグメントファイルが溢れることが原因で起きるチェッ�
 <code class="filename">standby.signal</code>と<code class="filename">recovery.signal</code>の両方が作られた場合は、スタンバイモードが優先します。
 ターゲットリカバリモードはアーカイブWALが完全に再生されるか、<code class="varname">recovery_target</code>に到達した時に終了します。
 このモードでは、この節と<a class="xref" href="runtime-config-wal.html#RUNTIME-CONFIG-WAL-RECOVERY-TARGET" title="19.5.5. リカバリターゲット">19.5.5</a>のパラメータの両方が使用されます。
-<a class="xref" href="runtime-config-replication.html#RUNTIME-CONFIG-REPLICATION-STANDBY" title="19.6.3. スタンバイサーバ">19.6.3</a>のパラメータは使用されません。
     </p><div class="variablelist"><dl class="variablelist"><dt id="GUC-RESTORE-COMMAND"><span class="term"><code class="varname">restore_command</code> (<code class="type">string</code>)
       <a id="id-1.6.6.8.6.7.1.1.3" class="indexterm"></a>
       </span></dt><dd><p>
@@ -1018,13 +1026,17 @@ restore_command = 'copy "C:\\server\\archivedir\\%f" "%p"'  # Windows
 このパラメータは、指定したタイムスタンプまでリカバリを進行させます。
 正確な停止点は<a class="xref" href="runtime-config-wal.html#GUC-RECOVERY-TARGET-INCLUSIVE">recovery_target_inclusive</a>にも影響されます。
        </p><p>
+<span class="original">
         The value of this parameter is a time stamp in the same format
-        accepted by the <code class="type">timestamp with time zone</code> data type,
+        accepted by the &lt;type&gt;timestamp with time zone&lt;/type&gt; data type,
         except that you cannot use a time zone abbreviation (unless the
-        <a class="xref" href="runtime-config-client.html#GUC-TIMEZONE-ABBREVIATIONS">timezone_abbreviations</a> variable has been set
+        &lt;xref linkend="guc-timezone-abbreviations"/&gt; variable has been set
         earlier in the configuration file).  Preferred style is to use a
         numeric offset from UTC, or you can write a full time zone name,
-        e.g. <code class="literal">Europe/Helsinki</code> not <code class="literal">EEST</code>.
+        e.g. &lt;literal&gt;Europe/Helsinki&lt;/literal&gt; not &lt;literal&gt;EEST&lt;/literal&gt;.
+</span>
+（<a class="xref" href="runtime-config-client.html#GUC-TIMEZONE-ABBREVIATIONS">timezone_abbreviations</a>変数が設定ファイルで先に設定されていない限り）時間帯略語を使えないことを除けば、このパラメータの値は<code class="type">timestamp with time zone</code>データ型が受け付けるのと同じ形式のタイムスタンプです。
+おすすめの形式はUTCからのオフセットか、<code class="literal">EEST</code>ではなく<code class="literal">Europe/Helsinki</code>のような完全な時間帯名です。
        </p></dd><dt id="GUC-RECOVERY-TARGET-XID"><span class="term"><code class="varname">recovery_target_xid</code> (<code class="type">string</code>)
       <a id="id-1.6.6.8.7.3.4.1.3" class="indexterm"></a>
       </span></dt><dd><p>
