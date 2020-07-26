@@ -67,7 +67,7 @@ CREATE TABLE capitals (
 <span class="productname">PostgreSQL</span>では、1つのテーブルは、0以上のテーブルから継承することが可能です。
 また、問い合わせはテーブルのすべての行、またはテーブルのすべての行と継承されたテーブルのすべての行のいずれかを参照できます。
 後者がデフォルトの動作になります。
-例えば次の問い合わせは、500フィートより上に位置しているすべての市の名前を、州都を含めて検索します。
+例えば次の問い合わせは、500フィートより高い標高に位置しているすべての市の名前を、州都を含めて検索します。
 
 </p><pre class="programlisting">
 SELECT name, elevation
@@ -93,7 +93,7 @@ SELECT name, elevation
    On the other hand, the following query finds all the cities that
    are not state capitals and are situated at an elevation over 500 feet:
 </span>
-一方、次の問い合わせは、州都ではなく500フィートより上に位置しているすべての市を検索します。
+一方、次の問い合わせは、州都ではなく500フィートより高い高度に位置しているすべての市を検索します。
 
 </p><pre class="programlisting">
 SELECT name, elevation
@@ -343,9 +343,14 @@ VALUES ('Albany', NULL, NULL, 'NY');
    where permissions on the child tables are always checked,
    whether they are processed directly or recursively via those commands
    performed on the parent table.
-  &lt;/para&gt;
-
-  &lt;para&gt;
+</span>
+継承された問い合わせは、親テーブルのみアクセス権限を検査します。
+つまり、例えば、<code class="literal">UPDATE</code>権限を<code class="structname">cities</code>テーブルに付与することは、<code class="structname">cities</code>テーブルを通じてアクセスする場合に、<code class="structname">capitals</code>テーブルにも行の更新権限を付与することを意味します。
+これによりデータが親テーブルに（も）あるように見えることが保たれます。
+しかし、<code class="structname">capitals</code>テーブルは、追加権限なしに直接更新することはできません。
+このルールに対する２つの例外は<code class="command">TRUNCATE</code>と<code class="command">LOCK TABLE</code>で、親テーブルに対してこれらのコマンドが直接、もしくは再帰的に適用されるかに関わらず子テーブルの権限は常にチェックされます。
+  </p><p>
+<span class="original">
    In a similar way, the parent table's row
    security policies (see &lt;xref linkend="ddl-rowsecurity"/&gt;) are applied to
    rows coming from child tables during an inherited query.  A child table's
@@ -353,10 +358,6 @@ VALUES ('Albany', NULL, NULL, 'NY');
    in the query; and in that case, any policies attached to its parent(s) are
    ignored.
 </span>
-継承された問い合わせは、親テーブルのみアクセス権限を検査します。
-つまり、例えば、<code class="literal">UPDATE</code>権限を<code class="structname">cities</code>テーブルに付与することは、<code class="structname">cities</code>テーブルを通じてアクセスする場合に、<code class="structname">capitals</code>テーブルにも行の更新権限を付与することを意味します。
-これによりデータが親テーブルに（も）あるように見えることが保たれます。
-しかし、<code class="structname">capitals</code>テーブルは、追加権限なしに直接更新することはできません。
 同様に、親テーブルの行セキュリティポリシー（<a class="xref" href="ddl-rowsecurity.html" title="5.8. 行セキュリティポリシー">5.8</a>を参照してください）が、継承された問い合わせの時に子テーブルの行に適用されます。
 子テーブルのポリシー（あれば）は、問い合わせにて明示的に指定されたテーブルである時にのみ適用されます。
 そしてこの場合、親テーブルに紐付けられたあらゆるポリシーは無視されます。
