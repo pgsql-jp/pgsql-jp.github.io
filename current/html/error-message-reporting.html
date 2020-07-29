@@ -29,7 +29,7 @@
 すべてのメッセージには、深刻度レベル（<code class="literal">DEBUG</code>から<code class="literal">PANIC</code>までの範囲）と主メッセージテキストという、2つの必須要素があります。
 さらに、省略可能な要素があります。
 その中で最もよく使用されるのは、SQL仕様のSQLSTATE規則に従うエラー識別コードです。
-<code class="function">ereport</code>自身はシェル関数で、主に、メッセージ生成をCソースコード内の関数呼び出しのように行わせる、構文の便宜上存在します。
+<code class="function">ereport</code>自身はシェルマクロで、主に、メッセージ生成をCソースコード内のひとつの関数呼び出しのように行わせる、構文の便宜上存在します。
 <code class="function">ereport</code>で直接受け付けられる唯一のパラメータは深刻度レベルです。
 主メッセージテキストと任意の省略可能なメッセージ要素は、<code class="function">ereport</code>呼び出し内で<code class="function">errmsg</code>などの補助関数を呼び出すことで生成されます。
    </p><p>
@@ -51,19 +51,23 @@ ereport(ERROR,
 これはエラー深刻度レベル<code class="literal">ERROR</code>（普通のエラー）を指定します。
 <code class="function">errcode</code>呼び出しは、<code class="filename">src/include/utils/errcodes.h</code>で定義されたマクロを使用してSQLSTATEエラーコードを指定します。
 <code class="function">errmsg</code>呼び出しは主メッセージテキストを提供します。
-補助関数呼び出しを囲む余計な括弧群に注意してください。
-これらはいらいらさせられますが、構文上必要です。
    </p><p>
+<span class="original">
     You will also frequently see this older style, with an extra set of
     parentheses surrounding the auxiliary function calls:
+</span>
+また、補助関数の呼び出しを追加の括弧のセットで囲んだ、この古いスタイルもよく見ることでしょう。
 </p><pre class="programlisting">
 ereport(ERROR,
         (errcode(ERRCODE_DIVISION_BY_ZERO),
          errmsg("division by zero")));
 </pre><p>
+<span class="original">
     The extra parentheses were required
-    before <span class="productname">PostgreSQL</span> version 12, but are now
+    before &lt;productname&gt;PostgreSQL&lt;/productname&gt; version 12, but are now
     optional.
+</span>
+この余分な括弧は<span class="productname">PostgreSQL</span>バージョン12より前では必要でしたが、現在ではオプションです。
    </p><p>
 <span class="original">
     Here is a more complex example:
@@ -87,6 +91,7 @@ ereport(ERROR,
 </span>
 これは、実行時の値をメッセージテキスト内に埋め込むための整形用コードの使用を示します。
 また、省略可能な<span class="quote">「<span class="quote">ヒント</span>」</span>メッセージも提供されています。
+補助関数の呼び出しは任意の順序で記述できますが、慣習的に<code class="function">errcode</code>と<code class="function">errmsg</code>が最初に記述されます。
    </p><p>
 <span class="original">
     If the severity level is &lt;literal&gt;ERROR&lt;/literal&gt; or higher,
@@ -94,7 +99,7 @@ ereport(ERROR,
     and does not return to the caller. If the severity level is
     lower than &lt;literal&gt;ERROR&lt;/literal&gt;, &lt;function&gt;ereport&lt;/function&gt; returns normally.
 </span>
-深刻度レベルが<code class="literal">ERROR</code>以上であれば、<code class="function">ereport</code>はユーザ定義関数の実行を中断し呼び出し元には戻りません。
+深刻度レベルが<code class="literal">ERROR</code>以上であれば、<code class="function">ereport</code>は現在の問い合わせの実行を中断し、呼び出し元には戻りません。
 深刻度レベルが<code class="literal">ERROR</code>未満であれば、<code class="function">ereport</code>は正常に戻ります。
    </p><p>
 <span class="original">
