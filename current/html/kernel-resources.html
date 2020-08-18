@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>18.4. カーネルリソースの管理</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="server-start.html" title="18.3. データベースサーバの起動" /><link rel="next" href="server-shutdown.html" title="18.5. サーバのシャットダウン" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 12.3文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="runtime.html" title="第18章 サーバの準備と運用">第18章 サーバの準備と運用</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 12.3 &#10;                      kernel-resources.html">誤訳等の報告
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>18.4. カーネルリソースの管理</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="server-start.html" title="18.3. データベースサーバの起動" /><link rel="next" href="server-shutdown.html" title="18.5. サーバのシャットダウン" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 12.4文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="runtime.html" title="第18章 サーバの準備と運用">第18章 サーバの準備と運用</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 12.4 &#10;                      kernel-resources.html">誤訳等の報告
                     </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="server-start.html" title="18.3. データベースサーバの起動">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="runtime.html" title="第18章 サーバの準備と運用">上へ</a></td><td width="60%" align="center">18.4. カーネルリソースの管理</td><td width="20%" align="right"> <a accesskey="n" href="server-shutdown.html" title="18.5. サーバのシャットダウン">次へ</a></td></tr></table><hr /></div><div class="sect1" id="KERNEL-RESOURCES"><div class="titlepage"><div><div><h2 class="title" style="clear: both">18.4. カーネルリソースの管理</h2></div></div></div><span class="original">
   &lt;title&gt;Managing Kernel Resources&lt;/title&gt;
 </span><p>
@@ -617,7 +617,7 @@ project.max-msg-ids=(priv,4096,deny)
        </p></dd></dl></div></div><div class="sect2" id="SYSTEMD-REMOVEIPC"><div class="titlepage"><div><div><h3 class="title">18.4.2. systemd RemoveIPC</h3></div></div></div><a id="id-1.6.5.6.4.2" class="indexterm"></a><p>
 <span class="original">
     If &lt;productname&gt;systemd&lt;/productname&gt; is in use, some care must be taken
-    that IPC resources (shared memory and semaphores) are not prematurely
+    that IPC resources (including shared memory) are not prematurely
     removed by the operating system.  This is especially of concern when
     installing PostgreSQL from source.  Users of distribution packages of
     PostgreSQL are less likely to be affected, as
@@ -640,13 +640,14 @@ PostgreSQLのディストリビューションパッケージのユーザーは�
 この設定のデフォルトは<span class="productname">systemd</span>ですが、いくつかのオペレーティングシステムではデフォルトでオフになっています。
    </p><p>
 <span class="original">
-    A typical observed effect when this setting is on is that the semaphore
-    objects used by a PostgreSQL server are removed at apparently random
-    times, leading to the server crashing with log messages like
+    A typical observed effect when this setting is on is that shared memory
+    objects used for parallel query execution are removed at apparently random
+    times, leading to errors and warnings while attempting to open and remove
+    them, like
 </span>
 この設定が有効になっている時の典型的な影響は、PostgreSQLサーバが使用しているセマフォオブジェクトがランダムな時間に削除され、サーバが以下のようなログメッセージでクラッシュします。
 </p><pre class="screen">
-LOG: semctl(1234567890, 0, IPC_RMID, ...) failed: Invalid argument
+WARNING:  could not remove shared memory segment "/PostgreSQL.1450751626": No such file or directory
 </pre><p>
 <span class="original">
     Different types of IPC objects (shared memory vs. semaphores, System V

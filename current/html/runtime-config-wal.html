@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>19.5. ログ先行書き込み（WAL）</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="runtime-config-resource.html" title="19.4. 資源の消費" /><link rel="next" href="runtime-config-replication.html" title="19.6. レプリケーション" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 12.3文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="runtime-config.html" title="第19章 サーバの設定">第19章 サーバの設定</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 12.3 &#10;                      runtime-config-wal.html">誤訳等の報告
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>19.5. ログ先行書き込み（WAL）</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="runtime-config-resource.html" title="19.4. 資源の消費" /><link rel="next" href="runtime-config-replication.html" title="19.6. レプリケーション" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 12.4文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="runtime-config.html" title="第19章 サーバの設定">第19章 サーバの設定</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 12.4 &#10;                      runtime-config-wal.html">誤訳等の報告
                     </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="runtime-config-resource.html" title="19.4. 資源の消費">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="runtime-config.html" title="第19章 サーバの設定">上へ</a></td><td width="60%" align="center">19.5. ログ先行書き込み（WAL）</td><td width="20%" align="right"> <a accesskey="n" href="runtime-config-replication.html" title="19.6. レプリケーション">次へ</a></td></tr></table><hr /></div><div class="sect1" id="RUNTIME-CONFIG-WAL"><div class="titlepage"><div><div><h2 class="title" style="clear: both">19.5. ログ先行書き込み（WAL）</h2></div></div></div><span class="original">
     &lt;title&gt;Write Ahead Log&lt;/title&gt;
     </span><p>
@@ -390,8 +390,25 @@
 </span>
 このパラメータを有効にすると、回復不可能なデータ破壊のリスクを増やすこと無しにWALの量を減らすことができます。
 しかし、WALロギングの際の圧縮のため、またWALリプレイの際には伸張のために余分なCPUを使用するというコストが発生します。
-       </p></dd><dt id="GUC-WAL-BUFFERS"><span class="term"><code class="varname">wal_buffers</code> (<code class="type">integer</code>)
+       </p></dd><dt id="GUC-WAL-INIT-ZERO"><span class="term"><code class="varname">wal_init_zero</code> (<code class="type">boolean</code>)
       <a id="id-1.6.6.8.3.2.8.1.3" class="indexterm"></a>
+      </span></dt><dd><p>
+        If set to <code class="literal">on</code> (the default), this option causes new
+        WAL files to be filled with zeroes.  On some file systems, this ensures
+        that space is allocated before we need to write WAL records.  However,
+        <em class="firstterm">Copy-On-Write</em> (COW) file systems may not benefit
+        from this technique, so the option is given to skip the unnecessary
+        work.  If set to <code class="literal">off</code>, only the final byte is written
+        when the file is created so that it has the expected size.
+       </p></dd><dt id="GUC-WAL-RECYCLE"><span class="term"><code class="varname">wal_recycle</code> (<code class="type">boolean</code>)
+      <a id="id-1.6.6.8.3.2.9.1.3" class="indexterm"></a>
+      </span></dt><dd><p>
+        If set to <code class="literal">on</code> (the default), this option causes WAL
+        files to be recycled by renaming them, avoiding the need to create new
+        ones.  On COW file systems, it may be faster to create new ones, so the
+        option is given to disable this behavior.
+       </p></dd><dt id="GUC-WAL-BUFFERS"><span class="term"><code class="varname">wal_buffers</code> (<code class="type">integer</code>)
+      <a id="id-1.6.6.8.3.2.10.1.3" class="indexterm"></a>
       </span></dt><dd><p>
        <span class="original">
         The amount of shared memory used for WAL data that has not yet been
@@ -428,7 +445,7 @@
        しかし、この値を数メガバイトに設定することにより、多くのクライアントが同時にコミットするトラフィック量の多いサーバでは書き込み性能が向上します。
        デフォルト設定の-1で選択される自動チューニングによると、ほとんどの場合妥当な結果が得られます。
        </p></dd><dt id="GUC-WAL-WRITER-DELAY"><span class="term"><code class="varname">wal_writer_delay</code> (<code class="type">integer</code>)
-      <a id="id-1.6.6.8.3.2.9.1.3" class="indexterm"></a>
+      <a id="id-1.6.6.8.3.2.11.1.3" class="indexterm"></a>
       </span></dt><dd><p>
 <span class="original">
         Specifies how often the WAL writer flushes WAL, in time terms.
@@ -456,7 +473,7 @@ WALを吐き出したとあと、非同期コミットしているトランザ�
 10の倍数以外の値を<code class="varname">wal_writer_delay</code>に設定しても、その次に大きい10の倍数を設定した場合と同じ結果となります。
 このパラメータは<code class="filename">postgresql.conf</code>ファイル内またはサーバのコマンドラインでのみ設定可能です。
        </p></dd><dt id="GUC-WAL-WRITER-FLUSH-AFTER"><span class="term"><code class="varname">wal_writer_flush_after</code> (<code class="type">integer</code>)
-      <a id="id-1.6.6.8.3.2.10.1.3" class="indexterm"></a>
+      <a id="id-1.6.6.8.3.2.12.1.3" class="indexterm"></a>
       </span></dt><dd><p>
 <span class="original">
         Specifies how often the WAL writer flushes WAL, in volume terms.
@@ -479,7 +496,7 @@ WALライタがWALを吐き出す頻度を量で指定します。
 デフォルト値は<code class="literal">1MB</code>です。
 このパラメータは<code class="filename">postgresql.conf</code>ファイル内またはサーバのコマンドラインでのみ設定可能です。
        </p></dd><dt id="GUC-COMMIT-DELAY"><span class="term"><code class="varname">commit_delay</code> (<code class="type">integer</code>)
-      <a id="id-1.6.6.8.3.2.11.1.3" class="indexterm"></a>
+      <a id="id-1.6.6.8.3.2.13.1.3" class="indexterm"></a>
       </span></dt><dd><p>
 <span class="original">
         Setting &lt;varname&gt;commit_delay&lt;/varname&gt; adds a time delay
@@ -521,7 +538,7 @@ WALライタがWALを吐き出す頻度を量で指定します。
        全てのWALフラッシュではなく、コミットだけに影響していました。また、そしてWALフラッシュが早めに完了しても設定された遅延分待機していました。
        <span class="productname">PostgreSQL</span> 9.3以降では、フラッシュの準備が整った最初のプロセスが設定値分待機し、後続のプロセスは最初のプロセスがフラッシュ操作を完了するまでの間だけ待機をします。
        </p></dd><dt id="GUC-COMMIT-SIBLINGS"><span class="term"><code class="varname">commit_siblings</code> (<code class="type">integer</code>)
-      <a id="id-1.6.6.8.3.2.12.1.3" class="indexterm"></a>
+      <a id="id-1.6.6.8.3.2.14.1.3" class="indexterm"></a>
       </span></dt><dd><p>
        <span class="original">
         Minimum number of concurrent open transactions to require
