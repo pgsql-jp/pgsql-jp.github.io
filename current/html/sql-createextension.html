@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>CREATE EXTENSION</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="sql-createeventtrigger.html" title="CREATE EVENT TRIGGER" /><link rel="next" href="sql-createforeigndatawrapper.html" title="CREATE FOREIGN DATA WRAPPER" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 12.3文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="sql-commands.html" title="SQLコマンド">SQLコマンド</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 12.3 &#10;                      sql-createextension.html">誤訳等の報告
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>CREATE EXTENSION</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="sql-createeventtrigger.html" title="CREATE EVENT TRIGGER" /><link rel="next" href="sql-createforeigndatawrapper.html" title="CREATE FOREIGN DATA WRAPPER" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 12.4文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="sql-commands.html" title="SQLコマンド">SQLコマンド</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 12.4 &#10;                      sql-createextension.html">誤訳等の報告
                     </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="sql-createeventtrigger.html" title="CREATE EVENT TRIGGER">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="sql-commands.html" title="SQLコマンド">上へ</a></td><td width="60%" align="center">CREATE EXTENSION</td><td width="20%" align="right"> <a accesskey="n" href="sql-createforeigndatawrapper.html" title="CREATE FOREIGN DATA WRAPPER">次へ</a></td></tr></table><hr /></div><div class="refentry" id="SQL-CREATEEXTENSION"><div class="titlepage"></div><a id="id-1.9.3.64.1" class="indexterm"></a><div class="refnamediv"><h2><span class="refentrytitle">CREATE EXTENSION</span></h2><p>CREATE EXTENSION<span class="original">
   &lt;refpurpose&gt;install an extension&lt;/refpurpose&gt;
 </span> — 拡張をインストールする</p></div><div class="refsynopsisdiv"><h2>概要</h2><pre class="synopsis">
@@ -176,7 +176,28 @@ CREATE EXTENSION [ IF NOT EXISTS ] <em class="replaceable"><code>extension_name<
    system views.
 </span>
 現在ロード可能な拡張は<a class="link" href="view-pg-available-extensions.html" title="51.66. pg_available_extensions"><code class="structname">pg_available_extensions</code></a>または<a class="link" href="view-pg-available-extension-versions.html" title="51.67. pg_available_extension_versions"><code class="structname">pg_available_extension_versions</code></a>システムビューで識別できます。
-  </p><p>
+  </p><div class="caution"><h3 class="title">注意</h3><p>
+    Installing an extension as superuser requires trusting that the
+    extension's author wrote the extension installation script in a secure
+    fashion.  It is not terribly difficult for a malicious user to create
+    trojan-horse objects that will compromise later execution of a
+    carelessly-written extension script, allowing that user to acquire
+    superuser privileges.  However, trojan-horse objects are only hazardous
+    if they are in the <code class="varname">search_path</code> during script
+    execution, meaning that they are in the extension's installation target
+    schema or in the schema of some extension it depends on.  Therefore, a
+    good rule of thumb when dealing with extensions whose scripts have not
+    been carefully vetted is to install them only into schemas for which
+    CREATE privilege has not been and will not be granted to any untrusted
+    users.  Likewise for any extensions they depend on.
+   </p><p>
+    The extensions supplied with <span class="productname">PostgreSQL</span> are
+    believed to be secure against installation-time attacks of this sort,
+    except for a few that depend on other extensions.  As stated in the
+    documentation for those extensions, they should be installed into secure
+    schemas, or installed into the same schemas as the extensions they
+    depend on, or both.
+   </p></div><p>
 <span class="original">
    For information about writing new extensions, see
    &lt;xref linkend="extend-extensions"/&gt;.
@@ -187,10 +208,15 @@ CREATE EXTENSION [ IF NOT EXISTS ] <em class="replaceable"><code>extension_name<
 </span><p>
 <span class="original">
    Install the &lt;link linkend="hstore"&gt;hstore&lt;/link&gt; extension into the
-   current database:
+   current database, placing its objects in schema &lt;literal&gt;addons&lt;/literal&gt;:
 </span>
 現在のデータベースに<a class="link" href="hstore.html" title="F.16. hstore">hstore</a>拡張をインストールします。
 </p><pre class="programlisting">
+CREATE EXTENSION hstore SCHEMA addons;
+</pre><p>
+   Another way to accomplish the same thing:
+</p><pre class="programlisting">
+SET search_path = addons;
 CREATE EXTENSION hstore;
 </pre><p>
   </p><p>
