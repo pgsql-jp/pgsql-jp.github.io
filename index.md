@@ -17,7 +17,7 @@ last-updated: 2020-08-19 04:40:15 JST
 
 | HTML （オンライン）           | PDF                                           | EPUB                                         | man | 更新日     |
 |:---------------------------|:---------------------------------------------:|:--------------------------------------------:|:---:|:----------:|
-| [12.3](jpug-doc/12.3/html/) | [PDF](jpug-doc/12.3/postgresql-12.3-A4.pdf) | [EPUB](jpug-doc/12.3/postgresql-12.3.epub) | [man.tar.gz](jpug-doc/12.3/man.tar.gz) | 2020-08-25 |
+| [12.3](jpug-doc/12.3/html/) | [PDF](jpug-doc/12.3/postgresql-12.3-A4.pdf) | [EPUB](jpug-doc/12.3/postgresql-12.3.epub) | [man.tar.gz](jpug-doc/12.3/man.tar.gz) | 2020-08-26 |
 | [12.0](jpug-doc/12.0/html/) | [PDF](jpug-doc/12.0/postgresql-12.0-A4.pdf) | [EPUB](jpug-doc/12.0/postgresql-12.0.epub) | [man.tar.gz](jpug-doc/12.0/man.tar.gz) | 2020-05-17 |
 
 ### PostgreSQL 11
