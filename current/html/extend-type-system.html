@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>37.2. PostgreSQLの型システム</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="extend-how.html" title="37.1. 拡張の作用法" /><link rel="next" href="xfunc.html" title="37.3. ユーザ定義関数" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 12.4文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="extend.html" title="第37章 SQLの拡張">第37章 <acronym class="acronym">SQL</acronym>の拡張</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 12.4 &#10;                      extend-type-system.html">誤訳等の報告
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>37.2. PostgreSQLの型システム</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="extend-how.html" title="37.1. 拡張の作用法" /><link rel="next" href="xfunc.html" title="37.3. ユーザ定義関数" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 13.1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="extend.html" title="第37章 SQLの拡張">第37章 <acronym class="acronym">SQL</acronym>の拡張</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 13.1 &#10;                      extend-type-system.html">誤訳等の報告
                     </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="extend-how.html" title="37.1. 拡張の作用法">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="extend.html" title="第37章 SQLの拡張">上へ</a></td><td width="60%" align="center">37.2. <span class="productname">PostgreSQL</span>の型システム</td><td width="20%" align="right"> <a accesskey="n" href="xfunc.html" title="37.3. ユーザ定義関数">次へ</a></td></tr></table><hr /></div><div class="sect1" id="EXTEND-TYPE-SYSTEM"><div class="titlepage"><div><div><h2 class="title" style="clear: both">37.2. <span class="productname">PostgreSQL</span>の型システム</h2></div></div></div><span class="original">
    &lt;title&gt;The &lt;productname&gt;PostgreSQL&lt;/productname&gt; Type System&lt;/title&gt;
 </span><a id="id-1.8.3.5.2" class="indexterm"></a><a id="id-1.8.3.5.3" class="indexterm"></a><a id="id-1.8.3.5.4" class="indexterm"></a><a id="id-1.8.3.5.5" class="indexterm"></a><a id="id-1.8.3.5.6" class="indexterm"></a><a id="id-1.8.3.5.7" class="indexterm"></a><p>
@@ -123,26 +123,50 @@
     &lt;title&gt;Polymorphic Types&lt;/title&gt;
 </span><a id="id-1.8.3.5.13.2" class="indexterm"></a><a id="id-1.8.3.5.13.3" class="indexterm"></a><a id="id-1.8.3.5.13.4" class="indexterm"></a><a id="id-1.8.3.5.13.5" class="indexterm"></a><p>
 <span class="original">
-     Five pseudo-types of special interest are &lt;type&gt;anyelement&lt;/type&gt;,
-     &lt;type&gt;anyarray&lt;/type&gt;, &lt;type&gt;anynonarray&lt;/type&gt;, &lt;type&gt;anyenum&lt;/type&gt;,
-     and &lt;type&gt;anyrange&lt;/type&gt;,
-     which are collectively called &lt;firstterm&gt;polymorphic types&lt;/firstterm&gt;.
-     Any function declared using these types is said to be
-     a &lt;firstterm&gt;polymorphic function&lt;/firstterm&gt;.  A polymorphic function can
-     operate on many different data types, with the specific data type(s)
-     being determined by the data types actually passed to it in a particular
-     call.
+     Some pseudo-types of special interest are the &lt;firstterm&gt;polymorphic
+     types&lt;/firstterm&gt;, which are used to declare &lt;firstterm&gt;polymorphic
+     functions&lt;/firstterm&gt;.  This powerful feature allows a single function
+     definition to operate on many different data types, with the specific
+     data type(s) being determined by the data types actually passed to it
+     in a particular call.  The polymorphic types are shown in
+     &lt;xref linkend="extend-types-polymorphic-table"/&gt;.  Some examples of
+     their use appear in &lt;xref linkend="xfunc-sql-polymorphic-functions"/&gt;.
 </span>
 特殊な用途を持つ疑似型には、<code class="type">anyelement</code>と<code class="type">anyarray</code>、<code class="type">anynonarray</code>、<code class="type">anyenum</code>および<code class="type">anyrange</code>の５つがあります。
 これらはまとめて<em class="firstterm">多様型</em>と呼ばれます。
 これらの型を使用すると宣言された関数は全て、<em class="firstterm">多様関数</em>と呼ばれます。
 多様関数は多くの異なるデータ型を操作することができます。
 データ型の指定は、特定の呼び出しに実際に渡されるデータ型によって決定されます。
-    </p><p>
+    </p><div class="table" id="EXTEND-TYPES-POLYMORPHIC-TABLE"><p class="title"><strong>表37.1 Polymorphic Types</strong></p><div class="table-contents"><table class="table" summary="Polymorphic Types" border="1"><colgroup><col class="col1" /><col class="col2" /><col class="col3" /></colgroup><thead><tr><th>Name</th><th>Family</th><th>Description</th></tr></thead><tbody><tr><td><code class="type">anyelement</code></td><td>Simple</td><td>Indicates that a function accepts any data type</td></tr><tr><td><code class="type">anyarray</code></td><td>Simple</td><td>Indicates that a function accepts any array data type</td></tr><tr><td><code class="type">anynonarray</code></td><td>Simple</td><td>Indicates that a function accepts any non-array data type</td></tr><tr><td><code class="type">anyenum</code></td><td>Simple</td><td>Indicates that a function accepts any enum data type
+        (see <a class="xref" href="datatype-enum.html" title="8.7. 列挙型">8.7</a>)
+        </td></tr><tr><td><code class="type">anyrange</code></td><td>Simple</td><td>Indicates that a function accepts any range data type
+        (see <a class="xref" href="rangetypes.html" title="8.17. 範囲型">8.17</a>)
+        </td></tr><tr><td><code class="type">anycompatible</code></td><td>Common</td><td>Indicates that a function accepts any data type,
+        with automatic promotion of multiple arguments to a common data type
+        </td></tr><tr><td><code class="type">anycompatiblearray</code></td><td>Common</td><td>Indicates that a function accepts any array data type,
+        with automatic promotion of multiple arguments to a common data type
+        </td></tr><tr><td><code class="type">anycompatiblenonarray</code></td><td>Common</td><td>Indicates that a function accepts any non-array data type,
+        with automatic promotion of multiple arguments to a common data type
+        </td></tr><tr><td><code class="type">anycompatiblerange</code></td><td>Common</td><td>Indicates that a function accepts any range data type,
+        with automatic promotion of multiple arguments to a common data type
+        </td></tr></tbody></table></div></div><br class="table-break" /><p>
 <span class="original">
      Polymorphic arguments and results are tied to each other and are resolved
-     to a specific data type when a query calling a polymorphic function is
-     parsed.  Each position (either argument or return value) declared as
+     to specific data types when a query calling a polymorphic function is
+     parsed.  When there is more than one polymorphic argument, the actual
+     data types of the input values must match up as described below.  If the
+     function's result type is polymorphic, or it has output parameters of
+     polymorphic types, the types of those results are deduced from the
+     actual types of the polymorphic inputs as described below.
+    &lt;/para&gt;
+
+    &lt;para&gt;
+     For the &lt;quote&gt;simple&lt;/quote&gt; family of polymorphic types, the
+     matching and deduction rules work like this:
+    &lt;/para&gt;
+
+    &lt;para&gt;
+     Each position (either argument or return value) declared as
      &lt;type&gt;anyelement&lt;/type&gt; is allowed to have any specific actual
      data type, but in any given call they must all be the
      &lt;emphasis&gt;same&lt;/emphasis&gt; actual type. Each
@@ -190,7 +214,8 @@
 <span class="original">
      When the return value of a function is declared as a polymorphic type,
      there must be at least one argument position that is also polymorphic,
-     and the actual data type supplied as the argument determines the actual
+     and the actual data type(s) supplied for the polymorphic arguments
+     determine the actual
      result type for that call.  For example, if there were not already
      an array subscripting mechanism, one could define a function that
      implements subscripting as &lt;literal&gt;subscript(anyarray, integer)
@@ -209,8 +234,9 @@
 <span class="original">
      In most cases, the parser can infer the actual data type for a
      polymorphic result type from arguments that are of a different
-     polymorphic type; for example &lt;type&gt;anyarray&lt;/type&gt; can be deduced
-     from &lt;type&gt;anyelement&lt;/type&gt; or vice versa.  The exception is that a
+     polymorphic type in the same family; for example &lt;type&gt;anyarray&lt;/type&gt;
+     can be deduced from &lt;type&gt;anyelement&lt;/type&gt; or vice versa.
+     An exception is that a
      polymorphic result of type &lt;type&gt;anyrange&lt;/type&gt; requires an argument
      of type &lt;type&gt;anyrange&lt;/type&gt;; it cannot be deduced
      from &lt;type&gt;anyarray&lt;/type&gt; or &lt;type&gt;anyelement&lt;/type&gt; arguments.  This
@@ -235,16 +261,64 @@
 例えば、<code class="literal">f(anyelement, anyenum)</code>として関数を宣言することは、<code class="literal">f(anyenum, anyenum)</code>と宣言することと同一です。
 両方の実引数は同じ列挙型でなければなりません。
     </p><p>
+     For the <span class="quote">「<span class="quote">common</span>」</span> family of polymorphic types, the
+     matching and deduction rules work approximately the same as for
+     the <span class="quote">「<span class="quote">simple</span>」</span> family, with one major difference: the
+     actual types of the arguments need not be identical, so long as they
+     can be implicitly cast to a single common type.  The common type is
+     selected following the same rules as for <code class="literal">UNION</code> and
+     related constructs (see <a class="xref" href="typeconv-union-case.html" title="10.5. UNION、CASEおよび関連する構文">10.5</a>).
+     Selection of the common type considers the actual types
+     of <code class="type">anycompatible</code> and <code class="type">anycompatiblenonarray</code>
+     inputs, the array element types of <code class="type">anycompatiblearray</code>
+     inputs, and the range subtypes of <code class="type">anycompatiblerange</code>
+     inputs.  If <code class="type">anycompatiblenonarray</code> is present then the
+     common type is required to be a non-array type.  Once a common type is
+     identified, arguments in <code class="type">anycompatible</code>
+     and <code class="type">anycompatiblenonarray</code> positions are automatically
+     cast to that type, and arguments in <code class="type">anycompatiblearray</code>
+     positions are automatically cast to the array type for that type.
+    </p><p>
+     Since there is no way to select a range type knowing only its subtype,
+     use of <code class="type">anycompatiblerange</code> requires that all arguments
+     declared with that type have the same actual range type, and that that
+     type's subtype agree with the selected common type, so that no casting
+     of the range values is required.  As with <code class="type">anyrange</code>, use
+     of <code class="type">anycompatiblerange</code> as a function result type requires
+     that there be an <code class="type">anycompatiblerange</code> argument.
+    </p><p>
+     Notice that there is no <code class="type">anycompatibleenum</code> type.  Such a
+     type would not be very useful, since there normally are not any
+     implicit casts to enum types, meaning that there would be no way to
+     resolve a common type for dissimilar enum inputs.
+    </p><p>
+     The <span class="quote">「<span class="quote">simple</span>」</span> and <span class="quote">「<span class="quote">common</span>」</span> polymorphic
+     families represent two independent sets of type variables.  Consider
+     for example
+</p><pre class="programlisting">
+CREATE FUNCTION myfunc(a anyelement, b anyelement,
+                       c anycompatible, d anycompatible)
+RETURNS anycompatible AS ...
+</pre><p>
+     In an actual call of this function, the first two inputs must have
+     exactly the same type.  The last two inputs must be promotable to a
+     common type, but this type need not have anything to do with the type
+     of the first two inputs.  The result will have the common type of the
+     last two inputs.
+    </p><p>
 <span class="original">
      A variadic function (one taking a variable number of arguments, as in
      &lt;xref linkend="xfunc-sql-variadic-functions"/&gt;) can be
      polymorphic: this is accomplished by declaring its last parameter as
-     &lt;literal&gt;VARIADIC&lt;/literal&gt; &lt;type&gt;anyarray&lt;/type&gt;.  For purposes of argument
+     &lt;literal&gt;VARIADIC&lt;/literal&gt; &lt;type&gt;anyarray&lt;/type&gt; or
+     &lt;literal&gt;VARIADIC&lt;/literal&gt; &lt;type&gt;anycompatiblearray&lt;/type&gt;.
+     For purposes of argument
      matching and determining the actual result type, such a function behaves
      the same as if you had written the appropriate number of
-     &lt;type&gt;anynonarray&lt;/type&gt; parameters.
+     &lt;type&gt;anynonarray&lt;/type&gt; or &lt;type&gt;anycompatiblenonarray&lt;/type&gt;
+     parameters.
 </span>
 可変長引数の関数（<a class="xref" href="xfunc-sql.html#XFUNC-SQL-VARIADIC-FUNCTIONS" title="37.5.5. 可変長引数を取るSQL関数">37.5.5</a>で説明する可変個の引数を取る関数）を多様とすることができます。
 最後のパラメータを<code class="literal">VARIADIC</code> <code class="type">anyarray</code>と宣言することで実現されます。
 引数を一致させ、実際の結果型を決めるために、こうした関数は<code class="type">anynonarray</code>パラメータを適切な個数記述した場合と同様に動作します
-    </p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="extend-how.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="extend.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="xfunc.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">37.1. 拡張の作用法 </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> 37.3. ユーザ定義関数</td></tr></table></div></body></html>
+    </p></div></div><div xmlns="http://www.w3.org/TR/xhtml1/transitional" class="navfooter"><hr></hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="extend-how.html" title="37.1. 拡張の作用法">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="extend.html" title="第37章 SQLの拡張">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="xfunc.html" title="37.3. ユーザ定義関数">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">37.1. 拡張の作用法 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 13.1文書">ホーム</a></td><td width="40%" align="right" valign="top"> 37.3. ユーザ定義関数</td></tr></table></div></body></html>

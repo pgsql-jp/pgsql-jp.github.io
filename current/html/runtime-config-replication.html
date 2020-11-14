@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>19.6. レプリケーション</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="runtime-config-wal.html" title="19.5. ログ先行書き込み（WAL）" /><link rel="next" href="runtime-config-query.html" title="19.7. 問い合わせ計画" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 12.4文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="runtime-config.html" title="第19章 サーバの設定">第19章 サーバの設定</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 12.4 &#10;                      runtime-config-replication.html">誤訳等の報告
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>19.6. レプリケーション</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="runtime-config-wal.html" title="19.5. ログ先行書き込み（WAL）" /><link rel="next" href="runtime-config-query.html" title="19.7. 問い合わせ計画" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 13.1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="runtime-config.html" title="第19章 サーバの設定">第19章 サーバの設定</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 13.1 &#10;                      runtime-config-replication.html">誤訳等の報告
                     </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="runtime-config-wal.html" title="19.5. ログ先行書き込み（WAL）">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="runtime-config.html" title="第19章 サーバの設定">上へ</a></td><td width="60%" align="center">19.6. レプリケーション</td><td width="20%" align="right"> <a accesskey="n" href="runtime-config-query.html" title="19.7. 問い合わせ計画">次へ</a></td></tr></table><hr /></div><div class="sect1" id="RUNTIME-CONFIG-REPLICATION"><div class="titlepage"><div><div><h2 class="title" style="clear: both">19.6. レプリケーション</h2></div></div></div><span class="original">
     &lt;title&gt;Replication&lt;/title&gt;
 </span><p>
@@ -39,7 +39,7 @@
         servers or streaming base backup clients (i.e., the maximum number of
         simultaneously running WAL sender processes). The default is
         &lt;literal&gt;10&lt;/literal&gt;.  The value &lt;literal&gt;0&lt;/literal&gt; means
-        replication is disabled.  Abrupt streaming client disconnection might
+        replication is disabled.  Abrupt disconnection of a streaming client might
         leave an orphaned connection slot behind until a timeout is reached,
         so this parameter should be set slightly higher than the maximum
         number of expected clients so disconnected clients can immediately
@@ -82,17 +82,17 @@
 このパラメータはサーバ起動時のみ設定可能です。
 現在存在しているレプリケーションスロットの数よりも少ない値を設定すると、サーバは起動しません。
 また、レプリケーションスロットが使用できるためには、<code class="varname">wal_level</code>を<code class="literal">replica</code>以上に設定しなければなりません。
-        </p></dd><dt id="GUC-WAL-KEEP-SEGMENTS"><span class="term"><code class="varname">wal_keep_segments</code> (<code class="type">integer</code>)
+        </p></dd><dt id="GUC-WAL-KEEP-SIZE"><span class="term"><code class="varname">wal_keep_size</code> (<code class="type">integer</code>)
        <a id="id-1.6.6.9.3.3.3.1.3" class="indexterm"></a>
        </span></dt><dd><p>
        <span class="original">
-        Specifies the minimum number of past log file segments kept in the
+        Specifies the minimum size of past log file segments kept in the
         &lt;filename&gt;pg_wal&lt;/filename&gt;
         directory, in case a standby server needs to fetch them for streaming
-        replication. Each segment is normally 16 megabytes. If a standby
+        replication. If a standby
         server connected to the sending server falls behind by more than
-        &lt;varname&gt;wal_keep_segments&lt;/varname&gt; segments, the sending server might remove
-        a WAL segment still needed by the standby, in which case the
+        &lt;varname&gt;wal_keep_size&lt;/varname&gt; megabytes, the sending server might
+        remove a WAL segment still needed by the standby, in which case the
         replication connection will be terminated.  Downstream connections
         will also eventually fail as a result.  (However, the standby
         server can recover by fetching the segment from archive, if WAL
@@ -104,14 +104,15 @@
 この場合、レプリケーション接続は終了させられます。結果として下流に対する接続も結局は終了されることがあります。（しかし、WALアーカイブが使用されていれば、スタンバイサーバはアーカイブからセグメントを取り出し、復旧することができます。）
        </p><p>
        <span class="original">
-        This sets only the minimum number of segments retained in
+        This sets only the minimum size of segments retained in
         &lt;filename&gt;pg_wal&lt;/filename&gt;; the system might need to retain more segments
         for WAL archival or to recover from a checkpoint. If
-        &lt;varname&gt;wal_keep_segments&lt;/varname&gt; is zero (the default), the system
+        &lt;varname&gt;wal_keep_size&lt;/varname&gt; is zero (the default), the system
         doesn't keep any extra segments for standby purposes, so the number
         of old WAL segments available to standby servers is a function of
         the location of the previous checkpoint and status of WAL
         archiving.
+        If this value is specified without units, it is taken as megabytes.
         This parameter can only be set in the
         &lt;filename&gt;postgresql.conf&lt;/filename&gt; file or on the server command line.
        </span>
@@ -120,8 +121,22 @@
 もし<code class="varname">wal_keep_segments</code>が（デフォルトの）ゼロの場合、システムはスタンバイサーバのために追加セグメントを保持することはしません。
 従って、スタンバイサーバが使用できる古いWALセグメントの数は、直前のチェックポイントの場所とWALアーカイブの状況によって算出されます。
 このパラメータは、<code class="filename">postgresql.conf</code>ファイル、もしくはサーバコマンドラインでのみ設定可能です。
+       </p></dd><dt id="GUC-MAX-SLOT-WAL-KEEP-SIZE"><span class="term"><code class="varname">max_slot_wal_keep_size</code> (<code class="type">integer</code>)
+       <a id="id-1.6.6.9.3.3.4.1.3" class="indexterm"></a>
+       </span></dt><dd><p>
+        Specify the maximum size of WAL files
+        that <a class="link" href="warm-standby.html#STREAMING-REPLICATION-SLOTS" title="26.2.6. レプリケーションスロット">replication
+        slots</a> are allowed to retain in the <code class="filename">pg_wal</code>
+        directory at checkpoint time.
+        If <code class="varname">max_slot_wal_keep_size</code> is -1 (the default),
+        replication slots may retain an unlimited amount of WAL files.  Otherwise, if
+        restart_lsn of a replication slot falls behind the current LSN by more
+        than the given size, the standby using the slot may no longer be able
+        to continue replication due to removal of required WAL files. You
+        can see the WAL availability of replication slots
+        in <a class="link" href="view-pg-replication-slots.html" title="51.80. pg_replication_slots">pg_replication_slots</a>.
        </p></dd><dt id="GUC-WAL-SENDER-TIMEOUT"><span class="term"><code class="varname">wal_sender_timeout</code> (<code class="type">integer</code>)
-      <a id="id-1.6.6.9.3.3.4.1.3" class="indexterm"></a>
+      <a id="id-1.6.6.9.3.3.5.1.3" class="indexterm"></a>
       </span></dt><dd><p>
 <span class="original">
         Terminate replication connections that are inactive for longer
@@ -150,7 +165,7 @@
 より小さな値は低遅延ネットワーク接続上のスタンバイの障害検知をより高速にするのに役立ちます。
 遅延の大きなネットワーク接続に設置されたスタンバイの健全性の判断にはより大きな値が助けになるでしょう。
        </p></dd><dt id="GUC-TRACK-COMMIT-TIMESTAMP"><span class="term"><code class="varname">track_commit_timestamp</code> (<code class="type">boolean</code>)
-      <a id="id-1.6.6.9.3.3.5.1.3" class="indexterm"></a>
+      <a id="id-1.6.6.9.3.3.6.1.3" class="indexterm"></a>
       </span></dt><dd><p>
 <span class="original">
         Record commit time of transactions. This parameter
@@ -190,9 +205,9 @@
         The synchronous standbys will be those whose names appear
         in this list, and
         that are both currently connected and streaming data in real-time
-        (as shown by a state of &lt;literal&gt;streaming&lt;/literal&gt; in the &lt;link
-        linkend="pg-stat-replication-view"&gt;&lt;literal&gt;pg_stat_replication&lt;/literal&gt;&lt;/link&gt;
-        view).
+        (as shown by a state of &lt;literal&gt;streaming&lt;/literal&gt; in the
+        &lt;link linkend="monitoring-pg-stat-replication-view"&gt;
+        &lt;structname&gt;pg_stat_replication&lt;/structname&gt;&lt;/link&gt; view).
         Specifying more than one synchronous standby can allow for very high
         availability and protection against data loss.
        &lt;/para&gt;
@@ -200,7 +215,7 @@
 <a class="xref" href="warm-standby.html#SYNCHRONOUS-REPLICATION" title="26.2.8. 同期レプリケーション">26.2.8</a>で説明されているように、<em class="firstterm">同期レプリケーション</em>をサポート可能なスタンバイサーバのリストを指定します。
 活動中の同期スタンバイサーバは1つまたはそれ以上です。
 コミットを待機しているトランザクションは、このスタンバイサーバがそのデータの受信を確認してから処理の継続が許可されます。
-同期スタンバイサーバはこのリストに名前が挙げられていており、現時点で接続され、そしてデータをリアルタイムでストリーミングしているものです（<a class="link" href="monitoring-stats.html#PG-STAT-REPLICATION-VIEW" title="表27.5 pg_stat_replicationビュー"><code class="literal">pg_stat_replication</code></a> ビューにおいて<code class="literal">streaming</code>状態として示されています）。
+同期スタンバイサーバはこのリストに名前が挙げられていており、現時点で接続され、そしてデータをリアルタイムでストリーミングしているものです（<a class="link" href="monitoring-stats.html#PG-STAT-REPLICATION-VIEW" title="表27.14 pg_stat_replication View"><code class="literal">pg_stat_replication</code></a> ビューにおいて<code class="literal">streaming</code>状態として示されています）。
 このリストの後の方に記載されているその他のスタンバイサーバは潜在的に同期スタンバイサーバになることを示しています。
 二つ以上の同期スタンバイサーバ名を指定することで、かなりの高可用性とデータ損失に対する保護が得られます。
        </p><p>
@@ -433,7 +448,12 @@ ANY <em class="replaceable"><code>num_sync</code></em> ( <em class="replaceable"
 <code class="varname">primary_conninfo</code>文字列の中には、データベース名を指定しないでください。
          </p><p>
 <span class="original">
-          This parameter can only be set at server start.
+          This parameter can only be set in the &lt;filename&gt;postgresql.conf&lt;/filename&gt;
+          file or on the server command line.
+          If this parameter is changed while the WAL receiver process is
+          running, that process is signaled to shut down and expected to
+          restart with the new setting (except if &lt;varname&gt;primary_conninfo&lt;/varname&gt;
+          is an empty string).
           This setting has no effect if the server is not in standby mode.
 </span>
 このパラメータはサーバ起動時のみ設定可能です。
@@ -446,9 +466,13 @@ ANY <em class="replaceable"><code>num_sync</code></em> ( <em class="replaceable"
           connecting to the sending server via streaming replication to control
           resource removal on the upstream node
           (see &lt;xref linkend="streaming-replication-slots"/&gt;).
-          This parameter can only be set at server start.
+          This parameter can only be set in the &lt;filename&gt;postgresql.conf&lt;/filename&gt;
+          file or on the server command line.
+          If this parameter is changed while the WAL receiver process is running,
+          that process is signaled to shut down and expected to restart with the
+          new setting.
           This setting has no effect if &lt;varname&gt;primary_conninfo&lt;/varname&gt; is not
-          set.
+          set or the server is not in standby mode.
 </span>
 上流ノードのリソース削除を制御するためにストリーミングレプリケーション経由でプライマリに接続した場合、既存のレプリケーションスロットを使うように、必要に応じて指定します（<a class="xref" href="warm-standby.html#STREAMING-REPLICATION-SLOTS" title="26.2.6. レプリケーションスロット">26.2.6</a>を参照）。
 このパラメータはサーバ起動時のみ設定可能です。
@@ -460,7 +484,7 @@ ANY <em class="replaceable"><code>num_sync</code></em> ( <em class="replaceable"
           Specifies a trigger file whose presence ends recovery in the
           standby.  Even if this value is not set, you can still promote
           the standby using &lt;command&gt;pg_ctl promote&lt;/command&gt; or calling
-          &lt;function&gt;pg_promote&lt;/function&gt;.
+          &lt;function&gt;pg_promote()&lt;/function&gt;.
           This parameter can only be set in the &lt;filename&gt;postgresql.conf&lt;/filename&gt;
           file or on the server command line.
 </span>
@@ -550,15 +574,26 @@ ANY <em class="replaceable"><code>num_sync</code></em> ( <em class="replaceable"
 <code class="varname">max_standby_streaming_delay</code>はキャンセル前に問い合わせが実行できる最大の時間の長さと同じでないことに注意してください。
 むしろ、プライマリサーバから一度受け取られたWALデータを適用するために許される最大合計時間です。
 従って、ある問い合わせが大幅な遅延を起こした場合、その後の衝突する問い合わせは、スタンバイサーバがふたたび遅れを取り戻すまでの間、猶予時間はずっと短くなります。
-       </p></dd><dt id="GUC-WAL-RECEIVER-STATUS-INTERVAL"><span class="term"><code class="varname">wal_receiver_status_interval</code> (<code class="type">integer</code>)
+       </p></dd><dt id="GUC-WAL-RECEIVER-CREATE-TEMP-SLOT"><span class="term"><code class="varname">wal_receiver_create_temp_slot</code> (<code class="type">boolean</code>)
       <a id="id-1.6.6.9.5.3.7.1.3" class="indexterm"></a>
+      </span></dt><dd><p>
+        Specifies whether the WAL receiver process should create a temporary replication
+        slot on the remote instance when no permanent replication slot to use
+        has been configured (using <a class="xref" href="runtime-config-replication.html#GUC-PRIMARY-SLOT-NAME">primary_slot_name</a>).
+        The default is off.  This parameter can only be set in the
+        <code class="filename">postgresql.conf</code> file or on the server command line.
+        If this parameter is changed while the WAL receiver process is running,
+        that process is signaled to shut down and expected to restart with
+        the new setting.
+       </p></dd><dt id="GUC-WAL-RECEIVER-STATUS-INTERVAL"><span class="term"><code class="varname">wal_receiver_status_interval</code> (<code class="type">integer</code>)
+      <a id="id-1.6.6.9.5.3.8.1.3" class="indexterm"></a>
       </span></dt><dd><p>
       <span class="original">
        Specifies the minimum frequency for the WAL receiver
        process on the standby to send information about replication progress
        to the primary or upstream standby, where it can be seen using the
-       &lt;link
-       linkend="pg-stat-replication-view"&gt;&lt;literal&gt;pg_stat_replication&lt;/literal&gt;&lt;/link&gt;
+       &lt;link linkend="monitoring-pg-stat-replication-view"&gt;
+       &lt;structname&gt;pg_stat_replication&lt;/structname&gt;&lt;/link&gt;
        view.  The standby will report
        the last write-ahead log location it has written, the last position it
        has flushed to disk, and the last position it has applied.
@@ -575,7 +610,7 @@ ANY <em class="replaceable"><code>num_sync</code></em> ( <em class="replaceable"
        command line.
        </span>
 スタンバイサーバ上のWAL受信プロセスがプライマリー、または上位サーバに対してレプリケーションの進捗情報を送信する最小頻度を指定します。
-送信された進捗情報は<a class="link" href="monitoring-stats.html#PG-STAT-REPLICATION-VIEW" title="表27.5 pg_stat_replicationビュー"><code class="literal">pg_stat_replication</code></a>ビューにより確認することが可能です。
+送信された進捗情報は<a class="link" href="monitoring-stats.html#PG-STAT-REPLICATION-VIEW" title="表27.14 pg_stat_replication View"><code class="literal">pg_stat_replication</code></a>ビューにより確認することが可能です。
 スタンバイサーバは書き込みがされた直近の先行書き込みログ位置、ディスクにフラッシュされた直近のログ位置、およびリカバリ適用された直近のログ位置を報告します。
 このパラメータの値がそれぞれの報告間における最大の時間間隔です。
 書き込み、またはフラッシュ位置が変更される毎、あるいは最低でもこのパラメータで設定された頻度で更新情報が送信されます。
@@ -585,7 +620,7 @@ ANY <em class="replaceable"><code>num_sync</code></em> ( <em class="replaceable"
 このパラメータをゼロに設定すると、ステータスの更新を完全に無効化します。
 このパラメータは、<code class="filename">postgresql.conf</code>ファイル、もしくはサーバコマンドラインでのみ設定可能です。
       </p></dd><dt id="GUC-HOT-STANDBY-FEEDBACK"><span class="term"><code class="varname">hot_standby_feedback</code> (<code class="type">boolean</code>)
-      <a id="id-1.6.6.9.5.3.8.1.3" class="indexterm"></a>
+      <a id="id-1.6.6.9.5.3.9.1.3" class="indexterm"></a>
       </span></dt><dd><p>
        <span class="original">
         Specifies whether or not a hot standby will send feedback to the primary
@@ -627,7 +662,7 @@ ANY <em class="replaceable"><code>num_sync</code></em> ( <em class="replaceable"
 これは、<code class="varname">old_snapshot_threshold</code>が、無効行によってデータ溢れが起こる時刻の絶対的な制限を提供することを意図しているからです。
 そうでなければ、スタンバイの設定によってこの目的は成立しなくなってしまいます。
        </p></dd><dt id="GUC-WAL-RECEIVER-TIMEOUT"><span class="term"><code class="varname">wal_receiver_timeout</code> (<code class="type">integer</code>)
-      <a id="id-1.6.6.9.5.3.9.1.3" class="indexterm"></a>
+      <a id="id-1.6.6.9.5.3.10.1.3" class="indexterm"></a>
       </span></dt><dd><p>
        <span class="original">
         Terminate replication connections that are inactive for longer
@@ -648,7 +683,7 @@ ANY <em class="replaceable"><code>num_sync</code></em> ( <em class="replaceable"
 値ゼロは時間切れメカニズムを無効にします。
 このパラメータは<code class="filename">postgresql.conf</code>ファイルまたはサーバのコマンドラインのみで設定可能です。
        </p></dd><dt id="GUC-WAL-RETRIEVE-RETRY-INTERVAL"><span class="term"><code class="varname">wal_retrieve_retry_interval</code> (<code class="type">integer</code>)
-      <a id="id-1.6.6.9.5.3.10.1.3" class="indexterm"></a>
+      <a id="id-1.6.6.9.5.3.11.1.3" class="indexterm"></a>
       </span></dt><dd><p>
 <span class="original">
         Specifies how long the standby server should wait when WAL data is not
@@ -683,7 +718,7 @@ WALデータがソース(ストリーミングレプリケーション、ロー�
 WALの生成頻度が少ないシステムでは、この値を大きくすることにより、WALアーカイブへのアクセス頻度を減らすことができます。
 これは、たとえば基盤へのアクセス回数が課金対象になるクラウド環境において、有用です。
        </p></dd><dt id="GUC-RECOVERY-MIN-APPLY-DELAY"><span class="term"><code class="varname">recovery_min_apply_delay</code> (<code class="type">integer</code>)
-      <a id="id-1.6.6.9.5.3.11.1.3" class="indexterm"></a>
+      <a id="id-1.6.6.9.5.3.12.1.3" class="indexterm"></a>
       </span></dt><dd><p>
 <span class="original">
         By default, a standby server restores WAL records from the
@@ -828,4 +863,4 @@ WALの生成頻度が少ないシステムでは、この値を大きくする�
         The default value is 2.
 </span>
 デフォルト値は2です。
-       </p></dd></dl></div></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="runtime-config-wal.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="runtime-config.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="runtime-config-query.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">19.5. ログ先行書き込み（WAL） </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> 19.7. 問い合わせ計画</td></tr></table></div></body></html>
+       </p></dd></dl></div></div></div><div xmlns="http://www.w3.org/TR/xhtml1/transitional" class="navfooter"><hr></hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="runtime-config-wal.html" title="19.5. ログ先行書き込み（WAL）">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="runtime-config.html" title="第19章 サーバの設定">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="runtime-config-query.html" title="19.7. 問い合わせ計画">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">19.5. ログ先行書き込み（WAL） </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 13.1文書">ホーム</a></td><td width="40%" align="right" valign="top"> 19.7. 問い合わせ計画</td></tr></table></div></body></html>

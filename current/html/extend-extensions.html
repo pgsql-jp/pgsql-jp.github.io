@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>37.17. 関連するオブジェクトを拡張としてパッケージ化</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="xindex.html" title="37.16. インデックス拡張機能へのインタフェース" /><link rel="next" href="extend-pgxs.html" title="37.18. 拡張構築基盤" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 12.4文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="extend.html" title="第37章 SQLの拡張">第37章 <acronym class="acronym">SQL</acronym>の拡張</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 12.4 &#10;                      extend-extensions.html">誤訳等の報告
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>37.17. 関連するオブジェクトを拡張としてパッケージ化</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="xindex.html" title="37.16. インデックス拡張機能へのインタフェース" /><link rel="next" href="extend-pgxs.html" title="37.18. 拡張構築基盤" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 13.1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="extend.html" title="第37章 SQLの拡張">第37章 <acronym class="acronym">SQL</acronym>の拡張</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 13.1 &#10;                      extend-extensions.html">誤訳等の報告
                     </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="xindex.html" title="37.16. インデックス拡張機能へのインタフェース">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="extend.html" title="第37章 SQLの拡張">上へ</a></td><td width="60%" align="center">37.17. 関連するオブジェクトを拡張としてパッケージ化</td><td width="20%" align="right"> <a accesskey="n" href="extend-pgxs.html" title="37.18. 拡張構築基盤">次へ</a></td></tr></table><hr /></div><div class="sect1" id="EXTEND-EXTENSIONS"><div class="titlepage"><div><div><h2 class="title" style="clear: both">37.17. 関連するオブジェクトを拡張としてパッケージ化</h2></div></div></div><span class="original">
    &lt;title&gt;Packaging Related Objects into an Extension&lt;/title&gt;
 </span><a id="id-1.8.3.20.2" class="indexterm"></a><p>
@@ -252,17 +252,39 @@
 <span class="original">
         If this parameter is &lt;literal&gt;true&lt;/literal&gt; (which is the default),
         only superusers can create the extension or update it to a new
-        version.  If it is set to &lt;literal&gt;false&lt;/literal&gt;, just the privileges
+        version (but see also &lt;varname&gt;trusted&lt;/varname&gt;, below).
+        If it is set to &lt;literal&gt;false&lt;/literal&gt;, just the privileges
         required to execute the commands in the installation or update script
         are required.
+        This should normally be set to &lt;literal&gt;true&lt;/literal&gt; if any of the
+        script commands require superuser privileges.  (Such commands would
+        fail anyway, but it's more user-friendly to give the error up front.)
 </span>
 このパラメータが<code class="literal">true</code>（デフォルト）の場合、スーパーユーザのみが拡張を作成または新しいバージョンに更新することができます。
 <code class="literal">false</code>に設定されている場合は、インストレーション内でコマンドを実行するまたはスクリプトを更新するために必要な権限のみが必要とされます。
+       </p></dd><dt><span class="term"><code class="varname">trusted</code> (<code class="type">boolean</code>)</span></dt><dd><p>
+        This parameter, if set to <code class="literal">true</code> (which is not the
+        default), allows some non-superusers to install an extension that
+        has <code class="varname">superuser</code> set to <code class="literal">true</code>.
+        Specifically, installation will be permitted for anyone who has
+        <code class="literal">CREATE</code> privilege on the current database.
+        When the user executing <code class="command">CREATE EXTENSION</code> is not
+        a superuser but is allowed to install by virtue of this parameter,
+        then the installation or update script is run as the bootstrap
+        superuser, not as the calling user.
+        This parameter is irrelevant if <code class="varname">superuser</code> is
+        <code class="literal">false</code>.
+        Generally, this should not be set true for extensions that could
+        allow access to otherwise-superuser-only abilities, such as
+        file system access.
+        Also, marking an extension trusted requires significant extra effort
+        to write the extension's installation and update script(s) securely;
+        see <a class="xref" href="extend-extensions.html#EXTEND-EXTENSIONS-SECURITY" title="37.17.6. Security Considerations for Extensions">37.17.6</a>.
        </p></dd><dt><span class="term"><code class="varname">relocatable</code> (<code class="type">boolean</code>)</span></dt><dd><p>
 <span class="original">
         An extension is &lt;firstterm&gt;relocatable&lt;/firstterm&gt; if it is possible to move
         its contained objects into a different schema after initial creation
-        of the extension.  The default is &lt;literal&gt;false&lt;/literal&gt;, i.e. the
+        of the extension.  The default is &lt;literal&gt;false&lt;/literal&gt;, i.e., the
         extension is not relocatable.
         See &lt;xref linkend="extend-extensions-relocation"/&gt; for more information.
 </span>
@@ -326,6 +348,16 @@
 この行は拡張の機構では無視されます（コメントとして扱われます）。
 これは、このスクリプトが<code class="command">CREATE EXTENSION</code>（<a class="xref" href="extend-extensions.html#EXTEND-EXTENSIONS-EXAMPLE" title="37.17.7. 拡張の例">37.17.7</a>のスクリプト例を参照）ではなく<span class="application">psql</span>に渡された場合にエラーを発生するために一般的に使用するために用意されたものです。
 これがないと、ユーザは間違って拡張としてではなく、<span class="quote">「<span class="quote">まとまっていない</span>」</span>オブジェクトとして拡張の内容をロードしてしまい、復旧が多少困難な状態になる可能性があります。
+    </p><p>
+     If the extension script contains the
+     string <code class="literal">@extowner@</code>, that string is replaced with the
+     (suitably quoted) name of the user calling <code class="command">CREATE
+     EXTENSION</code> or <code class="command">ALTER EXTENSION</code>.  Typically
+     this feature is used by extensions that are marked trusted to assign
+     ownership of selected objects to the calling user rather than the
+     bootstrap superuser.  (One should be careful about doing so, however.
+     For example, assigning ownership of a C-language function to a
+     non-superuser would create a privilege escalation path for that user.)
     </p><p>
 <span class="original">
      While the script files can contain any characters allowed by the specified
@@ -449,11 +481,8 @@ SET LOCAL search_path TO @extschema@, pg_temp;
 何らかの事前に必要な拡張が制御ファイル内の<code class="varname">requires</code>に列挙されていた場合、それらのターゲットスキーマは新しい機能拡張のターゲットスキーマに続いて<code class="varname">search_path</code>の初期設定に追加されます。
 これにより新しい拡張のスクリプトファイルからそれらのオブジェクトが可視になります。
     </p><p>
-<span class="original">
-     For security, &lt;literal&gt;pg_temp&lt;/literal&gt; is automatically appended to
-     the end of &lt;varname&gt;search_path&lt;/varname&gt; in all cases.
-</span>
-安全のため、全てのケースにおいて<code class="literal">pg_temp</code>は自動的に<code class="varname">search_path</code>の最後に追記されます。
+     For security, <code class="literal">pg_temp</code> is automatically appended to
+     the end of <code class="varname">search_path</code> in all cases.
     </p><p>
 <span class="original">
      Although a non-relocatable extension can contain objects spread across
@@ -593,8 +622,8 @@ SELECT pg_catalog.pg_extension_config_dump('my_config', 'WHERE NOT standard_entr
      dynamically from one version to the next, you should provide
      &lt;firstterm&gt;update scripts&lt;/firstterm&gt; that make the necessary changes to go from
      one version to the next.  Update scripts have names following the pattern
-     &lt;literal&gt;&lt;replaceable&gt;extension&lt;/replaceable&gt;&amp;#045;-&lt;replaceable&gt;old_version&lt;/replaceable&gt;&amp;#045;-&lt;replaceable&gt;target_version&lt;/replaceable&gt;.sql&lt;/literal&gt;
-     (for example, &lt;literal&gt;foo&amp;#045;-1.0&amp;#045;-1.1.sql&lt;/literal&gt; contains the commands to modify
+     &lt;literal&gt;&lt;replaceable&gt;extension&lt;/replaceable&gt;&amp;#045;&amp;#045;&lt;replaceable&gt;old_version&lt;/replaceable&gt;&amp;#045;&amp;#045;&lt;replaceable&gt;target_version&lt;/replaceable&gt;.sql&lt;/literal&gt;
+     (for example, &lt;literal&gt;foo&amp;#045;&amp;#045;1.0&amp;#045;&amp;#045;1.1.sql&lt;/literal&gt; contains the commands to modify
      version &lt;literal&gt;1.0&lt;/literal&gt; of extension &lt;literal&gt;foo&lt;/literal&gt; into version
      &lt;literal&gt;1.1&lt;/literal&gt;).
 </span>
@@ -624,42 +653,6 @@ SELECT pg_catalog.pg_extension_config_dump('my_config', 'WHERE NOT standard_entr
      target (new) version.
 </span>
 拡張が副制御ファイルを持つ場合、更新スクリプトで使用される制御パラメータは、スクリプトの対象の（新しい）バージョンに関連付けされたものになります。
-    </p><p>
-<span class="original">
-     The update mechanism can be used to solve an important special case:
-     converting a &lt;quote&gt;loose&lt;/quote&gt; collection of objects into an extension.
-     Before the extension mechanism was added to
-     &lt;productname&gt;PostgreSQL&lt;/productname&gt; (in 9.1), many people wrote
-     extension modules that simply created assorted unpackaged objects.
-     Given an existing database containing such objects, how can we convert
-     the objects into a properly packaged extension?  Dropping them and then
-     doing a plain &lt;command&gt;CREATE EXTENSION&lt;/command&gt; is one way, but it's not
-     desirable if the objects have dependencies (for example, if there are
-     table columns of a data type created by the extension).  The way to fix
-     this situation is to create an empty extension, then use &lt;command&gt;ALTER
-     EXTENSION ADD&lt;/command&gt; to attach each pre-existing object to the extension,
-     then finally create any new objects that are in the current extension
-     version but were not in the unpackaged release.  &lt;command&gt;CREATE
-     EXTENSION&lt;/command&gt; supports this case with its &lt;literal&gt;FROM&lt;/literal&gt; &lt;replaceable
-     class="parameter"&gt;old_version&lt;/replaceable&gt; option, which causes it to not run the
-     normal installation script for the target version, but instead the update
-     script named
-     &lt;literal&gt;&lt;replaceable&gt;extension&lt;/replaceable&gt;&amp;#045;-&lt;replaceable&gt;old_version&lt;/replaceable&gt;&amp;#045;-&lt;replaceable&gt;target_version&lt;/replaceable&gt;.sql&lt;/literal&gt;.
-     The choice of the dummy version name to use as &lt;replaceable
-     class="parameter"&gt;old_version&lt;/replaceable&gt; is up to the extension author, though
-     &lt;literal&gt;unpackaged&lt;/literal&gt; is a common convention.  If you have multiple
-     prior versions you need to be able to update into extension style, use
-     multiple dummy version names to identify them.
-</span>
-更新機構を使用して、オブジェクトの<span class="quote">「<span class="quote">粗</span>」</span>集合から拡張に変換するという、特別かつ重大な状況を解消することができます。
-拡張機構が<span class="productname">PostgreSQL</span>に（9.1で）追加されるようになる前では、パッケージ化されずに単に詰めあわされたオブジェクトを作成する拡張モジュールを多くのユーザが作成していました。
-こうしたオブジェクトを持つデータベースが存在する場合、どのようにすればこれらのオブジェクトを適切にパッケージ化された拡張に変換できるでしょうか？
-削除した後で普通に<code class="command">CREATE EXTENSION</code>を行うことも１つの方法ですが、オブジェクトに依存関係がある（例えば拡張により作成されたデータ型のテーブル列が存在する場合など）場合は好まれません。
-こうした状況を解消する方法は、空の拡張を作成し、<code class="command">ALTER EXTENSION ADD</code>を使用して、既存のオブジェクトそれぞれを拡張に関連づけ、最後にパッケージ化されていないリリースに存在しないが現在のバージョンの拡張には存在する新しいオブジェクトを作成するという方法です。
-<code class="command">CREATE EXTENSION</code>は<code class="literal">FROM</code> <em class="replaceable"><code>old_version</code></em>オプションでこの状況をサポートします。
-この場合、通常のインストール用スクリプトは実行されず、代わりに<code class="literal"><em class="replaceable"><code>extension</code></em>--<em class="replaceable"><code>old_version</code></em>--<em class="replaceable"><code>target_version</code></em>.sql</code>という名前の更新スクリプトが実行されるようになります。
-<em class="replaceable"><code>old_version</code></em>として使用するダミーのバージョン名の選択は拡張の作成者に任せられていますが、<code class="literal">unpackaged</code>がよく使われる規約です。
-拡張形式に更新できるようにしたい過去のバージョンが複数存在する場合、それらを識別できるように複数のダミーバージョン番号を使用していください。
     </p><p>
 <span class="original">
      &lt;command&gt;ALTER EXTENSION&lt;/command&gt; is able to execute sequences of update
@@ -775,9 +768,7 @@ SELECT * FROM pg_extension_update_paths('<em class="replaceable"><code>extension
 この方法で保守している拡張に二次的な（バージョン固有の）制御ファイルがある場合は、スタンドアローンのインストールスクリプトがない場合でも、各バージョンで制御ファイルが必要になることに注意してください。
 そのバージョンへと更新する暗黙的な方法を、制御ファイルが決定するからです。
 たとえば、<code class="filename">foo--1.0.control</code>が<code class="literal">requires = 'bar'</code>を指定しているのに、<code class="literal">foo</code>の他の制御ファイルが指定していないとすると、<code class="literal">1.0</code>から他のバージョンに更新した際に<code class="literal">bar</code>への依存性が削除されてしまうでしょう。
-    </p></div><div class="sect2" id="EXTEND-EXTENSIONS-SECURITY"><div class="titlepage"><div><div><h3 class="title">37.17.6. 拡張のためのセキュリティに関する考慮事項</h3></div></div></div><span class="original">
-    &lt;title&gt;Security Considerations for Extensions&lt;/title&gt;
-</span><p>
+    </p></div><div class="sect2" id="EXTEND-EXTENSIONS-SECURITY"><div class="titlepage"><div><div><h3 class="title">37.17.6. Security Considerations for Extensions</h3></div></div></div><p>
 <span class="original">
      Widely-distributed extensions should assume little about the database
      they occupy.  Therefore, it's appropriate to write functions provided
@@ -798,16 +789,17 @@ SELECT * FROM pg_extension_update_paths('<em class="replaceable"><code>extension
 <code class="varname">superuser</code>プロパティを真にしている拡張はインストールや更新スクリプトの中で行われるアクションのセキュリティ面での危険も考慮しなければなりません。
 悪意あるユーザが不用意に書かれた拡張スクリプトを悪用してトロイの木馬を作成し、スーパーユーザ権限を獲得できるようにすることは、そう難しくありません。
     </p><p>
-<span class="original">
+     If an extension is marked <code class="varname">trusted</code>, then its
+     installation schema can be selected by the installing user, who might
+     intentionally use an insecure schema in hopes of gaining superuser
+     privileges.  Therefore, a trusted extension is extremely exposed from a
+     security standpoint, and all its script commands must be carefully
+     examined to ensure that no compromise is possible.
+    </p><p>
      Advice about writing functions securely is provided in
-     &lt;xref linkend="extend-extensions-security-funcs"/&gt; below, and advice
+     <a class="xref" href="extend-extensions.html#EXTEND-EXTENSIONS-SECURITY-FUNCS" title="37.17.6.1. 拡張関数のためのセキュリティに関する考慮事項">37.17.6.1</a> below, and advice
      about writing installation scripts securely is provided in
-     &lt;xref linkend="extend-extensions-security-scripts"/&gt;.
-</span>
-関数を安全に書くためのアドバイスは以下のリンクから提供されます。
-<a class="xref" href="extend-extensions.html#EXTEND-EXTENSIONS-SECURITY-FUNCS" title="37.17.6.1. 拡張関数のためのセキュリティに関する考慮事項">37.17.6.1</a> 
-また、インストールスクリプトを安全に書くためのアドバイスは以下のリンクから提供されます。
-<a class="xref" href="extend-extensions.html#EXTEND-EXTENSIONS-SECURITY-SCRIPTS" title="37.17.6.2. 拡張スクリプトのためのセキュリティに関する考慮事項">37.17.6.2</a>
+     <a class="xref" href="extend-extensions.html#EXTEND-EXTENSIONS-SECURITY-SCRIPTS" title="37.17.6.2. Security Considerations for Extension Scripts">37.17.6.2</a>.
     </p><div class="sect3" id="EXTEND-EXTENSIONS-SECURITY-FUNCS"><div class="titlepage"><div><div><h4 class="title">37.17.6.1. 拡張関数のためのセキュリティに関する考慮事項</h4></div></div></div><span class="original">
      &lt;title&gt;Security Considerations for Extension Functions&lt;/title&gt;
 </span><p>
@@ -829,9 +821,7 @@ SELECT * FROM pg_extension_update_paths('<em class="replaceable"><code>extension
 </span>
 <a class="link" href="sql-createfunction.html#SQL-CREATEFUNCTION-SECURITY" title="SECURITY DEFINER関数の安全な作成"><code class="command">CREATE FUNCTION</code></a>のリファレンスページには<code class="literal">SECURITY DEFINER</code>関数を安全に書くためのアドバイスが記載されています。
 拡張が提供するあらゆる関数は、強い権限を持つユーザから実行されることがあるので、これらのテクニックを適用することは、良い習慣です。
-     </p><span class="original">
-(原文もコメント中にあり)
-          XXX It's not enough to use qualified names, because one might write a
+     </p><span class="original"> XXX It's not enough to use qualified names, because one might write a
           qualified name to an object that itself uses unqualified names.  Many
           information_schema functions have that defect, for example.  However,
           that's a defect in the referenced object, and relatively few queries
@@ -847,21 +837,15 @@ XXX 名前を(スキーマ)修飾するだけでは十分ではありません�
 そして、アプリケーションが指示どおりに作成されていれば、拡張が欠陥があるオブジェクトを参照していたとしても、既知の攻撃に影響されません。
 そのため、コアのPostgreSQLにはそのような欠陥が含まれないかのように拡張の作成者に案内して下さい。
 </span><p>
-<span class="original">
-      If you cannot set the &lt;varname&gt;search_path&lt;/varname&gt; to contain only
+      If you cannot set the <code class="varname">search_path</code> to contain only
       secure schemas, assume that each unqualified name could resolve to an
       object that a malicious user has defined.  Beware of constructs that
-      depend on &lt;varname&gt;search_path&lt;/varname&gt; implicitly; for
-      example, &lt;token&gt;IN&lt;/token&gt;
-      and &lt;literal&gt;CASE &lt;replaceable&gt;expression&lt;/replaceable&gt; WHEN&lt;/literal&gt;
+      depend on <code class="varname">search_path</code> implicitly; for
+      example, <code class="token">IN</code>
+      and <code class="literal">CASE <em class="replaceable"><code>expression</code></em> WHEN</code>
       always select an operator using the search path.  In their place, use
-      &lt;literal&gt;OPERATOR(&lt;replaceable&gt;schema&lt;/replaceable&gt;.=) ANY&lt;/literal&gt;
-      and &lt;literal&gt;CASE WHEN &lt;replaceable&gt;expression&lt;/replaceable&gt;&lt;/literal&gt;.
-</span>
-<code class="varname">search_path</code>に安全なスキーマだけを設定できない場合は、修飾されていない名前は悪意あるユーザが定義したオブジェクトとして名前解決されうることを想定してください。
-暗黙的に<code class="varname">search_path</code>に依存する構文に注意してください。
-例えば、<code class="token">IN</code>や <code class="literal">CASE <em class="replaceable"><code>式</code></em> WHEN</code>は常にサーチパスを使って演算子を選びます。
-これらの場所には、<code class="literal">OPERATOR(<em class="replaceable"><code>スキーマ</code></em>.=) ANY</code>や<code class="literal">CASE WHEN <em class="replaceable"><code>式</code></em></code>を使用してください。
+      <code class="literal">OPERATOR(<em class="replaceable"><code>schema</code></em>.=) ANY</code>
+      and <code class="literal">CASE WHEN <em class="replaceable"><code>expression</code></em></code>.
      </p><p>
 <span class="original">
       A general-purpose extension usually should not assume that it's been
@@ -877,9 +861,7 @@ XXX 名前を(スキーマ)修飾するだけでは十分ではありません�
 汎用の拡張は通常、安全なスキーマにインストールされることを想定するべきではありません。これはスキーマ修飾された自身のオブジェクトであっても完全にリスクがないわけではないことを意味しています。
 例えば、拡張が <code class="literal">myschema.myfunc(bigint)</code>という関数を定義しているとき、<code class="literal">myschema.myfunc(42)</code>というような呼び出しは、悪意ある関数<code class="literal">myschema.myfunc(integer)</code>に捕捉される可能性があります。
 必要に応じて明示的なキャストを使用して関数と演算子のデータ型が引数の型と厳密に一致するように注意してください。
-     </p></div><div class="sect3" id="EXTEND-EXTENSIONS-SECURITY-SCRIPTS"><div class="titlepage"><div><div><h4 class="title">37.17.6.2. 拡張スクリプトのためのセキュリティに関する考慮事項</h4></div></div></div><span class="original">
-     &lt;title&gt;Security Considerations for Extension Scripts&lt;/title&gt;
-</span><p>
+     </p></div><div class="sect3" id="EXTEND-EXTENSIONS-SECURITY-SCRIPTS"><div class="titlepage"><div><div><h4 class="title">37.17.6.2. Security Considerations for Extension Scripts</h4></div></div></div><p>
 <span class="original">
       An extension installation or update script should be written to guard
       against search-path-based attacks occurring when the script executes.
@@ -891,31 +873,26 @@ XXX 名前を(スキーマ)修飾するだけでは十分ではありません�
 拡張のインストールや更新スクリプトはスクリプト実行時にサーチパスに基づく攻撃を防ぐように記述されなければなりません。
 スクリプトが参照するオブジェクトがスクリプトの著者が意図したものではないオブジェクトとして解決されうる場合、即座もしくは、誤って定義された拡張オブジェクトが使われたときに攻撃を受ける可能性があります。
      </p><p>
-<span class="original">
-      DDL commands such as &lt;command&gt;CREATE FUNCTION&lt;/command&gt;
-      and &lt;command&gt;CREATE OPERATOR CLASS&lt;/command&gt; are generally secure,
+      DDL commands such as <code class="command">CREATE FUNCTION</code>
+      and <code class="command">CREATE OPERATOR CLASS</code> are generally secure,
       but beware of any command having a general-purpose expression as a
-      component.  For example, &lt;command&gt;CREATE VIEW&lt;/command&gt; needs to be
-      vetted, as does a &lt;literal&gt;DEFAULT&lt;/literal&gt; expression
-      in &lt;command&gt;CREATE FUNCTION&lt;/command&gt;.
-</span>
-<code class="command">CREATE FUNCTION</code>や<code class="command">CREATE OPERATOR CLASS</code>などのDDLコマンドは一般的には安全ですが、汎用的な式を構成に持つコマンドには注意が必要です。
-例えば、<code class="command">CREATE FUNCTION</code>の<code class="literal">DEFAULT</code>式に行うのと同様に<code class="command">CREATE VIEW</code>には審査が必要です。
+      component.  For example, <code class="command">CREATE VIEW</code> needs to be
+      vetted, as does a <code class="literal">DEFAULT</code> expression
+      in <code class="command">CREATE FUNCTION</code>.
      </p><p>
-<span class="original">
       Sometimes an extension script might need to execute general-purpose
       SQL, for example to make catalog adjustments that aren't possible via
       DDL.  Be careful to execute such commands with a
-      secure &lt;varname&gt;search_path&lt;/varname&gt;; do &lt;emphasis&gt;not&lt;/emphasis&gt;
-      trust the path provided by &lt;command&gt;CREATE/ALTER EXTENSION&lt;/command&gt;
+      secure <code class="varname">search_path</code>; do <span class="emphasis"><em>not</em></span>
+      trust the path provided by <code class="command">CREATE/ALTER EXTENSION</code>
       to be secure.  Best practice is to temporarily
-      set &lt;varname&gt;search_path&lt;/varname&gt; to &lt;literal&gt;'pg_catalog,
-      pg_temp'&lt;/literal&gt; and insert references to the extension's
+      set <code class="varname">search_path</code> to <code class="literal">'pg_catalog,
+      pg_temp'</code> and insert references to the extension's
       installation schema explicitly where needed.  (This practice might
       also be helpful for creating views.)  Examples can be found in
-      the &lt;filename&gt;contrib&lt;/filename&gt; modules in
-      the &lt;productname&gt;PostgreSQL&lt;/productname&gt; source code distribution.
-</span>
+      the <code class="filename">contrib</code> modules in
+      the <span class="productname">PostgreSQL</span> source code distribution.
+--&gt;
 拡張スクリプトには汎用SQLを実行する必要があることがあります。
 例えば、DDLではできないカタログの調整などです。
 そのようなコマンドは安全な<code class="varname">search_path</code>使って実行するように気をつけてください。
@@ -923,31 +900,31 @@ XXX 名前を(スキーマ)修飾するだけでは十分ではありません�
 最も良い方法は一時的に<code class="varname">search_path</code>を<code class="literal">'pg_catalog, pg_temp'</code>にセットし、必要な箇所に明示的に拡張のインストールスキーマの参照を記述する方法です(この方法はビューを作成する場合にも参考になります)。
 例は配布される<span class="productname">PostgreSQL</span>ソースコードの<code class="filename">contrib</code>に見つけることができます。
      </p><p>
-<span class="original">
       Cross-extension references are extremely difficult to make fully
       secure, partially because of uncertainty about which schema the other
       extension is in.  The hazards are reduced if both extensions are
       installed in the same schema, because then a hostile object cannot be
       placed ahead of the referenced extension in the installation-time
-      &lt;varname&gt;search_path&lt;/varname&gt;.  However, no mechanism currently exists
-      to require that.
-</span>
+      <code class="varname">search_path</code>.  However, no mechanism currently exists
+      to require that.  For now, best practice is to not mark an extension
+      trusted if it depends on another one, unless that other one is always
+      installed in <code class="literal">pg_catalog</code>.
+--&gt;
 拡張をまたがる参照を完璧に安全にすることは極めて困難です。
 理由の一つに、他の拡張がどのスキーマにあるのか定かではないことがあります。
 この危険性は両方の拡張を同じスキーマにインストールすることで軽減できます。
 悪意あるオブジェクトをインストール時の<code class="varname">search_path</code>内で参照された拡張の前に置くことができないからです。
 しかしながら、現時点ではこれを要求するメカニズムはありません。
      </p><p>
-<span class="original">
-      Do &lt;emphasis&gt;not&lt;/emphasis&gt; use &lt;command&gt;CREATE OR REPLACE
-      FUNCTION&lt;/command&gt;, except in an update script that must change the
+      Do <span class="emphasis"><em>not</em></span> use <code class="command">CREATE OR REPLACE
+      FUNCTION</code>, except in an update script that must change the
       definition of a function that is known to be an extension member
-      already.  (Likewise for other &lt;literal&gt;OR REPLACE&lt;/literal&gt; options.)
-      Using &lt;literal&gt;OR REPLACE&lt;/literal&gt; unnecessarily not only has a risk
+      already.  (Likewise for other <code class="literal">OR REPLACE</code> options.)
+      Using <code class="literal">OR REPLACE</code> unnecessarily not only has a risk
       of accidentally overwriting someone else's function, but it creates a
       security hazard since the overwritten function would still be owned by
       its original owner, who could modify it.
-</span>
+--&gt;
 拡張のメンバーであることが分かっている関数の定義を変更しなければならない更新スクリプトを除いて、<code class="command">CREATE OR REPLACE FUNCTION</code>は<span class="emphasis"><em>使用しないで</em></span>ください(他の<code class="literal">OR REPLACE</code>でも同様です)。
 <code class="literal">OR REPLACE</code> を不必要に使うことは他の誰かの別の関数を誤って上書きしてしまうリスクがあるだけでなく、上書きされた関数は元の所有者のままなので元の所有者が変更できる状態となってしまい、セキュリティの脆弱性になります。
      </p></div></div><div class="sect2" id="EXTEND-EXTENSIONS-EXAMPLE"><div class="titlepage"><div><div><h3 class="title">37.17.7. 拡張の例</h3></div></div></div><span class="original">
@@ -1038,4 +1015,4 @@ include $(PGXS)
      any particular database.
 </span>
 ファイルがインストールされた後、<a class="xref" href="sql-createextension.html" title="CREATE EXTENSION"><span class="refentrytitle">CREATE EXTENSION</span></a>コマンドを使用してオブジェクトを任意の特定のデータベースにロードしてください。
-    </p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="xindex.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="extend.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="extend-pgxs.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">37.16. インデックス拡張機能へのインタフェース </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> 37.18. 拡張構築基盤</td></tr></table></div></body></html>
+    </p></div></div><div xmlns="http://www.w3.org/TR/xhtml1/transitional" class="navfooter"><hr></hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="xindex.html" title="37.16. インデックス拡張機能へのインタフェース">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="extend.html" title="第37章 SQLの拡張">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="extend-pgxs.html" title="37.18. 拡張構築基盤">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">37.16. インデックス拡張機能へのインタフェース </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 13.1文書">ホーム</a></td><td width="40%" align="right" valign="top"> 37.18. 拡張構築基盤</td></tr></table></div></body></html>
