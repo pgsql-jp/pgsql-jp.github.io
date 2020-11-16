@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>F.21. ltree</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="lo.html" title="F.20. lo" /><link rel="next" href="pageinspect.html" title="F.22. pageinspect" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 12.4文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="contrib.html" title="付録F 追加で提供されるモジュール">付録F 追加で提供されるモジュール</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 12.4 &#10;                      ltree.html">誤訳等の報告
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>F.21. ltree</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="lo.html" title="F.20. lo" /><link rel="next" href="pageinspect.html" title="F.22. pageinspect" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 13.1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="contrib.html" title="付録F 追加で提供されるモジュール">付録F 追加で提供されるモジュール</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 13.1 &#10;                      ltree.html">誤訳等の報告
                     </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="lo.html" title="F.20. lo">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="contrib.html" title="付録F 追加で提供されるモジュール">上へ</a></td><td width="60%" align="center">F.21. ltree</td><td width="20%" align="right"> <a accesskey="n" href="pageinspect.html" title="F.22. pageinspect">次へ</a></td></tr></table><hr /></div><div class="sect1" id="LTREE"><div class="titlepage"><div><div><h2 class="title" style="clear: both">F.21. ltree</h2></div></div></div><a id="id-1.11.7.30.2" class="indexterm"></a><p>
 <span class="original">
   This module implements a data type &lt;type&gt;ltree&lt;/type&gt; for representing
@@ -8,7 +8,11 @@
 </span>
 本モジュールは階層ツリーを模擬した構造に格納されたデータのラベルを表現する <code class="type">ltree</code>データ型を実装します。
 ラベルツリー全体を検索する高度な機能を提供します。
- </p><div class="sect2" id="id-1.11.7.30.4"><div class="titlepage"><div><div><h3 class="title">F.21.1. 定義</h3></div></div></div><span class="original">
+ </p><p>
+  This module is considered <span class="quote">「<span class="quote">trusted</span>」</span>, that is, it can be
+  installed by non-superusers who have <code class="literal">CREATE</code> privilege
+  on the current database.
+ </p><div class="sect2" id="id-1.11.7.30.5"><div class="titlepage"><div><div><h3 class="title">F.21.1. 定義</h3></div></div></div><span class="original">
   &lt;title&gt;Definitions&lt;/title&gt;
 </span><p>
 <span class="original">
@@ -53,7 +57,8 @@
      &lt;type&gt;lquery&lt;/type&gt; represents a regular-expression-like pattern
      for matching &lt;type&gt;ltree&lt;/type&gt; values.  A simple word matches that
      label within a path.  A star symbol (&lt;literal&gt;*&lt;/literal&gt;) matches zero
-     or more labels.  For example:
+     or more labels.  These can be joined with dots to form a pattern that
+     must match the whole label path.  For example:
 </span>
 <code class="type">lquery</code>は、<code class="type">ltree</code>値に一致する正規表現のようなパターンを表現します。
 単一の単語は経路内のラベルに一致します。
@@ -71,8 +76,8 @@ foo         <em class="lineannotation"><span class="lineannotation">正確に<co
 </pre><p>
     </p><p>
 <span class="original">
-     Star symbols can also be quantified to restrict how many labels
-     they can match:
+     Both star symbols and simple words can be quantified to restrict how many
+     labels they can match:
 </span>
 スター印は一致可能なラベル数を制限するために量指定を行うことができます。
 </p><pre class="synopsis">
@@ -80,17 +85,23 @@ foo         <em class="lineannotation"><span class="lineannotation">正確に<co
 *{&lt;replaceable&gt;n&lt;/replaceable&gt;}        &lt;lineannotation&gt;Match exactly &lt;replaceable&gt;n&lt;/replaceable&gt; labels&lt;/lineannotation&gt;
 *{&lt;replaceable&gt;n&lt;/replaceable&gt;,}       &lt;lineannotation&gt;Match at least &lt;replaceable&gt;n&lt;/replaceable&gt; labels&lt;/lineannotation&gt;
 *{&lt;replaceable&gt;n&lt;/replaceable&gt;,&lt;replaceable&gt;m&lt;/replaceable&gt;}      &lt;lineannotation&gt;Match at least &lt;replaceable&gt;n&lt;/replaceable&gt; but not more than &lt;replaceable&gt;m&lt;/replaceable&gt; labels&lt;/lineannotation&gt;
-*{,&lt;replaceable&gt;m&lt;/replaceable&gt;}       &lt;lineannotation&gt;Match at most &lt;replaceable&gt;m&lt;/replaceable&gt; labels &amp;mdash; same as &lt;/lineannotation&gt; *{0,&lt;replaceable&gt;m&lt;/replaceable&gt;}
+*{,&lt;replaceable&gt;m&lt;/replaceable&gt;}       &lt;lineannotation&gt;Match at most &lt;replaceable&gt;m&lt;/replaceable&gt; labels &amp;mdash; same as &lt;/lineannotation&gt;*{0,&lt;replaceable&gt;m&lt;/replaceable&gt;}
+foo{&lt;replaceable&gt;n&lt;/replaceable&gt;,&lt;replaceable&gt;m&lt;/replaceable&gt;}    &lt;lineannotation&gt;Match at least &lt;replaceable&gt;n&lt;/replaceable&gt; but not more than &lt;replaceable&gt;m&lt;/replaceable&gt; occurrences of &lt;literal&gt;foo&lt;/literal&gt;&lt;/lineannotation&gt;
+foo{,}      &lt;lineannotation&gt;Match any number of occurrences of &lt;literal&gt;foo&lt;/literal&gt;, including zero&lt;/lineannotation&gt;
 </span>
 *{<em class="replaceable"><code>n</code></em>}        <em class="lineannotation"><span class="lineannotation">正確に<em class="replaceable"><code>n</code></em>個のラベルに一致します。</span></em>
 *{<em class="replaceable"><code>n</code></em>,}       <em class="lineannotation"><span class="lineannotation">少なくとも<em class="replaceable"><code>n</code></em>個のラベルに一致します。</span></em>
 *{<em class="replaceable"><code>n</code></em>,<em class="replaceable"><code>m</code></em>}      <em class="lineannotation"><span class="lineannotation">少なくとも<em class="replaceable"><code>n</code></em>個に一致し、多くても<em class="replaceable"><code>m</code></em>個を超えないラベルに一致します。</span></em>
 *{,<em class="replaceable"><code>m</code></em>}       <em class="lineannotation"><span class="lineannotation">最大<em class="replaceable"><code>m</code></em>個のラベルに一致します。つまり</span></em> *{0,<em class="replaceable"><code>m</code></em>}と同じです。
 </pre><p>
+     In the absence of any explicit quantifier, the default for a star symbol
+     is to match any number of labels (that is, <code class="literal">{,}</code>) while
+     the default for a non-star item is to match exactly once (that
+     is, <code class="literal">{1}</code>).
     </p><p>
 <span class="original">
      There are several modifiers that can be put at the end of a non-star
-     label in &lt;type&gt;lquery&lt;/type&gt; to make it match more than just the exact match:
+     &lt;type&gt;lquery&lt;/type&gt; item to make it match more than just the exact match:
 </span>
 単なる正確な一致以上の一致を行うために、<code class="type">lquery</code>の非スターラベルの終端に記述することができる複数の修飾子が存在します。
 </p><pre class="synopsis">
@@ -119,10 +130,13 @@ foo         <em class="lineannotation"><span class="lineannotation">正確に<co
 例えば<code class="literal">foo_bar%*</code>は<code class="literal">foo1_bar2_baz</code>に一致しますが、<code class="literal">foo1_br2_baz</code>に一致しません。
     </p><p>
 <span class="original">
-     Also, you can write several possibly-modified labels separated with
-     &lt;literal&gt;|&lt;/literal&gt; (OR) to match any of those labels, and you can put
-     &lt;literal&gt;!&lt;/literal&gt; (NOT) at the start to match any label that doesn't
-     match any of the alternatives.
+     Also, you can write several possibly-modified non-star items separated with
+     &lt;literal&gt;|&lt;/literal&gt; (OR) to match any of those items, and you can put
+     &lt;literal&gt;!&lt;/literal&gt; (NOT) at the start of a non-star group to match any
+     label that doesn't match any of the alternatives.  A quantifier, if any,
+     goes at the end of the group; it means some number of matches for the
+     group as a whole (that is, some number of labels matching or not matching
+     any of the alternatives).
 </span>
 また、ラベルのいずれかに一致させるために<code class="literal">|</code>（論理和）で区切って、複数のおそらく修飾子が付いたラベルを記述することもできます。
 さらに、先頭に<code class="literal">!</code> (否定)を記述して選択肢のいずれかにも一致しないすべてのラベルに一致させることもできます。
@@ -132,8 +146,8 @@ foo         <em class="lineannotation"><span class="lineannotation">正確に<co
 </span>
 以下に注釈付きの<code class="type">lquery</code>の例を示します。
 </p><pre class="programlisting">
-Top.*{0,2}.sport*@.!football|tennis.Russ*|Spain
-a.  b.     c.      d.               e.
+Top.*{0,2}.sport*@.!football|tennis{1,}.Russ*|Spain
+a.  b.     c.      d.                   e.
 </pre><p>
 <span class="original">
      This query will match any label path that:
@@ -156,8 +170,8 @@ a.  b.     c.      d.               e.
 直後に<code class="literal">sport</code>接頭辞（大文字小文字の区別無）から始まるラベルを持つ。
       </p></li><li class="listitem"><p>
 <span class="original">
-       then a label not matching &lt;literal&gt;football&lt;/literal&gt; nor
-       &lt;literal&gt;tennis&lt;/literal&gt;
+       then has one or more labels, none of which
+       match &lt;literal&gt;football&lt;/literal&gt; nor &lt;literal&gt;tennis&lt;/literal&gt;
 </span>
 そして、<code class="literal">football</code>と<code class="literal">tennis</code>に一致しないラベルを持つ。
       </p></li><li class="listitem"><p>
@@ -209,7 +223,7 @@ Europe &amp; Russia*@ &amp; !Transportation
    &lt;type&gt;ltree&lt;/type&gt; and &lt;type&gt;lquery&lt;/type&gt; do not.
 </span>
 注意：<code class="type">ltxtquery</code>ではシンボルの間に空白を入れることができますが、<code class="type">ltree</code>と<code class="type">lquery</code>ではできません。
-  </p></div><div class="sect2" id="id-1.11.7.30.5"><div class="titlepage"><div><div><h3 class="title">F.21.2. 演算子と関数</h3></div></div></div><span class="original">
+  </p></div><div class="sect2" id="id-1.11.7.30.6"><div class="titlepage"><div><div><h3 class="title">F.21.2. 演算子と関数</h3></div></div></div><span class="original">
   &lt;title&gt;Operators and Functions&lt;/title&gt;
 </span><p>
 <span class="original">
@@ -222,10 +236,150 @@ Europe &amp; Russia*@ &amp; !Transportation
 </span>
 <code class="type">ltree</code>型は、通常の比較演算子<code class="literal">=</code>、<code class="literal">&lt;&gt;</code>、<code class="literal">&lt;</code>、<code class="literal">&gt;</code>、<code class="literal">&lt;=</code>、<code class="literal">&gt;=</code>を持ちます。
 比較では、ツリーの巡回順でソートされ、ノードの子要素はラベルテキストでソートされます。
-さらに、<a class="xref" href="ltree.html#LTREE-OP-TABLE" title="表F.13 ltree演算子">表 F.13</a>に示す特殊な演算子が使用可能です。
-  </p><div class="table" id="LTREE-OP-TABLE"><p class="title"><strong>表F.13 <code class="type">ltree</code>演算子</strong></p><div class="table-contents"><span class="original">
-   &lt;title&gt;&lt;type&gt;ltree&lt;/type&gt; Operators&lt;/title&gt;
-</span><table class="table" summary="ltree演算子" border="1"><colgroup><col /><col /><col /></colgroup><thead><tr><th>演算子</th><th>戻り値</th><th>説明</th></tr></thead><tbody><tr><td><code class="type">ltree</code> <code class="literal">@&gt;</code> <code class="type">ltree</code></td><td><code class="type">boolean</code></td><td>左辺の引数が右辺の祖先要素（か同じ）かどうか</td></tr><tr><td><code class="type">ltree</code> <code class="literal">&lt;@</code> <code class="type">ltree</code></td><td><code class="type">boolean</code></td><td>左辺の引数が右辺の子孫要素（か同じ）かどうか</td></tr><tr><td><code class="type">ltree</code> <code class="literal">~</code> <code class="type">lquery</code></td><td><code class="type">boolean</code></td><td><code class="type">ltree</code>が<code class="type">lquery</code>に一致するかどうか</td></tr><tr><td><code class="type">lquery</code> <code class="literal">~</code> <code class="type">ltree</code></td><td><code class="type">boolean</code></td><td><code class="type">ltree</code>が<code class="type">lquery</code>に一致するかどうか</td></tr><tr><td><code class="type">ltree</code> <code class="literal">?</code> <code class="type">lquery[]</code></td><td><code class="type">boolean</code></td><td><code class="type">ltree</code>が配列内のいずれかの<code class="type">lquery</code>に一致するかどうか</td></tr><tr><td><code class="type">lquery[]</code> <code class="literal">?</code> <code class="type">ltree</code></td><td><code class="type">boolean</code></td><td><code class="type">ltree</code>が配列内のいずれかの<code class="type">lquery</code>に一致するかどうか</td></tr><tr><td><code class="type">ltree</code> <code class="literal">@</code> <code class="type">ltxtquery</code></td><td><code class="type">boolean</code></td><td><code class="type">ltree</code>が<code class="type">ltxtquery</code>に一致するかどうか</td></tr><tr><td><code class="type">ltxtquery</code> <code class="literal">@</code> <code class="type">ltree</code></td><td><code class="type">boolean</code></td><td><code class="type">ltree</code>が<code class="type">ltxtquery</code>に一致するかどうか</td></tr><tr><td><code class="type">ltree</code> <code class="literal">||</code> <code class="type">ltree</code></td><td><code class="type">ltree</code></td><td><code class="type">ltree</code>経路を連結します</td></tr><tr><td><code class="type">ltree</code> <code class="literal">||</code> <code class="type">text</code></td><td><code class="type">ltree</code></td><td>テキストを<code class="type">ltree</code>に変換し、連結します</td></tr><tr><td><code class="type">text</code> <code class="literal">||</code> <code class="type">ltree</code></td><td><code class="type">ltree</code></td><td>テキストを<code class="type">ltree</code>に変換し、連結します</td></tr><tr><td><code class="type">ltree[]</code> <code class="literal">@&gt;</code> <code class="type">ltree</code></td><td><code class="type">boolean</code></td><td>配列に<code class="type">ltree</code>の祖先要素が含まれるかどうか</td></tr><tr><td><code class="type">ltree</code> <code class="literal">&lt;@</code> <code class="type">ltree[]</code></td><td><code class="type">boolean</code></td><td>配列に<code class="type">ltree</code>の祖先要素が含まれるかどうか</td></tr><tr><td><code class="type">ltree[]</code> <code class="literal">&lt;@</code> <code class="type">ltree</code></td><td><code class="type">boolean</code></td><td>配列に<code class="type">ltree</code>の子孫要素が含まれるかどうか</td></tr><tr><td><code class="type">ltree</code> <code class="literal">@&gt;</code> <code class="type">ltree[]</code></td><td><code class="type">boolean</code></td><td>配列に<code class="type">ltree</code>の子孫要素が含まれるかどうか</td></tr><tr><td><code class="type">ltree[]</code> <code class="literal">~</code> <code class="type">lquery</code></td><td><code class="type">boolean</code></td><td>配列に<code class="type">lquery</code>に一致する経路が含まれるかどうか</td></tr><tr><td><code class="type">lquery</code> <code class="literal">~</code> <code class="type">ltree[]</code></td><td><code class="type">boolean</code></td><td>配列に<code class="type">lquery</code>に一致する経路が含まれるかどうか</td></tr><tr><td><code class="type">ltree[]</code> <code class="literal">?</code> <code class="type">lquery[]</code></td><td><code class="type">boolean</code></td><td><code class="type">ltree</code>配列にいずれかの<code class="type">lquery</code>に一致する経路が含まれるかどうか</td></tr><tr><td><code class="type">lquery[]</code> <code class="literal">?</code> <code class="type">ltree[]</code></td><td><code class="type">boolean</code></td><td><code class="type">ltree</code>配列にいずれかの<code class="type">lquery</code>に一致する経路が含まれるかどうか</td></tr><tr><td><code class="type">ltree[]</code> <code class="literal">@</code> <code class="type">ltxtquery</code></td><td><code class="type">boolean</code></td><td>配列に<code class="type">ltxtquery</code>に一致する経路が含まれるかどうか</td></tr><tr><td><code class="type">ltxtquery</code> <code class="literal">@</code> <code class="type">ltree[]</code></td><td><code class="type">boolean</code></td><td>配列に<code class="type">ltxtquery</code>に一致する経路が含まれるかどうか</td></tr><tr><td><code class="type">ltree[]</code> <code class="literal">?@&gt;</code> <code class="type">ltree</code></td><td><code class="type">ltree</code></td><td><code class="type">ltree</code>の祖先要素となる配列内の最初の要素。存在しなければNULL</td></tr><tr><td><code class="type">ltree[]</code> <code class="literal">?&lt;@</code> <code class="type">ltree</code></td><td><code class="type">ltree</code></td><td><code class="type">ltree</code>の子孫要素となる配列内の最初の要素。存在しなければNULL</td></tr><tr><td><code class="type">ltree[]</code> <code class="literal">?~</code> <code class="type">lquery</code></td><td><code class="type">ltree</code></td><td><code class="type">lquery</code>に一致する配列内の最初の要素。存在しなければNULL</td></tr><tr><td><code class="type">ltree[]</code> <code class="literal">?@</code> <code class="type">ltxtquery</code></td><td><code class="type">ltree</code></td><td><code class="type">ltxtquery</code>に一致する配列内の最初の要素。存在しなければNULL</td></tr></tbody></table></div></div><br class="table-break" /><p>
+さらに、<a class="xref" href="ltree.html#LTREE-OP-TABLE" title="表F.13 ltree Operators">表 F.13</a>に示す特殊な演算子が使用可能です。
+  </p><div class="table" id="LTREE-OP-TABLE"><p class="title"><strong>表F.13 <code class="type">ltree</code> Operators</strong></p><div class="table-contents"><table class="table" summary="ltree Operators" border="1"><colgroup><col /></colgroup><thead><tr><th class="func_table_entry"><p class="func_signature">
+        Operator
+       </p>
+       <p>
+        Description
+       </p></th></tr></thead><tbody><tr><td class="func_table_entry"><p class="func_signature">
+        <code class="type">ltree</code> <code class="literal">@&gt;</code> <code class="type">ltree</code>
+        → <code class="returnvalue">boolean</code>
+       </p>
+       <p>
+        Is left argument an ancestor of right (or equal)?
+       </p></td></tr><tr><td class="func_table_entry"><p class="func_signature">
+        <code class="type">ltree</code> <code class="literal">&lt;@</code> <code class="type">ltree</code>
+        → <code class="returnvalue">boolean</code>
+       </p>
+       <p>
+        Is left argument a descendant of right (or equal)?
+       </p></td></tr><tr><td class="func_table_entry"><p class="func_signature">
+        <code class="type">ltree</code> <code class="literal">~</code> <code class="type">lquery</code>
+        → <code class="returnvalue">boolean</code>
+       </p>
+       <p class="func_signature">
+        <code class="type">lquery</code> <code class="literal">~</code> <code class="type">ltree</code>
+        → <code class="returnvalue">boolean</code>
+       </p>
+       <p>
+        Does <code class="type">ltree</code> match <code class="type">lquery</code>?
+       </p></td></tr><tr><td class="func_table_entry"><p class="func_signature">
+        <code class="type">ltree</code> <code class="literal">?</code> <code class="type">lquery[]</code>
+        → <code class="returnvalue">boolean</code>
+       </p>
+       <p class="func_signature">
+        <code class="type">lquery[]</code> <code class="literal">?</code> <code class="type">ltree</code>
+        → <code class="returnvalue">boolean</code>
+       </p>
+       <p>
+        Does <code class="type">ltree</code> match any <code class="type">lquery</code> in array?
+       </p></td></tr><tr><td class="func_table_entry"><p class="func_signature">
+        <code class="type">ltree</code> <code class="literal">@</code> <code class="type">ltxtquery</code>
+        → <code class="returnvalue">boolean</code>
+       </p>
+       <p class="func_signature">
+        <code class="type">ltxtquery</code> <code class="literal">@</code> <code class="type">ltree</code>
+        → <code class="returnvalue">boolean</code>
+       </p>
+       <p>
+        Does <code class="type">ltree</code> match <code class="type">ltxtquery</code>?
+       </p></td></tr><tr><td class="func_table_entry"><p class="func_signature">
+        <code class="type">ltree</code> <code class="literal">||</code> <code class="type">ltree</code>
+        → <code class="returnvalue">ltree</code>
+       </p>
+       <p>
+        Concatenates <code class="type">ltree</code> paths.
+       </p></td></tr><tr><td class="func_table_entry"><p class="func_signature">
+        <code class="type">ltree</code> <code class="literal">||</code> <code class="type">text</code>
+        → <code class="returnvalue">ltree</code>
+       </p>
+       <p class="func_signature">
+        <code class="type">text</code> <code class="literal">||</code> <code class="type">ltree</code>
+        → <code class="returnvalue">ltree</code>
+       </p>
+       <p>
+        Converts text to <code class="type">ltree</code> and concatenates.
+       </p></td></tr><tr><td class="func_table_entry"><p class="func_signature">
+        <code class="type">ltree[]</code> <code class="literal">@&gt;</code> <code class="type">ltree</code>
+        → <code class="returnvalue">boolean</code>
+       </p>
+       <p class="func_signature">
+        <code class="type">ltree</code> <code class="literal">&lt;@</code> <code class="type">ltree[]</code>
+        → <code class="returnvalue">boolean</code>
+       </p>
+       <p>
+        Does array contain an ancestor of <code class="type">ltree</code>?
+       </p></td></tr><tr><td class="func_table_entry"><p class="func_signature">
+        <code class="type">ltree[]</code> <code class="literal">&lt;@</code> <code class="type">ltree</code>
+        → <code class="returnvalue">boolean</code>
+       </p>
+       <p class="func_signature">
+        <code class="type">ltree</code> <code class="literal">@&gt;</code> <code class="type">ltree[]</code>
+        → <code class="returnvalue">boolean</code>
+       </p>
+       <p>
+        Does array contain a descendant of <code class="type">ltree</code>?
+       </p></td></tr><tr><td class="func_table_entry"><p class="func_signature">
+        <code class="type">ltree[]</code> <code class="literal">~</code> <code class="type">lquery</code>
+        → <code class="returnvalue">boolean</code>
+       </p>
+       <p class="func_signature">
+        <code class="type">lquery</code> <code class="literal">~</code> <code class="type">ltree[]</code>
+        → <code class="returnvalue">boolean</code>
+       </p>
+       <p>
+        Does array contain any path matching <code class="type">lquery</code>?
+       </p></td></tr><tr><td class="func_table_entry"><p class="func_signature">
+        <code class="type">ltree[]</code> <code class="literal">?</code> <code class="type">lquery[]</code>
+        → <code class="returnvalue">boolean</code>
+       </p>
+       <p class="func_signature">
+        <code class="type">lquery[]</code> <code class="literal">?</code> <code class="type">ltree[]</code>
+        → <code class="returnvalue">boolean</code>
+       </p>
+       <p>
+        Does <code class="type">ltree</code> array contain any path matching
+        any <code class="type">lquery</code>?
+       </p></td></tr><tr><td class="func_table_entry"><p class="func_signature">
+        <code class="type">ltree[]</code> <code class="literal">@</code> <code class="type">ltxtquery</code>
+        → <code class="returnvalue">boolean</code>
+       </p>
+       <p class="func_signature">
+        <code class="type">ltxtquery</code> <code class="literal">@</code> <code class="type">ltree[]</code>
+        → <code class="returnvalue">boolean</code>
+       </p>
+       <p>
+        Does array contain any path matching <code class="type">ltxtquery</code>?
+       </p></td></tr><tr><td class="func_table_entry"><p class="func_signature">
+        <code class="type">ltree[]</code> <code class="literal">?@&gt;</code> <code class="type">ltree</code>
+        → <code class="returnvalue">ltree</code>
+       </p>
+       <p>
+        Returns first array entry that is an ancestor of <code class="type">ltree</code>,
+        or <code class="literal">NULL</code> if none.
+       </p></td></tr><tr><td class="func_table_entry"><p class="func_signature">
+        <code class="type">ltree[]</code> <code class="literal">?&lt;@</code> <code class="type">ltree</code>
+        → <code class="returnvalue">ltree</code>
+       </p>
+       <p>
+        Returns first array entry that is a descendant of <code class="type">ltree</code>,
+        or <code class="literal">NULL</code> if none.
+       </p></td></tr><tr><td class="func_table_entry"><p class="func_signature">
+        <code class="type">ltree[]</code> <code class="literal">?~</code> <code class="type">lquery</code>
+        → <code class="returnvalue">ltree</code>
+       </p>
+       <p>
+        Returns first array entry that matches <code class="type">lquery</code>,
+        or <code class="literal">NULL</code> if none.
+       </p></td></tr><tr><td class="func_table_entry"><p class="func_signature">
+        <code class="type">ltree[]</code> <code class="literal">?@</code> <code class="type">ltxtquery</code>
+        → <code class="returnvalue">ltree</code>
+       </p>
+       <p>
+        Returns first array entry that matches <code class="type">ltxtquery</code>,
+        or <code class="literal">NULL</code> if none.
+       </p></td></tr></tbody></table></div></div><br class="table-break" /><p>
 <span class="original">
    The operators &lt;literal&gt;&amp;lt;@&lt;/literal&gt;, &lt;literal&gt;@&amp;gt;&lt;/literal&gt;,
    &lt;literal&gt;@&lt;/literal&gt; and &lt;literal&gt;~&lt;/literal&gt; have analogues
@@ -240,27 +394,131 @@ Europe &amp; Russia*@ &amp; !Transportation
 <span class="original">
    The available functions are shown in &lt;xref linkend="ltree-func-table"/&gt;.
 </span>
-使用可能な関数を<a class="xref" href="ltree.html#LTREE-FUNC-TABLE" title="表F.14 ltree関数">表 F.14</a>に示します。
-  </p><div class="table" id="LTREE-FUNC-TABLE"><p class="title"><strong>表F.14 <code class="type">ltree</code>関数</strong></p><div class="table-contents"><span class="original">
-   &lt;title&gt;&lt;type&gt;ltree&lt;/type&gt; Functions&lt;/title&gt;
-</span><table class="table" summary="ltree関数" border="1"><colgroup><col /><col /><col /><col /><col /></colgroup><thead><tr><th>関数</th><th>戻り値型</th><th>説明</th><th>例</th><th>結果</th></tr></thead><tbody><tr><td><code class="function">subltree(ltree, int start, int end)</code><a id="id-1.11.7.30.5.6.2.2.1.1.2" class="indexterm"></a></td><td><code class="type">ltree</code></td><td>
-<em class="parameter"><code>start</code></em>位置から<em class="parameter"><code>end</code></em>-1位置までの<code class="type">ltree</code>の部分経路（位置は0から始まります）。
-      </td><td><code class="literal">subltree('Top.Child1.Child2',1,2)</code></td><td><code class="literal">Child1</code></td></tr><tr><td><code class="function">subpath(ltree, int offset, int len)</code><a id="id-1.11.7.30.5.6.2.2.2.1.2" class="indexterm"></a></td><td><code class="type">ltree</code></td><td>
-<em class="parameter"><code>offset</code></em>位置から<em class="parameter"><code>len</code></em>個の<code class="type">ltree</code>の部分経路（位置は0から始まります）。
-<em class="parameter"><code>offset</code></em>が負の場合、部分経路は経路の終端から数えた位置から始まります。
-<em class="parameter"><code>len</code></em>が負の場合、経路の終端から指定個のラベルを除きます。
-      </td><td><code class="literal">subpath('Top.Child1.Child2',0,2)</code></td><td><code class="literal">Top.Child1</code></td></tr><tr><td><code class="function">subpath(ltree, int offset)</code></td><td><code class="type">ltree</code></td><td>
-<em class="parameter"><code>offset</code></em>位置から経路の終端までの<code class="type">ltree</code>の部分経路（位置は0から始まります）。
-<em class="parameter"><code>offset</code></em>が負の場合、部分経路は経路の終端から数えた位置から始まります。</td><td><code class="literal">subpath('Top.Child1.Child2',1)</code></td><td><code class="literal">Child1.Child2</code></td></tr><tr><td><code class="function">nlevel(ltree)</code><a id="id-1.11.7.30.5.6.2.2.4.1.2" class="indexterm"></a></td><td><code class="type">integer</code></td><td>経路内のラベル数</td><td><code class="literal">nlevel('Top.Child1.Child2')</code></td><td><code class="literal">3</code></td></tr><tr><td><code class="function">index(ltree a, ltree b)</code><a id="id-1.11.7.30.5.6.2.2.5.1.2" class="indexterm"></a></td><td><code class="type">integer</code></td><td>
-<em class="parameter"><code>a</code></em>内で<em class="parameter"><code>b</code></em>が最初に出現する位置。存在しなければ-1
-      </td><td><code class="literal">index('0.1.2.3.5.4.5.6.8.5.6.8','5.6')</code></td><td><code class="literal">6</code></td></tr><tr><td><code class="function">index(ltree a, ltree b, int offset)</code></td><td><code class="type">integer</code></td><td>
-<em class="parameter"><code>a</code></em>内で<em class="parameter"><code>offset</code></em>から検索を始めて<em class="parameter"><code>b</code></em>が最初に出現する位置。
-負の<em class="parameter"><code>offset</code></em>は経路終端から<em class="parameter"><code>-offset</code></em>ラベルから検索を始めることを意味します。
-      </td><td><code class="literal">index('0.1.2.3.5.4.5.6.8.5.6.8','5.6',-4)</code></td><td><code class="literal">9</code></td></tr><tr><td><code class="function">text2ltree(text)</code><a id="id-1.11.7.30.5.6.2.2.7.1.2" class="indexterm"></a></td><td><code class="type">ltree</code></td><td><code class="type">text</code>を<code class="type">ltree</code>にキャスト</td><td><code class="literal"></code></td><td><code class="literal"></code></td></tr><tr><td><code class="function">ltree2text(ltree)</code><a id="id-1.11.7.30.5.6.2.2.8.1.2" class="indexterm"></a></td><td><code class="type">text</code></td><td><code class="type">ltree</code>を<code class="type">text</code>にキャスト</td><td><code class="literal"></code></td><td><code class="literal"></code></td></tr><tr><td><code class="function">lca(ltree, ltree, ...)</code><a id="id-1.11.7.30.5.6.2.2.9.1.2" class="indexterm"></a></td><td><code class="type">ltree</code></td><td>
-経路で共通する最長接頭辞。（最大8個の引数をサポート）
-      </td><td><code class="literal">lca('1.2.3','1.2.3.4.5.6')</code></td><td><code class="literal">1.2</code></td></tr><tr><td><code class="function">lca(ltree[])</code></td><td><code class="type">ltree</code></td><td>
-経路で共通する配列内の最長接頭辞。
-      </td><td><code class="literal">lca(array['1.2.3'::ltree,'1.2.3.4'])</code></td><td><code class="literal">1.2</code></td></tr></tbody></table></div></div><br class="table-break" /></div><div class="sect2" id="id-1.11.7.30.6"><div class="titlepage"><div><div><h3 class="title">F.21.3. インデックス</h3></div></div></div><span class="original">
+使用可能な関数を<a class="xref" href="ltree.html#LTREE-FUNC-TABLE" title="表F.14 ltree Functions">表 F.14</a>に示します。
+  </p><div class="table" id="LTREE-FUNC-TABLE"><p class="title"><strong>表F.14 <code class="type">ltree</code> Functions</strong></p><div class="table-contents"><table class="table" summary="ltree Functions" border="1"><colgroup><col /></colgroup><thead><tr><th class="func_table_entry"><p class="func_signature">
+        Function
+       </p>
+       <p>
+        Description
+       </p>
+       <p>
+        Example(s)
+       </p></th></tr></thead><tbody><tr><td class="func_table_entry"><p class="func_signature">
+        <a id="id-1.11.7.30.6.6.2.2.1.1.1.1" class="indexterm"></a>
+        <code class="function">subltree</code> ( <code class="type">ltree</code>, <em class="parameter"><code>start</code></em> <code class="type">integer</code>, <em class="parameter"><code>end</code></em> <code class="type">integer</code> )
+        → <code class="returnvalue">ltree</code>
+       </p>
+       <p>
+        Returns subpath of <code class="type">ltree</code> from
+        position <em class="parameter"><code>start</code></em> to
+        position <em class="parameter"><code>end</code></em>-1 (counting from 0).
+       </p>
+       <p>
+        <code class="literal">subltree('Top.Child1.Child2', 1, 2)</code>
+        → <code class="returnvalue">Child1</code>
+       </p></td></tr><tr><td class="func_table_entry"><p class="func_signature">
+        <a id="id-1.11.7.30.6.6.2.2.2.1.1.1" class="indexterm"></a>
+        <code class="function">subpath</code> ( <code class="type">ltree</code>, <em class="parameter"><code>offset</code></em> <code class="type">integer</code>, <em class="parameter"><code>len</code></em> <code class="type">integer</code> )
+        → <code class="returnvalue">ltree</code>
+       </p>
+       <p>
+        Returns subpath of <code class="type">ltree</code> starting at
+        position <em class="parameter"><code>offset</code></em>, with
+        length <em class="parameter"><code>len</code></em>.  If <em class="parameter"><code>offset</code></em>
+        is negative, subpath starts that far from the end of the path.
+        If <em class="parameter"><code>len</code></em> is negative, leaves that many labels off
+        the end of the path.
+       </p>
+       <p>
+        <code class="literal">subpath('Top.Child1.Child2', 0, 2)</code>
+        → <code class="returnvalue">Top.Child1</code>
+       </p></td></tr><tr><td class="func_table_entry"><p class="func_signature">
+        <code class="function">subpath</code> ( <code class="type">ltree</code>, <em class="parameter"><code>offset</code></em> <code class="type">integer</code> )
+        → <code class="returnvalue">ltree</code>
+       </p>
+       <p>
+        Returns subpath of <code class="type">ltree</code> starting at
+        position <em class="parameter"><code>offset</code></em>, extending to end of path.
+        If <em class="parameter"><code>offset</code></em> is negative, subpath starts that far
+        from the end of the path.
+       </p>
+       <p>
+        <code class="literal">subpath('Top.Child1.Child2', 1)</code>
+        → <code class="returnvalue">Child1.Child2</code>
+       </p></td></tr><tr><td class="func_table_entry"><p class="func_signature">
+        <a id="id-1.11.7.30.6.6.2.2.4.1.1.1" class="indexterm"></a>
+        <code class="function">nlevel</code> ( <code class="type">ltree</code> )
+        → <code class="returnvalue">integer</code>
+       </p>
+       <p>
+        Returns number of labels in path.
+       </p>
+       <p>
+        <code class="literal">nlevel('Top.Child1.Child2')</code>
+        → <code class="returnvalue">3</code>
+       </p></td></tr><tr><td class="func_table_entry"><p class="func_signature">
+        <a id="id-1.11.7.30.6.6.2.2.5.1.1.1" class="indexterm"></a>
+        <code class="function">index</code> ( <em class="parameter"><code>a</code></em> <code class="type">ltree</code>, <em class="parameter"><code>b</code></em> <code class="type">ltree</code> )
+        → <code class="returnvalue">integer</code>
+       </p>
+       <p>
+        Returns position of first occurrence of <em class="parameter"><code>b</code></em> in
+        <em class="parameter"><code>a</code></em>, or -1 if not found.
+       </p>
+       <p>
+        <code class="literal">index('0.1.2.3.5.4.5.6.8.5.6.8', '5.6')</code>
+        → <code class="returnvalue">6</code>
+       </p></td></tr><tr><td class="func_table_entry"><p class="func_signature">
+        <code class="function">index</code> ( <em class="parameter"><code>a</code></em> <code class="type">ltree</code>,  <em class="parameter"><code>b</code></em> <code class="type">ltree</code>, <em class="parameter"><code>offset</code></em> <code class="type">integer</code> )
+        → <code class="returnvalue">integer</code>
+       </p>
+       <p>
+        Returns position of first occurrence of <em class="parameter"><code>b</code></em>
+        in <em class="parameter"><code>a</code></em>, or -1 if not found.  The search starts at
+        position <em class="parameter"><code>offset</code></em>;
+        negative <em class="parameter"><code>offset</code></em> means
+        start <em class="parameter"><code>-offset</code></em> labels from the end of the path.
+       </p>
+       <p>
+        <code class="literal">index('0.1.2.3.5.4.5.6.8.5.6.8', '5.6', -4)</code>
+        → <code class="returnvalue">9</code>
+       </p></td></tr><tr><td class="func_table_entry"><p class="func_signature">
+        <a id="id-1.11.7.30.6.6.2.2.7.1.1.1" class="indexterm"></a>
+        <code class="function">text2ltree</code> ( <code class="type">text</code> )
+        → <code class="returnvalue">ltree</code>
+       </p>
+       <p>
+        Casts <code class="type">text</code> to <code class="type">ltree</code>.
+       </p></td></tr><tr><td class="func_table_entry"><p class="func_signature">
+        <a id="id-1.11.7.30.6.6.2.2.8.1.1.1" class="indexterm"></a>
+        <code class="function">ltree2text</code> ( <code class="type">ltree</code> )
+        → <code class="returnvalue">text</code>
+       </p>
+       <p>
+        Casts <code class="type">ltree</code> to <code class="type">text</code>.
+       </p></td></tr><tr><td class="func_table_entry"><p class="func_signature">
+        <a id="id-1.11.7.30.6.6.2.2.9.1.1.1" class="indexterm"></a>
+        <code class="function">lca</code> ( <code class="type">ltree</code> [<span class="optional">, <code class="type">ltree</code> [<span class="optional">, ... </span>]</span>] )
+        → <code class="returnvalue">ltree</code>
+       </p>
+       <p>
+        Computes longest common ancestor of paths
+        (up to 8 arguments are supported).
+       </p>
+       <p>
+        <code class="literal">lca('1.2.3', '1.2.3.4.5.6')</code>
+        → <code class="returnvalue">1.2</code>
+       </p></td></tr><tr><td class="func_table_entry"><p class="func_signature">
+        <code class="function">lca</code> ( <code class="type">ltree[]</code> )
+        → <code class="returnvalue">ltree</code>
+       </p>
+       <p>
+        Computes longest common ancestor of paths in array.
+       </p>
+       <p>
+        <code class="literal">lca(array['1.2.3'::ltree,'1.2.3.4'])</code>
+        → <code class="returnvalue">1.2</code>
+       </p></td></tr></tbody></table></div></div><br class="table-break" /></div><div class="sect2" id="id-1.11.7.30.7"><div class="titlepage"><div><div><h3 class="title">F.21.3. インデックス</h3></div></div></div><span class="original">
   &lt;title&gt;Indexes&lt;/title&gt;
 </span><p>
 <span class="original">
@@ -277,7 +535,8 @@ Europe &amp; Russia*@ &amp; !Transportation
 <code class="type">ltree</code>に対するB-treeインデックス：<code class="literal">&lt;</code>、<code class="literal">&lt;=</code>、<code class="literal">=</code>、<code class="literal">&gt;=</code>、<code class="literal">&gt;</code>
     </p></li><li class="listitem"><p>
 <span class="original">
-     GiST index over &lt;type&gt;ltree&lt;/type&gt;:
+     GiST index over &lt;type&gt;ltree&lt;/type&gt; (&lt;literal&gt;gist_ltree_ops&lt;/literal&gt;
+     opclass):
      &lt;literal&gt;&amp;lt;&lt;/literal&gt;, &lt;literal&gt;&amp;lt;=&lt;/literal&gt;, &lt;literal&gt;=&lt;/literal&gt;,
      &lt;literal&gt;&amp;gt;=&lt;/literal&gt;, &lt;literal&gt;&amp;gt;&lt;/literal&gt;,
      &lt;literal&gt;@&amp;gt;&lt;/literal&gt;, &lt;literal&gt;&amp;lt;@&lt;/literal&gt;,
@@ -286,32 +545,51 @@ Europe &amp; Russia*@ &amp; !Transportation
 <code class="type">ltree</code>に対するGiSTインデックス：
 <code class="literal">&lt;</code>、<code class="literal">&lt;=</code>、<code class="literal">=</code>、<code class="literal">&gt;=</code>、<code class="literal">&gt;</code>、<code class="literal">@&gt;</code>、<code class="literal">&lt;@</code>、<code class="literal">@</code>、<code class="literal">~</code>、<code class="literal">?</code>
     </p><p>
-<span class="original">
-     Example of creating such an index:
-</span>
-インデックスの作成例を以下に示します。
+     <code class="literal">gist_ltree_ops</code> GiST opclass approximates a set of
+     path labels as a bitmap signature.  Its optional integer parameter
+     <code class="literal">siglen</code> determines the
+     signature length in bytes.  The default signature length is 8 bytes.
+     Valid values of signature length are between 1 and 2024 bytes.  Longer
+     signatures lead to a more precise search (scanning a smaller fraction of the index and
+     fewer heap pages), at the cost of a larger index.
+    </p><p>
+     Example of creating such an index with the default signature length of 8 bytes:
     </p><pre class="programlisting">
 CREATE INDEX path_gist_idx ON test USING GIST (path);
+</pre><p>
+     Example of creating such an index with a signature length of 100 bytes:
+    </p><pre class="programlisting">
+CREATE INDEX path_gist_idx ON test USING GIST (path gist_ltree_ops(siglen=100));
 </pre></li><li class="listitem"><p>
 <span class="original">
-     GiST index over &lt;type&gt;ltree[]&lt;/type&gt;:
+     GiST index over &lt;type&gt;ltree[]&lt;/type&gt; (&lt;literal&gt;gist__ltree_ops&lt;/literal&gt;
+     opclass):
      &lt;literal&gt;ltree[] &amp;lt;@ ltree&lt;/literal&gt;, &lt;literal&gt;ltree @&amp;gt; ltree[]&lt;/literal&gt;,
      &lt;literal&gt;@&lt;/literal&gt;, &lt;literal&gt;~&lt;/literal&gt;, &lt;literal&gt;?&lt;/literal&gt;
 </span>
 <code class="type">ltree[]</code>に対するGiSTインデックス：<code class="literal">ltree[] &lt;@ ltree</code>、<code class="literal">ltree @&gt; ltree[]</code>、<code class="literal">@</code>、<code class="literal">~</code>、<code class="literal">?</code>
     </p><p>
+     <code class="literal">gist__ltree_ops</code> GiST opclass works similarly to
+     <code class="literal">gist_ltree_ops</code> and also takes signature length as
+     a parameter.  The default value of <code class="literal">siglen</code> in
+      <code class="literal">gist__ltree_ops</code> is 28 bytes.
+    </p><p>
 <span class="original">
-     Example of creating such an index:
+     Example of creating such an index with the default signature length of 28 bytes:
 </span>
 インデックスの作成例を以下に示します。
     </p><pre class="programlisting">
 CREATE INDEX path_gist_idx ON test USING GIST (array_path);
 </pre><p>
+     Example of creating such an index with a signature length of 100 bytes:
+    </p><pre class="programlisting">
+CREATE INDEX path_gist_idx ON test USING GIST (array_path gist__ltree_ops(siglen=100));
+</pre><p>
 <span class="original">
      Note: This index type is lossy.
 </span>
 注意：この種類のインデックスは非可逆です。
-    </p></li></ul></div></div><div class="sect2" id="id-1.11.7.30.7"><div class="titlepage"><div><div><h3 class="title">F.21.4. 例</h3></div></div></div><span class="original">
+    </p></li></ul></div></div><div class="sect2" id="id-1.11.7.30.8"><div class="titlepage"><div><div><h3 class="title">F.21.4. 例</h3></div></div></div><span class="original">
   &lt;title&gt;Example&lt;/title&gt;
 </span><p>
 <span class="original">
@@ -385,7 +663,7 @@ ltreetest=&gt; SELECT path FROM test WHERE path ~ '*.Astronomy.*';
  Top.Collections.Pictures.Astronomy.Astronauts
 (7 rows)
 
-ltreetest=&gt; SELECT path FROM test WHERE path ~ '*.!pictures@.*.Astronomy.*';
+ltreetest=&gt; SELECT path FROM test WHERE path ~ '*.!pictures@.Astronomy.*';
                 path
 ------------------------------------
  Top.Science.Astronomy
@@ -449,7 +727,7 @@ ltreetest=&gt; SELECT ins_label(path,2,'Space') FROM test WHERE path &lt;@ 'Top.
  Top.Science.Space.Astronomy.Cosmology
 (3 rows)
 </pre><p>
-  </p></div><div class="sect2" id="id-1.11.7.30.8"><div class="titlepage"><div><div><h3 class="title">F.21.5. 変換</h3></div></div></div><span class="original">
+  </p></div><div class="sect2" id="id-1.11.7.30.9"><div class="titlepage"><div><div><h3 class="title">F.21.5. 変換</h3></div></div></div><span class="original">
   &lt;title&gt;Transforms&lt;/title&gt;
 </span><p>
 <span class="original">
@@ -475,7 +753,7 @@ PL/Python言語向けに<code class="type">ltree</code>型の変換を実装し�
 </span>
 変換の拡張は<code class="filename">ltree</code>と同じスキーマにインストールすることを強く勧めます。
 さもないと、変換の拡張のスキーマが悪意のあるユーザにより定義されたオブジェクトを含んでいた場合に、インストール時のセキュリティ問題になります。
-   </p></div></div><div class="sect2" id="id-1.11.7.30.9"><div class="titlepage"><div><div><h3 class="title">F.21.6. 作者</h3></div></div></div><span class="original">
+   </p></div></div><div class="sect2" id="id-1.11.7.30.10"><div class="titlepage"><div><div><h3 class="title">F.21.6. 作者</h3></div></div></div><span class="original">
   &lt;title&gt;Authors&lt;/title&gt;
 </span><p>
 <span class="original">
@@ -489,4 +767,4 @@ PL/Python言語向けに<code class="type">ltree</code>型の変換を実装し�
 さらなる情報については<a class="ulink" href="http://www.sai.msu.su/~megera/postgres/gist/" target="_top">http://www.sai.msu.su/~megera/postgres/gist/</a>を参照してください。
 作者は有用な議論を行ったEugeny Rodichevに感謝しています。
 コメントや不具合報告を歓迎します。
-  </p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="lo.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="contrib.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="pageinspect.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">F.20. lo </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> F.22. pageinspect</td></tr></table></div></body></html>
+  </p></div></div><div xmlns="http://www.w3.org/TR/xhtml1/transitional" class="navfooter"><hr></hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="lo.html" title="F.20. lo">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="contrib.html" title="付録F 追加で提供されるモジュール">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="pageinspect.html" title="F.22. pageinspect">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">F.20. lo </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 13.1文書">ホーム</a></td><td width="40%" align="right" valign="top"> F.22. pageinspect</td></tr></table></div></body></html>

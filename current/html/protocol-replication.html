@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>52.4. ストリーミングレプリケーションプロトコル</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="sasl-authentication.html" title="52.3. SASL認証" /><link rel="next" href="protocol-logical-replication.html" title="52.5. 論理ストリーミングレプリケーションのプロトコル" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 12.4文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="protocol.html" title="第52章 フロントエンド/バックエンドプロトコル">第52章 フロントエンド/バックエンドプロトコル</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 12.4 &#10;                      protocol-replication.html">誤訳等の報告
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>52.4. ストリーミングレプリケーションプロトコル</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="sasl-authentication.html" title="52.3. SASL認証" /><link rel="next" href="protocol-logical-replication.html" title="52.5. 論理ストリーミングレプリケーションのプロトコル" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 13.1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="protocol.html" title="第52章 フロントエンド/バックエンドプロトコル">第52章 フロントエンド/バックエンドプロトコル</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 13.1 &#10;                      protocol-replication.html">誤訳等の報告
                     </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="sasl-authentication.html" title="52.3. SASL認証">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="protocol.html" title="第52章 フロントエンド/バックエンドプロトコル">上へ</a></td><td width="60%" align="center">52.4. ストリーミングレプリケーションプロトコル</td><td width="20%" align="right"> <a accesskey="n" href="protocol-logical-replication.html" title="52.5. 論理ストリーミングレプリケーションのプロトコル">次へ</a></td></tr></table><hr /></div><div class="sect1" id="PROTOCOL-REPLICATION"><div class="titlepage"><div><div><h2 class="title" style="clear: both">52.4. ストリーミングレプリケーションプロトコル</h2></div></div></div><span class="original">
 &lt;title&gt;Streaming Replication Protocol&lt;/title&gt;
 </span><p>
@@ -33,8 +33,9 @@ simple query protocol can be used.
 </p><p>
 <span class="original">
  For the purpose of testing replication commands, you can make a replication
- connection via &lt;application&gt;psql&lt;/application&gt; or any other &lt;literal&gt;libpq&lt;/literal&gt;-using
- tool with a connection string including the &lt;literal&gt;replication&lt;/literal&gt; option,
+ connection via &lt;application&gt;psql&lt;/application&gt; or any other
+ &lt;application&gt;libpq&lt;/application&gt;-using tool with a connection string including
+ the &lt;literal&gt;replication&lt;/literal&gt; option,
  e.g.:
 </span>
 レプリケーションコマンドをテストするために、<code class="literal">replication</code>オプションを含む接続文字列を使用して、<span class="application">psql</span>または他の<code class="literal">libpq</code>によるレプリケーション接続を作成できます。
@@ -295,8 +296,9 @@ The commands accepted in replication mode are:
       the switch position is the end of the WAL that was streamed, but there
       are corner cases where the server can send some WAL from the old
       timeline that it has not itself replayed before promoting. Finally, the
-      server sends CommandComplete message, and is ready to accept a new
-      command.
+      server sends two CommandComplete messages (one that ends the CopyData
+      and the other ends the &lt;literal&gt;START_REPLICATION&lt;/literal&gt; itself), and
+      is ready to accept a new command.
 </span>
 最新でないタイムラインの全てのWALストリームを送付した後、サーバはCOPYモードを出ることによりストリームを終了します。
 クライアントもCOPYモードを出ることにより承認した場合、サーバは2列単一行の結果セットを送付し、サーバにある次のタイムラインを示します。
@@ -550,7 +552,8 @@ WALデータストリームの断片。
      </p><p>
 <span class="original">
       The messages inside the CopyBothResponse messages are of the same format
-      documented for &lt;literal&gt;START_REPLICATION ... PHYSICAL&lt;/literal&gt;.
+      documented for &lt;literal&gt;START_REPLICATION ... PHYSICAL&lt;/literal&gt;, including
+      two CommandComplete messages.
 </span>
 CopyBothResponse内部のメッセージは、<code class="literal">START_REPLICATION ... PHYSICAL</code>の記述と同じ書式です。
      </p><p>
@@ -609,8 +612,8 @@ CopyBothResponse内部のメッセージは、<code class="literal">START_REPLIC
 </span>
 このオプションを使用すると、スロットが使用中の時に、スロットの使用が終わるまでコマンドを待機させます。
 デフォルトの動作ではエラーを発生させます。
-        </p></dd></dl></div></dd><dt><span class="term"><code class="literal">BASE_BACKUP</code> [ <code class="literal">LABEL</code> <em class="replaceable"><code>'label'</code></em> ] [ <code class="literal">PROGRESS</code> ] [ <code class="literal">FAST</code> ] [ <code class="literal">WAL</code> ] [ <code class="literal">NOWAIT</code> ] [ <code class="literal">MAX_RATE</code> <em class="replaceable"><code>rate</code></em> ] [ <code class="literal">TABLESPACE_MAP</code> ] [ <code class="literal">NOVERIFY_CHECKSUMS</code> ]
-     <a id="id-1.10.5.9.7.1.8.1.12" class="indexterm"></a>
+        </p></dd></dl></div></dd><dt id="PROTOCOL-REPLICATION-BASE-BACKUP"><span class="term"><code class="literal">BASE_BACKUP</code> [ <code class="literal">LABEL</code> <em class="replaceable"><code>'label'</code></em> ] [ <code class="literal">PROGRESS</code> ] [ <code class="literal">FAST</code> ] [ <code class="literal">WAL</code> ] [ <code class="literal">NOWAIT</code> ] [ <code class="literal">MAX_RATE</code> <em class="replaceable"><code>rate</code></em> ] [ <code class="literal">TABLESPACE_MAP</code> ] [ <code class="literal">NOVERIFY_CHECKSUMS</code> ] [ <code class="literal">MANIFEST</code> <em class="replaceable"><code>manifest_option</code></em> ] [ <code class="literal">MANIFEST_CHECKSUMS</code> <em class="replaceable"><code>checksum_algorithm</code></em> ]
+     <a id="id-1.10.5.9.7.1.8.1.16" class="indexterm"></a>
     </span></dt><dd><p>
 <span class="original">
       Instructs the server to start streaming a base backup.
@@ -705,6 +708,27 @@ CopyBothResponse内部のメッセージは、<code class="literal">START_REPLIC
 </span>
 デフォルトでは、チェックサムが有効である場合、ベースバックアップ中にチェックサムが検証されます。
 <code class="literal">NOVERIFY_CHECKSUMS</code>を指定すると、この検証を無効にします。
+         </p></dd><dt><span class="term"><code class="literal">MANIFEST</code> <em class="replaceable"><code>manifest_option</code></em></span></dt><dd><p>
+          When this option is specified with a value of <code class="literal">yes</code>
+          or <code class="literal">force-encode</code>, a backup manifest is created
+          and sent along with the backup.  The manifest is a list of every
+          file present in the backup with the exception of any WAL files that
+          may be included. It also stores the size, last modification time, and
+          optionally a checksum for each file.
+          A value of <code class="literal">force-encode</code> forces all filenames
+          to be hex-encoded; otherwise, this type of encoding is performed only
+          for files whose names are non-UTF8 octet sequences.
+          <code class="literal">force-encode</code> is intended primarily for testing
+          purposes, to be sure that clients which read the backup manifest
+          can handle this case. For compatibility with previous releases,
+          the default is <code class="literal">MANIFEST 'no'</code>.
+         </p></dd><dt><span class="term"><code class="literal">MANIFEST_CHECKSUMS</code> <em class="replaceable"><code>checksum_algorithm</code></em></span></dt><dd><p>
+          Specifies the checksum algorithm that should be applied to each file included
+          in the backup manifest. Currently, the available
+          algorithms are <code class="literal">NONE</code>, <code class="literal">CRC32C</code>,
+          <code class="literal">SHA224</code>, <code class="literal">SHA256</code>,
+          <code class="literal">SHA384</code>, and <code class="literal">SHA512</code>.
+          The default is <code class="literal">CRC32C</code>.
          </p></dd></dl></div><p>
      </p><p>
 <span class="original">
@@ -745,8 +769,8 @@ CopyBothResponse内部のメッセージは、<code class="literal">START_REPLIC
 ベースディレクトリの場合はNULLです。
          </p></dd><dt><span class="term"><code class="literal">size</code> (<code class="type">int8</code>)</span></dt><dd><p>
 <span class="original">
-          The approximate size of the tablespace, if progress report has
-          been requested; otherwise it's null.
+          The approximate size of the tablespace, in kilobytes (1024 bytes),
+          if progress report has been requested; otherwise it's null.
 </span>
 進行状況報告が要求された場合は、テーブル空間の概算容量です。
 要求されていない場合はNULLです。
@@ -760,8 +784,10 @@ CopyBothResponse内部のメッセージは、<code class="literal">START_REPLIC
       &lt;quote&gt;ustar interchange format&lt;/quote&gt; specified in the POSIX 1003.1-2008
       standard) dump of the tablespace contents, except that the two trailing
       blocks of zeroes specified in the standard are omitted.
-      After the tar data is complete, a final ordinary result set will be sent,
-      containing the WAL end position of the backup, in the same format as
+      After the tar data is complete, and if a backup manifest was requested,
+      another CopyResponse result is sent, containing the manifest data for the
+      current base backup. In any case, a final ordinary result set will be
+      sent, containing the WAL end position of the backup, in the same format as
       the start position.
 </span>
 ２番目の通常の結果セットの後、１つ以上のCopyResponse結果が送信されます。
@@ -837,4 +863,4 @@ PostgreSQLサーバの操作中に作成される種々の一時ファイルお�
 サーバ上の基盤となるファイルシステムがサポートする場合、所有者、グループ、ファイルのモードが設定されます。
      </p></dd></dl></div><p>
 
-</p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="sasl-authentication.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="protocol.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="protocol-logical-replication.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">52.3. SASL認証 </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> 52.5. 論理ストリーミングレプリケーションのプロトコル</td></tr></table></div></body></html>
+</p></div><div xmlns="http://www.w3.org/TR/xhtml1/transitional" class="navfooter"><hr></hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="sasl-authentication.html" title="52.3. SASL認証">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="protocol.html" title="第52章 フロントエンド/バックエンドプロトコル">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="protocol-logical-replication.html" title="52.5. 論理ストリーミングレプリケーションのプロトコル">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">52.3. SASL認証 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 13.1文書">ホーム</a></td><td width="40%" align="right" valign="top"> 52.5. 論理ストリーミングレプリケーションのプロトコル</td></tr></table></div></body></html>

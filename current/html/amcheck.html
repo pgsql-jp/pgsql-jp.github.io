@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>F.2. amcheck</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="adminpack.html" title="F.1. adminpack" /><link rel="next" href="auth-delay.html" title="F.3. auth_delay" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 12.4文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="contrib.html" title="付録F 追加で提供されるモジュール">付録F 追加で提供されるモジュール</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 12.4 &#10;                      amcheck.html">誤訳等の報告
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>F.2. amcheck</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="adminpack.html" title="F.1. adminpack" /><link rel="next" href="auth-delay.html" title="F.3. auth_delay" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 13.1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="contrib.html" title="付録F 追加で提供されるモジュール">付録F 追加で提供されるモジュール</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 13.1 &#10;                      amcheck.html">誤訳等の報告
                     </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="adminpack.html" title="F.1. adminpack">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="contrib.html" title="付録F 追加で提供されるモジュール">上へ</a></td><td width="60%" align="center">F.2. amcheck</td><td width="20%" align="right"> <a accesskey="n" href="auth-delay.html" title="F.3. auth_delay">次へ</a></td></tr></table><hr /></div><div class="sect1" id="AMCHECK"><div class="titlepage"><div><div><h2 class="title" style="clear: both">F.2. amcheck</h2></div></div></div><a id="id-1.11.7.11.2" class="indexterm"></a><p>
 <span class="original">
   The &lt;filename&gt;amcheck&lt;/filename&gt; module provides functions that allow you to
@@ -129,8 +129,7 @@ ORDER BY c.relpages DESC LIMIT 10;
       Optionally, when the &lt;parameter&gt;heapallindexed&lt;/parameter&gt;
       argument is &lt;literal&gt;true&lt;/literal&gt;, the function verifies the
       presence of all heap tuples that should be found within the
-      index, and that there are no missing downlinks in the index
-      structure.  When the optional &lt;parameter&gt;rootdescend&lt;/parameter&gt;
+      index.  When the optional &lt;parameter&gt;rootdescend&lt;/parameter&gt;
       argument is &lt;literal&gt;true&lt;/literal&gt;, verification re-finds
       tuples on the leaf level by performing a new search from the
       root page for each tuple.  The checks that can be performed by
@@ -140,7 +139,8 @@ ORDER BY c.relpages DESC LIMIT 10;
       a more thorough variant of &lt;function&gt;bt_index_check&lt;/function&gt;:
       unlike &lt;function&gt;bt_index_check&lt;/function&gt;,
       &lt;function&gt;bt_index_parent_check&lt;/function&gt; also checks
-      invariants that span parent/child relationships.
+      invariants that span parent/child relationships, including checking
+      that there are no missing downlinks in the index structure.
       &lt;function&gt;bt_index_parent_check&lt;/function&gt; follows the general
       convention of raising an error if it finds a logical
       inconsistency or other problem.
@@ -184,7 +184,24 @@ ORDER BY c.relpages DESC LIMIT 10;
 <code class="function">bt_index_parent_check</code>による追加の検査では、様々な病的な事象を検出する可能性があります。
 これらの現象は、チェック対象のインデックスが使用している間違った実装がされたB-Tree演算子クラスによるものや、もしかしたら関連するB-Treeインデックスアクセスメソッドのコード中のまだ見つかっていないバグによるものなのかもしれません。
 <code class="function">bt_index_check</code>と違って、<code class="function">bt_index_parent_check</code>は、ホットスタンバイモードが有効な場合（すなわち、読み出し専用物理レプリカ）では使用できません。
-     </p></dd></dl></div></div><div class="sect2" id="id-1.11.7.11.8"><div class="titlepage"><div><div><h3 class="title">F.2.2. オプション<em class="parameter"><code>heapallindexed</code></em>検証</h3></div></div></div><span class="original">
+     </p></dd></dl></div><div class="tip"><h3 class="title">ヒント</h3><p>
+    <code class="function">bt_index_check</code> and
+    <code class="function">bt_index_parent_check</code> both output log
+    messages about the verification process at
+    <code class="literal">DEBUG1</code> and <code class="literal">DEBUG2</code> severity
+    levels.  These messages provide detailed information about the
+    verification process that may be of interest to
+    <span class="productname">PostgreSQL</span> developers.  Advanced users
+    may also find this information helpful, since it provides
+    additional context should verification actually detect an
+    inconsistency.  Running:
+</p><pre class="programlisting">
+SET client_min_messages = DEBUG1;
+</pre><p>
+    in an interactive <span class="application">psql</span> session before
+    running a verification query will display messages about the
+    progress of verification with a manageable level of detail.
+   </p></div></div><div class="sect2" id="id-1.11.7.11.8"><div class="titlepage"><div><div><h3 class="title">F.2.2. オプション<em class="parameter"><code>heapallindexed</code></em>検証</h3></div></div></div><span class="original">
   &lt;title&gt;Optional &lt;parameter&gt;heapallindexed&lt;/parameter&gt; Verification&lt;/title&gt;
 </span><p>
 <span class="original">
@@ -402,4 +419,4 @@ ORDER BY c.relpages DESC LIMIT 10;
 不変条件違反の根本的な原因の説明が求められます。
 <code class="filename">amcheck</code>が検出した破損の診断には、<a class="xref" href="pageinspect.html" title="F.22. pageinspect">pageinspect</a>が有用な役割を担うかもしれません。
 <code class="command">REINDEX</code>は破損の修復には効果的ではないかもしれません。
- </p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="adminpack.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="contrib.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="auth-delay.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">F.1. adminpack </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> F.3. auth_delay</td></tr></table></div></body></html>
+ </p></div></div><div xmlns="http://www.w3.org/TR/xhtml1/transitional" class="navfooter"><hr></hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="adminpack.html" title="F.1. adminpack">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="contrib.html" title="付録F 追加で提供されるモジュール">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="auth-delay.html" title="F.3. auth_delay">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">F.1. adminpack </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 13.1文書">ホーム</a></td><td width="40%" align="right" valign="top"> F.3. auth_delay</td></tr></table></div></body></html>

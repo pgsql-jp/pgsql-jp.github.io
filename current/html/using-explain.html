@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>14.1. EXPLAINの利用</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="performance-tips.html" title="第14章 性能に関するヒント" /><link rel="next" href="planner-stats.html" title="14.2. プランナで使用される統計情報" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 12.4文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="performance-tips.html" title="第14章 性能に関するヒント">第14章 性能に関するヒント</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 12.4 &#10;                      using-explain.html">誤訳等の報告
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>14.1. EXPLAINの利用</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="performance-tips.html" title="第14章 性能に関するヒント" /><link rel="next" href="planner-stats.html" title="14.2. プランナで使用される統計情報" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 13.1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="performance-tips.html" title="第14章 性能に関するヒント">第14章 性能に関するヒント</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 13.1 &#10;                      using-explain.html">誤訳等の報告
                     </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="performance-tips.html" title="第14章 性能に関するヒント">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="performance-tips.html" title="第14章 性能に関するヒント">上へ</a></td><td width="60%" align="center">14.1. <code class="command">EXPLAIN</code>の利用</td><td width="20%" align="right"> <a accesskey="n" href="planner-stats.html" title="14.2. プランナで使用される統計情報">次へ</a></td></tr></table><hr /></div><div class="sect1" id="USING-EXPLAIN"><div class="titlepage"><div><div><h2 class="title" style="clear: both">14.1. <code class="command">EXPLAIN</code>の利用</h2></div></div></div><span class="original">
   &lt;title&gt;Using &lt;command&gt;EXPLAIN&lt;/command&gt;&lt;/title&gt;
 </span><a id="id-1.5.13.4.2" class="indexterm"></a><a id="id-1.5.13.4.3" class="indexterm"></a><p>
@@ -265,7 +265,7 @@ EXPLAIN SELECT * FROM tenk1 WHERE unique1 &lt; 7000;
 EXPLAIN SELECT * FROM tenk1 WHERE unique1 &lt; 100;
 
                                   QUERY PLAN
-------------------------------------------------------------------------------
+-------------------------------------------------------------------​-----------
  Bitmap Heap Scan on tenk1  (cost=5.07..229.20 rows=101 width=244)
    Recheck Cond: (unique1 &lt; 100)
    -&gt;  Bitmap Index Scan on tenk1_unique1  (cost=0.00..5.04 rows=101 width=0)
@@ -302,7 +302,7 @@ EXPLAIN SELECT * FROM tenk1 WHERE unique1 &lt; 100;
 EXPLAIN SELECT * FROM tenk1 WHERE unique1 &lt; 100 AND stringu1 = 'xxx';
 
                                   QUERY PLAN
-------------------------------------------------------------------------------
+-------------------------------------------------------------------​-----------
  Bitmap Heap Scan on tenk1  (cost=5.04..229.43 rows=1 width=244)
    Recheck Cond: (unique1 &lt; 100)
    Filter: (stringu1 = 'xxx'::name)
@@ -333,24 +333,56 @@ EXPLAIN SELECT * FROM tenk1 WHERE unique1 &lt; 100 AND stringu1 = 'xxx';
 EXPLAIN SELECT * FROM tenk1 WHERE unique1 = 42;
 
                                  QUERY PLAN
------------------------------------------------------------------------------
+-------------------------------------------------------------------​----------
  Index Scan using tenk1_unique1 on tenk1  (cost=0.29..8.30 rows=1 width=244)
    Index Cond: (unique1 = 42)
 </pre><p>
 
-<span class="original">
     In this type of plan the table rows are fetched in index order, which
     makes them even more expensive to read, but there are so few that the
     extra cost of sorting the row locations is not worth it.  You'll most
     often see this plan type for queries that fetch just a single row.  It's
-    also often used for queries that have an &lt;literal&gt;ORDER BY&lt;/literal&gt; condition
+    also often used for queries that have an <code class="literal">ORDER BY</code> condition
     that matches the index order, because then no extra sorting step is needed
-    to satisfy the &lt;literal&gt;ORDER BY&lt;/literal&gt;.
-</span>
-この種の計画では、テーブル行はインデックス順で取り出されます。
-このため読み取りがより高価になりますが、この場合取り出す行数が少ないため、改めて行位置をソートし直すための追加コストは割に合いません。
-単一の行のみを取り出す問い合わせでは、この計画種類がよく現れます。
-また、<code class="literal">ORDER BY</code>を満たすために必要となる余分な必要なソート処理がないため、インデックスの順序に一致する<code class="literal">ORDER BY</code>条件を持つ問い合わせでよく使用されます。
+    to satisfy the <code class="literal">ORDER BY</code>.  In this example, adding
+    <code class="literal">ORDER BY unique1</code> would use the same plan because the
+    index already implicitly provides the requested ordering.
+   </p><p>
+     The planner may implement an <code class="literal">ORDER BY</code> clause in several
+     ways.  The above example shows that such an ordering clause may be
+     implemented implicitly.  The planner may also add an explicit
+     <code class="literal">sort</code> step:
+
+</p><pre class="screen">
+EXPLAIN SELECT * FROM tenk1 ORDER BY unique1;
+                            QUERY PLAN
+-------------------------------------------------------------------
+ Sort  (cost=1109.39..1134.39 rows=10000 width=244)
+   Sort Key: unique1
+   -&gt;  Seq Scan on tenk1  (cost=0.00..445.00 rows=10000 width=244)
+</pre><p>
+
+    If a part of the plan guarantees an ordering on a prefix of the
+    required sort keys, then the planner may instead decide to use an
+    <code class="literal">incremental sort</code> step:
+
+</p><pre class="screen">
+EXPLAIN SELECT * FROM tenk1 ORDER BY four, ten LIMIT 100;
+                                              QUERY PLAN
+-------------------------------------------------------------------​-----------------------------------
+ Limit  (cost=521.06..538.05 rows=100 width=244)
+   -&gt;  Incremental Sort  (cost=521.06..2220.95 rows=10000 width=244)
+         Sort Key: four, ten
+         Presorted Key: four
+         -&gt;  Index Scan using index_tenk1_on_four on tenk1  (cost=0.29..1510.08 rows=10000 width=244)
+</pre><p>
+
+    Compared to regular sorts, sorting incrementally allows returning tuples
+    before the entire result set has been sorted, which particularly enables
+    optimizations with <code class="literal">LIMIT</code> queries.  It may also reduce
+    memory usage and the likelihood of spilling sorts to disk, but it comes at
+    the cost of the increased overhead of splitting the result set into multiple
+    sorting batches.
    </p><p>
 <span class="original">
     If there are separate indexes on several of the columns referenced
@@ -363,7 +395,7 @@ EXPLAIN SELECT * FROM tenk1 WHERE unique1 = 42;
 EXPLAIN SELECT * FROM tenk1 WHERE unique1 &lt; 100 AND unique2 &gt; 9000;
 
                                      QUERY PLAN
--------------------------------------------------------------------------------------
+-------------------------------------------------------------------​------------------
  Bitmap Heap Scan on tenk1  (cost=25.08..60.21 rows=10 width=244)
    Recheck Cond: ((unique1 &lt; 100) AND (unique2 &gt; 9000))
    -&gt;  BitmapAnd  (cost=25.08..25.08 rows=10 width=0)
@@ -392,7 +424,7 @@ EXPLAIN SELECT * FROM tenk1 WHERE unique1 &lt; 100 AND unique2 &gt; 9000;
 EXPLAIN SELECT * FROM tenk1 WHERE unique1 &lt; 100 AND unique2 &gt; 9000 LIMIT 2;
 
                                      QUERY PLAN
--------------------------------------------------------------------------------------
+-------------------------------------------------------------------​------------------
  Limit  (cost=0.29..14.48 rows=2 width=244)
    -&gt;  Index Scan using tenk1_unique2 on tenk1  (cost=0.29..71.27 rows=10 width=244)
          Index Cond: (unique2 &gt; 9000)
@@ -431,7 +463,7 @@ FROM tenk1 t1, tenk2 t2
 WHERE t1.unique1 &lt; 10 AND t1.unique2 = t2.unique2;
 
                                       QUERY PLAN
---------------------------------------------------------------------------------------
+-------------------------------------------------------------------​-------------------
  Nested Loop  (cost=4.65..118.62 rows=10 width=488)
    -&gt;  Bitmap Heap Scan on tenk1 t1  (cost=4.36..39.47 rows=10 width=244)
          Recheck Cond: (unique1 &lt; 10)
@@ -493,7 +525,7 @@ FROM tenk1 t1, tenk2 t2
 WHERE t1.unique1 &lt; 10 AND t2.unique2 &lt; 10 AND t1.hundred &lt; t2.hundred;
 
                                          QUERY PLAN
----------------------------------------------------------------------------------------------
+-------------------------------------------------------------------​--------------------------
  Nested Loop  (cost=4.65..49.46 rows=33 width=488)
    Join Filter: (t1.hundred &lt; t2.hundred)
    -&gt;  Bitmap Heap Scan on tenk1 t1  (cost=4.36..39.47 rows=10 width=244)
@@ -554,7 +586,7 @@ FROM tenk1 t1, tenk2 t2
 WHERE t1.unique1 &lt; 100 AND t1.unique2 = t2.unique2;
 
                                         QUERY PLAN
-------------------------------------------------------------------------------------------
+-------------------------------------------------------------------​-----------------------
  Hash Join  (cost=230.47..713.98 rows=101 width=488)
    Hash Cond: (t2.unique2 = t1.unique2)
    -&gt;  Seq Scan on tenk2 t2  (cost=0.00..445.00 rows=10000 width=244)
@@ -591,7 +623,7 @@ FROM tenk1 t1, onek t2
 WHERE t1.unique1 &lt; 100 AND t1.unique2 = t2.unique2;
 
                                         QUERY PLAN
-------------------------------------------------------------------------------------------
+-------------------------------------------------------------------​-----------------------
  Merge Join  (cost=198.11..268.19 rows=10 width=488)
    Merge Cond: (t1.unique2 = t2.unique2)
    -&gt;  Index Scan using tenk1_unique2 on tenk1 t1  (cost=0.29..656.28 rows=101 width=244)
@@ -637,7 +669,7 @@ FROM tenk1 t1, onek t2
 WHERE t1.unique1 &lt; 100 AND t1.unique2 = t2.unique2;
 
                                         QUERY PLAN
-------------------------------------------------------------------------------------------
+-------------------------------------------------------------------​-----------------------
  Merge Join  (cost=0.56..292.65 rows=10 width=488)
    Merge Cond: (t1.unique2 = t2.unique2)
    -&gt;  Index Scan using tenk1_unique2 on tenk1 t1  (cost=0.29..656.28 rows=101 width=244)
@@ -674,7 +706,7 @@ FROM tenk1 t1, tenk2 t2
 WHERE t1.unique1 &lt; 10 AND t1.unique2 = t2.unique2;
 
                                                            QUERY PLAN
----------------------------------------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------​--------------------------------------------------------------
  Nested Loop  (cost=4.65..118.62 rows=10 width=488) (actual time=0.128..0.377 rows=10 loops=1)
    -&gt;  Bitmap Heap Scan on tenk1 t1  (cost=4.36..39.47 rows=10 width=244) (actual time=0.057..0.121 rows=10 loops=1)
          Recheck Cond: (unique1 &lt; 10)
@@ -732,7 +764,7 @@ FROM tenk1 t1, tenk2 t2
 WHERE t1.unique1 &lt; 100 AND t1.unique2 = t2.unique2 ORDER BY t1.fivethous;
 
                                                                  QUERY PLAN
---------------------------------------------------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------​-------------------------------------------------------------------​------
  Sort  (cost=717.34..717.59 rows=101 width=488) (actual time=7.761..7.774 rows=100 loops=1)
    Sort Key: t1.fivethous
    Sort Method: quicksort  Memory: 77kB
@@ -771,7 +803,7 @@ WHERE t1.unique1 &lt; 100 AND t1.unique2 = t2.unique2 ORDER BY t1.fivethous;
 EXPLAIN ANALYZE SELECT * FROM tenk1 WHERE ten &lt; 7;
 
                                                QUERY PLAN
----------------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------​--------------------------------------
  Seq Scan on tenk1  (cost=0.00..483.00 rows=7000 width=244) (actual time=0.016..5.107 rows=7000 loops=1)
    Filter: (ten &lt; 7)
    Rows Removed by Filter: 3000
@@ -800,7 +832,7 @@ EXPLAIN ANALYZE SELECT * FROM tenk1 WHERE ten &lt; 7;
 EXPLAIN ANALYZE SELECT * FROM polygon_tbl WHERE f1 @&gt; polygon '(0.5,2.0)';
 
                                               QUERY PLAN
-------------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------​-----------------------------------
  Seq Scan on polygon_tbl  (cost=0.00..1.05 rows=1 width=32) (actual time=0.044..0.044 rows=0 loops=1)
    Filter: (f1 @&gt; '((0.5,2))'::polygon)
    Rows Removed by Filter: 4
@@ -824,7 +856,7 @@ SET enable_seqscan TO off;
 EXPLAIN ANALYZE SELECT * FROM polygon_tbl WHERE f1 @&gt; polygon '(0.5,2.0)';
 
                                                         QUERY PLAN
---------------------------------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------​-------------------------------------------------------
  Index Scan using gpolygonind on polygon_tbl  (cost=0.13..8.15 rows=1 width=32) (actual time=0.062..0.062 rows=0 loops=1)
    Index Cond: (f1 @&gt; '((0.5,2))'::polygon)
    Rows Removed by Index Recheck: 1
@@ -853,7 +885,7 @@ EXPLAIN ANALYZE SELECT * FROM polygon_tbl WHERE f1 @&gt; polygon '(0.5,2.0)';
 EXPLAIN (ANALYZE, BUFFERS) SELECT * FROM tenk1 WHERE unique1 &lt; 100 AND unique2 &gt; 9000;
 
                                                            QUERY PLAN
----------------------------------------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------​--------------------------------------------------------------
  Bitmap Heap Scan on tenk1  (cost=25.08..60.21 rows=10 width=244) (actual time=0.323..0.342 rows=10 loops=1)
    Recheck Cond: ((unique1 &lt; 100) AND (unique2 &gt; 9000))
    Buffers: shared hit=15
@@ -892,7 +924,7 @@ BEGIN;
 EXPLAIN ANALYZE UPDATE tenk1 SET hundred = hundred + 1 WHERE unique1 &lt; 100;
 
                                                            QUERY PLAN
---------------------------------------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------​-------------------------------------------------------------
  Update on tenk1  (cost=5.07..229.46 rows=101 width=250) (actual time=14.628..14.628 rows=0 loops=1)
    -&gt;  Bitmap Heap Scan on tenk1  (cost=5.07..229.46 rows=101 width=250) (actual time=0.101..0.439 rows=100 loops=1)
          Recheck Cond: (unique1 &lt; 100)
@@ -934,7 +966,7 @@ ROLLBACK;
 </p><pre class="screen">
 EXPLAIN UPDATE parent SET f2 = f2 + 1 WHERE f1 = 101;
                                     QUERY PLAN
------------------------------------------------------------------------------------
+-------------------------------------------------------------------​----------------
  Update on parent  (cost=0.00..24.53 rows=4 width=14)
    Update on parent
    Update on child1
@@ -1045,7 +1077,7 @@ EXPLAIN UPDATE parent SET f2 = f2 + 1 WHERE f1 = 101;
 EXPLAIN ANALYZE SELECT * FROM tenk1 WHERE unique1 &lt; 100 AND unique2 &gt; 9000 LIMIT 2;
 
                                                           QUERY PLAN
--------------------------------------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------​------------------------------------------------------------
  Limit  (cost=0.29..14.71 rows=2 width=244) (actual time=0.177..0.249 rows=2 loops=1)
    -&gt;  Index Scan using tenk1_unique2 on tenk1  (cost=0.29..72.42 rows=10 width=244) (actual time=0.174..0.244 rows=2 loops=1)
          Index Cond: (unique2 &gt; 9000)
@@ -1113,4 +1145,4 @@ EXPLAIN ANALYZE SELECT * FROM tenk1 WHERE unique1 &lt; 100 AND unique2 &gt; 9000
 しかし、プラン時にパラメータ値が入手できずそのノードが行を生成できないために、エクゼキューターがあるノードが実行不要であると判断できるケースがあります。
 （今の所、これはパーティションテーブルを走査しているAppendあるいはMergeAppendノードの子ノードでのみ起きることがあります。）
 これが起きると、これらのプランノードは<code class="command">EXPLAIN</code>の出力から削除され、<code class="literal">Subplans Removed: <em class="replaceable"><code>N</code></em></code>という注釈が代わりに表示されます。
-   </p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="performance-tips.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="performance-tips.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="planner-stats.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">第14章 性能に関するヒント </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> 14.2. プランナで使用される統計情報</td></tr></table></div></body></html>
+   </p></div></div><div xmlns="http://www.w3.org/TR/xhtml1/transitional" class="navfooter"><hr></hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="performance-tips.html" title="第14章 性能に関するヒント">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="performance-tips.html" title="第14章 性能に関するヒント">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="planner-stats.html" title="14.2. プランナで使用される統計情報">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">第14章 性能に関するヒント </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 13.1文書">ホーム</a></td><td width="40%" align="right" valign="top"> 14.2. プランナで使用される統計情報</td></tr></table></div></body></html>

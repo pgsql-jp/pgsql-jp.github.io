@@ -1,0 +1,1576 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>E.2. Release 13</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="release-13-1.html" title="E.1. Release 13.1" /><link rel="next" href="release-prior.html" title="E.3. Prior Releases" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 13.1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="release.html" title="付録E リリースノート">付録E リリースノート</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 13.1 &#10;                      release-13.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="release-13-1.html" title="E.1. Release 13.1">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="release.html" title="付録E リリースノート">上へ</a></td><td width="60%" align="center">E.2. Release 13</td><td width="20%" align="right"> <a accesskey="n" href="release-prior.html" title="E.3. Prior Releases">次へ</a></td></tr></table><hr /></div><div class="sect1" id="RELEASE-13"><div class="titlepage"><div><div><h2 class="title" style="clear: both">E.2. Release 13</h2></div></div></div><p><strong>Release date: </strong>2020-09-24</p><div class="sect2" id="id-1.11.6.6.3"><div class="titlepage"><div><div><h3 class="title">E.2.1. Overview</h3></div></div></div><p>
+    <span class="productname">PostgreSQL</span> 13 contains many new features and
+    enhancements, including:
+   </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>
+      Space savings and performance gains from de-duplication of B-tree
+      index entries
+     </p></li><li class="listitem"><p>
+      Improved performance for queries that use aggregates or partitioned
+      tables
+     </p></li><li class="listitem"><p>
+      Better query planning when using extended statistics
+     </p></li><li class="listitem"><p>
+      Parallelized vacuuming of indexes
+     </p></li><li class="listitem"><p>
+      Incremental sorting
+     </p></li></ul></div><p>
+    The above items and other new features
+    of <span class="productname">PostgreSQL</span> 13 are explained in more
+    detail in the sections below.
+   </p></div><div class="sect2" id="id-1.11.6.6.4"><div class="titlepage"><div><div><h3 class="title">E.2.2. Migration to Version 13</h3></div></div></div><p>
+     A dump/restore using <a class="xref" href="app-pg-dumpall.html" title="pg_dumpall"><span class="refentrytitle"><span class="application">pg_dumpall</span></span></a> or use of <a class="xref" href="pgupgrade.html" title="pg_upgrade"><span class="refentrytitle"><span class="application">pg_upgrade</span></span></a> or logical replication is required for those
+     wishing to migrate data from any previous release.  See <a class="xref" href="upgrading.html" title="18.6. PostgreSQLクラスタのアップグレード処理">18.6</a> for general information on migrating to new major
+     releases.
+    </p><p>
+     Version 13 contains a number of changes that may affect compatibility
+     with previous releases.  Observe the following incompatibilities:
+    </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+2019-09-07 [ca70bdaef] Fix issues around strictness of SIMILAR TO.
+</span><p>
+      Change <a class="link" href="functions-matching.html#FUNCTIONS-SIMILARTO-REGEXP" title="9.7.2. SIMILAR TO Regular Expressions"><code class="command">SIMILAR
+      TO ... ESCAPE NULL</code></a> to return <code class="literal">NULL</code>
+      (Tom Lane)
+     </p><p>
+      This new behavior matches the <acronym class="acronym">SQL</acronym> specification.
+      Previously a null <code class="literal">ESCAPE</code> value was taken to mean
+      using the default escape string (a backslash character).  This also
+      applies to <code class="literal">substring(<em class="replaceable"><code>text</code></em>
+      FROM <em class="replaceable"><code>pattern</code></em>
+      ESCAPE <em class="replaceable"><code>text</code></em>)</code>.  The previous
+      behavior has been retained in old views by keeping the original
+      function unchanged.
+     </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+2020-01-31 [870ad6a59] Fix not-quite-right string comparison in parse_jsonb_ind
+</span><p>
+      Make <a class="link" href="functions-textsearch.html#TEXTSEARCH-FUNCTIONS-TABLE" title="表9.42 Text Search Functions"><code class="function">json[b]_to_tsvector()</code></a>
+      fully check the spelling of its <code class="literal">string</code> option
+      (Dominik Czarnota)
+     </p></li><li class="listitem"><span class="original">
+Author: Thomas Munro &lt;tmunro@postgresql.org&gt;
+2020-03-16 [b09ff5366] Simplify the effective_io_concurrency setting.
+</span><p>
+      Change the way non-default <a class="xref" href="runtime-config-resource.html#GUC-EFFECTIVE-IO-CONCURRENCY">effective_io_concurrency</a> values affect concurrency
+      (Thomas Munro)
+     </p><p>
+      Previously, this value was adjusted before setting the number of
+      concurrent requests.  The value is now used directly.  Conversion of
+      old values to new ones can be done using:
+     </p><pre class="programlisting">
+SELECT round(sum(<em class="replaceable"><code>OLDVALUE</code></em> / n::float)) AS newvalue FROM generate_series(1, <em class="replaceable"><code>OLDVALUE</code></em>) s(n);
+</pre></li><li class="listitem"><span class="original">
+Author: Alvaro Herrera &lt;alvherre@alvh.no-ip.org&gt;
+2019-11-12 [5c46e7d82] pg_stat_{ssl,gssapi}: Show only processes with connectio
+</span><p>
+      Prevent display of auxiliary processes in <a class="xref" href="monitoring-stats.html#PG-STAT-SSL-VIEW" title="表27.17 pg_stat_ssl View">pg_stat_ssl</a> and <a class="xref" href="monitoring-stats.html#PG-STAT-GSSAPI-VIEW" title="表27.18 pg_stat_gssapi View">pg_stat_gssapi</a>
+      system views (Euler Taveira)
+     </p><p>
+      Queries that join these views to <a class="xref" href="monitoring-stats.html#PG-STAT-ACTIVITY-VIEW" title="表27.3 pg_stat_activity View">pg_stat_activity</a> and wish to see auxiliary processes
+      will need to use left joins.
+     </p></li><li class="listitem"><span class="original">
+Author: Fujii Masao &lt;fujii@postgresql.org&gt;
+2020-03-19 [1d253bae5] Rename the recovery-related wait events.
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+2020-05-15 [36ac359d3] Rename assorted LWLock tranches.
+2020-05-15 [474e7da64] Change locktype "speculative token" to "spectoken".
+2020-05-15 [14a910109] Drop the redundant "Lock" suffix from LWLock wait event
+2020-05-16 [3048898e7] Mop-up for wait event naming issues.
+</span><p>
+      Rename various <a class="link" href="monitoring-stats.html#WAIT-EVENT-TABLE" title="表27.4 Wait Event Types">wait
+      events</a> to improve consistency (Fujii Masao, Tom Lane)
+     </p></li><li class="listitem"><span class="original">
+Author: Fujii Masao &lt;fujii@postgresql.org&gt;
+2019-11-06 [979766c0a] Correct the command tags for ALTER ... RENAME COLUMN.
+</span><p>
+      Fix <a class="link" href="sql-alterforeigntable.html" title="ALTER FOREIGN TABLE"><code class="command">ALTER FOREIGN
+      TABLE ... RENAME COLUMN</code></a> to return a more appropriate
+      command tag (Fujii Masao)
+     </p><p>
+      Previously it returned <code class="command">ALTER TABLE</code>; now it returns
+      <code class="command">ALTER FOREIGN TABLE</code>.
+     </p></li><li class="listitem"><span class="original">
+Author: Fujii Masao &lt;fujii@postgresql.org&gt;
+2019-11-06 [979766c0a] Correct the command tags for ALTER ... RENAME COLUMN.
+</span><p>
+      Fix <a class="link" href="sql-altermaterializedview.html" title="ALTER MATERIALIZED VIEW"><code class="command">ALTER
+      MATERIALIZED VIEW ... RENAME COLUMN</code></a> to return a more
+      appropriate command tag (Fujii Masao)
+     </p><p>
+      Previously it returned <code class="command">ALTER TABLE</code>; now it returns
+      <code class="command">ALTER MATERIALIZED VIEW</code>.
+     </p></li><li class="listitem"><span class="original">
+Author: Fujii Masao &lt;fujii@postgresql.org&gt;
+2020-07-20 [f5dff45962] Rename wal_keep_segments to wal_keep_size.
+</span><p>
+      Rename configuration parameter <code class="varname">wal_keep_segments</code>
+      to <a class="xref" href="runtime-config-replication.html#GUC-WAL-KEEP-SIZE">wal_keep_size</a> (Fujii Masao)
+     </p><p>
+      This determines how much WAL to retain for standby servers.
+      It is specified in megabytes, rather than number of files as with
+      the old parameter. If you
+      previously used <code class="varname">wal_keep_segments</code>,
+      the following formula will give you an approximately equivalent setting:
+</p><pre class="programlisting">
+wal_keep_size = wal_keep_segments * wal_segment_size (typically 16MB)
+</pre><p>
+     </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+2020-03-05 [84eca14bc] Remove ancient hacks to ignore certain opclass names in
+</span><p>
+      Remove support for defining <a class="link" href="sql-createopclass.html" title="CREATE OPERATOR CLASS">operator
+      classes</a> using pre-<span class="productname">PostgreSQL</span>
+      8.0 syntax (Daniel Gustafsson)
+     </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+2020-03-05 [e58a59975] Remove ancient support for upgrading pre-7.3 foreign key
+</span><p>
+      Remove support for defining <a class="link" href="sql-altertable.html" title="ALTER TABLE">foreign key
+      constraints</a> using pre-<span class="productname">PostgreSQL</span>
+      7.3 syntax (Daniel Gustafsson)
+     </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+2020-03-05 [bb03010b9] Remove the "opaque" pseudo-type and associated compatibi
+</span><p>
+      Remove support for "opaque" <a class="link" href="sql-createtype.html" title="CREATE TYPE">pseudo-types</a> used by
+      pre-<span class="productname">PostgreSQL</span> 7.3 servers (Daniel
+      Gustafsson)
+     </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+2020-02-19 [70a773200] Remove support for upgrading extensions from "unpackaged
+</span><p>
+       Remove support for upgrading unpackaged (pre-9.1) extensions (Tom Lane)
+      </p><p>
+       The <code class="literal">FROM</code> option
+       of <a class="link" href="sql-createextension.html" title="CREATE EXTENSION"><code class="command">CREATE
+       EXTENSION</code></a> is no longer supported.  Any installations
+       still using unpackaged extensions should upgrade them to a packaged
+       version before updating to <span class="productname">PostgreSQL</span> 13.
+      </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+2020-06-29 [21aac2ff9] Remove support for timezone "posixrules" file.
+</span><p>
+      Remove support for <code class="filename">posixrules</code> files in the
+      timezone database (Tom Lane)
+     </p><p>
+      IANA's timezone group has deprecated this feature, meaning that it
+      will gradually disappear from systems' timezone databases over the
+      next few years.  Rather than have a behavioral change appear
+      unexpectedly with a timezone data update, we have
+      removed <span class="productname">PostgreSQL</span>'s support for this
+      feature as of version 13.  This affects only the behavior
+      of <a class="link" href="datetime-posix-timezone-specs.html" title="B.5. POSIX 時間帯の指定">POSIX-style time
+      zone specifications</a> that lack an explicit daylight savings
+      transition rule; formerly the transition rule could be determined
+      by installing a custom <code class="filename">posixrules</code> file, but
+      now it is hard-wired.  The recommended fix for any affected
+      installations is to start using a geographical time zone name.
+     </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+2020-03-28 [9950c8aad] Fix lquery's behavior for consecutive '*' items.
+</span><p>
+      In <a class="xref" href="ltree.html" title="F.21. ltree">ltree</a>, when an <code class="type">lquery</code> pattern
+      contains adjacent asterisks with braces,
+      e.g., <code class="literal">*{2}.*{3}</code>, properly interpret that
+      as <code class="literal">*{5}</code> (Nikita Glukhov)
+     </p></li><li class="listitem"><span class="original">
+Author: Peter Geoghegan &lt;pg@bowt.ie&gt;
+2020-03-07 [691e8b2e1] pageinspect: Fix types used for bt_metap() columns.
+</span><p>
+      Fix <a class="xref" href="pageinspect.html" title="F.22. pageinspect">pageinspect</a>'s <code class="function">bt_metap()</code>
+      to return more appropriate data types that are less likely to overflow
+      (Peter Geoghegan)
+     </p></li></ul></div></div><div class="sect2" id="id-1.11.6.6.5"><div class="titlepage"><div><div><h3 class="title">E.2.3. Changes</h3></div></div></div><p>
+       Below you will find a detailed account of the changes between
+       <span class="productname">PostgreSQL</span> 13 and the previous major
+       release.
+     </p><div class="sect3" id="id-1.11.6.6.5.3"><div class="titlepage"><div><div><h4 class="title">E.2.3.1. Server</h4></div></div></div><div class="sect4" id="id-1.11.6.6.5.3.2"><div class="titlepage"><div><div><h5 class="title">E.2.3.1.1. <a class="link" href="ddl-partitioning.html" title="5.11. テーブルのパーティショニング">Partitioning</a></h5></div></div></div><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><span class="original">
+Author: Alvaro Herrera &lt;alvherre@alvh.no-ip.org&gt;
+2019-08-07 [4e85642d9] Apply constraint exclusion more generally in partitionin
+Author: Alvaro Herrera &lt;alvherre@alvh.no-ip.org&gt;
+2019-08-13 [815ef2f56] Don't constraint-exclude partitioned tables as much
+</span><p>
+        Allow <a class="link" href="ddl-partitioning.html#DDL-PARTITION-PRUNING" title="5.11.4. パーティション除去">pruning</a> of
+        partitions to happen in more cases
+        (Yuzuko Hosoya, Amit Langote, Álvaro Herrera)
+       </p></li><li class="listitem"><span class="original">
+Author: Etsuro Fujita &lt;efujita@postgresql.org&gt;
+2020-04-08 [c8434d64c] Allow partitionwise joins in more cases.
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+2020-04-07 [981643dcd] Allow partitionwise join to handle nested FULL JOIN USIN
+</span><p>
+       Allow <a class="link" href="runtime-config-query.html#GUC-ENABLE-PARTITIONWISE-JOIN">partitionwise
+       joins</a> to happen in more cases (Ashutosh Bapat, Etsuro Fujita,
+       Amit Langote, Tom Lane)
+      </p><p>
+        For example, partitionwise joins can now happen between partitioned
+        tables even when their partition bounds do not match exactly.
+       </p></li><li class="listitem"><span class="original">
+Author: Alvaro Herrera &lt;alvherre@alvh.no-ip.org&gt;
+2020-03-18 [487e9861d] Enable BEFORE row-level triggers for partitioned tables
+</span><p>
+        Support row-level <code class="literal">BEFORE</code> <a class="link" href="triggers.html" title="第38章 トリガ">triggers</a> on partitioned tables (Álvaro
+        Herrera)
+       </p><p>
+        However, such a trigger is not allowed to change which partition
+        is the destination.
+       </p></li><li class="listitem"><span class="original">
+Author: Peter Eisentraut &lt;peter@eisentraut.org&gt;
+2020-03-10 [17b9e7f9f] Support adding partitioned tables to publication
+Author: Peter Eisentraut &lt;peter@eisentraut.org&gt;
+2020-04-08 [83fd4532a] Allow publishing partition changes via ancestors
+</span><p>
+        Allow partitioned tables to be logically replicated via <a class="link" href="sql-createpublication.html" title="CREATE PUBLICATION">publications</a> (Amit Langote)
+       </p><p>
+        Previously, partitions had to be replicated individually.  Now a
+        partitioned table can be published explicitly, causing all its
+        partitions to be published automatically.  Addition/removal of a
+        partition causes it to be likewise added to or removed from the
+        publication.
+        The <a class="link" href="sql-createpublication.html" title="CREATE PUBLICATION"><code class="command">CREATE
+        PUBLICATION</code></a> option
+        <code class="literal">publish_via_partition_root</code> controls whether changes
+        to partitions are published as their own changes or their parent's.
+       </p></li><li class="listitem"><span class="original">
+Author: Peter Eisentraut &lt;peter@eisentraut.org&gt;
+2020-04-06 [f1ac27bfd] Add logical replication support to replicate into partit
+</span><p>
+        Allow logical replication into partitioned tables on subscribers
+        (Amit Langote)
+       </p><p>
+        Previously, subscribers could only receive rows into non-partitioned
+        tables.
+       </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+2019-12-25 [bb4114a4e] Allow whole-row Vars to be used in partitioning expressi
+</span><p>
+        Allow whole-row variables (that
+        is, <em class="replaceable"><code>table</code></em><code class="literal">.*</code>) to be
+        used in partitioning expressions (Amit Langote)
+       </p></li></ul></div></div><div class="sect4" id="id-1.11.6.6.5.3.3"><div class="titlepage"><div><div><h5 class="title">E.2.3.1.2. Indexes</h5></div></div></div><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><span class="original">
+Author: Peter Geoghegan &lt;pg@bowt.ie&gt;
+2020-02-26 [0d861bbb7] Add deduplication to nbtree.
+</span><p>
+        More efficiently store <a class="link" href="btree-implementation.html#BTREE-DEDUPLICATION" title="63.4.2. Deduplication">duplicates</a> in B-tree indexes
+        (Anastasia Lubennikova, Peter Geoghegan)
+       </p><p>
+        This allows efficient B-tree indexing of low-cardinality columns
+        by storing duplicate keys only once.  Users upgrading with <a class="link" href="pgupgrade.html" title="pg_upgrade"><span class="application">pg_upgrade</span></a>
+        will need to use <a class="link" href="sql-reindex.html" title="REINDEX"><code class="command">REINDEX</code></a> to make an
+        existing index use this feature.
+       </p></li><li class="listitem"><span class="original">
+Author: Alexander Korotkov &lt;akorotkov@postgresql.org&gt;
+2019-07-14 [c085e1c1c] Add support for &lt;-&gt; (box, point) operator to GiST box_op
+Author: Alexander Korotkov &lt;akorotkov@postgresql.org&gt;
+2019-07-14 [075f0a880] Add support for &lt;-&gt; (box, point) operator to SP-GiST box
+</span><p>
+        Allow <a class="link" href="gist.html" title="第64章 GiSTインデックス">GiST</a> and <a class="link" href="spgist.html" title="第65章 SP-GiSTインデックス">SP-GiST</a> indexes on <code class="type">box</code>
+        columns to support <code class="literal">ORDER BY <em class="replaceable"><code>box</code></em>
+        &lt;-&gt; <em class="replaceable"><code>point</code></em></code> queries (Nikita
+        Glukhov)
+       </p></li><li class="listitem"><span class="original">
+Author: Alexander Korotkov &lt;akorotkov@postgresql.org&gt;
+2020-01-18 [4b754d6c1] Avoid full scan of GIN indexes when possible
+</span><p>
+        Allow <a class="link" href="gin.html" title="第66章 GINインデックス"><acronym class="acronym">GIN</acronym></a> indexes to
+        more efficiently handle <code class="literal">!</code> (NOT) clauses
+        in <code class="type">tsquery</code> searches (Nikita
+        Glukhov, Alexander Korotkov, Tom Lane, Julien Rouhaud)
+       </p></li><li class="listitem"><span class="original">
+Author: Alexander Korotkov &lt;akorotkov@postgresql.org&gt;
+2020-03-30 [911e70207] Implement operator class parameters
+</span><p>
+        Allow <a class="link" href="sql-createindex.html" title="CREATE INDEX">index operator classes</a>
+        to take parameters (Nikita Glukhov)
+       </p></li><li class="listitem"><span class="original">
+Author: Alexander Korotkov &lt;akorotkov@postgresql.org&gt;
+2020-03-30 [911e70207] Implement operator class parameters
+</span><p>
+        Allow <code class="command">CREATE INDEX</code> to specify the GiST signature
+        length and maximum number of integer ranges (Nikita Glukhov)
+       </p><p>
+        Indexes created on four and eight-byte <a class="link" href="intarray.html" title="F.18. intarray">integer
+        array</a>, <a class="link" href="textsearch.html" title="第12章 全文検索">tsvector</a>,
+        <a class="xref" href="pgtrgm.html" title="F.31. pg_trgm">pg_trgm</a>, <a class="xref" href="ltree.html" title="F.21. ltree">ltree</a>, and <a class="xref" href="hstore.html" title="F.16. hstore">hstore</a> columns can now control these GiST index parameters,
+        rather than using the defaults.
+       </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+2019-12-06 [fbbf68094] Disallow non-default collation in ADD PRIMARY KEY/UNIQUE
+</span><p>
+        Prevent indexes that use non-default collations from being <a class="link" href="sql-altertable.html" title="ALTER TABLE">added</a> as a table's unique or primary
+        key constraint (Tom Lane)
+       </p><p>
+        The index's collation must match that of the underlying column,
+        but <code class="command">ALTER TABLE</code> previously failed to check
+        this.
+       </p></li></ul></div></div><div class="sect4" id="id-1.11.6.6.5.3.4"><div class="titlepage"><div><div><h5 class="title">E.2.3.1.3. Optimizer</h5></div></div></div><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+2020-04-01 [a80818605] Improve selectivity estimation for assorted match-style
+</span><p>
+        Improve the optimizer's <a class="link" href="planner-stats-details.html" title="第70章 プランナは統計情報をどのように使用するか">selectivity</a> estimation for
+        containment/match operators (Tom Lane)
+       </p></li><li class="listitem"><span class="original">
+Author: Tomas Vondra &lt;tomas.vondra@postgresql.org&gt;
+2019-09-11 [d06215d03] Allow setting statistics target for extended statistics
+</span><p>
+        Allow setting the <a class="link" href="sql-altertable.html" title="ALTER TABLE">statistics target</a>
+        for <a class="link" href="sql-createstatistics.html" title="CREATE STATISTICS">extended statistics</a>
+        (Tomas Vondra)
+       </p><p>
+        This is controlled with the new command option <code class="command">ALTER
+        STATISTICS ... SET STATISTICS</code>.  Previously this was computed
+        based on more general statistics target settings.
+       </p></li><li class="listitem"><span class="original">
+Author: Tomas Vondra &lt;tomas.vondra@postgresql.org&gt;
+2020-01-13 [aaa676187] Apply all available functional dependencies
+Author: Tomas Vondra &lt;tomas.vondra@postgresql.org&gt;
+2020-01-13 [eae056c19] Apply multiple multivariate MCV lists when possible
+</span><p>
+        Allow use of multiple extended statistics objects in a single query
+        (Tomas Vondra)
+       </p></li><li class="listitem"><span class="original">
+Author: Tomas Vondra &lt;tomas.vondra@postgresql.org&gt;
+2020-03-14 [8f321bd16] Use functional dependencies to estimate ScalarArrayOpExp
+Author: Tomas Vondra &lt;tomas.vondra@postgresql.org&gt;
+2020-03-14 [e83daa7e3] Use multi-variate MCV lists to estimate ScalarArrayOpExp
+Author: Tomas Vondra &lt;tomas.vondra@postgresql.org&gt;
+2020-03-18 [ccaa3569f] Recognize some OR clauses as compatible with functional
+</span><p>
+        Allow use of extended statistics objects for OR clauses and <a class="link" href="functions-subquery.html" title="9.23. Subquery Expressions">IN</a>/<code class="literal">ANY</code> constant
+        lists (Pierre Ducroquet, Tomas Vondra)
+       </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+2019-08-01 [7266d0997] Allow functions-in-FROM to be pulled up if they reduce t
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+2019-09-24 [a9ae99d01] Prevent bogus pullup of constant-valued functions return
+</span><p>
+        Allow functions in <code class="literal">FROM</code> clauses to be pulled up
+        (inlined) if they evaluate to constants (Alexander Kuzmenkov,
+        Aleksandr Parfenov)
+       </p></li></ul></div></div><div class="sect4" id="id-1.11.6.6.5.3.5"><div class="titlepage"><div><div><h5 class="title">E.2.3.1.4. General Performance</h5></div></div></div><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><span class="original">
+Author: Tomas Vondra &lt;tomas.vondra@postgresql.org&gt;
+2020-04-06 [d2d8a229b] Implement Incremental Sort
+Author: Peter Eisentraut &lt;peter@eisentraut.org&gt;
+2020-07-05 [94e454cdd] Rename enable_incrementalsort for clarity
+</span><p>
+        Implement <a class="link" href="runtime-config-query.html#GUC-ENABLE-INCREMENTAL-SORT">incremental
+        sorting</a> (James Coleman, Alexander Korotkov, Tomas Vondra)
+       </p><p>
+        If an intermediate query result is known to be sorted by
+        one or more leading keys of a required sort ordering, the
+        additional sorting can be done considering only the remaining
+        keys, if the rows are sorted in batches that have equal leading
+        keys.
+       </p><p>
+        If necessary, this can be controlled using <a class="xref" href="runtime-config-query.html#GUC-ENABLE-INCREMENTAL-SORT">enable_incremental_sort</a>.
+       </p></li><li class="listitem"><span class="original">
+Author: Peter Geoghegan &lt;pg@bowt.ie&gt;
+2019-08-01 [71dcd7438] Add sort support routine for the inet data type.
+</span><p>
+        Improve the performance of sorting <a class="link" href="datatype-net-types.html#DATATYPE-INET" title="8.9.1. inet">inet</a> values (Brandur Leach)
+       </p></li><li class="listitem"><span class="original">
+Author: Jeff Davis &lt;jdavis@postgresql.org&gt;
+2020-03-18 [1f39bce02] Disk-based Hash Aggregation.
+Author: Jeff Davis &lt;jdavis@postgresql.org&gt;
+2020-03-24 [dd8e19132] Consider disk-based hash aggregation to implement DISTIN
+Author: Peter Geoghegan &lt;pg@bowt.ie&gt;
+2020-07-29 [78530c8e7] Add hash_mem_multiplier GUC.
+</span><p>
+        Allow <a class="link" href="runtime-config-query.html#GUC-ENABLE-HASHAGG">hash aggregation</a>
+        to use disk storage for large aggregation result sets (Jeff Davis)
+       </p><p>
+        Previously, hash aggregation was avoided if it was expected to use
+        more than <a class="xref" href="runtime-config-resource.html#GUC-WORK-MEM">work_mem</a> memory.  Now, a hash
+        aggregation plan can be chosen despite that.  The hash table will
+        be spilled to disk if it exceeds <code class="varname">work_mem</code> times
+        <a class="xref" href="runtime-config-resource.html#GUC-HASH-MEM-MULTIPLIER">hash_mem_multiplier</a>.
+       </p><p>
+        This behavior is normally preferable to the old behavior, in which
+        once hash aggregation had been chosen, the hash table would be
+        kept in memory no matter how large it got — which could be
+        very large if the planner had misestimated.  If necessary,
+        behavior similar to that can be obtained by
+        increasing <code class="varname">hash_mem_multiplier</code>.
+       </p></li><li class="listitem"><span class="original">
+Author: David Rowley &lt;drowley@postgresql.org&gt;
+2020-03-28 [b07642dbc] Trigger autovacuum based on number of INSERTs
+</span><p>
+        Allow inserts, not only updates and deletes, to trigger vacuuming
+        activity in <a class="link" href="routine-vacuuming.html#AUTOVACUUM" title="24.1.6. 自動バキュームデーモン">autovacuum</a>
+        (Laurenz Albe, Darafei Praliaskouski)
+       </p><p>
+        Previously, insert-only activity would trigger auto-analyze but
+        not auto-vacuum, on the grounds that there could not be any dead
+        tuples to remove.  However, a vacuum scan has other useful
+        side-effects such as setting page-all-visible bits, which improves
+        the efficiency of index-only scans.  Also, allowing an insert-only
+        table to receive periodic vacuuming helps to spread out the work
+        of <span class="quote">「<span class="quote">freezing</span>」</span> old tuples, so that there is not
+        suddenly a large amount of freezing work to do when the entire
+        table reaches the anti-wraparound threshold all at once.
+       </p><p>
+        If necessary, this behavior can be adjusted with the new
+        parameters <a class="xref" href="runtime-config-autovacuum.html#GUC-AUTOVACUUM-VACUUM-INSERT-THRESHOLD">autovacuum_vacuum_insert_threshold</a>
+        and <a class="xref" href="runtime-config-autovacuum.html#GUC-AUTOVACUUM-VACUUM-INSERT-SCALE-FACTOR">autovacuum_vacuum_insert_scale_factor</a>, or
+        the equivalent table storage options.
+       </p></li><li class="listitem"><span class="original">
+Author: Thomas Munro &lt;tmunro@postgresql.org&gt;
+2020-03-16 [fc34b0d9d] Introduce a maintenance_io_concurrency setting.
+</span><p>
+        Add <a class="xref" href="runtime-config-resource.html#GUC-MAINTENANCE-IO-CONCURRENCY">maintenance_io_concurrency</a> parameter to
+        control I/O concurrency for maintenance operations (Thomas Munro)
+       </p></li><li class="listitem"><span class="original">
+Author: Noah Misch &lt;noah@leadboat.com&gt;
+2020-04-04 [c6b92041d] Skip WAL for new relfilenodes, under wal_level=minimal.
+</span><p>
+        Allow <acronym class="acronym">WAL</acronym> writes to be skipped during a transaction
+        that creates or rewrites a relation, if <a class="xref" href="runtime-config-wal.html#GUC-WAL-LEVEL">wal_level</a> is <code class="literal">minimal</code> (Kyotaro
+        Horiguchi)
+       </p><p>
+        Relations larger than <a class="xref" href="runtime-config-wal.html#GUC-WAL-SKIP-THRESHOLD">wal_skip_threshold</a>
+        will have their files fsync'ed rather than generating
+        <acronym class="acronym">WAL</acronym>.  Previously this was done only for
+        <code class="command">COPY</code> operations, but the implementation had a bug
+        that could cause data loss during crash recovery.
+       </p></li><li class="listitem"><span class="original">
+Author: Fujii Masao &lt;fujii@postgresql.org&gt;
+2019-11-21 [e6d806952] Make DROP DATABASE command generate less WAL records.
+</span><p>
+        Improve performance when replaying <a class="link" href="sql-dropdatabase.html" title="DROP DATABASE"><code class="command">DROP DATABASE</code></a>
+        commands when many tablespaces are in use (Fujii Masao)
+       </p></li><li class="listitem"><span class="original">
+Author: Fujii Masao &lt;fujii@postgresql.org&gt;
+2019-09-24 [6d05086c0] Speedup truncations of relation forks.
+</span><p>
+        Improve performance for <a class="link" href="sql-truncate.html" title="TRUNCATE">truncation</a>
+        of very large relations (Kirk Jamison)
+       </p></li><li class="listitem"><span class="original">
+Author: Tomas Vondra &lt;tomas.vondra@postgresql.org&gt;
+2019-10-01 [11a078cf8] Optimize partial TOAST decompression
+</span><p>
+        Improve retrieval of the leading bytes of <a class="link" href="storage-toast.html" title="68.2. TOAST"><acronym class="acronym">TOAST</acronym></a>'ed values
+        (Binguo Bao, Andrey Borodin)
+       </p><p>
+        Previously, compressed out-of-line <acronym class="acronym">TOAST</acronym> values
+        were fully fetched even when it's known that only some leading
+        bytes are needed.  Now, only enough data to produce the result is
+        fetched.
+       </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+2019-09-10 [bca6e6435] Reduce overhead of scanning the backend[] array in LISTE
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+2019-09-22 [51004c717] Make some efficiency improvements in LISTEN/NOTIFY.
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+2019-08-15 [bb5ae8f6c] Use a hash table to de-duplicate NOTIFY events faster.
+</span><p>
+        Improve performance of <a class="link" href="sql-listen.html" title="LISTEN"><code class="command">LISTEN</code></a>/<code class="command">NOTIFY</code>
+        (Martijn van Oosterhout, Tom Lane)
+       </p></li><li class="listitem"><span class="original">
+Author: Andrew Gierth &lt;rhodiumtoad@postgresql.org&gt;
+2020-02-01 [1fd687a03] Optimizations for integer to decimal output.
+</span><p>
+        Speed up conversions of integers to text (David Fetter)
+       </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+2019-07-10 [b5810de3f] Reduce memory consumption for multi-statement query stri
+</span><p>
+        Reduce memory usage for query strings and extension scripts that
+        contain many <acronym class="acronym">SQL</acronym> statements (Amit Langote)
+       </p></li></ul></div></div><div class="sect4" id="id-1.11.6.6.5.3.6"><div class="titlepage"><div><div><h5 class="title">E.2.3.1.5. Monitoring</h5></div></div></div><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><span class="original">
+Author: Amit Kapila &lt;akapila@postgresql.org&gt;
+2020-04-05 [6b466bf5f] Allow pg_stat_statements to track WAL usage statistics.
+Author: Amit Kapila &lt;akapila@postgresql.org&gt;
+2020-04-06 [33e05f89c] Add the option to report WAL usage in EXPLAIN and auto_e
+Author: Amit Kapila &lt;akapila@postgresql.org&gt;
+2020-04-06 [b7ce6de93] Allow autovacuum to log WAL usage statistics.
+</span><p>
+        Allow <a class="link" href="sql-explain.html" title="EXPLAIN"><code class="command">EXPLAIN</code></a>,
+        <a class="xref" href="auto-explain.html" title="F.4. auto_explain">auto_explain</a>, <a class="link" href="routine-vacuuming.html#AUTOVACUUM" title="24.1.6. 自動バキュームデーモン">autovacuum</a>, and <a class="xref" href="pgstatstatements.html" title="F.29. pg_stat_statements">pg_stat_statements</a> to track <acronym class="acronym">WAL</acronym> usage
+        statistics (Kirill Bychik, Julien Rouhaud)
+       </p></li><li class="listitem"><span class="original">
+Author: Tomas Vondra &lt;tomas.vondra@postgresql.org&gt;
+2019-11-06 [6e3e6cc0e] Allow sampling of statements depending on duration
+</span><p>
+        Allow a sample of SQL statements, rather than all statements, to
+        be logged (Adrien Nayrat)
+       </p><p>
+        A <a class="xref" href="runtime-config-logging.html#GUC-LOG-STATEMENT-SAMPLE-RATE">log_statement_sample_rate</a> fraction of
+        those statements taking more than
+        <a class="xref" href="runtime-config-logging.html#GUC-LOG-MIN-DURATION-SAMPLE">log_min_duration_sample</a> duration will be
+        logged.
+       </p></li><li class="listitem"><span class="original">
+Author: Peter Eisentraut &lt;peter@eisentraut.org&gt;
+2020-03-15 [70a7b4776] Add backend type to csvlog and optionally log_line_prefi
+</span><p>
+        Add the backend type to <a class="link" href="runtime-config-logging.html" title="19.8. エラー報告とログ取得">csvlog</a> and optionally <a class="xref" href="runtime-config-logging.html#GUC-LOG-LINE-PREFIX">log_line_prefix</a> log output (Peter Eisentraut)
+       </p></li><li class="listitem"><span class="original">
+Author: Alvaro Herrera &lt;alvherre@alvh.no-ip.org&gt;
+2019-12-11 [ba79cb5dc] Emit parameter values during query bind/execute errors
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+2020-04-02 [0b34e7d30] Improve user control over truncation of logged bind-para
+</span><p>
+        Improve control of prepared statement parameter logging (Alexey
+        Bashtanov, Álvaro Herrera)
+       </p><p>
+        The <acronym class="acronym">GUC</acronym> setting <a class="xref" href="runtime-config-logging.html#GUC-LOG-PARAMETER-MAX-LENGTH">log_parameter_max_length</a> controls the maximum length
+        of parameter values output during logging of non-error statements,
+        while <a class="xref" href="runtime-config-logging.html#GUC-LOG-PARAMETER-MAX-LENGTH-ON-ERROR">log_parameter_max_length_on_error</a> does
+        the same for logging of statements with errors.  Previously,
+        prepared statement parameters were never logged during errors.
+       </p></li><li class="listitem"><span class="original">
+Author: Alvaro Herrera &lt;alvherre@alvh.no-ip.org&gt;
+2019-11-08 [71a8a4f6e] Add backtrace support for error reporting
+Author: Peter Eisentraut &lt;peter@eisentraut.org&gt;
+2020-07-10 [8ff4d1277] Log the location field before any backtrace
+</span><p>
+        Allow function call backtraces to be logged after errors (Peter
+        Eisentraut, Álvaro Herrera)
+       </p><p>
+        The new parameter <a class="xref" href="runtime-config-developer.html#GUC-BACKTRACE-FUNCTIONS">backtrace_functions</a> specifies
+        which C functions should generate backtraces on error.
+       </p></li><li class="listitem"><span class="original">
+Author: Alvaro Herrera &lt;alvherre@alvh.no-ip.org&gt;
+2020-02-05 [15d13e829] Make vacuum buffer counters 64 bits wide
+</span><p>
+        Make <a class="link" href="sql-vacuum.html" title="VACUUM">vacuum</a> buffer counters 64-bits
+        wide to avoid overflow (Álvaro Herrera)
+       </p></li></ul></div></div><div class="sect4" id="id-1.11.6.6.5.3.7"><div class="titlepage"><div><div><h5 class="title">E.2.3.1.6. System Views</h5></div></div></div><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><span class="original">
+Author: Michael Paquier &lt;michael@paquier.xyz&gt;
+2020-02-06 [b025f32e0] Add leader_pid to pg_stat_activity
+</span><p>
+        Add <code class="structfield">leader_pid</code> to <a class="xref" href="monitoring-stats.html#PG-STAT-ACTIVITY-VIEW" title="表27.3 pg_stat_activity View">pg_stat_activity</a> to report a parallel worker's
+        leader process (Julien Rouhaud)
+       </p></li><li class="listitem"><span class="original">
+Author: Fujii Masao &lt;fujii@postgresql.org&gt;
+2020-03-03 [e65497df8] Report progress of streaming base backup.
+</span><p>
+        Add system view <a class="link" href="progress-reporting.html#BASEBACKUP-PROGRESS-REPORTING" title="27.4.5. Base Backup Progress Reporting"><code class="structname">pg_stat_progress_basebackup</code></a>
+        to report the progress of streaming base backups (Fujii Masao)
+       </p></li><li class="listitem"><span class="original">
+Author: Alvaro Herrera &lt;alvherre@alvh.no-ip.org&gt;
+2020-01-15 [a166d408e] Report progress of ANALYZE commands
+</span><p>
+        Add system view <a class="link" href="monitoring-stats.html#MONITORING-STATS-DYNAMIC-VIEWS-TABLE" title="表27.1 動的統計情報ビュー"><code class="structname">pg_stat_progress_analyze</code></a>
+        to report <a class="link" href="sql-analyze.html" title="ANALYZE">ANALYZE</a> progress
+        (Álvaro Herrera, Tatsuro Yamada, Vinayak Pokale)
+       </p></li><li class="listitem"><span class="original">
+Author: Robert Haas &lt;rhaas@postgresql.org&gt;
+2020-01-09 [ed10f32e3] Add pg_shmem_allocations view.
+</span><p>
+        Add system view <a class="link" href="view-pg-shmem-allocations.html" title="51.87. pg_shmem_allocations"><code class="structname">pg_shmem_allocations</code></a>
+        to display shared memory usage (Andres Freund, Robert Haas)
+       </p></li><li class="listitem"><span class="original">
+Author: Tomas Vondra &lt;tomas.vondra@postgresql.org&gt;
+2020-04-02 [28cac71bd] Collect statistics about SLRU caches
+</span><p>
+        Add system view <a class="link" href="monitoring-stats.html#MONITORING-STATS-VIEWS-TABLE" title="表27.2 収集済み統計情報ビュー"><code class="structname">pg_stat_slru</code></a>
+        to monitor internal <acronym class="acronym">SLRU</acronym> caches
+        (Tomas Vondra)
+       </p></li><li class="listitem"><span class="original">
+Author: Robert Haas &lt;rhaas@postgresql.org&gt;
+2020-01-07 [814727858] Increase the maximum value of track_activity_query_size.
+</span><p>
+        Allow <a class="xref" href="runtime-config-statistics.html#GUC-TRACK-ACTIVITY-QUERY-SIZE">track_activity_query_size</a> to be set as
+        high as 1MB (Vyacheslav Makarov)
+       </p><p>
+        The previous maximum was 100kB.
+       </p></li></ul></div></div><div class="sect4" id="id-1.11.6.6.5.3.8"><div class="titlepage"><div><div><h5 class="title">E.2.3.1.7. <a class="link" href="monitoring-stats.html#WAIT-EVENT-TABLE" title="表27.4 Wait Event Types">Wait Events</a></h5></div></div></div><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><span class="original">
+Author: Thomas Munro &lt;tmunro@postgresql.org&gt;
+2020-01-31 [ef02fb15a] Report time spent in posix_fallocate() as a wait event.
+</span><p>
+        Report a wait event while creating a DSM segment
+        with <code class="function">posix_fallocate()</code> (Thomas Munro)
+       </p></li><li class="listitem"><span class="original">
+Author: Andres Freund &lt;andres@anarazel.de&gt;
+2020-03-23 [cedffbdb8] Report wait event for cost-based vacuum delay.
+</span><p>
+        Add wait event VacuumDelay to report on cost-based vacuum delay
+        (Justin Pryzby)
+       </p></li><li class="listitem"><span class="original">
+Author: Fujii Masao &lt;fujii@postgresql.org&gt;
+2020-03-24 [b8e20d6da] Add wait events for WAL archive and recovery pause.
+</span><p>
+        Add wait events for <acronym class="acronym">WAL</acronym> archive and recovery pause
+        (Fujii Masao)
+       </p><p>
+        The new events are BackupWaitWalArchive and RecoveryPause.
+       </p></li><li class="listitem"><span class="original">
+Author: Fujii Masao &lt;fujii@postgresql.org&gt;
+2020-04-03 [18808f8c8] Add wait events for recovery conflicts.
+</span><p>
+        Add  wait events RecoveryConflictSnapshot and
+        RecoveryConflictTablespace to monitor recovery conflicts (Masahiko
+        Sawada)
+       </p></li><li class="listitem"><span class="original">
+Author: Thomas Munro &lt;tmunro@postgresql.org&gt;
+2020-02-05 [815c2f097] Add kqueue(2) support to the WaitEventSet API.
+</span><p>
+        Improve performance of wait events on <acronym class="acronym">BSD</acronym>-based
+        systems (Thomas Munro)
+       </p></li></ul></div></div><div class="sect4" id="id-1.11.6.6.5.3.9"><div class="titlepage"><div><div><h5 class="title">E.2.3.1.8. <acronym class="acronym">Authentication</acronym></h5></div></div></div><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><span class="original">
+Author: Fujii Masao &lt;fujii@postgresql.org&gt;
+2020-03-09 [d9249441e] Mark ssl_passphrase_command as GUC_SUPERUSER_ONLY.
+</span><p>
+        Allow only superusers to view the <a class="xref" href="runtime-config-connection.html#GUC-SSL-PASSPHRASE-COMMAND">ssl_passphrase_command</a> setting (Insung Moon)
+       </p><p>
+        This was changed as a security precaution.
+       </p></li><li class="listitem"><span class="original">
+Author: Peter Eisentraut &lt;peter@eisentraut.org&gt;
+2019-12-04 [b1abfec82] Update minimum SSL version
+</span><p>
+        Change the server's default minimum <acronym class="acronym">TLS</acronym> version
+        for encrypted connections from 1.0 to 1.2 (Peter Eisentraut)
+       </p><p>
+        This choice can be controlled by
+        <a class="xref" href="runtime-config-connection.html#GUC-SSL-MIN-PROTOCOL-VERSION">ssl_min_protocol_version</a>.
+       </p></li></ul></div></div><div class="sect4" id="id-1.11.6.6.5.3.10"><div class="titlepage"><div><div><h5 class="title">E.2.3.1.9. Server Configuration</h5></div></div></div><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><span class="original">
+Author: Robert Haas &lt;rhaas@postgresql.org&gt;
+2020-01-16 [2eb34ac36] Fix problems with "read only query" checks, and refactor
+</span><p>
+        Tighten rules on which utility commands are allowed in
+        read-only transaction mode (Robert Haas)
+       </p><p>
+        This change also increases the number of utility commands that can
+        run in parallel queries.
+       </p></li><li class="listitem"><span class="original">
+Author: Peter Eisentraut &lt;peter@eisentraut.org&gt;
+2019-11-29 [c4a7a392e] Make allow_system_table_mods settable at run time
+</span><p>
+        Allow <a class="xref" href="runtime-config-developer.html#GUC-ALLOW-SYSTEM-TABLE-MODS">allow_system_table_mods</a> to be changed
+        after server start (Peter Eisentraut)
+       </p></li><li class="listitem"><span class="original">
+Author: Peter Eisentraut &lt;peter@eisentraut.org&gt;
+2019-11-29 [508bf95b7] Remove any-user DML capability from allow_system_table_m
+</span><p>
+        Disallow non-superusers from modifying system tables when <a class="xref" href="runtime-config-developer.html#GUC-ALLOW-SYSTEM-TABLE-MODS">allow_system_table_mods</a> is set (Peter Eisentraut)
+       </p><p>
+        Previously, if <a class="xref" href="runtime-config-developer.html#GUC-ALLOW-SYSTEM-TABLE-MODS">allow_system_table_mods</a>
+        was set at server start, non-superusers could issue
+        <code class="command">INSERT</code>/<code class="command">UPDATE</code>/<code class="command">DELETE</code>
+        commands on system tables.
+       </p></li><li class="listitem"><span class="original">
+Author: Peter Eisentraut &lt;peter@eisentraut.org&gt;
+2020-03-28 [8f3ec75de] Enable Unix-domain sockets support on Windows
+</span><p>
+        Enable support
+        for <a class="link" href="runtime-config-connection.html#RUNTIME-CONFIG-CONNECTION-SETTINGS" title="19.3.1. 接続設定">Unix-domain
+        sockets</a> on Windows (Peter Eisentraut)
+       </p></li></ul></div></div></div><div class="sect3" id="id-1.11.6.6.5.4"><div class="titlepage"><div><div><h4 class="title">E.2.3.2. Streaming Replication and Recovery</h4></div></div></div><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><span class="original">
+Author: Alvaro Herrera &lt;alvherre@alvh.no-ip.org&gt;
+2020-03-27 [1e6148032] Allow walreceiver configuration to change on reload
+</span><p>
+       Allow streaming replication configuration settings to be changed by
+       reload (Sergei Kornilov)
+      </p><p>
+       Previously, a server restart was required to change
+       <a class="xref" href="runtime-config-replication.html#GUC-PRIMARY-CONNINFO">primary_conninfo</a> and <a class="xref" href="runtime-config-replication.html#GUC-PRIMARY-SLOT-NAME">primary_slot_name</a>.
+      </p></li><li class="listitem"><span class="original">
+Author: Peter Eisentraut &lt;peter@eisentraut.org&gt;
+2020-01-14 [329730827] walreceiver uses a temporary replication slot by default
+Author: Alvaro Herrera &lt;alvherre@alvh.no-ip.org&gt;
+2020-03-27 [092c6936d] Set wal_receiver_create_temp_slot PGC_POSTMASTER
+</span><p>
+       Allow <acronym class="acronym">WAL</acronym> receivers to use a temporary
+       replication slot when a permanent one is not specified (Peter
+       Eisentraut, Sergei Kornilov)
+      </p><p>
+       This behavior can be enabled using <a class="xref" href="runtime-config-replication.html#GUC-WAL-RECEIVER-CREATE-TEMP-SLOT">wal_receiver_create_temp_slot</a>.
+      </p></li><li class="listitem"><span class="original">
+Author: Alvaro Herrera &lt;alvherre@alvh.no-ip.org&gt;
+2020-04-07 [c65507763] Allow users to limit storage reserved by replication slo
+</span><p>
+       Allow WAL storage for replication slots to be limited by
+       <a class="xref" href="runtime-config-replication.html#GUC-MAX-SLOT-WAL-KEEP-SIZE">max_slot_wal_keep_size</a> (Kyotaro Horiguchi)
+      </p><p>
+       Replication slots that would require exceeding this value are
+       marked invalid.
+      </p></li><li class="listitem"><span class="original">
+Author: Fujii Masao &lt;fujii@postgresql.org&gt;
+2020-03-24 [496ee647e] Prefer standby promotion over recovery pause.
+</span><p>
+       Allow <a class="link" href="runtime-config-replication.html#GUC-PROMOTE-TRIGGER-FILE">standby promotion</a>
+       to cancel any requested pause (Fujii Masao)
+      </p><p>
+       Previously, promotion could not happen while the standby was in
+       paused state.
+      </p></li><li class="listitem"><span class="original">
+Author: Peter Eisentraut &lt;peter@eisentraut.org&gt;
+2020-01-29 [dc788668b] Fail if recovery target is not reached
+</span><p>
+       Generate an error if recovery does not reach the specified <a class="link" href="runtime-config-wal.html#RUNTIME-CONFIG-WAL-RECOVERY-TARGET" title="19.5.5. リカバリターゲット">recovery target</a>
+       (Leif Gunnar Erlandsen, Peter Eisentraut)
+      </p><p>
+       Previously, a standby would promote itself upon reaching the end
+       of <acronym class="acronym">WAL</acronym>, even if the target was not reached.
+      </p></li><li class="listitem"><span class="original">
+Author: Amit Kapila &lt;akapila@postgresql.org&gt;
+2019-11-19 [cec2edfa7] Add logical_decoding_work_mem to limit ReorderBuffer mem
+</span><p>
+       Allow control over how much memory is used by logical decoding before
+       it is spilled to disk (Tomas Vondra, Dilip Kumar, Amit Kapila)
+      </p><p>
+       This is controlled by <a class="xref" href="runtime-config-resource.html#GUC-LOGICAL-DECODING-WORK-MEM">logical_decoding_work_mem</a>.
+      </p></li><li class="listitem"><span class="original">
+Author: Fujii Masao &lt;fujii@postgresql.org&gt;
+2020-01-22 [41c184bc6] Add GUC ignore_invalid_pages.
+</span><p>
+       Allow recovery to continue even if invalid
+       pages are referenced by <acronym class="acronym">WAL</acronym> (Fujii Masao)
+      </p><p>
+       This is enabled using <a class="xref" href="runtime-config-developer.html#GUC-IGNORE-INVALID-PAGES">ignore_invalid_pages</a>.
+      </p></li></ul></div></div><div class="sect3" id="id-1.11.6.6.5.5"><div class="titlepage"><div><div><h4 class="title">E.2.3.3. Utility Commands</h4></div></div></div><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><span class="original">
+Author: Amit Kapila &lt;akapila@postgresql.org&gt;
+2020-01-20 [40d964ec9] Allow vacuum command to process indexes in parallel.
+</span><p>
+       Allow <a class="link" href="sql-vacuum.html" title="VACUUM"><code class="command">VACUUM</code></a>
+       to process a table's indexes in parallel (Masahiko Sawada, Amit Kapila)
+      </p><p>
+       The new <code class="literal">PARALLEL</code> option controls this.
+      </p></li><li class="listitem"><span class="original">
+Author: Alvaro Herrera &lt;alvherre@alvh.no-ip.org&gt;
+2020-04-07 [357889eb1] Support FETCH FIRST WITH TIES
+</span><p>
+       Allow <a class="link" href="sql-select.html#SQL-LIMIT" title="LIMIT句"><code class="command">FETCH FIRST</code></a>
+       to use <code class="literal">WITH TIES</code> to return any additional rows
+       that match the last result row (Surafel Temesgen)
+      </p></li><li class="listitem"><span class="original">
+Author: Fujii Masao &lt;fujii@postgresql.org&gt;
+2020-04-04 [ce77abe63] Include information on buffer usage during planning phas
+</span><p>
+       Report planning-time buffer usage in <a class="link" href="sql-explain.html" title="EXPLAIN"><code class="command">EXPLAIN</code></a>'s
+       <code class="literal">BUFFER</code> output (Julien Rouhaud)
+      </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+2020-03-10 [cacef1722] Ensure that CREATE TABLE LIKE copies any NO INHERIT cons
+</span><p>
+       Make <a class="link" href="sql-createtable.html" title="CREATE TABLE"><code class="command">CREATE TABLE
+       LIKE</code></a> propagate a <code class="literal">CHECK</code>
+       constraint's <code class="literal">NO INHERIT</code> property to the created
+       table (Ildar Musin, Chris Travers)
+      </p></li><li class="listitem"><span class="original">
+Author: Fujii Masao &lt;fujii@postgresql.org&gt;
+2020-02-18 [b7e51b350] Make inherited LOCK TABLE perform access permission chec
+</span><p>
+       When using <a class="link" href="sql-lock.html" title="LOCK"><code class="command">LOCK
+       TABLE</code></a> on a partitioned table, do not check permissions
+       on the child tables (Amit Langote)
+      </p></li><li class="listitem"><span class="original">
+Author: Peter Eisentraut &lt;peter@eisentraut.org&gt;
+2020-03-31 [de3bbfcc9] Fix INSERT OVERRIDING USER VALUE behavior
+</span><p>
+       Allow <a class="link" href="sql-insert.html" title="INSERT"><code class="literal">OVERRIDING USER
+       VALUE</code></a> on inserts into identity columns (Dean Rasheed)
+      </p></li><li class="listitem"><span class="original">
+Author: Peter Eisentraut &lt;peter@eisentraut.org&gt;
+2020-01-14 [f595117e2] ALTER TABLE ... ALTER COLUMN ... DROP EXPRESSION
+</span><p>
+       Add <a class="link" href="sql-altertable.html" title="ALTER TABLE"><code class="command">ALTER
+       TABLE ... DROP EXPRESSION</code></a>
+       to allow removing the <code class="literal">GENERATED</code>
+       property from a column (Peter Eisentraut)
+      </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+2020-01-15 [1281a5c90] Restructure ALTER TABLE execution to fix assorted bugs.
+</span><p>
+       Fix bugs in multi-step <code class="command">ALTER TABLE</code> commands (Tom
+       Lane)
+      </p><p>
+       <code class="literal">IF NOT EXISTS</code> clauses now work as expected, in
+       that derived actions (such as index creation) do not execute if the
+       column already exists.  Also, certain cases of combining related
+       actions into one <code class="command">ALTER TABLE</code> now work when they
+       did not before.
+      </p></li><li class="listitem"><span class="original">
+Author: Fujii Masao &lt;fujii@postgresql.org&gt;
+2019-11-21 [30840c92a] Allow ALTER VIEW command to rename the column in the vie
+</span><p>
+       Add <a class="link" href="sql-alterview.html" title="ALTER VIEW"><code class="command">ALTER VIEW</code></a>
+       syntax to rename view columns (Fujii Masao)
+      </p><p>
+       Renaming view columns was already possible, but one had to
+       write <code class="command">ALTER TABLE RENAME COLUMN</code>, which is
+       confusing.
+      </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+2020-03-06 [fe30e7ebf] Allow ALTER TYPE to change some properties of a base typ
+</span><p>
+       Add <a class="link" href="sql-altertype.html" title="ALTER TYPE"><code class="command">ALTER TYPE</code></a>
+       options to modify a base type's <acronym class="acronym">TOAST</acronym> properties
+       and support functions (Tomas Vondra, Tom Lane)
+      </p></li><li class="listitem"><span class="original">
+Author: Peter Eisentraut &lt;peter@eisentraut.org&gt;
+2019-07-23 [06140c201] Add CREATE DATABASE LOCALE option
+</span><p>
+       Add <a class="link" href="sql-createdatabase.html" title="CREATE DATABASE"><code class="command">CREATE
+       DATABASE</code></a> <code class="literal">LOCALE</code> option (Peter
+       Eisentraut)
+      </p><p>
+       This combines the existing options <code class="literal">LC_COLLATE</code> and
+       <code class="literal">LC_CTYPE</code> into a single option.
+      </p></li><li class="listitem"><span class="original">
+Author: Amit Kapila &lt;akapila@postgresql.org&gt;
+2019-11-13 [1379fd537] Introduce the 'force' option for the Drop Database comma
+</span><p>
+       Allow <a class="link" href="sql-dropdatabase.html" title="DROP DATABASE"><code class="command">DROP
+       DATABASE</code></a> to disconnect sessions using the target
+       database, allowing the drop to succeed (Pavel Stehule, Amit Kapila)
+      </p><p>
+       This is enabled by the <code class="literal">FORCE</code> option.
+      </p></li><li class="listitem"><span class="original">
+Author: Peter Eisentraut &lt;peter@eisentraut.org&gt;
+2020-03-09 [71d60e2aa] Add tg_updatedcols to TriggerData
+</span><p>
+       Add structure member <a class="link" href="trigger-interface.html" title="38.3. Cによるトリガ関数の作成"><code class="structfield">tg_updatedcols</code></a>
+       to allow C-language update triggers to know which column(s) were updated
+       (Peter Eisentraut)
+      </p></li></ul></div></div><div class="sect3" id="id-1.11.6.6.5.6"><div class="titlepage"><div><div><h4 class="title">E.2.3.4. Data Types</h4></div></div></div><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><span class="original">
+Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+2020-03-19 [24e2885ee] Introduce "anycompatible" family of polymorphic types.
+</span><p>
+       Add polymorphic data types for use by functions requiring compatible
+       arguments (Pavel Stehule)
+      </p><p>
+       The new data types are <a class="link" href="datatype-pseudo.html#DATATYPE-PSEUDOTYPES-TABLE" title="表8.27 疑似データ型"><code class="type">anycompatible</code></a>,
+       <code class="type">anycompatiblearray</code>, <code class="type">anycompatiblenonarray</code>,
+       and <code class="type">anycompatiblerange</code>.
+      </p></li><li class="listitem"><span class="original">
+Author: Thomas Munro &lt;tmunro@postgresql.org&gt;
+2020-04-07 [aeec457de] Add SQL type xid8 to expose FullTransactionId to users.
+</span><p>
+       Add <acronym class="acronym">SQL</acronym> data type <a class="link" href="datatype-oid.html" title="8.19. オブジェクト識別子データ型"><code class="type">xid8</code></a> to expose
+       FullTransactionId (Thomas Munro)
+      </p><p>
+       The existing <code class="type">xid</code> data type is only four bytes so it
+       does not provide the transaction epoch.
+      </p></li><li class="listitem"><span class="original">
+Author: Peter Eisentraut &lt;peter@eisentraut.org&gt;
+2020-03-18 [a2b1faa0f] Implement type regcollation
+</span><p>
+       Add data
+       type <a class="link" href="datatype-oid.html" title="8.19. オブジェクト識別子データ型"><code class="type">regcollation</code></a>
+       and associated functions, to represent OIDs of collation objects
+       (Julien Rouhaud)
+      </p></li><li class="listitem"><span class="original">
+Author: Thomas Munro &lt;tmunro@postgresql.org&gt;
+2019-10-16 [d5ac14f9c] Use libc version as a collation version on glibc systems
+</span><p>
+       Use the glibc version in some cases as a <a class="link" href="collation.html" title="23.2. 照合順序サポート">collation</a> version identifier (Thomas Munro)
+      </p><p>
+       If the glibc version changes, a warning will be issued about
+       possible corruption of collation-dependent indexes.
+      </p></li><li class="listitem"><span class="original">
+Author: Thomas Munro &lt;tmunro@postgresql.org&gt;
+2020-03-25 [352f6f2df] Add collation versions for Windows.
+</span><p>
+       Add support for collation versions on Windows (Thomas Munro)
+      </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+2019-10-28 [8b7a0f1d1] Allow extracting fields from a ROW() expression in more
+</span><p>
+       Allow <a class="link" href="sql-expressions.html#SQL-SYNTAX-ROW-CONSTRUCTORS" title="4.2.13. 行コンストラクタ"><code class="literal">ROW</code>
+       expressions</a> to have their members extracted with suffix
+       notation (Tom Lane)
+      </p><p>
+       For example, <code class="literal">(ROW(4, 5.0)).f1</code> now returns 4.
+      </p></li></ul></div></div><div class="sect3" id="id-1.11.6.6.5.7"><div class="titlepage"><div><div><h4 class="title">E.2.3.5. Functions</h4></div></div></div><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><span class="original">
+Author: Andrew Dunstan &lt;andrew@dunslane.net&gt;
+2020-01-17 [a83586b55] Add a non-strict version of jsonb_set
+</span><p>
+       Add alternate version of <a class="link" href="functions-json.html#FUNCTIONS-JSON-PROCESSING-TABLE" title="表9.47 JSON Processing Functions"><code class="function">jsonb_set()</code></a>
+       with improved <code class="literal">NULL</code> handling (Andrew Dunstan)
+      </p><p>
+       The new function, <code class="function">jsonb_set_lax()</code>, handles a
+       <code class="literal">NULL</code> new value by either setting the specified
+       key to a <acronym class="acronym">JSON</acronym> null, deleting the key, raising an
+       exception, or returning the <code class="type">jsonb</code> value unmodified, as
+       requested.
+      </p></li><li class="listitem"><span class="original">
+Author: Alexander Korotkov &lt;akorotkov@postgresql.org&gt;
+2019-09-25 [bffe1bd68] Implement jsonpath .datetime() method
+</span><p>
+       Add jsonpath <a class="link" href="functions-json.html#FUNCTIONS-SQLJSON-PATH-OPERATORS" title="9.16.2.2. SQL/JSON Path Operators and Methods">.<code class="function">datetime()</code></a>
+       method (Nikita Glukhov, Teodor Sigaev, Oleg Bartunov, Alexander
+       Korotkov)
+      </p><p>
+       This function allows <acronym class="acronym">JSON</acronym> values to be converted
+       to timestamps, which can then be processed in <code class="type">jsonpath</code>
+       expressions.  This change also adds <code class="type">jsonpath</code> functions
+       that support time-zone-aware output.
+      </p></li><li class="listitem"><span class="original">
+Author: Peter Eisentraut &lt;peter@eisentraut.org&gt;
+2020-04-02 [2991ac5fc] Add SQL functions for Unicode normalization
+</span><p>
+       Add <acronym class="acronym">SQL</acronym> functions <a class="link" href="functions-string.html#FUNCTIONS-STRING-SQL" title="表9.9 SQL String Functions and Operators"><code class="literal">NORMALIZE</code>()</a>
+       to normalize Unicode strings, and <a class="link" href="collation.html#COLLATION-NONDETERMINISTIC" title="23.2.2.4. 非決定論的な照合順序"><code class="literal">IS
+       NORMALIZED</code></a> to check for normalization (Peter
+       Eisentraut)
+      </p></li><li class="listitem"><span class="original">
+Author: Michael Paquier &lt;michael@paquier.xyz&gt;
+2019-07-05 [313f87a17] Add min() and max() aggregates for pg_lsn
+</span><p>
+       Add <code class="function">min()</code> and
+       <code class="function">max()</code> aggregates for <a class="link" href="datatype-pg-lsn.html" title="8.20. pg_lsn 型"><code class="type">pg_lsn</code></a> (Fabrízio
+       de Royes Mello)
+      </p><p>
+       These are particularly useful in monitoring queries.
+      </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+2020-03-06 [a6525588b] Allow Unicode escapes in any server encoding, not only U
+</span><p>
+       Allow <a class="link" href="sql-syntax-lexical.html#SQL-SYNTAX-STRINGS-UESCAPE" title="4.1.2.3. Unicodeエスケープがある文字列定数">Unicode
+       escapes</a>,
+       e.g., <code class="literal">E'\u<em class="replaceable"><code>nnnn</code></em>'</code>
+       or <code class="literal">U&amp;'\<em class="replaceable"><code>nnnn</code></em>'</code>, to
+       specify any character available in the database encoding, even when
+       the database encoding is not <acronym class="acronym">UTF</acronym>-8 (Tom Lane)
+      </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+2020-03-03 [d67755049] Allow to_date/to_timestamp to recognize non-English mont
+</span><p>
+       Allow <a class="link" href="functions-formatting.html" title="9.8. Data Type Formatting Functions"><code class="function">to_date()</code></a>
+       and <code class="function">to_timestamp()</code> to recognize non-English
+       month/day names (Juan José Santamaría Flecha, Tom Lane)
+      </p><p>
+       The names recognized are the same as those output by <a class="link" href="functions-formatting.html" title="9.8. Data Type Formatting Functions"><code class="function">to_char()</code></a>
+       with the same format patterns.
+      </p></li><li class="listitem"><span class="original">
+Author: Alexander Korotkov &lt;akorotkov@postgresql.org&gt;
+2019-09-16 [d589f9446] Support for FF1-FF6 datetime format patterns
+</span><p>
+       Add datetime format patterns <code class="literal">FF1</code>
+       – <code class="literal">FF6</code> to specify input or output of
+       1 to 6 fractional-second digits (Alexander
+       Korotkov, Nikita Glukhov, Teodor Sigaev, Oleg Bartunov)
+      </p><p>
+       These patterns can be used by <code class="function">to_char()</code>,
+       <code class="function">to_timestamp()</code>, and jsonpath's
+       .<code class="function">datetime()</code>.
+      </p></li><li class="listitem"><span class="original">
+Author: Alexander Korotkov &lt;akorotkov@postgresql.org&gt;
+2019-09-16 [b64b857f5] Support for SSSSS datetime format pattern
+</span><p>
+       Add <code class="literal">SSSSS</code> datetime format pattern as an
+       <acronym class="acronym">SQL</acronym>-standard alias for <code class="literal">SSSS</code>
+       (Nikita Glukhov, Alexander Korotkov)
+      </p></li><li class="listitem"><span class="original">
+Author: Peter Eisentraut &lt;peter@eisentraut.org&gt;
+2019-07-14 [5925e5549] Add gen_random_uuid function
+</span><p>
+       Add function <a class="link" href="functions-uuid.html" title="9.14. UUID Functions"><code class="function">gen_random_uuid()</code></a>
+       to generate version-4 UUIDs (Peter Eisentraut)
+      </p><p>
+       Previously <acronym class="acronym">UUID</acronym> generation functions were only
+       available in the external modules <a class="xref" href="uuid-ossp.html" title="F.44. uuid-ossp">uuid-ossp</a> and <a class="xref" href="pgcrypto.html" title="F.25. pgcrypto">pgcrypto</a>.
+      </p></li><li class="listitem"><span class="original">
+Author: Dean Rasheed &lt;dean.a.rasheed@gmail.com&gt;
+2020-01-25 [13661ddd7] Add functions gcd() and lcm() for integer and numeric ty
+</span><p>
+       Add greatest-common-denominator
+       (<a class="link" href="functions-math.html#FUNCTIONS-MATH-FUNC-TABLE" title="表9.5 Mathematical Functions"><code class="function">gcd</code></a>)
+       and least-common-multiple (<code class="function">lcm</code>) functions (Vik
+       Fearing)
+      </p></li><li class="listitem"><span class="original">
+Author: Dean Rasheed &lt;dean.a.rasheed@gmail.com&gt;
+2020-03-01 [43a899f41] Fix corner-case loss of precision in numeric ln().
+Author: Dean Rasheed &lt;dean.a.rasheed@gmail.com&gt;
+2020-03-28 [4083f445c] Improve the performance and accuracy of numeric sqrt() a
+</span><p>
+       Improve the performance and accuracy of the <code class="type">numeric</code>
+       type's <a class="link" href="functions-math.html#FUNCTIONS-MATH-FUNC-TABLE" title="表9.5 Mathematical Functions">square root</a>
+       (<code class="function">sqrt</code>) and natural log
+       (<code class="function">ln</code>) functions (Dean Rasheed)
+      </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+2020-01-06 [20d6225d1] Add functions min_scale(numeric) and trim_scale(numeric)
+</span><p>
+       Add function <a class="link" href="functions-math.html#FUNCTIONS-MATH-FUNC-TABLE" title="表9.5 Mathematical Functions"><code class="function">min_scale()</code></a>
+       that returns the number of digits to the right of the decimal point
+       that are required to represent a <code class="type">numeric</code> value with
+       full accuracy (Pavel Stehule)
+      </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+2020-01-06 [20d6225d1] Add functions min_scale(numeric) and trim_scale(numeric)
+</span><p>
+       Add function <a class="link" href="functions-math.html#FUNCTIONS-MATH-FUNC-TABLE" title="表9.5 Mathematical Functions"><code class="function">trim_scale()</code></a>
+       to reduce the scale of a <code class="type">numeric</code> value by removing
+       trailing zeros (Pavel Stehule)
+      </p></li><li class="listitem"><span class="original">
+Author: Alexander Korotkov &lt;akorotkov@postgresql.org&gt;
+2019-07-14 [6254c55f8] Add missing commutators for distance operators
+</span><p>
+       Add commutators of <a class="link" href="functions-geometry.html#FUNCTIONS-GEOMETRY-OP-TABLE" title="表9.35 Geometric Operators">distance
+       operators</a> (Nikita Glukhov)
+      </p><p>
+       For example, previously only <code class="type">point</code>
+       <code class="literal">&lt;-&gt;</code> <code class="type">line</code> was supported,
+       now <code class="type">line</code> <code class="literal">&lt;-&gt;</code> <code class="type">point</code>
+       works too.
+      </p></li><li class="listitem"><span class="original">
+Author: Thomas Munro &lt;tmunro@postgresql.org&gt;
+2020-04-07 [4c04be9b0] Introduce xid8-based functions to replace txid_XXX.
+</span><p>
+       Create <code class="type">xid8</code> versions of all <a class="link" href="functions-info.html#FUNCTIONS-PG-SNAPSHOT" title="表9.74 Transaction ID and Snapshot Information Functions">transaction ID functions</a>
+       (Thomas Munro)
+      </p><p>
+       The old <code class="type">xid</code>-based functions still exist, for backward
+       compatibility.
+      </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+2020-04-07 [26a944cf2] Adjust bytea get_bit/set_bit to use int8 not int4 for bi
+</span><p>
+       Allow <a class="link" href="functions-binarystring.html#FUNCTIONS-BINARYSTRING-OTHER" title="表9.12 Other Binary String Functions"><code class="function">get_bit()</code></a>
+       and <code class="function">set_bit()</code> to set bits beyond the first
+       256MB of a <code class="type">bytea</code> value (Movead Li)
+      </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+2019-08-01 [4886da832] Mark advisory-lock functions as parallel restricted, not
+</span><p>
+       Allow <a class="link" href="functions-admin.html#FUNCTIONS-ADVISORY-LOCKS" title="9.27.10. 勧告的ロック用関数">advisory-lock
+       functions</a> to be used in some parallel operations (Tom Lane)
+      </p></li><li class="listitem"><span class="original">
+Author: Alvaro Herrera &lt;alvherre@alvh.no-ip.org&gt;
+2020-04-20 [5fc703946] Add ALTER .. NO DEPENDS ON
+</span><p>
+       Add the ability to remove an object's dependency on an extension
+       (Álvaro Herrera)
+      </p><p>
+       The object can be a function, materialized view, index, or trigger.
+       The syntax is <code class="command">ALTER .. NO DEPENDS ON</code>.
+      </p></li></ul></div></div><div class="sect3" id="id-1.11.6.6.5.8"><div class="titlepage"><div><div><h4 class="title">E.2.3.6. <a class="link" href="plpgsql.html" title="第42章 PL/pgSQL - SQL手続き言語">PL/pgSQL</a></h4></div></div></div><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+2020-03-26 [8f59f6b9c] Improve performance of "simple expressions" in PL/pgSQL.
+</span><p>
+       Improve performance of simple PL/pgSQL expressions (Tom Lane,
+       Amit Langote)
+      </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+2019-11-22 [73b06cf89] Avoid taking a new snapshot for an immutable simple expr
+</span><p>
+       Improve performance of PL/pgSQL functions that use immutable
+       expressions (Konstantin Knizhnik)
+      </p></li></ul></div></div><div class="sect3" id="id-1.11.6.6.5.9"><div class="titlepage"><div><div><h4 class="title">E.2.3.7. Client Interfaces</h4></div></div></div><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><span class="original">
+Author: Jeff Davis &lt;jdavis@postgresql.org&gt;
+2019-09-23 [d6e612f83] Add libpq parameter 'channel_binding'.
+</span><p>
+       Allow libpq clients to require channel binding for encrypted
+       connections (Jeff Davis)
+      </p><p>
+       Using the libpq connection parameter <a class="link" href="libpq-connect.html#LIBPQ-CONNECT-CHANNEL-BINDING"><code class="literal">channel_binding</code></a>
+       forces the other end of the <acronym class="acronym">TLS</acronym> connection to prove
+       it knows the user's password.  This prevents man-in-the-middle attacks.
+      </p></li><li class="listitem"><span class="original">
+Author: Michael Paquier &lt;michael@paquier.xyz&gt;
+2020-01-28 [ff8ca5fad] Add connection parameters to control SSL protocol min/ma
+Author: Michael Paquier &lt;michael@paquier.xyz&gt;
+2020-04-30 [401aad670] Rename connection parameters to control min/max SSL prot
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+2020-06-27 [16412c784] Change libpq's default ssl_min_protocol_version to TLSv1
+</span><p>
+       Add libpq connection parameters to control the minimum and maximum
+       <acronym class="acronym">TLS</acronym> version allowed for an encrypted connection
+       (Daniel Gustafsson)
+      </p><p>
+       The settings are <a class="xref" href="libpq-connect.html#LIBPQ-CONNECT-SSL-MIN-PROTOCOL-VERSION">ssl_min_protocol_version</a> and <a class="xref" href="libpq-connect.html#LIBPQ-CONNECT-SSL-MAX-PROTOCOL-VERSION">ssl_max_protocol_version</a>.
+       By default, the minimum <acronym class="acronym">TLS</acronym> version is 1.2
+       (this represents a behavioral change from previous releases).
+      </p></li><li class="listitem"><span class="original">
+Author: Andrew Dunstan &lt;andrew@dunslane.net&gt;
+2019-11-30 [4dc635521] libq support for sslpassword connection param,  DER form
+</span><p>
+       Allow use of passwords to unlock client certificates (Craig
+       Ringer, Andrew Dunstan)
+      </p><p>
+       This is enabled by libpq's <a class="xref" href="libpq-connect.html#LIBPQ-CONNECT-SSLPASSWORD">sslpassword</a>
+       connection parameter.
+      </p></li><li class="listitem"><span class="original">
+Author: Andrew Dunstan &lt;andrew@dunslane.net&gt;
+2019-11-30 [4dc635521] libq support for sslpassword connection param,  DER form
+</span><p>
+       Allow libpq to use <acronym class="acronym">DER</acronym>-encoded client
+       certificates (Craig Ringer, Andrew Dunstan)
+      </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+2020-08-03 [44cd434ec] Fix behavior of ecpg's "EXEC SQL elif name".
+</span><p>
+       Fix <span class="application">ecpg</span>'s <code class="literal">EXEC SQL
+       elif</code> directive to work correctly (Tom Lane)
+      </p><p>
+       Previously it behaved the same as <code class="literal">endif</code> followed
+       by <code class="literal">ifdef</code>, so that a successful previous branch
+       of the same <code class="literal">if</code> construct did not prevent
+       expansion of the <code class="literal">elif</code> branch or following
+       branches.
+      </p></li></ul></div></div><div class="sect3" id="id-1.11.6.6.5.10"><div class="titlepage"><div><div><h4 class="title">E.2.3.8. Client Applications</h4></div></div></div><div class="sect4" id="id-1.11.6.6.5.10.2"><div class="titlepage"><div><div><h5 class="title">E.2.3.8.1. <a class="xref" href="app-psql.html" title="psql"><span class="refentrytitle"><span class="application">psql</span></span></a></h5></div></div></div><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><span class="original">
+Author: Michael Paquier &lt;michael@paquier.xyz&gt;
+2020-02-12 [dcdbb5a5d] Add %x to default PROMPT1 and PROMPT2 in psql
+</span><p>
+        Add transaction status (<code class="literal">%x</code>)
+        to <span class="application">psql</span>'s default
+        <a class="link" href="app-psql.html#APP-PSQL-PROMPTING" title="プロンプト">prompts</a> (Vik Fearing)
+       </p></li><li class="listitem"><span class="original">
+Author: Thomas Munro &lt;tmunro@postgresql.org&gt;
+2019-11-19 [7f338369c] Allow invisible PROMPT2 in psql.
+</span><p>
+        Allow the secondary <span class="application">psql</span> prompt to be
+        blank but the same width as the primary prompt (Thomas Munro)
+       </p><p>
+        This is accomplished by setting <code class="literal">PROMPT2</code>
+        to <code class="literal">%w</code>.
+       </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+2020-04-07 [b63c293bc] Allow psql's \g and \gx commands to transiently change \
+</span><p>
+        Allow <span class="application">psql</span>'s
+        <a class="link" href="app-psql.html#APP-PSQL-META-COMMANDS" title="メタコマンド"><code class="literal">\g</code></a>
+        and <code class="literal">\gx</code> commands to
+        change <a class="link" href="app-psql.html#APP-PSQL-META-COMMANDS" title="メタコマンド">\pset</a> output
+        options for the duration of that single command (Tom Lane)
+       </p><p>
+        This feature allows syntax like <code class="literal">\g (expand=on)</code>,
+        which is equivalent to <code class="literal">\gx</code>.
+       </p></li><li class="listitem"><span class="original">
+Author: Alexander Korotkov &lt;akorotkov@postgresql.org&gt;
+2020-03-08 [b0b5e20cd] Show opclass and opfamily related information in psql
+</span><p>
+        Add <span class="application">psql</span> commands to display operator
+        classes and operator families (Sergey Cherkashin, Nikita Glukhov,
+        Alexander Korotkov)
+       </p><p>
+        The new commands are <a class="link" href="app-psql.html#APP-PSQL-META-COMMANDS" title="メタコマンド"><code class="literal">\dAc</code></a>,
+        <code class="literal">\dAf</code>, <code class="literal">\dAo</code>,
+        and <code class="literal">\dAp</code>.
+       </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+2019-07-03 [9a2ea6183] Show table persistence in psql's \dt+ and related comman
+</span><p>
+        Show table persistence in <span class="application">psql</span>'s <a class="link" href="app-psql.html#APP-PSQL-META-COMMANDS" title="メタコマンド"><code class="literal">\dt+</code></a>
+        and related commands (David Fetter)
+       </p><p>
+        In verbose mode, the table/index/view shows if the object is permanent,
+        temporary, or unlogged.
+       </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+2019-07-23 [eb5472da9] Improve psql's \d output for TOAST tables.
+</span><p>
+        Improve output of <span class="application">psql</span>'s <a class="link" href="app-psql.html#APP-PSQL-META-COMMANDS" title="メタコマンド"><code class="literal">\d</code></a>
+        for <acronym class="acronym">TOAST</acronym> tables (Justin Pryzby)
+       </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+2019-11-22 [d1c866e57] Make psql redisplay the query buffer after \e.
+</span><p>
+        Fix redisplay after <span class="application">psql</span>'s <a class="link" href="app-psql.html#APP-PSQL-META-COMMANDS" title="メタコマンド"><code class="literal">\e</code></a>
+        command (Tom Lane)
+       </p><p>
+        When exiting the editor, if the query doesn't end with a semicolon
+        or <code class="literal">\g</code>, the query buffer contents will now be
+        displayed.
+       </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+2019-07-05 [02e95a504] Add \warn command to psql.
+</span><p>
+        Add <a class="link" href="app-psql.html#APP-PSQL-META-COMMANDS" title="メタコマンド"><code class="literal">\warn</code></a>
+        command to <span class="application">psql</span> (David Fetter)
+       </p><p>
+        This is like <code class="literal">\echo</code> except that the text is sent
+        to stderr instead of stdout.
+       </p></li><li class="listitem"><span class="original">
+Author: Peter Eisentraut &lt;peter@eisentraut.org&gt;
+2020-02-28 [1933ae629] Add PostgreSQL home page to - -help output
+</span><p>
+        Add the <span class="productname">PostgreSQL</span> home page to command-line
+        <code class="option">--help</code> output (Peter Eisentraut)
+       </p></li></ul></div></div><div class="sect4" id="id-1.11.6.6.5.10.3"><div class="titlepage"><div><div><h5 class="title">E.2.3.8.2. <a class="link" href="pgbench.html" title="pgbench"><span class="application">pgbench</span></a></h5></div></div></div><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><span class="original">
+Author: Amit Kapila &lt;akapila@postgresql.org&gt;
+2019-10-03 [b1c1aa531] pgbench: add - -partitions and - -partition-method options
+</span><p>
+        Allow pgbench to partition its <span class="quote">「<span class="quote">accounts</span>」</span> table
+        (Fabien Coelho)
+       </p><p>
+        This allows performance testing of partitioning.
+       </p></li><li class="listitem"><span class="original">
+Author: Michael Paquier &lt;michael@paquier.xyz&gt;
+2020-04-03 [9d8ef9880] Add support for \aset in pgbench
+</span><p>
+        Add pgbench command <code class="literal">\aset</code>, which behaves
+        like <code class="literal">\gset</code>, but for multiple queries (Fabien
+        Coelho)
+       </p></li><li class="listitem"><span class="original">
+Author: Fujii Masao &lt;fujii@postgresql.org&gt;
+2019-11-06 [a386942bd] Add "G" (server-side data generation) as an initializati
+</span><p>
+        Allow pgbench to generate its initial data server-side, rather
+        than client-side (Fabien Coelho)
+       </p></li><li class="listitem"><span class="original">
+Author: Thomas Munro &lt;tmunro@postgresql.org&gt;
+2019-07-16 [5823677ac] Provide pgbench - -show-script to dump built-in scripts.
+</span><p>
+        Allow pgbench to show script contents using option
+        <code class="option">--show-script</code> (Fabien Coelho)
+       </p></li></ul></div></div></div><div class="sect3" id="id-1.11.6.6.5.11"><div class="titlepage"><div><div><h4 class="title">E.2.3.9. Server Applications</h4></div></div></div><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><span class="original">
+Author: Robert Haas &lt;rhaas@postgresql.org&gt;
+2020-04-03 [0d8c9c121] Generate backup manifests for base backups, and validate
+Author: Robert Haas &lt;rhaas@postgresql.org&gt;
+2020-04-12 [dbc60c559] Rename pg_validatebackup to pg_verifybackup.
+</span><p>
+       Generate backup manifests for base backups, and verify them (Robert
+       Haas)
+      </p><p>
+       A new tool <a class="link" href="app-pgverifybackup.html" title="pg_verifybackup"><span class="application">pg_verifybackup</span></a>
+       can verify backups.
+      </p></li><li class="listitem"><span class="original">
+Author: Author: Fujii Masao &lt;fujii@postgresql.org&gt;
+2020-03-19 [fab13dc50] Make pg_basebackup ask the server to estimate the total
+</span><p>
+       Have <a class="link" href="app-pgbasebackup.html" title="pg_basebackup"><span class="application">pg_basebackup</span></a>
+       estimate the total backup size by default (Fujii Masao)
+      </p><p>
+       This computation allows <a class="link" href="monitoring-stats.html#MONITORING-STATS-DYNAMIC-VIEWS-TABLE" title="表27.1 動的統計情報ビュー"><code class="structname">pg_stat_progress_basebackup</code></a>
+       to show progress.  If that is not needed, it can be disabled by
+       using the <code class="option">--no-estimate-size</code> option.  Previously,
+       this computation happened only if the <code class="option">--progress</code>
+       option was used.
+      </p></li><li class="listitem"><span class="original">
+Author: Alvaro Herrera &lt;alvherre@alvh.no-ip.org&gt;
+2019-09-30 [927474ce1] pg_rewind: Allow writing recovery configuration
+</span><p>
+       Add an option to <a class="link" href="app-pgrewind.html" title="pg_rewind"><span class="application">pg_rewind</span></a>
+       to configure standbys (Paul Guo, Jimmy Yih, Ashwin Agrawal)
+      </p><p>
+       This matches <a class="link" href="app-pgbasebackup.html" title="pg_basebackup"><span class="application">pg_basebackup</span></a>'s
+       <code class="option">--write-recovery-conf</code> option.
+      </p></li><li class="listitem"><span class="original">
+Author: Michael Paquier &lt;michael@paquier.xyz&gt;
+2020-04-01 [a7e8ece41] Add -c/- -restore-target-wal to pg_rewind
+</span><p>
+       Allow <span class="application">pg_rewind</span> to use the target
+       cluster's <a class="xref" href="runtime-config-wal.html#GUC-RESTORE-COMMAND">restore_command</a> to retrieve needed
+       <acronym class="acronym">WAL</acronym> (Alexey Kondratov)
+      </p><p>
+       This is enabled using the
+       <code class="option">-c</code>/<code class="option">--restore-target-wal</code> option.
+      </p></li><li class="listitem"><span class="original">
+Author: Alvaro Herrera &lt;alvherre@alvh.no-ip.org&gt;
+2019-09-27 [5adafaf17] Have pg_rewind run crash recovery before rewinding
+</span><p>
+       Have <span class="application">pg_rewind</span> automatically run crash
+       recovery before rewinding (Paul Guo, Jimmy Yih, Ashwin Agrawal)
+      </p><p>
+       This can be disabled by using <code class="option">--no-ensure-shutdown</code>.
+      </p></li><li class="listitem"><span class="original">
+Author: Fujii Masao &lt;fujii@postgresql.org&gt;
+2019-11-13 [7b8a899bd] Make pg_waldump report more detail information about PRE
+</span><p>
+       Increase the <a class="link" href="sql-prepare-transaction.html" title="PREPARE TRANSACTION"><code class="command">PREPARE
+       TRANSACTION</code></a>-related information reported by
+       <span class="application">pg_waldump</span> (Fujii Masao)
+      </p></li><li class="listitem"><span class="original">
+Author: Robert Haas &lt;rhaas@postgresql.org&gt;
+2020-04-02 [ac44367ef] pg_waldump: Add a - -quiet option.
+</span><p>
+       Add <a class="link" href="pgwaldump.html" title="pg_waldump"><span class="application">pg_waldump</span></a>
+       option <code class="option">--quiet</code> to suppress non-error output (Andres
+       Freund, Robert Haas)
+      </p></li><li class="listitem"><span class="original">
+Author: Alvaro Herrera &lt;alvherre@alvh.no-ip.org&gt;
+2020-03-25 [2f9eb3132] pg_dump: Allow dumping data of specific foreign servers
+</span><p>
+       Add <a class="link" href="app-pgdump.html" title="pg_dump"><span class="application">pg_dump</span></a>
+       option <code class="option">--include-foreign-data</code> to dump data from
+       foreign servers (Luis Carril)
+      </p></li><li class="listitem"><span class="original">
+Author: Amit Kapila &lt;akapila@postgresql.org&gt;
+2020-01-29 [47bc9ced0] Add - -parallel option to vacuumdb command.
+</span><p>
+       Allow vacuum commands run by <a class="link" href="app-vacuumdb.html" title="vacuumdb">vacuumdb</a> to operate in parallel mode
+       (Masahiko Sawada)
+      </p><p>
+       This is enabled with the new <code class="option">--parallel</code> option.
+      </p></li><li class="listitem"><span class="original">
+Author: Michael Paquier &lt;michael@paquier.xyz&gt;
+2019-07-27 [5ab892c39] Add support for - -jobs in reindexdb
+</span><p>
+       Allow <a class="link" href="app-reindexdb.html" title="reindexdb">reindexdb</a> to operate in
+       parallel (Julien Rouhaud)
+      </p><p>
+       Parallel mode is enabled with the new <code class="option">--jobs</code> option.
+      </p></li><li class="listitem"><span class="original">
+Author: Amit Kapila &lt;akapila@postgresql.org&gt;
+2019-11-20 [80e05a088] Add the support for '-f' option in dropdb utility.
+</span><p>
+       Allow <a class="link" href="app-dropdb.html" title="dropdb">dropdb</a> to disconnect
+       sessions using the target database, allowing the drop to succeed
+       (Pavel Stehule)
+      </p><p>
+       This is enabled with the <code class="option">-f</code> option.
+      </p></li><li class="listitem"><span class="original">
+Author: Author: Michael Paquier &lt;michael@paquier.xyz&gt;
+2019-10-23 [4fa5edcd1] Remove last traces of - -adduser/- -no-adduser in createus
+</span><p>
+       Remove <code class="option">--adduser</code> and <code class="option">--no-adduser</code>
+       from <a class="link" href="app-createuser.html" title="createuser">createuser</a> (Alexander
+       Lakhin)
+      </p><p>
+       The long-supported preferred options for this are called
+       <code class="option">--superuser</code> and <code class="option">--no-superuser</code>.
+      </p></li><li class="listitem"><span class="original">
+Author: Peter Eisentraut &lt;peter@eisentraut.org&gt;
+2019-07-27 [959f6d6a1] pg_upgrade: Default new bindir to pg_upgrade location
+</span><p>
+       Use the directory of the <a class="link" href="pgupgrade.html" title="pg_upgrade"><span class="application">pg_upgrade</span></a>
+       program as the default <code class="option">--new-bindir</code> setting when
+       running <span class="application">pg_upgrade</span> (Daniel Gustafsson)
+      </p></li></ul></div></div><div class="sect3" id="id-1.11.6.6.5.12"><div class="titlepage"><div><div><h4 class="title">E.2.3.10. Documentation</h4></div></div></div><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><span class="original">
+Author: Alvaro Herrera &lt;alvherre@alvh.no-ip.org&gt;
+2020-04-03 [347d2b07f] Add a glossary to the documentation
+</span><p>
+       Add a <a class="link" href="glossary.html" title="付録M Glossary">glossary</a> to the documentation
+       (Corey Huinker, Jürgen Purtz, Roger Harkavy, Álvaro
+       Herrera)
+      </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+2020-04-12 [e894c6183] Doc: introduce new layout for tables of functions and op
+</span><p>
+       Reformat tables containing <a class="link" href="functions.html" title="第9章 関数と演算子">function
+       and operator information</a> for better clarity (Tom Lane)
+      </p></li><li class="listitem"><span class="original">
+Author: Peter Eisentraut &lt;peter@eisentraut.org&gt;
+2019-08-13 [416c75cf3] Update to DocBook 4.5
+</span><p>
+       Upgrade to use <a class="link" href="docguide-docbook.html" title="J.1. DocBook">DocBook 4.5</a>
+       (Peter Eisentraut)
+      </p></li></ul></div></div><div class="sect3" id="id-1.11.6.6.5.13"><div class="titlepage"><div><div><h4 class="title">E.2.3.11. Source Code</h4></div></div></div><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><span class="original">
+Author: Michael Paquier &lt;michael@paquier.xyz&gt;
+2019-07-02 [2b1394fc2] Add support for Visual Studio 2019 in build scripts
+</span><p>
+       Add support for building on Visual Studio 2019 (Haribabu Kommi)
+      </p></li><li class="listitem"><span class="original">
+Author: Peter Eisentraut &lt;peter@eisentraut.org&gt;
+2019-12-19 [e975c1a60] Add support for MSYS2
+</span><p>
+       Add build support for MSYS2 (Peter Eisentraut)
+      </p></li><li class="listitem"><span class="original">
+Author: Noah Misch &lt;noah@leadboat.com&gt;
+2019-10-18 [30ee5d17c] For all ppc compilers, implement compare_exchange and fe
+</span><p>
+       Add compare_exchange and fetch_add assembly language code for Power
+       PC compilers (Noah Misch)
+      </p></li><li class="listitem"><span class="original">
+Author: Peter Eisentraut &lt;peter@eisentraut.org&gt;
+2019-07-04 [7b925e127] Sync our Snowball stemmer dictionaries with current upst
+</span><p>
+       Update <a class="link" href="textsearch-dictionaries.html#TEXTSEARCH-SNOWBALL-DICTIONARY" title="12.6.6. Snowball辞書">Snowball
+       stemmer</a> dictionaries used by full text search (Panagiotis
+       Mavrogiorgos)
+      </p><p>
+       This adds Greek stemming and improves Danish and French stemming.
+      </p></li><li class="listitem"><span class="original">
+Author: Michael Paquier &lt;michael@paquier.xyz&gt;
+2020-02-19 [e2e02191e] Clean up some code, comments and docs referring to Windo
+</span><p>
+       Remove support for Windows 2000 (Michael Paquier)
+      </p></li><li class="listitem"><span class="original">
+Author: Peter Eisentraut &lt;peter@eisentraut.org&gt;
+2019-07-01 [c72f9b950] Remove support for non-ELF BSD systems
+</span><p>
+       Remove support for non-<acronym class="acronym">ELF</acronym> <acronym class="acronym">BSD</acronym>
+       systems (Peter Eisentraut)
+      </p></li><li class="listitem"><span class="original">
+Author: Peter Eisentraut &lt;peter@eisentraut.org&gt;
+2020-01-08 [37f21ed13] Remove support for Python older than 2.6
+</span><p>
+       Remove <a class="link" href="plpython.html" title="第45章 PL/Python - Python手続き言語">support</a> for Python versions
+       2.5.X and earlier (Peter Eisentraut)
+      </p></li><li class="listitem"><span class="original">
+Author: Michael Paquier &lt;michael@paquier.xyz&gt;
+2020-01-06 [7b283d0e1] Remove support for OpenSSL 0.9.8 and 1.0.0
+</span><p>
+       Remove <a class="link" href="install-short.html" title="16.1. 簡易版">support</a> for OpenSSL 0.9.8
+       and 1.0.0 (Michael Paquier)
+      </p></li><li class="listitem"><span class="original">
+Author: Peter Eisentraut &lt;peter@eisentraut.org&gt;
+2019-11-27 [4513d8b07] Move configure - -disable-float8-byval to pg_config_manua
+Author: Peter Eisentraut &lt;peter@eisentraut.org&gt;
+2019-11-21 [2e4db241b] Remove configure - -disable-float4-byval
+</span><p>
+       Remove <a class="link" href="install-short.html" title="16.1. 簡易版">configure</a> options
+       <code class="option">--disable-float8-byval</code>
+       and <code class="option">--disable-float4-byval</code> (Peter Eisentraut)
+      </p><p>
+       These were needed for compatibility with some version-zero C
+       functions, but those are no longer supported.
+      </p></li><li class="listitem"><span class="original">
+Author: Fujii Masao &lt;fujii@postgresql.org&gt;
+2020-03-30 [6aba63ef3] Allow the planner-related functions and hook to accept t
+</span><p>
+       Pass the query string to planner hook functions (Pascal Legrand,
+       Julien Rouhaud)
+      </p></li><li class="listitem"><span class="original">
+Author: Joe Conway &lt;mail@joeconway.com&gt;
+2019-11-23 [f7a2002e8] Add object TRUNCATE hook
+</span><p>
+       Add <a class="link" href="sql-truncate.html" title="TRUNCATE"><code class="command">TRUNCATE</code></a>
+       command hook (Yuli Khodorkovskiy)
+      </p></li><li class="listitem"><span class="original">
+Author: Andrew Dunstan &lt;andrew@dunslane.net&gt;
+2020-03-25 [896fcdb23] Provide a TLS init hook
+</span><p>
+       Add <acronym class="acronym">TLS</acronym> init hook (Andrew Dunstan)
+      </p></li><li class="listitem"><span class="original">
+Author: Peter Eisentraut &lt;peter@eisentraut.org&gt;
+2020-01-31 [a9cff89f7] Allow building without default socket directory
+</span><p>
+       Allow building with no predefined Unix-domain socket directory
+       (Peter Eisentraut)
+      </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+2019-09-05 [7de19fbc0] Use data directory inode number, not port, to select Sys
+</span><p>
+       Reduce the probability of SysV resource key collision on Unix platforms
+       (Tom Lane)
+      </p></li><li class="listitem"><span class="original">
+Author: Peter Eisentraut &lt;peter@eisentraut.org&gt;
+2019-09-05 [74a308cf5] Use explicit_bzero
+</span><p>
+       Use operating system functions to reliably erase memory that contains
+       sensitive information (Peter Eisentraut)
+      </p><p>
+       For example, this is used for clearing passwords stored in memory.
+      </p></li><li class="listitem"><span class="original">
+Author: Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+2019-08-19 [55ea10918] Add "headerscheck" script to test header-file compilabil
+</span><p>
+       Add <code class="filename">headerscheck</code> script to test C header-file
+       compatibility (Tom Lane)
+      </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+2019-07-15 [1cff1b95a] Represent Lists as expansible arrays, not chains of cons
+</span><p>
+       Implement internal lists as arrays, rather than a chain of cells
+       (Tom Lane)
+      </p><p>
+       This improves performance for queries that access many objects.
+      </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+2020-07-24 [92fe6895d] Fix assorted bugs by changing TS_execute's callback API
+2020-07-24 [70eca6a9a] Replace TS_execute's TS_EXEC_CALC_NOT flag with TS_EXEC_
+</span><p>
+       Change the API for <code class="function">TS_execute()</code> (Tom Lane,
+       Pavel Borisov)
+      </p><p>
+       <code class="function">TS_execute</code> callbacks must now provide ternary
+       (yes/no/maybe) logic.  Calculating NOT queries accurately is now
+       the default.
+      </p></li></ul></div></div><div class="sect3" id="id-1.11.6.6.5.14"><div class="titlepage"><div><div><h4 class="title">E.2.3.12. Additional Modules</h4></div></div></div><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+2020-01-29 [50fc694e4] Invent "trusted" extensions, and remove the pg_pltemplat
+</span><p>
+       Allow <a class="link" href="sql-createextension.html" title="CREATE EXTENSION">extensions</a> to be
+       specified as trusted (Tom Lane)
+      </p><p>
+       Such extensions can be installed in a database by users with
+       database-level <code class="literal">CREATE</code> privileges, even if they
+       are not superusers.  This change also removes
+       the <code class="structname">pg_pltemplate</code> system catalog.
+      </p></li><li class="listitem"><span class="original">
+Author: Andrew Dunstan &lt;andrew@dunslane.net&gt;
+2019-12-20 [6136e94dc] Superuser can permit passwordless connections on postgre
+</span><p>
+       Allow non-superusers to connect to <a class="xref" href="postgres-fdw.html" title="F.33. postgres_fdw">postgres_fdw</a>
+       foreign servers without using a password (Craig Ringer)
+      </p><p>
+       Specifically, allow a superuser to set
+       <code class="literal">password_required</code> to false for
+       a <a class="link" href="sql-alterusermapping.html" title="ALTER USER MAPPING">user mapping</a>.  Care
+       must still be taken to prevent non-superusers from using superuser
+       credentials to connect to the foreign server.
+      </p></li><li class="listitem"><span class="original">
+Author: Andrew Dunstan &lt;andrew@dunslane.net&gt;
+2020-01-09 [f5fd995a1] Allow 'sslkey' and 'sslcert' in postgres_fdw user mappin
+</span><p>
+       Allow <span class="application">postgres_fdw</span> to use certificate
+       authentication (Craig Ringer)
+      </p><p>
+       Different users can use different certificates.
+      </p></li><li class="listitem"><span class="original">
+Author: Joe Conway &lt;mail@joeconway.com&gt;
+2019-11-23 [4f66c93f6] Update sepgsql to add mandatory access control for TRUNC
+</span><p>
+       Allow <a class="xref" href="sepgsql.html" title="F.35. sepgsql">sepgsql</a> to control access to the
+       <code class="command">TRUNCATE</code> command (Yuli Khodorkovskiy)
+      </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+2020-03-06 [36058a3c5] Create contrib/bool_plperl to provide a bool transform f
+</span><p>
+       Add extension <a class="link" href="plperl.html" title="第44章 PL/Perl - Perl手続き言語"><span class="application">bool_plperl</span></a>
+       which transforms <acronym class="acronym">SQL</acronym> booleans to/from PL/Perl
+       booleans (Ivan Panchenko)
+      </p></li><li class="listitem"><span class="original">
+Author: Andrew Gierth &lt;rhodiumtoad@postgresql.org&gt;
+2019-07-14 [6e74c64bc] Teach pg_stat_statements not to ignore FOR UPDATE clause
+</span><p>
+       Have <a class="xref" href="pgstatstatements.html" title="F.29. pg_stat_statements">pg_stat_statements</a> treat <code class="command">SELECT
+       ... FOR UPDATE</code> commands as distinct from those
+       without <code class="command">FOR UPDATE</code> (Andrew Gierth, Vik Fearing)
+      </p></li><li class="listitem"><span class="original">
+Author: Fujii Masao &lt;fujii@postgresql.org&gt;
+2020-04-02 [17e032822] Allow pg_stat_statements to track planning statistics.
+2020-07-03 [8d459762b] Change default of pg_stat_statements.track_planning to o
+</span><p>
+       Allow <span class="application">pg_stat_statements</span> to optionally
+       track the planning time of statements (Julien Rouhaud, Pascal Legrand,
+       Thomas Munro, Fujii Masao)
+      </p><p>
+       Previously only execution time was tracked.
+      </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+2020-03-31 [70dc4c509] Fix lquery's NOT handling, and add ability to quantify n
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+2020-04-01 [17ca06799] Clean up parsing of ltree and lquery some more.
+</span><p>
+       Overhaul <a class="xref" href="ltree.html" title="F.21. ltree">ltree</a>'s lquery syntax to treat
+       <code class="literal">NOT</code> (!) more logically (Filip Rembialkowski,
+       Tom Lane, Nikita Glukhov)
+      </p><p>
+       Also allow non-* queries to use a numeric range ({}) of matches.
+      </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+2020-04-01 [949a9f043] Add support for binary I/O of ltree, lquery, and ltxtque
+</span><p>
+       Add support for binary I/O of <a class="xref" href="ltree.html" title="F.21. ltree">ltree</a>, lquery, and
+       ltxtquery types (Nino Floris)
+      </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+2020-03-08 [806eb92c0] Add an "absval" parameter to allow contrib/dict_int to i
+</span><p>
+       Add an option to <a class="xref" href="dict-int.html" title="F.11. dict_int">dict_int</a> to ignore the sign
+       of integers (Jeff Janes)
+      </p></li><li class="listitem"><span class="original">
+Author: Fujii Masao &lt;fujii@postgresql.org&gt;
+2020-01-24 [d694e0bb7] Add pg_file_sync() to adminpack extension.
+</span><p>
+       Add <a class="xref" href="adminpack.html" title="F.1. adminpack">adminpack</a> function
+       <code class="function">pg_file_sync()</code> to allow fsync'ing a file
+       (Fujii Masao)
+      </p></li><li class="listitem"><span class="original">
+Author: Michael Paquier &lt;michael@paquier.xyz&gt;
+2019-09-12 [ddbd5d873] Add to pageinspect function to make t_infomask/t_infomas
+Author: Author: Michael Paquier &lt;michael@paquier.xyz&gt;
+2019-09-19 [58b4cb30a] Redesign pageinspect function printing infomask bits
+</span><p>
+       Add <a class="xref" href="pageinspect.html" title="F.22. pageinspect">pageinspect</a> functions to output
+       <code class="structfield">t_infomask</code>/<code class="structfield">t_infomask2</code>
+       values in human-readable format (Craig Ringer, Sawada Masahiko,
+       Michael Paquier)
+      </p></li><li class="listitem"><span class="original">
+Author: Peter Geoghegan &lt;pg@bowt.ie&gt;
+2020-02-29 [93ee38ead] Teach pageinspect about nbtree deduplication.
+</span><p>
+       Add B-tree index de-duplication processing columns to pageinspect output
+       (Peter Geoghegan)
+      </p></li></ul></div></div></div><div class="sect2" id="RELEASE-13-ACKNOWLEDGEMENTS"><div class="titlepage"><div><div><h3 class="title">E.2.4. Acknowledgments</h3></div></div></div><p>
+    The following individuals (in alphabetical order) have contributed to this
+    release as patch authors, committers, reviewers, testers, or reporters of
+    issues.
+   </p><table border="0" summary="Simple list" class="simplelist"><tr><td>Abhijit Menon-Sen</td></tr><tr><td>Adam Lee</td></tr><tr><td>Adam Scott</td></tr><tr><td>Adé Heyward</td></tr><tr><td>Adrien Nayrat</td></tr><tr><td>Ahsan Hadi</td></tr><tr><td>Alastair McKinley</td></tr><tr><td>Aleksandr Parfenov</td></tr><tr><td>Alex Aktsipetrov</td></tr><tr><td>Alex Macy</td></tr><tr><td>Alex Shulgin</td></tr><tr><td>Alexander Korotkov</td></tr><tr><td>Alexander Kukushkin</td></tr><tr><td>Alexander Kuzmenkov</td></tr><tr><td>Alexander Lakhin</td></tr><tr><td>Alexey Bashtanov</td></tr><tr><td>Alexey Kondratov</td></tr><tr><td>Álvaro Herrera</td></tr><tr><td>Amit Kapila</td></tr><tr><td>Amit Khandekar</td></tr><tr><td>Amit Langote</td></tr><tr><td>Amul Sul</td></tr><tr><td>Anastasia Lubennikova</td></tr><tr><td>Andreas Joseph Krogh</td></tr><tr><td>Andreas Karlsson</td></tr><tr><td>Andreas Kunert</td></tr><tr><td>Andreas Seltenreich</td></tr><tr><td>Andrei Zubkov</td></tr><tr><td>Andres Freund</td></tr><tr><td>Andrew Bille</td></tr><tr><td>Andrew Dunstan</td></tr><tr><td>Andrew Gierth</td></tr><tr><td>Andrey Borodin</td></tr><tr><td>Andrey Klychkov</td></tr><tr><td>Andrey Lepikhov</td></tr><tr><td>Anna Akenteva</td></tr><tr><td>Anna Endo</td></tr><tr><td>Anthony Nowocien</td></tr><tr><td>Anton Vlasov</td></tr><tr><td>Antonin Houska</td></tr><tr><td>Ants Aasma</td></tr><tr><td>Arne Roland</td></tr><tr><td>Arnold Müller</td></tr><tr><td>Arseny Sher</td></tr><tr><td>Arthur Nascimento</td></tr><tr><td>Arthur Zakirov</td></tr><tr><td>Ashutosh Bapat</td></tr><tr><td>Ashutosh Sharma</td></tr><tr><td>Ashwin Agrawal</td></tr><tr><td>Asif Rehman</td></tr><tr><td>Asim Praveen</td></tr><tr><td>Atsushi Torikoshi</td></tr><tr><td>Augustinas Jokubauskas</td></tr><tr><td>Austin Drenski</td></tr><tr><td>Basil Bourque</td></tr><tr><td>Beena Emerson</td></tr><tr><td>Ben Cornett</td></tr><tr><td>Benjie Gillam</td></tr><tr><td>Benoît Lobréau</td></tr><tr><td>Bernd Helmle</td></tr><tr><td>Bharath Rupireddy</td></tr><tr><td>Bhargav Kamineni</td></tr><tr><td>Binguo Bao</td></tr><tr><td>Brad DeJong</td></tr><tr><td>Brandur Leach</td></tr><tr><td>Brent Bates</td></tr><tr><td>Brian Williams</td></tr><tr><td>Bruce Momjian</td></tr><tr><td>Cameron Ezell</td></tr><tr><td>Cary Huang</td></tr><tr><td>Chapman Flack</td></tr><tr><td>Charles Offenbacher</td></tr><tr><td>Chen Huajun</td></tr><tr><td>Chenyang Lu</td></tr><tr><td>Chris Bandy</td></tr><tr><td>Chris Travers</td></tr><tr><td>Christoph Berg</td></tr><tr><td>Christophe Courtois</td></tr><tr><td>Corey Huinker</td></tr><tr><td>Craig Ringer</td></tr><tr><td>Cuiping Lin</td></tr><tr><td>Dagfinn Ilmari Mannsåker</td></tr><tr><td>Daniel Fiori</td></tr><tr><td>Daniel Gustafsson</td></tr><tr><td>Daniel Vérité</td></tr><tr><td>Daniel Westermann</td></tr><tr><td>Darafei Praliaskouski</td></tr><tr><td>Daryl Waycott</td></tr><tr><td>Dave Cramer</td></tr><tr><td>David Christensen</td></tr><tr><td>David Fetter</td></tr><tr><td>David G. Johnston</td></tr><tr><td>David Gilman</td></tr><tr><td>David Harper</td></tr><tr><td>David Rowley</td></tr><tr><td>David Steele</td></tr><tr><td>David Zhang</td></tr><tr><td>Davinder Singh</td></tr><tr><td>Dean Rasheed</td></tr><tr><td>Denis Stuchalin</td></tr><tr><td>Dent John</td></tr><tr><td>Didier Gautheron</td></tr><tr><td>Dilip Kumar</td></tr><tr><td>Dmitry Belyavsky</td></tr><tr><td>Dmitry Dolgov</td></tr><tr><td>Dmitry Ivanov</td></tr><tr><td>Dmitry Telpt</td></tr><tr><td>Dmitry Uspenskiy</td></tr><tr><td>Dominik Czarnota</td></tr><tr><td>Dongming Liu</td></tr><tr><td>Ed Morley</td></tr><tr><td>Edmund Horner</td></tr><tr><td>Emre Hasegeli</td></tr><tr><td>Eric Gillum</td></tr><tr><td>Erik Rijkers</td></tr><tr><td>Erwin Brandstetter</td></tr><tr><td>Ethan Waldo</td></tr><tr><td>Etsuro Fujita</td></tr><tr><td>Eugen Konkov</td></tr><tr><td>Euler Taveira</td></tr><tr><td>Fabien Coelho</td></tr><tr><td>Fabrízio de Royes Mello</td></tr><tr><td>Felix Lechner</td></tr><tr><td>Filip Janus</td></tr><tr><td>Filip Rembialkowski</td></tr><tr><td>Frank Gagnepain</td></tr><tr><td>Georgios Kokolatos</td></tr><tr><td>Gilles Darold</td></tr><tr><td>Greg Nancarrow</td></tr><tr><td>Grigory Smolkin</td></tr><tr><td>Guancheng Luo</td></tr><tr><td>Guillaume Lelarge</td></tr><tr><td>Hadi Moshayedi</td></tr><tr><td>Haiying Tang</td></tr><tr><td>Hamid Akhtar</td></tr><tr><td>Hans Buschmann</td></tr><tr><td>Hao Wu</td></tr><tr><td>Haribabu Kommi</td></tr><tr><td>Haruka Takatsuka</td></tr><tr><td>Heath Lord</td></tr><tr><td>Heikki Linnakangas</td></tr><tr><td>Himanshu Upadhyaya</td></tr><tr><td>Hironobu Suzuki</td></tr><tr><td>Hugh McMaster</td></tr><tr><td>Hugh Ranalli</td></tr><tr><td>Hugh Wang</td></tr><tr><td>Ian Barwick</td></tr><tr><td>Ibrar Ahmed</td></tr><tr><td>Ildar Musin</td></tr><tr><td>Insung Moon</td></tr><tr><td>Ireneusz Pluta</td></tr><tr><td>Isaac Morland</td></tr><tr><td>Ivan Kartyshov</td></tr><tr><td>Ivan Panchenko</td></tr><tr><td>Ivan Sergio Borgonovo</td></tr><tr><td>Jaime Casanova</td></tr><tr><td>James Coleman</td></tr><tr><td>James Gray</td></tr><tr><td>James Hunter</td></tr><tr><td>James Inform</td></tr><tr><td>James Lucas</td></tr><tr><td>Jan Mussler</td></tr><tr><td>Jaroslav Sivy</td></tr><tr><td>Jeevan Chalke</td></tr><tr><td>Jeevan Ladhe</td></tr><tr><td>Jeff Davis</td></tr><tr><td>Jeff Janes</td></tr><tr><td>Jehan-Guillaume de Rorthais</td></tr><tr><td>Jeremy Evans</td></tr><tr><td>Jeremy Schneider</td></tr><tr><td>Jeremy Smith</td></tr><tr><td>Jerry Sievers</td></tr><tr><td>Jesper Pedersen</td></tr><tr><td>Jesse Kinkead</td></tr><tr><td>Jesse Zhang</td></tr><tr><td>Jian Zhang</td></tr><tr><td>Jie Zhang</td></tr><tr><td>Jim Nasby</td></tr><tr><td>Jimmy Yih</td></tr><tr><td>Jobin Augustine</td></tr><tr><td>Joe Conway</td></tr><tr><td>John Hsu</td></tr><tr><td>John Naylor</td></tr><tr><td>Jon Jensen</td></tr><tr><td>Jonathan Katz</td></tr><tr><td>Jorge Gustavo Rocha</td></tr><tr><td>Josef Šimánek</td></tr><tr><td>Joseph Nahmias</td></tr><tr><td>Juan José Santamaría Flecha</td></tr><tr><td>Julian Backes</td></tr><tr><td>Julien Rouhaud</td></tr><tr><td>Jürgen Purtz</td></tr><tr><td>Justin King</td></tr><tr><td>Justin Pryzby</td></tr><tr><td>Karl O. Pinc</td></tr><tr><td>Keisuke Kuroda</td></tr><tr><td>Keith Fiske</td></tr><tr><td>Kelly Min</td></tr><tr><td>Ken Tanzer</td></tr><tr><td>Kirill Bychik</td></tr><tr><td>Kirk Jamison</td></tr><tr><td>Konstantin Knizhnik</td></tr><tr><td>Kuntal Ghosh</td></tr><tr><td>Kyle Kingsbury</td></tr><tr><td>Kyotaro Horiguchi</td></tr><tr><td>Lars Kanis</td></tr><tr><td>Laurenz Albe</td></tr><tr><td>Leif Gunnar Erlandsen</td></tr><tr><td>Li Japin</td></tr><tr><td>Liudmila Mantrova</td></tr><tr><td>Lucas Viecelli</td></tr><tr><td>Luis M. Carril</td></tr><tr><td>Lukáš Sobotka</td></tr><tr><td>Maciek Sakrejda</td></tr><tr><td>Magnus Hagander</td></tr><tr><td>Mahadevan Ramachandran</td></tr><tr><td>Mahendra Singh Thalor</td></tr><tr><td>Manuel Rigger</td></tr><tr><td>Marc Munro</td></tr><tr><td>Marcos David</td></tr><tr><td>Marina Polyakova</td></tr><tr><td>Mark Dilger</td></tr><tr><td>Mark Wong</td></tr><tr><td>Marko Tiikkaja</td></tr><tr><td>Markus Winand</td></tr><tr><td>Marti Raudsepp</td></tr><tr><td>Martijn van Oosterhout</td></tr><tr><td>Masahiko Sawada</td></tr><tr><td>Masahiro Ikeda</td></tr><tr><td>Masao Fujii</td></tr><tr><td>Mateusz Guzik</td></tr><tr><td>Matt Jibson</td></tr><tr><td>Matteo Beccati</td></tr><tr><td>Maxence Ahlouche</td></tr><tr><td>Melanie Plageman</td></tr><tr><td>Michael Banck</td></tr><tr><td>Michael Luo</td></tr><tr><td>Michael Meskes</td></tr><tr><td>Michael Paquier</td></tr><tr><td>Michail Nikolaev</td></tr><tr><td>Mike Palmiotto</td></tr><tr><td>Mithun Cy</td></tr><tr><td>Movead Li</td></tr><tr><td>Nathan Bossart</td></tr><tr><td>Nazli Ugur Koyluoglu</td></tr><tr><td>Neha Sharma</td></tr><tr><td>Nicola Contu</td></tr><tr><td>Nicolás Alvarez</td></tr><tr><td>Nikhil Sontakke</td></tr><tr><td>Nikita Glukhov</td></tr><tr><td>Nikolay Shaplov</td></tr><tr><td>Nino Floris</td></tr><tr><td>Noah Misch</td></tr><tr><td>Noriyoshi Shinoda</td></tr><tr><td>Oleg Bartunov</td></tr><tr><td>Oleg Samoilov</td></tr><tr><td>Oleksii Kliukin</td></tr><tr><td>Ondrej Jirman</td></tr><tr><td>Panagiotis Mavrogiorgos</td></tr><tr><td>Pascal Legrand</td></tr><tr><td>Patrick McHardy</td></tr><tr><td>Paul Guo</td></tr><tr><td>Paul Jungwirth</td></tr><tr><td>Paul Ramsey</td></tr><tr><td>Paul Sivash</td></tr><tr><td>Paul Spencer</td></tr><tr><td>Pavan Deolasee</td></tr><tr><td>Pavel Borisov</td></tr><tr><td>Pavel Luzanov</td></tr><tr><td>Pavel Stehule</td></tr><tr><td>Pavel Suderevsky</td></tr><tr><td>Peifeng Qiu</td></tr><tr><td>Pengzhou Tang</td></tr><tr><td>Peter Billen</td></tr><tr><td>Peter Eisentraut</td></tr><tr><td>Peter Geoghegan</td></tr><tr><td>Peter Smith</td></tr><tr><td>Petr Fedorov</td></tr><tr><td>Petr Jelínek</td></tr><tr><td>Phil Bayer</td></tr><tr><td>Philip Semanchuk</td></tr><tr><td>Philippe Beaudoin</td></tr><tr><td>Pierre Ducroquet</td></tr><tr><td>Pierre Giraud</td></tr><tr><td>Piotr Gabriel Kosinski</td></tr><tr><td>Piotr Wlodarczyk</td></tr><tr><td>Prabhat Sahu</td></tr><tr><td>Quan Zongliang</td></tr><tr><td>Quentin Rameau</td></tr><tr><td>Rafael Castro</td></tr><tr><td>Rafia Sabih</td></tr><tr><td>Raj Mohite</td></tr><tr><td>Rajkumar Raghuwanshi</td></tr><tr><td>Ramanarayana M</td></tr><tr><td>Ranier Vilela</td></tr><tr><td>Rares Salcudean</td></tr><tr><td>Raúl Marín Rodríguez</td></tr><tr><td>Raymond Martin</td></tr><tr><td>Reijo Suhonen</td></tr><tr><td>Richard Guo</td></tr><tr><td>Robert Ford</td></tr><tr><td>Robert Haas</td></tr><tr><td>Robert Kahlert</td></tr><tr><td>Robert Treat</td></tr><tr><td>Robin Abbi</td></tr><tr><td>Robins Tharakan</td></tr><tr><td>Roger Harkavy</td></tr><tr><td>Roman Peshkurov</td></tr><tr><td>Rui DeSousa</td></tr><tr><td>Rui Hai Jiang</td></tr><tr><td>Rushabh Lathia</td></tr><tr><td>Ryan Lambert</td></tr><tr><td>Ryohei Takahashi</td></tr><tr><td>Scott Ribe</td></tr><tr><td>Sean Farrell</td></tr><tr><td>Sehrope Sarkuni</td></tr><tr><td>Sergei Agalakov</td></tr><tr><td>Sergei Kornilov</td></tr><tr><td>Sergey Cherkashin</td></tr><tr><td>Shawn Debnath</td></tr><tr><td>Shawn Wang</td></tr><tr><td>Shay Rojansky</td></tr><tr><td>Shenhao Wang</td></tr><tr><td>Simon Riggs</td></tr><tr><td>Slawomir Chodnicki</td></tr><tr><td>Soumyadeep Chakraborty</td></tr><tr><td>Stéphane Lorek</td></tr><tr><td>Stephen Frost</td></tr><tr><td>Steve Rogerson</td></tr><tr><td>Steven Winfield</td></tr><tr><td>Surafel Temesgen</td></tr><tr><td>Suraj Kharage</td></tr><tr><td>Takanori Asaba</td></tr><tr><td>Takao Fujii</td></tr><tr><td>Takayuki Tsunakawa</td></tr><tr><td>Takuma Hoshiai</td></tr><tr><td>Tatsuhito Kasahara</td></tr><tr><td>Tatsuo Ishii</td></tr><tr><td>Tatsuro Yamada</td></tr><tr><td>Taylor Vesely</td></tr><tr><td>Teodor Sigaev</td></tr><tr><td>Tham Nguyen</td></tr><tr><td>Thibaut Madelaine</td></tr><tr><td>Thom Brown</td></tr><tr><td>Thomas Kellerer</td></tr><tr><td>Thomas Munro</td></tr><tr><td>Tiago Anastacio</td></tr><tr><td>Tim Clarke</td></tr><tr><td>Tim Möhlmann</td></tr><tr><td>Tom Ellis</td></tr><tr><td>Tom Gottfried</td></tr><tr><td>Tom Lane</td></tr><tr><td>Tomas Vondra</td></tr><tr><td>Tuomas Leikola</td></tr><tr><td>Tushar Ahuja</td></tr><tr><td>Victor Wagner</td></tr><tr><td>Victor Yegorov</td></tr><tr><td>Vignesh C</td></tr><tr><td>Vik Fearing</td></tr><tr><td>Vinay Banakar</td></tr><tr><td>Vladimir Leskov</td></tr><tr><td>Vladimir Sitnikov</td></tr><tr><td>Vyacheslav Makarov</td></tr><tr><td>Vyacheslav Shablistyy</td></tr><tr><td>Will Leinweber</td></tr><tr><td>William Crowell</td></tr><tr><td>Wyatt Alt</td></tr><tr><td>Yang Xiao</td></tr><tr><td>Yaroslav Schekin</td></tr><tr><td>Yi Huang</td></tr><tr><td>Yigong Hu</td></tr><tr><td>Yoann La Cancellera</td></tr><tr><td>Yoshikazu Imai</td></tr><tr><td>Yu Kimura</td></tr><tr><td>Yugo Nagata</td></tr><tr><td>Yuli Khodorkovskiy</td></tr><tr><td>Yusuke Egashira</td></tr><tr><td>Yuya Watari</td></tr><tr><td>Yuzuko Hosoya</td></tr><tr><td>ZhenHua Cai</td></tr></table></div></div><div xmlns="http://www.w3.org/TR/xhtml1/transitional" class="navfooter"><hr></hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="release-13-1.html" title="E.1. Release 13.1">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="release.html" title="付録E リリースノート">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="release-prior.html" title="E.3. Prior Releases">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">E.1. Release 13.1 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 13.1文書">ホーム</a></td><td width="40%" align="right" valign="top"> E.3. Prior Releases</td></tr></table></div></body></html>

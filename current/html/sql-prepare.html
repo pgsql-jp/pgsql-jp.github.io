@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>PREPARE</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="sql-notify.html" title="NOTIFY" /><link rel="next" href="sql-prepare-transaction.html" title="PREPARE TRANSACTION" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 12.4文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="sql-commands.html" title="SQLコマンド">SQLコマンド</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 12.4 &#10;                      sql-prepare.html">誤訳等の報告
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>PREPARE</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="sql-notify.html" title="NOTIFY" /><link rel="next" href="sql-prepare-transaction.html" title="PREPARE TRANSACTION" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 13.1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="sql-commands.html" title="SQLコマンド">SQLコマンド</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 13.1 &#10;                      sql-prepare.html">誤訳等の報告
                     </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="sql-notify.html" title="NOTIFY">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="sql-commands.html" title="SQLコマンド">上へ</a></td><td width="60%" align="center">PREPARE</td><td width="20%" align="right"> <a accesskey="n" href="sql-prepare-transaction.html" title="PREPARE TRANSACTION">次へ</a></td></tr></table><hr /></div><div class="refentry" id="SQL-PREPARE"><div class="titlepage"></div><a id="id-1.9.3.158.1" class="indexterm"></a><a id="id-1.9.3.158.2" class="indexterm"></a><div class="refnamediv"><h2><span class="refentrytitle">PREPARE</span></h2><p>PREPARE<span class="original">
   &lt;refpurpose&gt;prepare a statement for execution&lt;/refpurpose&gt;
 </span> — 実行する文を準備する</p></div><div class="refsynopsisdiv"><h2>概要</h2><pre class="synopsis">
@@ -64,7 +64,7 @@ PREPARE <em class="replaceable"><code>name</code></em> [ ( <em class="replaceabl
    Prepared statements potentially have the largest performance advantage
    when a single session is being used to execute a large number of similar
    statements. The performance difference will be particularly
-   significant if the statements are complex to plan or rewrite, e.g.
+   significant if the statements are complex to plan or rewrite, e.g.,
    if the query involves a join of many tables or requires
    the application of several rules. If the statement is relatively simple
    to plan and rewrite but relatively expensive to execute, the
@@ -121,6 +121,16 @@ PREPARE <em class="replaceable"><code>name</code></em> [ ( <em class="replaceabl
 汎用的な計画は全実行に渡って同じであるのに対して、独自の計画はその呼出しで与えられたパラメータ値を使った特別な実行のために生成されます。
 汎用的な計画の使用は計画のオーバーヘッドを回避しますが、プランナがパラメータ値の知識を使えるので、独自の計画の方がずっと効率よく実行される場合があります。
 (もちろん、プリペアド文にパラメータがなければ、これは無意味で、汎用的な計画が常に使われます。)
+  </p><p>
+   A prepared statement can be executed with either a <em class="firstterm">generic
+   plan</em> or a <em class="firstterm">custom plan</em>.  A generic
+   plan is the same across all executions, while a custom plan is generated
+   for a specific execution using the parameter values given in that call.
+   Use of a generic plan avoids planning overhead, but in some situations
+   a custom plan will be much more efficient to execute because the planner
+   can make use of knowledge of the parameter values.  (Of course, if the
+   prepared statement has no parameters, then this is moot and a generic
+   plan is always used.)
   </p><p>
 <span class="original">
    By default (that is, when &lt;xref linkend="guc-plan-cache_mode"/&gt; is set
@@ -210,10 +220,8 @@ EXPLAIN EXECUTE <em class="replaceable"><code>stmt_name</code></em>(<em class="r
    &lt;link linkend="view-pg-prepared-statements"&gt;&lt;structname&gt;pg_prepared_statements&lt;/structname&gt;&lt;/link&gt;
    system view.
 </span>
-<a class="link" href="view-pg-prepared-statements.html" title="51.77. pg_prepared_statements"><code class="structname">pg_prepared_statements</code></a>システムビューを問い合わせることによりセッションで利用可能なプリペアド文をすべて確認することができます。
-  </p></div><div class="refsect1" id="SQL-PREPARE-EXAMPLES"><h2>例</h2><span class="original">
-  &lt;title id="sql-prepare-examples-title"&gt;Examples&lt;/title&gt;
-</span><p>
+<a class="link" href="view-pg-prepared-statements.html" title="51.76. pg_prepared_statements"><code class="structname">pg_prepared_statements</code></a>システムビューを問い合わせることによりセッションで利用可能なプリペアド文をすべて確認することができます。
+  </p></div><div class="refsect1" id="SQL-PREPARE-EXAMPLES"><h2>Examples</h2><p>
 <span class="original">
    Create a prepared statement for an &lt;command&gt;INSERT&lt;/command&gt;
    statement, and then execute it:
@@ -256,4 +264,4 @@ EXECUTE usrrptplan(1, current_date);
 また、標準SQLの<code class="command">PREPARE</code>文では多少異なる構文が使用されます。
   </p></div><div class="refsect1" id="id-1.9.3.158.11"><h2>関連項目</h2><span class="original">
   &lt;title&gt;See Also&lt;/title&gt;
-</span><span class="simplelist"><a class="xref" href="sql-deallocate.html" title="DEALLOCATE"><span class="refentrytitle">DEALLOCATE</span></a>, <a class="xref" href="sql-execute.html" title="EXECUTE"><span class="refentrytitle">EXECUTE</span></a></span></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="sql-notify.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="sql-commands.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="sql-prepare-transaction.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">NOTIFY </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> PREPARE TRANSACTION</td></tr></table></div></body></html>
+</span><span class="simplelist"><a class="xref" href="sql-deallocate.html" title="DEALLOCATE"><span class="refentrytitle">DEALLOCATE</span></a>, <a class="xref" href="sql-execute.html" title="EXECUTE"><span class="refentrytitle">EXECUTE</span></a></span></div></div><div xmlns="http://www.w3.org/TR/xhtml1/transitional" class="navfooter"><hr></hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="sql-notify.html" title="NOTIFY">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="sql-commands.html" title="SQLコマンド">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="sql-prepare-transaction.html" title="PREPARE TRANSACTION">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">NOTIFY </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 13.1文書">ホーム</a></td><td width="40%" align="right" valign="top"> PREPARE TRANSACTION</td></tr></table></div></body></html>

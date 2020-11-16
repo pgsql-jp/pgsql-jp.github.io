@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>14.4. データベースへのデータ投入</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="explicit-joins.html" title="14.3. 明示的なJOIN句でプランナを制御する" /><link rel="next" href="non-durability.html" title="14.5. 永続性がない設定" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 12.4文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="performance-tips.html" title="第14章 性能に関するヒント">第14章 性能に関するヒント</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 12.4 &#10;                      populate.html">誤訳等の報告
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>14.4. データベースへのデータ投入</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="explicit-joins.html" title="14.3. 明示的なJOIN句でプランナを制御する" /><link rel="next" href="non-durability.html" title="14.5. 永続性がない設定" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 13.1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="performance-tips.html" title="第14章 性能に関するヒント">第14章 性能に関するヒント</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 13.1 &#10;                      populate.html">誤訳等の報告
                     </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="explicit-joins.html" title="14.3. 明示的なJOIN句でプランナを制御する">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="performance-tips.html" title="第14章 性能に関するヒント">上へ</a></td><td width="60%" align="center">14.4. データベースへのデータ投入</td><td width="20%" align="right"> <a accesskey="n" href="non-durability.html" title="14.5. 永続性がない設定">次へ</a></td></tr></table><hr /></div><div class="sect1" id="POPULATE"><div class="titlepage"><div><div><h2 class="title" style="clear: both">14.4. データベースへのデータ投入</h2></div></div></div><span class="original">
   &lt;title&gt;Populating a Database&lt;/title&gt;
 </span><p>
@@ -84,8 +84,8 @@
     needs to be written, because in case of an error, the files
     containing the newly loaded data will be removed anyway.
     However, this consideration only applies when
-    &lt;xref linkend="guc-wal-level"/&gt; is &lt;literal&gt;minimal&lt;/literal&gt; for
-    non-partitioned tables as all commands must write WAL otherwise.
+    &lt;xref linkend="guc-wal-level"/&gt; is &lt;literal&gt;minimal&lt;/literal&gt;
+    as all commands must write WAL otherwise.
 </span>
 <code class="command">COPY</code>は、前もって行われる<code class="command">CREATE TABLE</code>または<code class="command">TRUNCATE</code>コマンドと同一トランザクションで行った場合に、最速です。
 この場合、エラーが起きた場合に新しくロードされるデータを含むファイルがとにかく削除されますので、WALを書き出す必要がありません。
@@ -201,37 +201,17 @@
 しかし、これらの変数を変更するにはサーバの再起動が必要な点に注意してください。
    </p><p>
 <span class="original">
-    Aside from avoiding the time for the archiver or WAL sender to
-    process the WAL data,
-    doing this will actually make certain commands faster, because they
-    are designed not to write WAL at all if &lt;varname&gt;wal_level&lt;/varname&gt;
-    is &lt;literal&gt;minimal&lt;/literal&gt;.  (They can guarantee crash safety more cheaply
-    by doing an &lt;function&gt;fsync&lt;/function&gt; at the end than by writing WAL.)
-    This applies to the following commands:
+    Aside from avoiding the time for the archiver or WAL sender to process the
+    WAL data, doing this will actually make certain commands faster, because
+    they do not to write WAL at all if &lt;varname&gt;wal_level&lt;/varname&gt;
+    is &lt;literal&gt;minimal&lt;/literal&gt; and the current subtransaction (or top-level
+    transaction) created or truncated the table or index they change.  (They
+    can guarantee crash safety more cheaply by doing
+    an &lt;function&gt;fsync&lt;/function&gt; at the end than by writing WAL.)
 </span>
 こうすると、WALデータを処理する保管処理またはWAL送信処理にかかる時間がかからないことの他に、実際のところ、特定のコマンドをより高速にします。
 <code class="varname">wal_level</code>が<code class="literal">minimal</code>の場合、これらのコマンドではWALへの書き出しは全く予定されないためです。
 （これらは最後に<code class="function">fsync</code>を実行することで、WALへの書き込みより安価にクラッシュした場合の安全性を保証することができます。）
-これは以下のコマンドで当てはまります。
-    </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>
-       <code class="command">CREATE TABLE AS SELECT</code>
-      </p></li><li class="listitem"><p>
-<span class="original">
-       &lt;command&gt;CREATE INDEX&lt;/command&gt; (and variants such as
-       &lt;command&gt;ALTER TABLE ADD PRIMARY KEY&lt;/command&gt;)
-</span>
-<code class="command">CREATE INDEX</code> (または<code class="command">ALTER TABLE ADD PRIMARY KEY</code>などの亜種)
-      </p></li><li class="listitem"><p>
-       <code class="command">ALTER TABLE SET TABLESPACE</code>
-      </p></li><li class="listitem"><p>
-       <code class="command">CLUSTER</code>
-      </p></li><li class="listitem"><p>
-<span class="original">
-       &lt;command&gt;COPY FROM&lt;/command&gt;, when the target table has been
-       created or truncated earlier in the same transaction
-</span>
-同一トランザクションで前もって対象テーブルが作成された、あるいは、消去された場合の<code class="command">COPY FROM</code>
-      </p></li></ul></div><p>
    </p></div><div class="sect2" id="POPULATE-ANALYZE"><div class="titlepage"><div><div><h3 class="title">14.4.8. 最後に<code class="command">ANALYZE</code>を実行</h3></div></div></div><span class="original">
    &lt;title&gt;Run &lt;command&gt;ANALYZE&lt;/command&gt; Afterwards&lt;/title&gt;
 </span><p>
@@ -383,4 +363,4 @@ WALアーカイブ処理またはストリーミングレプリケーション�
 <code class="option">--disable-triggers</code>オプションを使用して、外部キーを無効にさせることができます。
 しかし、これは外部キー制約を遅らせるのではなく、除去することに注意してください。
 そのため、これを使用すると不正なデータを挿入することができてしまいます。
-      </p></div></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="explicit-joins.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="performance-tips.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="non-durability.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">14.3. 明示的な<code class="literal">JOIN</code>句でプランナを制御する </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> 14.5. 永続性がない設定</td></tr></table></div></body></html>
+      </p></div></div></div><div xmlns="http://www.w3.org/TR/xhtml1/transitional" class="navfooter"><hr></hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="explicit-joins.html" title="14.3. 明示的なJOIN句でプランナを制御する">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="performance-tips.html" title="第14章 性能に関するヒント">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="non-durability.html" title="14.5. 永続性がない設定">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">14.3. 明示的な<code xmlns="http://www.w3.org/1999/xhtml" class="literal">JOIN</code>句でプランナを制御する </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 13.1文書">ホーム</a></td><td width="40%" align="right" valign="top"> 14.5. 永続性がない設定</td></tr></table></div></body></html>

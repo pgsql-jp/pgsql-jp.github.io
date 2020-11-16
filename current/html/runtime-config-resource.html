@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>19.4. 資源の消費</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="runtime-config-connection.html" title="19.3. 接続と認証" /><link rel="next" href="runtime-config-wal.html" title="19.5. ログ先行書き込み（WAL）" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 12.4文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="runtime-config.html" title="第19章 サーバの設定">第19章 サーバの設定</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 12.4 &#10;                      runtime-config-resource.html">誤訳等の報告
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>19.4. 資源の消費</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="runtime-config-connection.html" title="19.3. 接続と認証" /><link rel="next" href="runtime-config-wal.html" title="19.5. ログ先行書き込み（WAL）" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 13.1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="runtime-config.html" title="第19章 サーバの設定">第19章 サーバの設定</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 13.1 &#10;                      runtime-config-resource.html">誤訳等の報告
                     </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="runtime-config-connection.html" title="19.3. 接続と認証">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="runtime-config.html" title="第19章 サーバの設定">上へ</a></td><td width="60%" align="center">19.4. 資源の消費</td><td width="20%" align="right"> <a accesskey="n" href="runtime-config-wal.html" title="19.5. ログ先行書き込み（WAL）">次へ</a></td></tr></table><hr /></div><div class="sect1" id="RUNTIME-CONFIG-RESOURCE"><div class="titlepage"><div><div><h2 class="title" style="clear: both">19.4. 資源の消費</h2></div></div></div><span class="original">
     &lt;title&gt;Resource Consumption&lt;/title&gt;
     </span><div class="sect2" id="RUNTIME-CONFIG-RESOURCE-MEMORY"><div class="titlepage"><div><div><h3 class="title">19.4.1. メモリ</h3></div></div></div><span class="original">
@@ -197,19 +197,20 @@ Linuxでは、これは<span class="quote">「<span class="quote">transparent hu
       <a id="id-1.6.6.7.2.2.5.1.3" class="indexterm"></a>
       </span></dt><dd><p>
        <span class="original">
-        Sets the maximum amount of memory to be used by a query operation
+        Sets the base maximum amount of memory to be used by a query operation
         (such as a sort or hash table) before writing to temporary disk files.
         If this value is specified without units, it is taken as kilobytes.
         The default value is four megabytes (&lt;literal&gt;4MB&lt;/literal&gt;).
         Note that for a complex query, several sort or hash operations might be
-        running in parallel; each operation will be allowed to use as much memory
-        as this value specifies before it starts to write data into temporary
-        files. Also, several running sessions could be doing such operations
-        concurrently.  Therefore, the total memory used could be many
-        times the value of &lt;varname&gt;work_mem&lt;/varname&gt;; it is necessary to
-        keep this fact in mind when choosing the value. Sort operations are
-        used for &lt;literal&gt;ORDER BY&lt;/literal&gt;, &lt;literal&gt;DISTINCT&lt;/literal&gt;, and
-        merge joins.
+        running in parallel; each operation will generally be allowed
+        to use as much memory as this value specifies before it starts
+        to write data into temporary files.  Also, several running
+        sessions could be doing such operations concurrently.
+        Therefore, the total memory used could be many times the value
+        of &lt;varname&gt;work_mem&lt;/varname&gt;; it is necessary to keep this
+        fact in mind when choosing the value.  Sort operations are used
+        for &lt;literal&gt;ORDER BY&lt;/literal&gt;, &lt;literal&gt;DISTINCT&lt;/literal&gt;,
+        and merge joins.
         Hash tables are used in hash joins, hash-based aggregation, and
         hash-based processing of &lt;literal&gt;IN&lt;/literal&gt; subqueries.
        </span>
@@ -222,8 +223,38 @@ Linuxでは、これは<span class="quote">「<span class="quote">transparent hu
 したがって、使用されるメモリの合計は、<code class="varname">work_mem</code>の数倍になります。値を選択する時には、この事実に留意することが必要です。
 並び替え操作は<code class="literal">ORDER BY</code>、<code class="literal">DISTINCT</code>、およびマージ結合に対して使われます。
 ハッシュテーブルはハッシュ結合、ハッシュに基づいた集約、および<code class="literal">IN</code>副問い合わせのハッシュに基づいた処理で使用されます。
-       </p></dd><dt id="GUC-MAINTENANCE-WORK-MEM"><span class="term"><code class="varname">maintenance_work_mem</code> (<code class="type">integer</code>)
+       </p><p>
+        Hash-based operations are generally more sensitive to memory
+        availability than equivalent sort-based operations.  The
+        memory available for hash tables is computed by multiplying
+        <code class="varname">work_mem</code> by
+        <code class="varname">hash_mem_multiplier</code>.  This makes it
+        possible for hash-based operations to use an amount of memory
+        that exceeds the usual <code class="varname">work_mem</code> base
+        amount.
+       </p></dd><dt id="GUC-HASH-MEM-MULTIPLIER"><span class="term"><code class="varname">hash_mem_multiplier</code> (<code class="type">floating point</code>)
       <a id="id-1.6.6.7.2.2.6.1.3" class="indexterm"></a>
+      </span></dt><dd><p>
+        Used to compute the maximum amount of memory that hash-based
+        operations can use.  The final limit is determined by
+        multiplying <code class="varname">work_mem</code> by
+        <code class="varname">hash_mem_multiplier</code>.  The default value is
+        1.0, which makes hash-based operations subject to the same
+        simple <code class="varname">work_mem</code> maximum as sort-based
+        operations.
+       </p><p>
+        Consider increasing <code class="varname">hash_mem_multiplier</code> in
+        environments where spilling by query operations is a regular
+        occurrence, especially when simply increasing
+        <code class="varname">work_mem</code> results in memory pressure (memory
+        pressure typically takes the form of intermittent out of
+        memory errors).  A setting of 1.5 or 2.0 may be effective with
+        mixed workloads.  Higher settings in the range of 2.0 - 8.0 or
+        more may be effective in environments where
+        <code class="varname">work_mem</code> has already been increased to 40MB
+        or more.
+       </p></dd><dt id="GUC-MAINTENANCE-WORK-MEM"><span class="term"><code class="varname">maintenance_work_mem</code> (<code class="type">integer</code>)
+      <a id="id-1.6.6.7.2.2.7.1.3" class="indexterm"></a>
       </span></dt><dd><p>
        <span class="original">
         Specifies the maximum amount of memory to be used by maintenance
@@ -254,7 +285,7 @@ Linuxでは、これは<span class="quote">「<span class="quote">transparent hu
 自動バキュームが稼動すると、最大でこのメモリの<a class="xref" href="runtime-config-autovacuum.html#GUC-AUTOVACUUM-MAX-WORKERS">autovacuum_max_workers</a>倍が配分されるので、デフォルトの値をあまり高く設定しないよう注意してください。
 別の設定項目<a class="xref" href="runtime-config-resource.html#GUC-AUTOVACUUM-WORK-MEM">autovacuum_work_mem</a>で制御するのが良いかもしれません。
        </p></dd><dt id="GUC-AUTOVACUUM-WORK-MEM"><span class="term"><code class="varname">autovacuum_work_mem</code> (<code class="type">integer</code>)
-      <a id="id-1.6.6.7.2.2.7.1.3" class="indexterm"></a>
+      <a id="id-1.6.6.7.2.2.8.1.3" class="indexterm"></a>
       </span></dt><dd><p>
 <span class="original">
         Specifies the maximum amount of memory to be used by each
@@ -269,8 +300,20 @@ Linuxでは、これは<span class="quote">「<span class="quote">transparent hu
 この値が単位なしで指定された場合は、キロバイト単位であるとみなします。
 デフォルトは-1で、<a class="xref" href="runtime-config-resource.html#GUC-MAINTENANCE-WORK-MEM">maintenance_work_mem</a>が代わりに使われる設定になります。
 別の文脈で実行される<code class="command">VACUUM</code>にはこの設定は影響しません。
+       </p></dd><dt id="GUC-LOGICAL-DECODING-WORK-MEM"><span class="term"><code class="varname">logical_decoding_work_mem</code> (<code class="type">integer</code>)
+      <a id="id-1.6.6.7.2.2.9.1.3" class="indexterm"></a>
+      </span></dt><dd><p>
+        Specifies the maximum amount of memory to be used by logical decoding,
+        before some of the decoded changes are written to local disk. This
+        limits the amount of memory used by logical streaming replication
+        connections. It defaults to 64 megabytes (<code class="literal">64MB</code>).
+        Since each replication connection only uses a single buffer of this size,
+        and an installation normally doesn't have many such connections
+        concurrently (as limited by <code class="varname">max_wal_senders</code>), it's
+        safe to set this value significantly higher than <code class="varname">work_mem</code>,
+        reducing the amount of decoded changes written to disk.
        </p></dd><dt id="GUC-MAX-STACK-DEPTH"><span class="term"><code class="varname">max_stack_depth</code> (<code class="type">integer</code>)
-      <a id="id-1.6.6.7.2.2.8.1.3" class="indexterm"></a>
+      <a id="id-1.6.6.7.2.2.10.1.3" class="indexterm"></a>
       </span></dt><dd><p>
        <span class="original">
         Specifies the maximum safe depth of the server's execution stack.
@@ -307,7 +350,7 @@ Linuxでは、これは<span class="quote">「<span class="quote">transparent hu
 しかし、すべてのプラットフォームがこの情報を提供できるわけではありません。
 このため、値を選ぶ時には注意が必要です。
        </p></dd><dt id="GUC-SHARED-MEMORY-TYPE"><span class="term"><code class="varname">shared_memory_type</code> (<code class="type">enum</code>)
-      <a id="id-1.6.6.7.2.2.9.1.3" class="indexterm"></a>
+      <a id="id-1.6.6.7.2.2.11.1.3" class="indexterm"></a>
       </span></dt><dd><p>
 <span class="original">
         Specifies the shared memory implementation that the server
@@ -332,7 +375,7 @@ Linuxでは、これは<span class="quote">「<span class="quote">transparent hu
 通常、デフォルトではないカーネルの設定が大きなアロケーションでは必要になるからです。
 （<a class="xref" href="kernel-resources.html#SYSVIPC" title="18.4.1. 共有メモリとセマフォ">18.4.1</a>参照。）
        </p></dd><dt id="GUC-DYNAMIC-SHARED-MEMORY-TYPE"><span class="term"><code class="varname">dynamic_shared_memory_type</code> (<code class="type">enum</code>)
-      <a id="id-1.6.6.7.2.2.10.1.3" class="indexterm"></a>
+      <a id="id-1.6.6.7.2.2.12.1.3" class="indexterm"></a>
       </span></dt><dd><p>
 <span class="original">
         Specifies the dynamic shared memory implementation that the server
@@ -736,8 +779,18 @@ SSDやそれ以外のメモリーベースの記憶装置は、多くの同時�
 デフォルトは、サポートされているシステムでは1、そうでなければ0です。
 この値は、テーブルスペースパラメータの同じ名前のパラメータを設定することで、特定のテーブルスペース内のテーブルに対して上書きできます。
 (<a class="xref" href="sql-altertablespace.html" title="ALTER TABLESPACE"><span class="refentrytitle">ALTER TABLESPACE</span></a>を参照ください)。
-        </p></dd><dt id="GUC-MAX-WORKER-PROCESSES"><span class="term"><code class="varname">max_worker_processes</code> (<code class="type">integer</code>)
+        </p></dd><dt id="GUC-MAINTENANCE-IO-CONCURRENCY"><span class="term"><code class="varname">maintenance_io_concurrency</code> (<code class="type">integer</code>)
        <a id="id-1.6.6.7.7.2.2.1.3" class="indexterm"></a>
+       </span></dt><dd><p>
+         Similar to <code class="varname">effective_io_concurrency</code>, but used
+         for maintenance work that is done on behalf of many client sessions.
+        </p><p>
+         The default is 10 on supported systems, otherwise 0.  This value can
+         be overridden for tables in a particular tablespace by setting the
+         tablespace parameter of the same name (see
+         <a class="xref" href="sql-altertablespace.html" title="ALTER TABLESPACE"><span class="refentrytitle">ALTER TABLESPACE</span></a>).
+        </p></dd><dt id="GUC-MAX-WORKER-PROCESSES"><span class="term"><code class="varname">max_worker_processes</code> (<code class="type">integer</code>)
+       <a id="id-1.6.6.7.7.2.3.1.3" class="indexterm"></a>
        </span></dt><dd><p>
 <span class="original">
          Sets the maximum number of background processes that the system
@@ -764,7 +817,7 @@ SSDやそれ以外のメモリーベースの記憶装置は、多くの同時�
 この値を変更する際は、<a class="xref" href="runtime-config-resource.html#GUC-MAX-PARALLEL-WORKERS">max_parallel_workers</a>と<a class="xref" href="runtime-config-resource.html#GUC-MAX-PARALLEL-WORKERS-PER-GATHER">max_parallel_workers_per_gather</a>を変更することも考慮してください。
 
         </p></dd><dt id="GUC-MAX-PARALLEL-WORKERS-PER-GATHER"><span class="term"><code class="varname">max_parallel_workers_per_gather</code> (<code class="type">integer</code>)
-       <a id="id-1.6.6.7.7.2.3.1.3" class="indexterm"></a>
+       <a id="id-1.6.6.7.7.2.4.1.3" class="indexterm"></a>
        </span></dt><dd><p>
 <span class="original">
          Sets the maximum number of workers that can be started by a single
@@ -812,17 +865,17 @@ SSDやそれ以外のメモリーベースの記憶装置は、多くの同時�
 </span>
          パラレルクエリに関する更なる情報については、<a class="xref" href="parallel-query.html" title="第15章 パラレルクエリ">第15章</a>をご覧ください。
         </p></dd><dt id="GUC-MAX-PARALLEL-WORKERS-MAINTENANCE"><span class="term"><code class="varname">max_parallel_maintenance_workers</code> (<code class="type">integer</code>)
-       <a id="id-1.6.6.7.7.2.4.1.3" class="indexterm"></a>
+       <a id="id-1.6.6.7.7.2.5.1.3" class="indexterm"></a>
        </span></dt><dd><p>
 <span class="original">
          Sets the maximum number of parallel workers that can be
-         started by a single utility command.  Currently, the only
-         parallel utility command that supports the use of parallel
-         workers is &lt;command&gt;CREATE INDEX&lt;/command&gt;, and only when
-         building a B-tree index.  Parallel workers are taken from the
-         pool of processes established by &lt;xref
-         linkend="guc-max-worker-processes"/&gt;, limited by &lt;xref
-         linkend="guc-max-parallel-workers"/&gt;.  Note that the requested
+         started by a single utility command.  Currently, the parallel
+         utility commands that support the use of parallel workers are
+         &lt;command&gt;CREATE INDEX&lt;/command&gt; only when building a B-tree index,
+         and &lt;command&gt;VACUUM&lt;/command&gt; without &lt;literal&gt;FULL&lt;/literal&gt;
+         option.  Parallel workers are taken from the pool of processes
+         established by &lt;xref linkend="guc-max-worker-processes"/&gt;, limited
+         by &lt;xref linkend="guc-max-parallel-workers"/&gt;.  Note that the requested
          number of workers may not actually be available at run time.
          If this occurs, the utility operation will run with fewer
          workers than expected.  The default value is 2.  Setting this
@@ -854,7 +907,7 @@ SSDやそれ以外のメモリーベースの記憶装置は、多くの同時�
 パラレルワーカープロセスの数にかかわらず、パラレルユーティリティコマンドは、その全体でリソース制限<code class="varname">maintenance_work_mem</code>が適用されるとみなします。
 しかし、パラレルユーティリティコマンドは、依然としてかなり多くのCPUリソースとI/Oバンド幅を消費するかも知れません。
         </p></dd><dt id="GUC-MAX-PARALLEL-WORKERS"><span class="term"><code class="varname">max_parallel_workers</code> (<code class="type">integer</code>)
-       <a id="id-1.6.6.7.7.2.5.1.3" class="indexterm"></a>
+       <a id="id-1.6.6.7.7.2.6.1.3" class="indexterm"></a>
        </span></dt><dd><p>
 <span class="original">
          Sets the maximum number of workers that the system can support for
@@ -873,7 +926,7 @@ SSDやそれ以外のメモリーベースの記憶装置は、多くの同時�
 また、この設定値を<a class="xref" href="runtime-config-resource.html#GUC-MAX-WORKER-PROCESSES">max_worker_processes</a>よりも高い値にしても効果がないことに注意してください。
 <a class="xref" href="runtime-config-resource.html#GUC-MAX-WORKER-PROCESSES">max_worker_processes</a>で決まるワーカープロセスのプールから、パラレルワーカーが使われるからです。
         </p></dd><dt id="GUC-BACKEND-FLUSH-AFTER"><span class="term"><code class="varname">backend_flush_after</code> (<code class="type">integer</code>)
-       <a id="id-1.6.6.7.7.2.6.1.3" class="indexterm"></a>
+       <a id="id-1.6.6.7.7.2.7.1.3" class="indexterm"></a>
        </span></dt><dd><p>
 <span class="original">
          Whenever more than this amount of data has
@@ -904,7 +957,7 @@ SSDやそれ以外のメモリーベースの記憶装置は、多くの同時�
 デフォルト値は<code class="literal">0</code>です(すなわち書き出し制御を行いません)。
 (<code class="symbol">BLCKSZ</code>が8kbでなければ、最大値が<code class="symbol">BLCKSZ</code>に比例して変更されます。)
         </p></dd><span class="original"> split-config0-end </span><span class="original"> split-config1-start </span><dt id="GUC-OLD-SNAPSHOT-THRESHOLD"><span class="term"><code class="varname">old_snapshot_threshold</code> (<code class="type">integer</code>)
-       <a id="id-1.6.6.7.7.2.7.1.3" class="indexterm"></a>
+       <a id="id-1.6.6.7.7.2.8.1.3" class="indexterm"></a>
        </span></dt><dd><p>
 <span class="original">
          Sets the minimum amount of time that a query snapshot can be used
@@ -973,4 +1026,4 @@ SSDやそれ以外のメモリーベースの記憶装置は、多くの同時�
 ある種のテーブルでは、早期にVACUUMできないので、この設定の影響を受けません。
 例としては、システムカタログが挙げられます。
 このようなテーブルにおいては、この設定によってデータ溢れを防ぐことも、スキャンの際に<span class="quote">「<span class="quote">snapshot too old</span>」</span>エラーを起こす可能性を作り出すこともできません。
-        </p></dd></dl></div></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="runtime-config-connection.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="runtime-config.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="runtime-config-wal.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">19.3. 接続と認証 </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> 19.5. ログ先行書き込み（WAL）</td></tr></table></div></body></html>
+        </p></dd></dl></div></div></div><div xmlns="http://www.w3.org/TR/xhtml1/transitional" class="navfooter"><hr></hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="runtime-config-connection.html" title="19.3. 接続と認証">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="runtime-config.html" title="第19章 サーバの設定">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="runtime-config-wal.html" title="19.5. ログ先行書き込み（WAL）">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">19.3. 接続と認証 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 13.1文書">ホーム</a></td><td width="40%" align="right" valign="top"> 19.5. ログ先行書き込み（WAL）</td></tr></table></div></body></html>

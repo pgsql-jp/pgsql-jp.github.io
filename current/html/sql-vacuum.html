@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>VACUUM</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="sql-update.html" title="UPDATE" /><link rel="next" href="sql-values.html" title="VALUES" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 12.4文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="sql-commands.html" title="SQLコマンド">SQLコマンド</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 12.4 &#10;                      sql-vacuum.html">誤訳等の報告
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>VACUUM</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="sql-update.html" title="UPDATE" /><link rel="next" href="sql-values.html" title="VALUES" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 13.1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="sql-commands.html" title="SQLコマンド">SQLコマンド</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 13.1 &#10;                      sql-vacuum.html">誤訳等の報告
                     </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="sql-update.html" title="UPDATE">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="sql-commands.html" title="SQLコマンド">上へ</a></td><td width="60%" align="center">VACUUM</td><td width="20%" align="right"> <a accesskey="n" href="sql-values.html" title="VALUES">次へ</a></td></tr></table><hr /></div><div class="refentry" id="SQL-VACUUM"><div class="titlepage"></div><a id="id-1.9.3.183.1" class="indexterm"></a><div class="refnamediv"><h2><span class="refentrytitle">VACUUM</span></h2><p>VACUUM<span class="original">
   &lt;refpurpose&gt;garbage-collect and optionally analyze a database&lt;/refpurpose&gt;
 </span> — 
@@ -21,6 +21,7 @@ VACUUM [ FULL ] [ FREEZE ] [ VERBOSE ] [ ANALYZE ] [ <em class="replaceable"><co
     SKIP_LOCKED [ <em class="replaceable"><code>boolean</code></em> ]
     INDEX_CLEANUP [ <em class="replaceable"><code>boolean</code></em> ]
     TRUNCATE [ <em class="replaceable"><code>boolean</code></em> ]
+    PARALLEL <em class="replaceable"><code>integer</code></em>
 
 <span class="original">
 &lt;phrase&gt;and &lt;replaceable class="parameter"&gt;table_and_columns&lt;/replaceable&gt; is:&lt;/phrase&gt;
@@ -71,10 +72,14 @@ VACUUM [ FULL ] [ FREEZE ] [ VERBOSE ] [ ANALYZE ] [ <em class="replaceable"><co
    with normal reading and writing of the table, as an exclusive lock
    is not obtained.  However, extra space is not returned to the operating
    system (in most cases); it's just kept available for re-use within the
-   same table.  &lt;command&gt;VACUUM FULL&lt;/command&gt; rewrites the entire contents
-   of the table into a new disk file with no extra space, allowing unused
-   space to be returned to the operating system.  This form is much slower and
-   requires an exclusive lock on each table while it is being processed.
+   same table.  It also allows us to leverage multiple CPUs in order to process
+   indexes.  This feature is known as &lt;firstterm&gt;parallel vacuum&lt;/firstterm&gt;.
+   To disable this feature, one can use &lt;literal&gt;PARALLEL&lt;/literal&gt; option and
+   specify parallel workers as zero.  &lt;command&gt;VACUUM FULL&lt;/command&gt; rewrites
+   the entire contents of the table into a new disk file with no extra space,
+   allowing unused space to be returned to the operating system.  This form is
+   much slower and requires an exclusive lock on each table while it is being
+   processed.
 </span>
 （<code class="literal">FULL</code>が指定されていない）通常の<code class="command">VACUUM</code>は、単に領域を回収し、そこを再利用可能な状態に変更します。
 この形式のコマンドでは排他的ロックを取得しないため、テーブルへの通常の読み書き操作と並行して実行することができます。
@@ -214,6 +219,26 @@ VACUUM [ FULL ] [ FREEZE ] [ VERBOSE ] [ ANALYZE ] [ <em class="replaceable"><co
 これは普通は望まれる振舞いであり、バキュームされるテーブルに対して<code class="literal">vacuum_truncate</code>オプションが偽に設定されていない限りデフォルトです。
 このオプションを偽に設定するのは、切り詰めが要求されているテーブルの<code class="literal">ACCESS EXCLUSIVE</code>ロックを回避するのに有用かもしれません。
 このオプションは<code class="literal">FULL</code>オプションが使われていれば無視されます。
+     </p></dd><dt><span class="term"><code class="literal">PARALLEL</code></span></dt><dd><p>
+      Perform index vacuum and index cleanup phases of <code class="command">VACUUM</code>
+      in parallel using <em class="replaceable"><code>integer</code></em>
+      background workers (for the details of each vacuum phase, please
+      refer to <a class="xref" href="progress-reporting.html#VACUUM-PHASES" title="表27.37 VACUUMのフェーズ">表 27.37</a>).  The number of workers used
+      to perform the operation is equal to the number of indexes on the
+      relation that support parallel vacuum which is limited by the number of
+      workers specified with <code class="literal">PARALLEL</code> option if any which is
+      further limited by <a class="xref" href="runtime-config-resource.html#GUC-MAX-PARALLEL-WORKERS-MAINTENANCE">max_parallel_maintenance_workers</a>.
+      An index can participate in parallel vacuum if and only if the size of the
+      index is more than <a class="xref" href="runtime-config-query.html#GUC-MIN-PARALLEL-INDEX-SCAN-SIZE">min_parallel_index_scan_size</a>.
+      Please note that it is not guaranteed that the number of parallel workers
+      specified in <em class="replaceable"><code>integer</code></em> will be
+      used during execution.  It is possible for a vacuum to run with fewer
+      workers than specified, or even with no workers at all.  Only one worker
+      can be used per index.  So parallel workers are launched only when there
+      are at least <code class="literal">2</code> indexes in the table.  Workers for
+      vacuum are launched before the start of each phase and exit at the end of
+      the phase.  These behaviors might change in a future release.  This
+      option can't be used with the <code class="literal">FULL</code> option.
      </p></dd><dt><span class="term"><em class="replaceable"><code>boolean</code></em></span></dt><dd><p>
 <span class="original">
       Specifies whether the selected option should be turned on or off.
@@ -226,6 +251,8 @@ VACUUM [ FULL ] [ FREEZE ] [ VERBOSE ] [ ANALYZE ] [ <em class="replaceable"><co
 選択されたオプションを有効にするか無効にするかを指定します。
 オプションを有効にするには<code class="literal">TRUE</code>、<code class="literal">ON</code>または<code class="literal">1</code>と書くことができ、無効にするには<code class="literal">FALSE</code>、<code class="literal">OFF</code>または<code class="literal">0</code>と書くことができます。
 <em class="replaceable"><code>boolean</code></em>値は省略することもでき、その場合には<code class="literal">TRUE</code>とみなされます。
+     </p></dd><dt><span class="term"><em class="replaceable"><code>integer</code></em></span></dt><dd><p>
+      Specifies a non-negative integer value passed to the selected option.
      </p></dd><dt><span class="term"><em class="replaceable"><code>table_name</code></em></span></dt><dd><p>
 <span class="original">
       The name (optionally schema-qualified) of a specific table or
@@ -311,11 +338,17 @@ VACUUM [ FULL ] [ FREEZE ] [ VERBOSE ] [ ANALYZE ] [ <em class="replaceable"><co
 例えば、テーブル内のほとんど全ての行を削除または更新し、そのテーブルによるディスクの使用量を物理的に縮小させて高速なテーブルスキャンを行いたい場合です。
 <code class="command">VACUUM FULL</code>はたいていの場合、通常の<code class="command">VACUUM</code>よりもテーブルを縮小します。
    </p><p>
+     The <code class="option">PARALLEL</code> option is used only for vacuum purposes.
+     If this option is specified with the <code class="option">ANALYZE</code> option,
+     it does not affect <code class="option">ANALYZE</code>.
+   </p><p>
 <span class="original">
     &lt;command&gt;VACUUM&lt;/command&gt; causes a substantial increase in I/O traffic,
     which might cause poor performance for other active sessions.  Therefore,
-    it is sometimes advisable to use the cost-based vacuum delay feature.
-    See &lt;xref linkend="runtime-config-resource-vacuum-cost"/&gt; for details.
+    it is sometimes advisable to use the cost-based vacuum delay feature.  For
+    parallel vacuum, each worker sleeps in proportion to the work done by that
+    worker.  See &lt;xref linkend="runtime-config-resource-vacuum-cost"/&gt; for
+    details.
 </span>
 <code class="command">VACUUM</code>によりI/Oトラフィックがかなり増大しますので、実行中の他のセッションの性能が悪化する可能性があります。
 このため、コストベースのバキューム遅延機能の使用が推奨される場合があります。
@@ -349,4 +382,4 @@ VACUUM (VERBOSE, ANALYZE) onek;
 標準SQLには<code class="command">VACUUM</code>文はありません。
   </p></div><div class="refsect1" id="id-1.9.3.183.11"><h2>関連項目</h2><span class="original">
   &lt;title&gt;See Also&lt;/title&gt;
-</span><span class="simplelist"><a class="xref" href="app-vacuumdb.html" title="vacuumdb"><span class="refentrytitle"><span class="application">vacuumdb</span></span></a>, <a class="xref" href="runtime-config-resource.html#RUNTIME-CONFIG-RESOURCE-VACUUM-COST" title="19.4.4. コストに基づくVacuum遅延">19.4.4</a>, <a class="xref" href="routine-vacuuming.html#AUTOVACUUM" title="24.1.6. 自動バキュームデーモン">24.1.6</a></span></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="sql-update.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="sql-commands.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="sql-values.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">UPDATE </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> VALUES</td></tr></table></div></body></html>
+</span><span class="simplelist"><a class="xref" href="app-vacuumdb.html" title="vacuumdb"><span class="refentrytitle"><span class="application">vacuumdb</span></span></a>, <a class="xref" href="runtime-config-resource.html#RUNTIME-CONFIG-RESOURCE-VACUUM-COST" title="19.4.4. コストに基づくVacuum遅延">19.4.4</a>, <a class="xref" href="routine-vacuuming.html#AUTOVACUUM" title="24.1.6. 自動バキュームデーモン">24.1.6</a></span></div></div><div xmlns="http://www.w3.org/TR/xhtml1/transitional" class="navfooter"><hr></hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="sql-update.html" title="UPDATE">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="sql-commands.html" title="SQLコマンド">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="sql-values.html" title="VALUES">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">UPDATE </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 13.1文書">ホーム</a></td><td width="40%" align="right" valign="top"> VALUES</td></tr></table></div></body></html>

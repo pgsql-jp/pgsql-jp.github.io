@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>ALTER TABLE</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="sql-altersystem.html" title="ALTER SYSTEM" /><link rel="next" href="sql-altertablespace.html" title="ALTER TABLESPACE" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 12.4文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="sql-commands.html" title="SQLコマンド">SQLコマンド</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 12.4 &#10;                      sql-altertable.html">誤訳等の報告
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>ALTER TABLE</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="sql-altersystem.html" title="ALTER SYSTEM" /><link rel="next" href="sql-altertablespace.html" title="ALTER TABLESPACE" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 13.1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="sql-commands.html" title="SQLコマンド">SQLコマンド</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 13.1 &#10;                      sql-altertable.html">誤訳等の報告
                     </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="sql-altersystem.html" title="ALTER SYSTEM">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="sql-commands.html" title="SQLコマンド">上へ</a></td><td width="60%" align="center">ALTER TABLE</td><td width="20%" align="right"> <a accesskey="n" href="sql-altertablespace.html" title="ALTER TABLESPACE">次へ</a></td></tr></table><hr /></div><div class="refentry" id="SQL-ALTERTABLE"><div class="titlepage"></div><a id="id-1.9.3.35.1" class="indexterm"></a><div class="refnamediv"><h2><span class="refentrytitle">ALTER TABLE</span></h2><p>ALTER TABLE<span class="original">
   &lt;refpurpose&gt;change the definition of a table&lt;/refpurpose&gt;
 </span> — テーブル定義を変更する</p></div><div class="refsynopsisdiv"><h2>概要</h2><pre class="synopsis">
@@ -31,6 +31,7 @@ ALTER TABLE [ IF EXISTS ] <em class="replaceable"><code>name</code></em>
     ALTER [ COLUMN ] <em class="replaceable"><code>column_name</code></em> SET DEFAULT <em class="replaceable"><code>expression</code></em>
     ALTER [ COLUMN ] <em class="replaceable"><code>column_name</code></em> DROP DEFAULT
     ALTER [ COLUMN ] <em class="replaceable"><code>column_name</code></em> { SET | DROP } NOT NULL
+    ALTER [ COLUMN ] <em class="replaceable"><code>column_name</code></em> DROP EXPRESSION [ IF EXISTS ]
     ALTER [ COLUMN ] <em class="replaceable"><code>column_name</code></em> ADD GENERATED { ALWAYS | BY DEFAULT } AS IDENTITY [ ( <em class="replaceable"><code>sequence_options</code></em> ) ]
     ALTER [ COLUMN ] <em class="replaceable"><code>column_name</code></em> { SET GENERATED { ALWAYS | BY DEFAULT } | SET <em class="replaceable"><code>sequence_option</code></em> | RESTART [ [ WITH ] <em class="replaceable"><code>restart</code></em> ] } [...]
     ALTER [ COLUMN ] <em class="replaceable"><code>column_name</code></em> DROP IDENTITY [ IF EXISTS ]
@@ -205,10 +206,11 @@ WITH ( MODULUS <em class="replaceable"><code>numeric_literal</code></em>, REMAIN
 古いデータ型から新しいデータ型への暗黙キャストあるいは代入キャストがない場合、<code class="literal">USING</code>句を指定しなければなりません。
      </p></dd><dt><span class="term"><code class="literal">SET</code>/<code class="literal">DROP DEFAULT</code></span></dt><dd><p>
 <span class="original">
-      These forms set or remove the default value for a column.
-      Default values only apply in subsequent &lt;command&gt;INSERT&lt;/command&gt;
-      or &lt;command&gt;UPDATE&lt;/command&gt; commands; they do not cause rows already in the
-      table to change.
+      These forms set or remove the default value for a column (where
+      removal is equivalent to setting the default value to NULL).  The new
+      default value will only apply in subsequent &lt;command&gt;INSERT&lt;/command&gt;
+      or &lt;command&gt;UPDATE&lt;/command&gt; commands; it does not cause rows already
+      in the table to change.
 </span>
 これらの構文を使用すると、列のデフォルト値を設定または削除できます。
 デフォルト値は、変更後に行われる<code class="command">INSERT</code>または<code class="command">UPDATE</code>コマンドにのみ適用されます。
@@ -246,11 +248,23 @@ WITH ( MODULUS <em class="replaceable"><code>numeric_literal</code></em>, REMAIN
 すべてのパーティションから<code class="literal">NOT NULL</code>制約を削除するには、親テーブルで<code class="literal">DROP NOT NULL</code>を実行してください。
 親テーブルに<code class="literal">NOT NULL</code>制約がない場合でも、望むなら各パーティションにそのような制約を追加することができます。
 つまり、親テーブルがNULLを許していても子テーブルでNULLを禁止することができますが、その逆はできません。
+     </p></dd><dt><span class="term"><code class="literal">DROP EXPRESSION [ IF EXISTS ]</code></span></dt><dd><p>
+      This form turns a stored generated column into a normal base column.
+      Existing data in the columns is retained, but future changes will no
+      longer apply the generation expression.
+     </p><p>
+      If <code class="literal">DROP EXPRESSION IF EXISTS</code> is specified and the
+      column is not a stored generated column, no error is thrown.  In this
+      case a notice is issued instead.
      </p></dd><dt><span class="term"><code class="literal">ADD GENERATED { ALWAYS | BY DEFAULT } AS IDENTITY</code><br /></span><span class="term"><code class="literal">SET GENERATED { ALWAYS | BY DEFAULT }</code><br /></span><span class="term"><code class="literal">DROP IDENTITY [ IF EXISTS ]</code></span></dt><dd><p>
 <span class="original">
       These forms change whether a column is an identity column or change the
       generation attribute of an existing identity column.
       See &lt;xref linkend="sql-createtable"/&gt; for details.
+      Like &lt;literal&gt;SET DEFAULT&lt;/literal&gt;, these forms only affect the
+      behavior of subsequent &lt;command&gt;INSERT&lt;/command&gt;
+      and &lt;command&gt;UPDATE&lt;/command&gt; commands; they do not cause rows
+      already in the table to change.
 </span>
 この構文では、列がIDENTITY列であるかどうか、または既存のIDENTITY列の生成属性を変更することができます。
 詳細は<a class="xref" href="sql-createtable.html" title="CREATE TABLE"><span class="refentrytitle">CREATE TABLE</span></a>を参照してください。
@@ -337,7 +351,7 @@ WITH ( MODULUS <em class="replaceable"><code>numeric_literal</code></em>, REMAIN
 属性単位のオプションの変更は<code class="literal">SHARE UPDATE EXCLUSIVE</code>ロックを取得します。
      </p></dd><dt><span class="term">
      <code class="literal">SET STORAGE</code>
-     <a id="id-1.9.3.35.5.2.3.10.1.2" class="indexterm"></a>
+     <a id="id-1.9.3.35.5.2.3.11.1.2" class="indexterm"></a>
     </span></dt><dd><p>
 <span class="original">
       This form sets the storage mode for a column. This controls whether this
@@ -389,15 +403,14 @@ WITH ( MODULUS <em class="replaceable"><code>numeric_literal</code></em>, REMAIN
       database will not assume that the constraint holds for all rows in
       the table, until it is validated by using the &lt;literal&gt;VALIDATE
       CONSTRAINT&lt;/literal&gt; option.
-      See &lt;xref linkend="sql-altertable-notes"
-      endterm="sql-altertable-notes-title"/&gt; below for more information
+      See &lt;xref linkend="sql-altertable-notes"/&gt; below for more information
       about using the &lt;literal&gt;NOT VALID&lt;/literal&gt; option.
 </span>
 通常この構文は、テーブルの既存の行が新しい制約を満たすか確認するため、テーブルのスキャンの原因となります。
 しかし、<code class="literal">NOT VALID</code>オプションが使われていれば、時間がかかるかもしれないこのスキャンは省略されます。
 それでも、制約はその後の挿入や更新に対して強制されます（つまり、外部キー制約の場合、被参照テーブルに一致する行が存在しない限り失敗します。指定された検査制約に一致する新しい行が存在しない限り失敗します）。
 しかしデータベースは、<code class="literal">VALIDATE CONSTRAINT</code>オプションを使用して検証されるまで、テーブル内のすべての行で制約が保持されているとみなしません。
-<code class="literal">NOT VALID</code>オブションを使うことに関する更なる情報は<a class="xref" href="sql-altertable.html#SQL-ALTERTABLE-NOTES" title="注釈">注釈</a>以下を参照してください。
+<code class="literal">NOT VALID</code>オブションを使うことに関する更なる情報は<a class="xref" href="sql-altertable.html#SQL-ALTERTABLE-NOTES" title="注釈">Notes</a>以下を参照してください。
      </p><p>
 <span class="original">
       Although most forms of &lt;literal&gt;ADD
@@ -498,13 +511,12 @@ WITH ( MODULUS <em class="replaceable"><code>numeric_literal</code></em>, REMAIN
       previously created as &lt;literal&gt;NOT VALID&lt;/literal&gt;, by scanning the
       table to ensure there are no rows for which the constraint is not
       satisfied.  Nothing happens if the constraint is already marked valid.
-      (See &lt;xref linkend="sql-altertable-notes"
-      endterm="sql-altertable-notes-title"/&gt; below for an explanation of the
-      usefulness of this command.)
+      (See &lt;xref linkend="sql-altertable-notes"/&gt; below for an explanation
+      of the usefulness of this command.)
 </span>
 この構文は、以前に<code class="literal">NOT VALID</code>として作成された外部キー制約または検査制約を、これらの制約を満たさない行が存在しないことを確認するためにテーブルをスキャンして、検証します。
 制約がすでに有効であると記録されている場合は何も起こりません。
-(このコマンドの有用性の説明は<a class="xref" href="sql-altertable.html#SQL-ALTERTABLE-NOTES" title="注釈">注釈</a>以下を参照してください。)
+(このコマンドの有用性の説明は<a class="xref" href="sql-altertable.html#SQL-ALTERTABLE-NOTES" title="注釈">Notes</a>以下を参照してください。)
      </p></dd><dt><span class="term"><code class="literal">DROP CONSTRAINT [ IF EXISTS ]</code></span></dt><dd><p>
 <span class="original">
       This form drops the specified constraint on a table, along with
@@ -599,8 +611,8 @@ WITH ( MODULUS <em class="replaceable"><code>numeric_literal</code></em>, REMAIN
       These forms control the application of row security policies belonging
       to the table.  If enabled and no policies exist for the table, then a
       default-deny policy is applied.  Note that policies can exist for a table
-      even if row level security is disabled - in this case, the policies will
-      NOT be applied and the policies will be ignored.
+      even if row level security is disabled.  In this case, the policies will
+      &lt;emphasis&gt;not&lt;/emphasis&gt; be applied and the policies will be ignored.
       See also
       &lt;xref linkend="sql-createpolicy"/&gt;.
 </span>
@@ -667,7 +679,7 @@ clusterオプションの変更は<code class="literal">SHARE UPDATE EXCLUSIVE</
       When applied to a partitioned table, nothing is moved, but any
       partitions created afterwards with
       &lt;command&gt;CREATE TABLE PARTITION OF&lt;/command&gt; will use that tablespace,
-      unless the &lt;literal&gt;TABLESPACE&lt;/literal&gt; clause is used to override it.
+      unless overridden by a &lt;literal&gt;TABLESPACE&lt;/literal&gt; clause.
 </span>
 この構文を使用すると、テーブルのテーブル空間を指定したテーブル空間に変更し、テーブルに関連するデータファイルを新しいテーブル空間に移動することができます。
 テーブルにインデックスがあっても移動されません。
@@ -707,8 +719,8 @@ clusterオプションの変更は<code class="literal">SHARE UPDATE EXCLUSIVE</
      </p></dd><dt><span class="term"><code class="literal">SET ( <em class="replaceable"><code>storage_parameter</code></em> [= <em class="replaceable"><code>value</code></em>] [, ... ] )</code></span></dt><dd><p>
 <span class="original">
       This form changes one or more storage parameters for the table.  See
-      &lt;xref linkend="sql-createtable-storage-parameters"
-      endterm="sql-createtable-storage-parameters-title"/&gt;
+      &lt;xref linkend="sql-createtable-storage-parameters"/&gt; in the
+      &lt;xref linkend="sql-createtable"/&gt; documentation
       for details on the available parameters.  Note that the table contents
       will not be modified immediately by this command; depending on the
       parameter you might need to rewrite the table to get the desired effects.
@@ -720,7 +732,7 @@ clusterオプションの変更は<code class="literal">SHARE UPDATE EXCLUSIVE</
       affected.
 </span>
 この構文は、1つ以上のテーブルの格納パラメータを変更します。
-設定可能なパラメータの詳細に関しては<a class="xref" href="sql-createtable.html#SQL-CREATETABLE-STORAGE-PARAMETERS" title="格納パラメータ">格納パラメータ</a>を参照してください。
+設定可能なパラメータの詳細に関しては<a class="xref" href="sql-createtable.html#SQL-CREATETABLE-STORAGE-PARAMETERS" title="Storage Parameters">Storage Parameters</a>を参照してください。
 このコマンドによってテーブルの内容が即座に変更されない点に注意してください。
 パラメータによりますが、期待する効果を得るためにテーブルを書き換える必要がある場合があります。
 このためには、<a class="link" href="sql-vacuum.html" title="VACUUM">VACUUM FULL</a>、<a class="xref" href="sql-cluster.html" title="CLUSTER"><span class="refentrytitle">CLUSTER</span></a>またはテーブルを強制的に書き換える<code class="command">ALTER TABLE</code>の構文のいずれかを使用してください。
@@ -884,7 +896,7 @@ fillfactor、TOAST、およびautovacuumのストレージパラメータおよ�
       from the parent table will be created in the partition, if they don't
       already exist.
       If any of the &lt;literal&gt;CHECK&lt;/literal&gt; constraints of the table being
-      attached is marked &lt;literal&gt;NO INHERIT&lt;/literal&gt;, the command will fail;
+      attached are marked &lt;literal&gt;NO INHERIT&lt;/literal&gt;, the command will fail;
       such constraints must be recreated without the
       &lt;literal&gt;NO INHERIT&lt;/literal&gt; clause.
 </span>
@@ -949,6 +961,11 @@ fillfactor、TOAST、およびautovacuumのストレージパラメータおよ�
       to be attached and on the default partition (if any).
 </span>
 パーティションの追加は、追加されるテーブルと（もしあれば）デフォルトパーティションでの<code class="literal">ACCESS EXCLUSIVE</code>ロックに加えて、親テーブルで<code class="literal">SHARE UPDATE EXCLUSIVE</code>ロックを取得します。
+     </p><p>
+      Attaching a partition acquires a
+      <code class="literal">SHARE UPDATE EXCLUSIVE</code> lock on the parent table,
+      in addition to <code class="literal">ACCESS EXCLUSIVE</code> locks on the table
+      to be attached and on the default partition (if any).
      </p></dd><dt><span class="term"><code class="literal">DETACH PARTITION</code> <em class="replaceable"><code>partition_name</code></em></span></dt><dd><p>
 <span class="original">
       This form detaches the specified partition of the target table.  The detached
@@ -1142,7 +1159,7 @@ fillfactor、TOAST、およびautovacuumのストレージパラメータおよ�
 新しいパーティションのパーティション境界の指定です。
 その構文の詳細については<a class="xref" href="sql-createtable.html" title="CREATE TABLE"><span class="refentrytitle">CREATE TABLE</span></a>を参照してください。
        </p></dd></dl></div></div><div class="refsect1" id="SQL-ALTERTABLE-NOTES"><h2>注釈</h2><span class="original">
-  &lt;title id="sql-altertable-notes-title"&gt;Notes&lt;/title&gt;
+  &lt;title&gt;Notes&lt;/title&gt;
 </span><p>
 <span class="original">
     The key word &lt;literal&gt;COLUMN&lt;/literal&gt; is noise and can be omitted.
@@ -1369,6 +1386,28 @@ IDENTITY列についての操作（<code class="literal">ADD GENERATED</code>、
 </p><pre class="programlisting">
 ALTER TABLE distributors ADD COLUMN address varchar(30);
 </pre><p>
+   That will cause all existing rows in the table to be filled with null
+   values for the new column.
+  </p><p>
+   To add a column with a non-null default:
+</p><pre class="programlisting">
+ALTER TABLE measurements
+  ADD COLUMN mtime timestamp with time zone DEFAULT now();
+</pre><p>
+   Existing rows will be filled with the current time as the value of the
+   new column, and then new rows will receive the time of their insertion.
+  </p><p>
+   To add a column and fill it with a value different from the default to
+   be used later:
+</p><pre class="programlisting">
+ALTER TABLE transactions
+  ADD COLUMN status varchar(30) DEFAULT 'old',
+  ALTER COLUMN status SET default 'current';
+</pre><p>
+   Existing rows will be filled with <code class="literal">old</code>, but then
+   the default for subsequent commands will be <code class="literal">current</code>.
+   The effects are the same as if the two sub-commands had been issued
+   in separate <code class="command">ALTER TABLE</code> commands.
   </p><p>
 <span class="original">
    To drop a column from a table:
@@ -1620,4 +1659,4 @@ ALTER TABLE measurement
 これは<span class="productname">PostgreSQL</span>の拡張です。SQLでは、列を持たないテーブルは認められていません。
   </p></div><div class="refsect1" id="id-1.9.3.35.10"><h2>関連項目</h2><span class="original">
   &lt;title&gt;See Also&lt;/title&gt;
-</span><span class="simplelist"><a class="xref" href="sql-createtable.html" title="CREATE TABLE"><span class="refentrytitle">CREATE TABLE</span></a></span></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="sql-altersystem.html">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="sql-commands.html">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="sql-altertablespace.html">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">ALTER SYSTEM </td><td width="20%" align="center"><a accesskey="h" href="index.html">ホーム</a></td><td width="40%" align="right" valign="top"> ALTER TABLESPACE</td></tr></table></div></body></html>
+</span><span class="simplelist"><a class="xref" href="sql-createtable.html" title="CREATE TABLE"><span class="refentrytitle">CREATE TABLE</span></a></span></div></div><div xmlns="http://www.w3.org/TR/xhtml1/transitional" class="navfooter"><hr></hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="sql-altersystem.html" title="ALTER SYSTEM">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="sql-commands.html" title="SQLコマンド">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="sql-altertablespace.html" title="ALTER TABLESPACE">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">ALTER SYSTEM </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 13.1文書">ホーム</a></td><td width="40%" align="right" valign="top"> ALTER TABLESPACE</td></tr></table></div></body></html>
