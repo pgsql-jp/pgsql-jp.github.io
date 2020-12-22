@@ -214,45 +214,60 @@ Linuxでは、これは<span class="quote">「<span class="quote">transparent hu
         Hash tables are used in hash joins, hash-based aggregation, and
         hash-based processing of &lt;literal&gt;IN&lt;/literal&gt; subqueries.
        </span>
-一時ディスクファイルに書き込むようになる前に、クエリ操作（たとえば並べ替えとハッシュテーブル操作）が使用する最大のメモリ容量を指定します。
+一時ディスクファイルに書き込むようになる前に、問い合わせ操作（たとえば並べ替えとハッシュテーブル操作）が使用する基本的な最大のメモリ容量を指定します。
 この値が単位なしで指定された場合は、キロバイト単位であるとみなします。
 デフォルト値は4メガバイト（<code class="literal">4MB</code>）です。
 複雑な問い合わせの場合、いくつかの並び替えもしくはハッシュ操作が並行して実行されることに注意してください。
-それぞれの操作による一時メモリへの書き込み開始の前に、この値が指定するのと同じメモリ容量の使用をそれらの操作に許容します。
+一時ファイルへの書き込み開始の前に、それぞれの操作にこの値が指定するのと同じメモリ容量の使用が許容されます。
 さらに、いくつかの実行中のセッションはこれらの動作を同時に行います。
 したがって、使用されるメモリの合計は、<code class="varname">work_mem</code>の数倍になります。値を選択する時には、この事実に留意することが必要です。
 並び替え操作は<code class="literal">ORDER BY</code>、<code class="literal">DISTINCT</code>、およびマージ結合に対して使われます。
 ハッシュテーブルはハッシュ結合、ハッシュに基づいた集約、および<code class="literal">IN</code>副問い合わせのハッシュに基づいた処理で使用されます。
        </p><p>
+<span class="original">
         Hash-based operations are generally more sensitive to memory
         availability than equivalent sort-based operations.  The
         memory available for hash tables is computed by multiplying
-        <code class="varname">work_mem</code> by
-        <code class="varname">hash_mem_multiplier</code>.  This makes it
+        &lt;varname&gt;work_mem&lt;/varname&gt; by
+        &lt;varname&gt;hash_mem_multiplier&lt;/varname&gt;.  This makes it
         possible for hash-based operations to use an amount of memory
-        that exceeds the usual <code class="varname">work_mem</code> base
+        that exceeds the usual &lt;varname&gt;work_mem&lt;/varname&gt; base
         amount.
+</span>
+一般的に、ハッシュに基づく操作はソートに基づく操作よりも利用可能なメモリに敏感です。
+ハッシュテーブルが利用可能なメモリは<code class="varname">work_mem</code>に<code class="varname">hash_mem_multiplier</code>を掛けて計算します。
+これにより、ハッシュに基づく操作では通常の<code class="varname">work_mem</code>に基づく量を超える量のメモリが使用される可能性があります。
        </p></dd><dt id="GUC-HASH-MEM-MULTIPLIER"><span class="term"><code class="varname">hash_mem_multiplier</code> (<code class="type">floating point</code>)
       <a id="id-1.6.6.7.2.2.6.1.3" class="indexterm"></a>
       </span></dt><dd><p>
+<span class="original">
         Used to compute the maximum amount of memory that hash-based
         operations can use.  The final limit is determined by
-        multiplying <code class="varname">work_mem</code> by
-        <code class="varname">hash_mem_multiplier</code>.  The default value is
+        multiplying &lt;varname&gt;work_mem&lt;/varname&gt; by
+        &lt;varname&gt;hash_mem_multiplier&lt;/varname&gt;.  The default value is
         1.0, which makes hash-based operations subject to the same
-        simple <code class="varname">work_mem</code> maximum as sort-based
+        simple &lt;varname&gt;work_mem&lt;/varname&gt; maximum as sort-based
         operations.
+</span>
+ハッシュに基づく操作が利用できる最大のメモリ量を計算するために使用します。
+最終的な制限は<code class="varname">work_mem</code>に<code class="varname">hash_mem_multiplier</code>を掛けて決定されます。
+デフォルト値は1.0で、ソートに基づく操作と同じように単に<code class="varname">work_mem</code>が最大となります。
        </p><p>
-        Consider increasing <code class="varname">hash_mem_multiplier</code> in
+<span class="original">
+        Consider increasing &lt;varname&gt;hash_mem_multiplier&lt;/varname&gt; in
         environments where spilling by query operations is a regular
         occurrence, especially when simply increasing
-        <code class="varname">work_mem</code> results in memory pressure (memory
+        &lt;varname&gt;work_mem&lt;/varname&gt; results in memory pressure (memory
         pressure typically takes the form of intermittent out of
         memory errors).  A setting of 1.5 or 2.0 may be effective with
         mixed workloads.  Higher settings in the range of 2.0 - 8.0 or
         more may be effective in environments where
-        <code class="varname">work_mem</code> has already been increased to 40MB
+        &lt;varname&gt;work_mem&lt;/varname&gt; has already been increased to 40MB
         or more.
+</span>
+問い合わせ操作によって日常的にメモリ不足になるような環境、とりわけ単に<code class="varname">work_mem</code>を増やしたことによってメモリ逼迫（メモリ逼迫が典型的には間欠的なメモリ不足エラーの発生の形で起こる）が起きる場合には<code class="varname">hash_mem_multiplier</code>を増やすことを考慮してください。
+1.5あるいは2.0が色々なワークロードが混在している場合には効果的かも知れません。
+より大きな2.0から8.0、あるいはそれ以上の設定は<code class="varname">work_mem</code>がすでに40MB以上に増やしてあるような環境で効果的かも知れません。
        </p></dd><dt id="GUC-MAINTENANCE-WORK-MEM"><span class="term"><code class="varname">maintenance_work_mem</code> (<code class="type">integer</code>)
       <a id="id-1.6.6.7.2.2.7.1.3" class="indexterm"></a>
       </span></dt><dd><p>
@@ -303,15 +318,21 @@ Linuxでは、これは<span class="quote">「<span class="quote">transparent hu
        </p></dd><dt id="GUC-LOGICAL-DECODING-WORK-MEM"><span class="term"><code class="varname">logical_decoding_work_mem</code> (<code class="type">integer</code>)
       <a id="id-1.6.6.7.2.2.9.1.3" class="indexterm"></a>
       </span></dt><dd><p>
+<span class="original">
         Specifies the maximum amount of memory to be used by logical decoding,
         before some of the decoded changes are written to local disk. This
         limits the amount of memory used by logical streaming replication
-        connections. It defaults to 64 megabytes (<code class="literal">64MB</code>).
+        connections. It defaults to 64 megabytes (&lt;literal&gt;64MB&lt;/literal&gt;).
         Since each replication connection only uses a single buffer of this size,
         and an installation normally doesn't have many such connections
-        concurrently (as limited by <code class="varname">max_wal_senders</code>), it's
-        safe to set this value significantly higher than <code class="varname">work_mem</code>,
+        concurrently (as limited by &lt;varname&gt;max_wal_senders&lt;/varname&gt;), it's
+        safe to set this value significantly higher than &lt;varname&gt;work_mem&lt;/varname&gt;,
         reducing the amount of decoded changes written to disk.
+</span>
+デコードされた更新がローカルディスクに書かれる前にロジカルデコーディングが使用する最大のメモリ量を指定します。
+これにより、ロジカルストリーミングレプリケーションの接続が使用する最大メモリが制限されます。
+デフォルトは64メガバイト(<code class="literal">64MB</code>)です。
+個々のレプリケーション接続がここで指定した単一のバッファだけを使用し、インストールは通常たくさんの接続を並行して使わないので（<code class="varname">max_wal_senders</code>で制限されます）、この値を<code class="varname">work_mem</code>よりもずっと大きくしても安全で、それによってデコードされた更新がディスクに書かれる量が削減されます。
        </p></dd><dt id="GUC-MAX-STACK-DEPTH"><span class="term"><code class="varname">max_stack_depth</code> (<code class="type">integer</code>)
       <a id="id-1.6.6.7.2.2.10.1.3" class="indexterm"></a>
       </span></dt><dd><p>
@@ -782,13 +803,20 @@ SSDやそれ以外のメモリーベースの記憶装置は、多くの同時�
         </p></dd><dt id="GUC-MAINTENANCE-IO-CONCURRENCY"><span class="term"><code class="varname">maintenance_io_concurrency</code> (<code class="type">integer</code>)
        <a id="id-1.6.6.7.7.2.2.1.3" class="indexterm"></a>
        </span></dt><dd><p>
-         Similar to <code class="varname">effective_io_concurrency</code>, but used
+<span class="original">
+         Similar to &lt;varname&gt;effective_io_concurrency&lt;/varname&gt;, but used
          for maintenance work that is done on behalf of many client sessions.
+</span>
+<code class="varname">effective_io_concurrency</code>と似ていますが、多くのクライアントセッションのために行われる保守作業で適用されるところが異なります。
         </p><p>
+<span class="original">
          The default is 10 on supported systems, otherwise 0.  This value can
          be overridden for tables in a particular tablespace by setting the
          tablespace parameter of the same name (see
-         <a class="xref" href="sql-altertablespace.html" title="ALTER TABLESPACE"><span class="refentrytitle">ALTER TABLESPACE</span></a>).
+         &lt;xref linkend="sql-altertablespace"/&gt;).
+</span>
+サポートしているシステムではデフォルトは10で、それ以外は0です。
+この値は同じ名前のテーブル空間パラメータを使って、特定のテーブル空間にあるテーブルのために置き換えることができます。（xref linkend="sql-altertablespace"/&gt;を参照してください。）
         </p></dd><dt id="GUC-MAX-WORKER-PROCESSES"><span class="term"><code class="varname">max_worker_processes</code> (<code class="type">integer</code>)
        <a id="id-1.6.6.7.7.2.3.1.3" class="indexterm"></a>
        </span></dt><dd><p>
@@ -883,7 +911,7 @@ SSDやそれ以外のメモリーベースの記憶装置は、多くの同時�
          commands.
 </span>
 単一のユーティリティコマンドで使用されるパラレルワーカーの最大数を設定します。
-今の所、パラレルワーカーの利用をサポートしているパラレルユーティリティコマンドは<code class="command">CREATE INDEX</code>だけで、しかもB-treeインデックスを構築するときだけです。
+今の所、パラレルワーカーの利用をサポートしているパラレルユーティリティコマンドは、<code class="command">CREATE INDEX</code>がB-treeインデックスを構築するときと、<code class="literal">FULL</code>オプションなしの<code class="command">VACUUM</code>です。
 パラレルワーカーは、<a class="xref" href="runtime-config-resource.html#GUC-MAX-WORKER-PROCESSES">max_worker_processes</a>で確立したプロセスのプールから取得され、<a class="xref" href="runtime-config-resource.html#GUC-MAX-PARALLEL-WORKERS">max_parallel_workers</a>によって制限されます。
 要求したワーカー数は、実行時に実際には利用可能でないかも知れないことに注意してください。
 この場合は、ユーティリティ操作は期待したよりも少ない数のワーカーにより実行されます。

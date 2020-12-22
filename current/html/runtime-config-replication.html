@@ -98,9 +98,8 @@
         server can recover by fetching the segment from archive, if WAL
         archiving is in use.)
        </span>
-ストリーミングレプリケーションにおいて、スタンバイサーバが過去のファイルセグメントを取得する必要がある場合に備え、<code class="filename">pg_wal</code>ディレクトリに保持しておくファイルセグメント数の最小値を指定します。
-それぞれのセグメントは通常16メガバイトです。
-もし送出サーバに接続しているスタンバイサーバが<code class="varname">wal_keep_segments</code>セグメントを越えて遅延した場合、送出サーバはスタンバイサーバが今後とも必要とするWALセグメントを削除する可能性があります。
+ストリーミングレプリケーションにおいて、スタンバイサーバが過去のファイルセグメントを取得する必要がある場合に備え、<code class="filename">pg_wal</code>ディレクトリに保持しておくファイルセグメントの最小サイズを指定します。
+もし送出サーバに接続しているスタンバイサーバが<code class="varname">wal_keep_size</code>メガバイトを越えて遅延した場合、送出サーバはスタンバイサーバが今後とも必要とするWALセグメントを削除する可能性があります。
 この場合、レプリケーション接続は終了させられます。結果として下流に対する接続も結局は終了されることがあります。（しかし、WALアーカイブが使用されていれば、スタンバイサーバはアーカイブからセグメントを取り出し、復旧することができます。）
        </p><p>
        <span class="original">
@@ -118,23 +117,31 @@
        </span>
 <code class="filename">pg_wal</code>に保持され続けるセグメントの最小値のみを設定します。
 システムはWALアーカイブのため、またはチェックポイントからの復旧のため、より多くのセグメント保持が必要となることがあります。
-もし<code class="varname">wal_keep_segments</code>が（デフォルトの）ゼロの場合、システムはスタンバイサーバのために追加セグメントを保持することはしません。
+もし<code class="varname">wal_keep_size</code>が（デフォルトの）ゼロの場合、システムはスタンバイサーバのために追加セグメントを保持することはしません。
 従って、スタンバイサーバが使用できる古いWALセグメントの数は、直前のチェックポイントの場所とWALアーカイブの状況によって算出されます。
+この値が単位無しで指定されると、メガバイトであると見なします。
 このパラメータは、<code class="filename">postgresql.conf</code>ファイル、もしくはサーバコマンドラインでのみ設定可能です。
        </p></dd><dt id="GUC-MAX-SLOT-WAL-KEEP-SIZE"><span class="term"><code class="varname">max_slot_wal_keep_size</code> (<code class="type">integer</code>)
        <a id="id-1.6.6.9.3.3.4.1.3" class="indexterm"></a>
        </span></dt><dd><p>
+<span class="original">
         Specify the maximum size of WAL files
-        that <a class="link" href="warm-standby.html#STREAMING-REPLICATION-SLOTS" title="26.2.6. レプリケーションスロット">replication
-        slots</a> are allowed to retain in the <code class="filename">pg_wal</code>
+        that &lt;link linkend="streaming-replication-slots"&gt;replication
+        slots&lt;/link&gt; are allowed to retain in the &lt;filename&gt;pg_wal&lt;/filename&gt;
         directory at checkpoint time.
-        If <code class="varname">max_slot_wal_keep_size</code> is -1 (the default),
+        If &lt;varname&gt;max_slot_wal_keep_size&lt;/varname&gt; is -1 (the default),
         replication slots may retain an unlimited amount of WAL files.  Otherwise, if
         restart_lsn of a replication slot falls behind the current LSN by more
         than the given size, the standby using the slot may no longer be able
         to continue replication due to removal of required WAL files. You
         can see the WAL availability of replication slots
-        in <a class="link" href="view-pg-replication-slots.html" title="51.80. pg_replication_slots">pg_replication_slots</a>.
+        in &lt;link linkend="view-pg-replication-slots"&gt;pg_replication_slots&lt;/link&gt;.
+</span>
+チェックポイント時に<a class="link" href="warm-standby.html#STREAMING-REPLICATION-SLOTS" title="26.2.6. レプリケーションスロット">レプリケーションスロット</a>が<code class="filename">pg_wal</code>ディレクトリに残すことのできる
+最大のWALファイルのサイズを指定します。
+<code class="varname">max_slot_wal_keep_size</code>が-1 (デフォルトです)なら、レプリケーションスロットは無制限のWALファイルを残すかも知れません。
+そうでなければ、レプリケーションスロットのrestart_lsnが現在のLSNよりも与えられたサイズ分遅れると、そのスロットを使っているスタンバイは必要なWALファイルが削除されたためにレプリケーションを継続できなくなります。
+レプリケーションスロットのWALが存在するかどうかは<a class="link" href="view-pg-replication-slots.html" title="51.80. pg_replication_slots">pg_replication_slots</a>を見て確認できます。
        </p></dd><dt id="GUC-WAL-SENDER-TIMEOUT"><span class="term"><code class="varname">wal_sender_timeout</code> (<code class="type">integer</code>)
       <a id="id-1.6.6.9.3.3.5.1.3" class="indexterm"></a>
       </span></dt><dd><p>
@@ -215,7 +222,7 @@
 <a class="xref" href="warm-standby.html#SYNCHRONOUS-REPLICATION" title="26.2.8. 同期レプリケーション">26.2.8</a>で説明されているように、<em class="firstterm">同期レプリケーション</em>をサポート可能なスタンバイサーバのリストを指定します。
 活動中の同期スタンバイサーバは1つまたはそれ以上です。
 コミットを待機しているトランザクションは、このスタンバイサーバがそのデータの受信を確認してから処理の継続が許可されます。
-同期スタンバイサーバはこのリストに名前が挙げられていており、現時点で接続され、そしてデータをリアルタイムでストリーミングしているものです（<a class="link" href="monitoring-stats.html#PG-STAT-REPLICATION-VIEW" title="表27.14 pg_stat_replication View"><code class="literal">pg_stat_replication</code></a> ビューにおいて<code class="literal">streaming</code>状態として示されています）。
+同期スタンバイサーバはこのリストに名前が挙げられていており、現時点で接続され、そしてデータをリアルタイムでストリーミングしているものです（<a class="link" href="monitoring-stats.html#MONITORING-PG-STAT-REPLICATION-VIEW" title="27.2.4. pg_stat_replication"><code class="structname">pg_stat_replication</code></a> ビューにおいて<code class="literal">streaming</code>状態として示されています）。
 このリストの後の方に記載されているその他のスタンバイサーバは潜在的に同期スタンバイサーバになることを示しています。
 二つ以上の同期スタンバイサーバ名を指定することで、かなりの高可用性とデータ損失に対する保護が得られます。
        </p><p>
@@ -456,7 +463,8 @@ ANY <em class="replaceable"><code>num_sync</code></em> ( <em class="replaceable"
           is an empty string).
           This setting has no effect if the server is not in standby mode.
 </span>
-このパラメータはサーバ起動時のみ設定可能です。
+このパラメータは<code class="filename">postgresql.conf</code>か、サーバのコマンドラインでのみ設定可能です。
+WAL受信プロセスが実行中にこのパラメータが変更されると、そのプロセスにシグナルが送られ、新しい設定で再起動するために停止します（<code class="varname">primary_conninfo</code>が空文字の場合を除きます。）
 サーバがスタンバイモードでなければこの設定は無効となります。
          </p></dd><dt id="GUC-PRIMARY-SLOT-NAME"><span class="term"><code class="varname">primary_slot_name</code> (<code class="type">string</code>)
         <a id="id-1.6.6.9.5.3.2.1.3" class="indexterm"></a>
@@ -475,7 +483,8 @@ ANY <em class="replaceable"><code>num_sync</code></em> ( <em class="replaceable"
           set or the server is not in standby mode.
 </span>
 上流ノードのリソース削除を制御するためにストリーミングレプリケーション経由でプライマリに接続した場合、既存のレプリケーションスロットを使うように、必要に応じて指定します（<a class="xref" href="warm-standby.html#STREAMING-REPLICATION-SLOTS" title="26.2.6. レプリケーションスロット">26.2.6</a>を参照）。
-このパラメータはサーバ起動時のみ設定可能です。
+このパラメータは<code class="filename">postgresql.conf</code>か、サーバのコマンドラインでのみ設定可能です。
+WAL受信プロセスが実行中にこのパラメータが変更されると、そのプロセスにシグナルが送られ、新しい設定で再起動するために停止します。
 <code class="varname">primary_conninfo</code>が設定されていない場合、この設定は無効です。
          </p></dd><dt id="GUC-PROMOTE-TRIGGER-FILE"><span class="term"><code class="varname">promote_trigger_file</code> (<code class="type">string</code>)
         <a id="id-1.6.6.9.5.3.3.1.3" class="indexterm"></a>
@@ -489,7 +498,7 @@ ANY <em class="replaceable"><code>num_sync</code></em> ( <em class="replaceable"
           file or on the server command line.
 </span>
 スタンバイサーバにおいて、リカバリの完了を示すトリガファイルを指定します。
-この値が設定されていなくても、<code class="command">pg_ctl promote</code>あるいは<code class="function">pg_promote</code>を使ってスタンバイサーバを昇格させることができます。
+この値が設定されていなくても、<code class="command">pg_ctl promote</code>あるいは<code class="function">pg_promote()</code>を使ってスタンバイサーバを昇格させることができます。
 このパラメータは、<code class="filename">postgresql.conf</code>ファイル、もしくはサーバコマンドラインでのみ設定可能です。
          </p></dd><dt id="GUC-HOT-STANDBY"><span class="term"><code class="varname">hot_standby</code> (<code class="type">boolean</code>)
       <a id="id-1.6.6.9.5.3.4.1.3" class="indexterm"></a>
@@ -577,14 +586,19 @@ ANY <em class="replaceable"><code>num_sync</code></em> ( <em class="replaceable"
        </p></dd><dt id="GUC-WAL-RECEIVER-CREATE-TEMP-SLOT"><span class="term"><code class="varname">wal_receiver_create_temp_slot</code> (<code class="type">boolean</code>)
       <a id="id-1.6.6.9.5.3.7.1.3" class="indexterm"></a>
       </span></dt><dd><p>
+<span class="original">
         Specifies whether the WAL receiver process should create a temporary replication
         slot on the remote instance when no permanent replication slot to use
-        has been configured (using <a class="xref" href="runtime-config-replication.html#GUC-PRIMARY-SLOT-NAME">primary_slot_name</a>).
+        has been configured (using &lt;xref linkend="guc-primary-slot-name"/&gt;).
         The default is off.  This parameter can only be set in the
-        <code class="filename">postgresql.conf</code> file or on the server command line.
+        &lt;filename&gt;postgresql.conf&lt;/filename&gt; file or on the server command line.
         If this parameter is changed while the WAL receiver process is running,
         that process is signaled to shut down and expected to restart with
         the new setting.
+</span>
+永続レプリケーションスロットが(<a class="xref" href="runtime-config-replication.html#GUC-PRIMARY-SLOT-NAME">primary_slot_name</a>を使って)作成されない設定になっている時に、WAL受信プロセスがリモートインスタンス上に一時レプリケーションスロットを作るかどうかを指定します。
+このパラメータは<code class="filename">postgresql.conf</code>か、サーバのコマンドラインでのみ設定可能です。
+WAL受信プロセスが実行中にこのパラメータが変更されると、そのプロセスにシグナルが送られ、新しい設定で再起動するために停止します。
        </p></dd><dt id="GUC-WAL-RECEIVER-STATUS-INTERVAL"><span class="term"><code class="varname">wal_receiver_status_interval</code> (<code class="type">integer</code>)
       <a id="id-1.6.6.9.5.3.8.1.3" class="indexterm"></a>
       </span></dt><dd><p>
@@ -610,7 +624,7 @@ ANY <em class="replaceable"><code>num_sync</code></em> ( <em class="replaceable"
        command line.
        </span>
 スタンバイサーバ上のWAL受信プロセスがプライマリー、または上位サーバに対してレプリケーションの進捗情報を送信する最小頻度を指定します。
-送信された進捗情報は<a class="link" href="monitoring-stats.html#PG-STAT-REPLICATION-VIEW" title="表27.14 pg_stat_replication View"><code class="literal">pg_stat_replication</code></a>ビューにより確認することが可能です。
+送信された進捗情報は<a class="link" href="monitoring-stats.html#MONITORING-PG-STAT-REPLICATION-VIEW" title="27.2.4. pg_stat_replication"><code class="structname">pg_stat_replication</code></a>ビューにより確認することが可能です。
 スタンバイサーバは書き込みがされた直近の先行書き込みログ位置、ディスクにフラッシュされた直近のログ位置、およびリカバリ適用された直近のログ位置を報告します。
 このパラメータの値がそれぞれの報告間における最大の時間間隔です。
 書き込み、またはフラッシュ位置が変更される毎、あるいは最低でもこのパラメータで設定された頻度で更新情報が送信されます。
