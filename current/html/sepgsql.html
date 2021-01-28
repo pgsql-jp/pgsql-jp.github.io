@@ -218,6 +218,7 @@ $ for DBNAME in template0 template1 postgres; do
 <code class="filename">sepgsql-regtest</code>ポリシーはリグレッションテストの実行に必要な一連のルールを含む特別な目的のポリシーパッケージです。
 ポリシーのソースファイルである<code class="filename">sepgsql-regtest.te</code>から、SELinuxの提供するMakefileを用いて<code class="command">make</code>コマンドでビルドする事ができます。
 この時、インストール先システムにおいて、適切な<code class="filename">Makefile</code>の位置を指定する必要があります。以下の例で示されているパスは一例です。
+(このMakefileは通常<code class="filename">selinux-policy-devel</code>や<code class="filename">selinux-policy</code>パッケージで提供されています。)
 ビルドが完了したら、<code class="command">semodule</code>を用いてこのポリシーパッケージをインストールする事ができます。このコマンドは、指定されたポリシーパッケージをリンクし、カーネル空間にロードする役割を果たします。
 インストールが正常終了したら、<code class="literal"><code class="command">semodule</code> -l</code>により有効なパッケージの一覧として<code class="literal">sepgsql-regtest</code>が表示されるはずです。
   </p><pre class="screen">
@@ -404,11 +405,8 @@ $ sudo semodule -r sepgsql-regtest
     &lt;literal&gt;INSERT&lt;/literal&gt;.
 </span>
 参照された全てのカラムに対して列レベルの権限チェックが行われます。
-<code class="literal">SELECT</code>構文で読み出されるカラムに対してだけでなく、他のDML構文で参照
-されているカラムに対しても<code class="literal">db_column:select</code>権限がチェックされます。
-また、<code class="literal">UPDATE</code>や<code class="literal">INSERT</code>によって操作の対象となっているカラム
-に対しても、<code class="literal">db_column:update</code>や<code class="literal">db_column:insert</code>権限が
-それぞれチェックされます。
+<code class="literal">SELECT</code>構文で読み出されるカラムに対してだけでなく、他のDML構文で参照されているカラムに対しても<code class="literal">db_column:select</code>権限がチェックされます。
+また、<code class="literal">UPDATE</code>や<code class="literal">INSERT</code>によって操作の対象となっているカラムに対しても、<code class="literal">db_column:update</code>や<code class="literal">db_column:insert</code>権限がそれぞれチェックされます。
    </p><p>
 <span class="original">
    For example, consider:
@@ -519,16 +517,14 @@ UPDATE t1 SET x = 2, y = func1(y) WHERE z = 100;
       Creating a schema object additionally requires &lt;literal&gt;add_name&lt;/literal&gt;
       permission on the parent schema.
 </span>
-スキーマオブジェクトの作成は、それを含むスキーマに対して<code class="literal">add_name</code>
-権限を要求します。
+スキーマオブジェクトの作成は、それを含むスキーマに対して<code class="literal">add_name</code>権限を要求します。
      </p></li><li class="listitem"><p>
 <span class="original">
       Creating a table additionally requires permission to create each
       individual table column, just as if each table column were a
       separate top-level object.
 </span>
-テーブルの作成は同時に、それがあたかも独立したオブジェクトであるかのように、
-個々のテーブル列を作成する権限を要求します。
+テーブルの作成は同時に、それがあたかも独立したオブジェクトであるかのように、個々のテーブル列を作成する権限を要求します。
      </p></li><li class="listitem"><p>
 <span class="original">
       Creating a function marked as &lt;literal&gt;LEAKPROOF&lt;/literal&gt; additionally
@@ -582,8 +578,8 @@ UPDATE t1 SET x = 2, y = func1(y) WHERE z = 100;
       This is currently not done due to implementation restrictions.)
 </span>
 <a class="xref" href="sql-security-label.html" title="SECURITY LABEL"><span class="refentrytitle">SECURITY LABEL</span></a>コマンドの実行時、ラベル付けされるオブジェクトの古いラベルに対して<code class="literal">setattr</code>権限と<code class="literal">relabelfrom</code>権限が、入力された新しいラベルに対して<code class="literal">relabelto</code>権限がチェックされます。
-（複数のラベルプロバイダがインストールされており、利用者が<span class="productname">SELinux</span>の管理下にないラベルを設定しようとした場合、<code class="literal">setattr</code>権限だけがチェックされるべきです。しかし実装上の制約により、現在はこれをチェックしていません）
-     </p></li></ul></div></div><div class="sect3" id="id-1.11.7.44.9.5"><div class="titlepage"><div><div><h4 class="title">F.35.5.4. トラステッド プロシージャ</h4></div></div></div><span class="original">
+（複数のラベルプロバイダがインストールされており、利用者が<span class="productname">SELinux</span>の管理下にないラベルを設定しようとした場合、<code class="literal">setattr</code>権限だけがチェックされるべきです。しかし実装上の制約により、現在はこれをチェックしていません。）
+     </p></li></ul></div></div><div class="sect3" id="id-1.11.7.44.9.5"><div class="titlepage"><div><div><h4 class="title">F.35.5.4. トラステッドプロシージャ</h4></div></div></div><span class="original">
    &lt;title&gt;Trusted Procedures&lt;/title&gt;
 </span><p>
 <span class="original">
@@ -596,8 +592,9 @@ UPDATE t1 SET x = 2, y = func1(y) WHERE z = 100;
     procedure is controlled by its security label and the operating system
     security policy.  For example:
 </span>
-トラステッド・プロシージャはSECURITY DEFINER関数やSet-UIDコマンドに似ています。通常、機密データに対する高度にコントロールされたアクセス手段を提供する目的で、<span class="productname">SELinux</span>は利用者のものとは異なるセキュリティラベルで信頼済みのコードを実行するための機能を持っています。
-関数がトラステッド・プロシージャとして振舞うかどうかは、関数のセキュリティラベルおよびオペレーティングシステムのセキュリティポリシーに従って決まります。
+トラステッドプロシージャはSECURITY DEFINER関数やSet-UIDコマンドに似ています。
+通常、機密データに対する高度にコントロールされたアクセス手段(例えば行を削除したり、保存された値の精度をさげたりします)を提供する目的で、<span class="productname">SELinux</span>は利用者のものとは異なるセキュリティラベルで信頼済みのコードを実行するための機能を持っています。
+関数がトラステッドプロシージャとして振舞うかどうかは、関数のセキュリティラベルおよびオペレーティングシステムのセキュリティポリシーに従って決まります。
 例えば：
    </p><pre class="screen">
 postgres=# CREATE TABLE customer (
@@ -638,7 +635,7 @@ postgres=# SELECT cid, cname, show_credit(cid) FROM customer;
     to print the credit card numbers of customers with some of the digits
     masked out.
 </span>
-この場合、一般の利用者は<code class="literal">customer.credit</code>を直接参照することはできませんが、トラステッド・プロシージャである<code class="literal">show_credit</code>を用いる事で、一部の桁がマスクされた顧客のクレジットカード番号をプリントする事が可能になります。
+この場合、一般の利用者は<code class="literal">customer.credit</code>を直接参照することはできませんが、トラステッドプロシージャである<code class="literal">show_credit</code>を用いる事で、一部の桁がマスクされた顧客のクレジットカード番号をプリントする事が可能になります。
    </p></div><div class="sect3" id="id-1.11.7.44.9.6"><div class="titlepage"><div><div><h4 class="title">F.35.5.5. 動的ドメイン遷移</h4></div></div></div><span class="original">
    &lt;title&gt;Dynamic Domain Transitions&lt;/title&gt;
 </span><p>
@@ -661,8 +658,9 @@ postgres=# SELECT cid, cname, show_credit(cid) FROM customer;
     safe when used to switch to a domain with a smaller set of privileges than
     the original one. For example:
 </span>
-利用者に自身のラベル、すなわち権限を切り替える事を可能にする動的ドメイン遷移は、システムによる自動切り替え（トラステッド・プロシージャの場合）に比べて慎重に取り扱う必要があります。
-<code class="literal">dyntransition</code>権限は元々のドメインよりも小さな権限セットを持つドメインに切り替える場合にのみ安全であると考えられます。例えば、
+利用者に自身のラベル、すなわち権限を切り替える事を可能にする動的ドメイン遷移は、システムによる自動切り替え（トラステッドプロシージャの場合）に比べて慎重に取り扱う必要があります。
+<code class="literal">dyntransition</code>権限は元々のドメインよりも小さな権限セットを持つドメインに切り替える場合にのみ安全であると考えられます。
+例えば、
    </p><pre class="screen">
 regression=# select sepgsql_getcon();
                     sepgsql_getcon
@@ -707,11 +705,11 @@ ERROR:  SELinux: security policy violation
     (table, procedure definition, or whatever) must be protected from
     unauthorized access.
 </span>
-動的ドメイン遷移とトラステッド・プロシージャの組み合わせは、典型的なコネクションプーラのライフサイクルに適合する興味深い利用法を提供します。
-たとえコネクションプーリングソフトウェアが大半のSQLの実行を許可されていない場合でも、トラステッド・プロシージャの内側から<code class="literal">sepgsql_setcon()</code>関数を用いて利用者のセキュリティラベルを切り替える事ができます。（トラステッド・プロシージャは利用者のセキュリティラベルを切り替えるための認証情報を要求すべきです）
+動的ドメイン遷移とトラステッドプロシージャの組み合わせは、典型的なコネクションプーラのライフサイクルに適合する興味深い利用法を提供します。
+たとえコネクションプーリングソフトウェアが大半のSQLの実行を許可されていない場合でも、トラステッドプロシージャの内側から<code class="literal">sepgsql_setcon()</code>関数を用いて利用者のセキュリティラベルを切り替える事ができます。（トラステッドプロシージャは利用者のセキュリティラベルを切り替えるための認証情報を要求すべきです。）
 この後、現在のセッションはコネクションプーラの権限ではなく、対象となる利用者の権限で動作する事になります。
-また、<code class="literal">sepgsql_setcon()</code>に<code class="literal">NULL</code>引数を与えて（適切な権限チェックを行う）トラステッド・プロシージャから再び呼び出す事で、コネクションプーラは後でセキュリティラベルを元に戻す事ができます。
-ここでのポイントは、トラステッド・プロシージャだけが実際に有効なセキュリティラベルを変更する権限を持っており、正しい認証情報が与えられた場合にのみそれを実行するという事です。
+また、<code class="literal">sepgsql_setcon()</code>に<code class="literal">NULL</code>引数を与えて（適切な権限チェックを行う）トラステッドプロシージャから再び呼び出す事で、コネクションプーラは後でセキュリティラベルを元に戻す事ができます。
+ここでのポイントは、トラステッドプロシージャだけが実際に有効なセキュリティラベルを変更する権限を持っており、正しい認証情報が与えられた場合にのみそれを実行するという事です。
 言うまでもなく、安全な操作のためには、権限のないアクセスから認証情報を保持するテーブルや関数定義などを保護しなければなりません。
    </p></div><div class="sect3" id="id-1.11.7.44.9.7"><div class="titlepage"><div><div><h4 class="title">F.35.5.6. その他</h4></div></div></div><span class="original">
    &lt;title&gt;Miscellaneous&lt;/title&gt;
@@ -727,49 +725,74 @@ ERROR:  SELinux: security policy violation
 <span class="original">
    &lt;xref linkend="sepgsql-functions-table"/&gt; shows the available functions.
 </span>
-   <a class="xref" href="sepgsql.html#SEPGSQL-FUNCTIONS-TABLE" title="表F.29 Sepgsql Functions">表 F.29</a>に利用可能な関数を示します。
-  </p><div class="table" id="SEPGSQL-FUNCTIONS-TABLE"><p class="title"><strong>表F.29 Sepgsql Functions</strong></p><div class="table-contents"><table class="table" summary="Sepgsql Functions" border="1"><colgroup><col /></colgroup><thead><tr><th class="func_table_entry"><p class="func_signature">
+<a class="xref" href="sepgsql.html#SEPGSQL-FUNCTIONS-TABLE" title="表F.29 sepgsql関数">表 F.29</a>に利用可能な関数を示します。
+  </p><div class="table" id="SEPGSQL-FUNCTIONS-TABLE"><p class="title"><strong>表F.29 sepgsql関数</strong></p><div class="table-contents"><span class="original">
+   &lt;title&gt;Sepgsql Functions&lt;/title&gt;
+</span><table class="table" summary="sepgsql関数" border="1"><colgroup><col /></colgroup><thead><tr><th class="func_table_entry"><p class="func_signature">
+<span class="original">
         Function
+</span>
+        関数
        </p>
        <p>
+<span class="original">
         Description
+</span>
+        説明
        </p></th></tr></thead><tbody><tr><td class="func_table_entry"><p class="func_signature">
         <code class="function">sepgsql_getcon</code> ()
         → <code class="returnvalue">text</code>
        </p>
        <p>
+<span class="original">
         Returns the client domain, the current security label of the client.
+</span>
+利用者のドメイン、つまり、現在の利用者ラベルを返却します。
        </p></td></tr><tr><td class="func_table_entry"><p class="func_signature">
         <code class="function">sepgsql_setcon</code> ( <code class="type">text</code> )
         → <code class="returnvalue">boolean</code>
        </p>
        <p>
+<span class="original">
         Switches the client domain of the current session to the new domain,
         if allowed by the security policy.
-        It also accepts <code class="literal">NULL</code> input as a request to transition
+        It also accepts &lt;literal&gt;NULL&lt;/literal&gt; input as a request to transition
         to the client's original domain.
+</span>
+セキュリティポリシーで許可されている場合、現在のセッションの利用者ドメインを新しいドメインへと切り替えます。
+<code class="literal">NULL</code>を引数に取る事も可能で、その場合、元々の利用者ドメインへの遷移を意味します。
        </p></td></tr><tr><td class="func_table_entry"><p class="func_signature">
         <code class="function">sepgsql_mcstrans_in</code> ( <code class="type">text</code> )
         → <code class="returnvalue">text</code>
        </p>
        <p>
+<span class="original">
         Translates the given qualified MLS/MCS range into raw format if
         the mcstrans daemon is running.
+</span>
+mcstransデーモンが動作している場合、入力されたMLS/MCSレンジを修飾フォーマットから直接フォーマットに変換します。
        </p></td></tr><tr><td class="func_table_entry"><p class="func_signature">
         <code class="function">sepgsql_mcstrans_out</code> ( <code class="type">text</code> )
         → <code class="returnvalue">text</code>
        </p>
        <p>
+<span class="original">
         Translates the given raw MLS/MCS range into qualified format if
         the mcstrans daemon is running.
+</span>
+mcstransデーモンが動作している場合、入力されたMLS/MCSレンジを直接フォーマットから修飾フォーマットに変換します。
        </p></td></tr><tr><td class="func_table_entry"><p class="func_signature">
         <code class="function">sepgsql_restorecon</code> ( <code class="type">text</code> )
         → <code class="returnvalue">boolean</code>
        </p>
        <p>
+<span class="original">
         Sets up initial security labels for all objects within the
-        current database. The argument may be <code class="literal">NULL</code>, or the
+        current database. The argument may be &lt;literal&gt;NULL&lt;/literal&gt;, or the
         name of a specfile to be used as alternative of the system default.
+</span>
+現在のデータベース内のすべてのオブジェクトに対して初期セキュリティラベルを割り当てます。
+引数は<code class="literal">NULL</code>もしくはシステムの標準に代わる定義ファイルの名前です。
        </p></td></tr></tbody></table></div></div><br class="table-break" /></div><div class="sect2" id="SEPGSQL-LIMITATIONS"><div class="titlepage"><div><div><h3 class="title">F.35.7. 制限事項</h3></div></div></div><span class="original">
   &lt;title&gt;Limitations&lt;/title&gt;
 </span><div class="variablelist"><dl class="variablelist"><dt><span class="term">Data Definition Language (DDL) パーミッション</span></dt><dd><p>
