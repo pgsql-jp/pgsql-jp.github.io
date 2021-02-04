@@ -10,9 +10,12 @@
 本モジュールは線分、浮動小数点区間を表現する<code class="type">seg</code>データ型を実装します。
 <code class="type">seg</code>は区間の終端内の不確定性を表すことができ、特に実験計測の表現に有用です。
  </p><p>
-  This module is considered <span class="quote">「<span class="quote">trusted</span>」</span>, that is, it can be
-  installed by non-superusers who have <code class="literal">CREATE</code> privilege
+<span class="original">
+  This module is considered &lt;quote&gt;trusted&lt;/quote&gt;, that is, it can be
+  installed by non-superusers who have &lt;literal&gt;CREATE&lt;/literal&gt; privilege
   on the current database.
+</span>
+このモジュールは<span class="quote">「<span class="quote">trusted</span>」</span>と見なされます。つまり、現在のデータベースに対して<code class="literal">CREATE</code>権限を持つ非スーパーユーザがインストールできます。
  </p><div class="sect2" id="id-1.11.7.43.5"><div class="titlepage"><div><div><h3 class="title">F.34.1. 原理</h3></div></div></div><span class="original">
   &lt;title&gt;Rationale&lt;/title&gt;
 </span><p>
@@ -183,7 +186,7 @@ test=&gt; select '6.25 .. 6.50'::seg as "pH";
    This is resolved by requiring at least one digit before the decimal
    point in all numbers in &lt;type&gt;seg&lt;/type&gt; input.
 </span>
-データソースで<code class="literal">...</code>が広く使用されるため、<code class="literal">..</code>の代わりの綴りとして許可されています。
+データソースで<code class="literal">...</code>演算子が広く使用されるため、<code class="literal">..</code>演算子の代わりの綴りとして許可されています。
 残念なことにこれにより解析上の曖昧性が生じました。
 <code class="literal">0...23</code>の上限が<code class="literal">23</code>なのか<code class="literal">0.23</code>なのかが明確ではありません。
 これは、<code class="type">seg</code>の入力において、少なくとも1つの桁を数値内の小数点の前に書くことを要求することで解決されます。
@@ -203,7 +206,6 @@ test=&gt; select '6.25 .. 6.50'::seg as "pH";
 </span>
 内部的に<code class="type">seg</code>値には32ビット浮動小数点数値の組合せが格納されます。
 これは7桁以上の有効桁を持つ数値が切り詰められることを意味します。
-
   </p><p>
 <span class="original">
    Numbers with 7 or fewer significant digits retain their
@@ -227,66 +229,102 @@ test=&gt; select '6.25 .. 6.50'::seg as "pH";
    The operators supported by the GiST operator class are shown in &lt;xref linkend="seg-gist-operators"/&gt;.
 </span>
 <code class="filename">seg</code>モジュールには<code class="type">seg</code>値用のGiSTインデックス演算子クラスが含まれます。
-GiST演算子クラスでサポートされる演算子を<a class="xref" href="seg.html#SEG-GIST-OPERATORS" title="表F.28 Seg GiST Operators">表 F.28</a>に示します。
-  </p><div class="table" id="SEG-GIST-OPERATORS"><p class="title"><strong>表F.28 Seg GiST Operators</strong></p><div class="table-contents"><table class="table" summary="Seg GiST Operators" border="1"><colgroup><col /></colgroup><thead><tr><th class="func_table_entry"><p class="func_signature">
+GiST演算子クラスでサポートされる演算子を<a class="xref" href="seg.html#SEG-GIST-OPERATORS" title="表F.28 Seg GiST演算子">表 F.28</a>に示します。
+  </p><div class="table" id="SEG-GIST-OPERATORS"><p class="title"><strong>表F.28 Seg GiST演算子</strong></p><div class="table-contents"><span class="original">
+   &lt;title&gt;Seg GiST Operators&lt;/title&gt;
+</span><table class="table" summary="Seg GiST演算子" border="1"><colgroup><col /></colgroup><thead><tr><th class="func_table_entry"><p class="func_signature">
+<span class="original">
         Operator
+</span>
+        演算子
        </p>
        <p>
+<span class="original">
         Description
+</span>
+        説明
        </p></th></tr></thead><tbody><tr><td class="func_table_entry"><p class="func_signature">
         <code class="type">seg</code> <code class="literal">&lt;&lt;</code> <code class="type">seg</code>
         → <code class="returnvalue">boolean</code>
        </p>
        <p>
-        Is the first <code class="type">seg</code> entirely to the left of the second?
-        [a, b] &lt;&lt; [c, d] is true if b &lt; c.
+<span class="original">
+        Is the first &lt;type&gt;seg&lt;/type&gt; entirely to the left of the second?
+        [a, b] &amp;lt;&amp;lt; [c, d] is true if b &amp;lt; c.
+</span>
+1番目の<code class="type">seg</code>が完全に2番目の左側に存在するか。
+b &lt; cならば[a, b] &lt;&lt; [c, d]は真です。
        </p></td></tr><tr><td class="func_table_entry"><p class="func_signature">
         <code class="type">seg</code> <code class="literal">&gt;&gt;</code> <code class="type">seg</code>
         → <code class="returnvalue">boolean</code>
        </p>
        <p>
-        Is the first <code class="type">seg</code> entirely to the right of the second?
-        [a, b] &gt;&gt; [c, d] is true if a &gt; d.
+<span class="original">
+        Is the first &lt;type&gt;seg&lt;/type&gt; entirely to the right of the second?
+        [a, b] &amp;gt;&amp;gt; [c, d] is true if a &amp;gt; d.
+</span>
+1番目の<code class="type">seg</code>が完全に2番目の右側に存在するか。
+a &gt; dならば[a, b] &gt;&gt; [c, d]は真です。
        </p></td></tr><tr><td class="func_table_entry"><p class="func_signature">
         <code class="type">seg</code> <code class="literal">&amp;&lt;</code> <code class="type">seg</code>
         → <code class="returnvalue">boolean</code>
        </p>
        <p>
-        Does the first <code class="type">seg</code> not extend to the right of the
+<span class="original">
+        Does the first &lt;type&gt;seg&lt;/type&gt; not extend to the right of the
         second?
-        [a, b] &amp;&lt; [c, d] is true if b &lt;= d.
+        [a, b] &amp;amp;&amp;lt; [c, d] is true if b &amp;lt;= d.
+</span>
+1番目の<code class="type">seg</code>は2番目の右側にはみ出さないか。
+b &lt;= dならば[a, b] &amp;&lt; [c, d]は真です。
        </p></td></tr><tr><td class="func_table_entry"><p class="func_signature">
         <code class="type">seg</code> <code class="literal">&amp;&gt;</code> <code class="type">seg</code>
         → <code class="returnvalue">boolean</code>
        </p>
        <p>
-        Does the first <code class="type">seg</code> not extend to the left of the
+<span class="original">
+        Does the first &lt;type&gt;seg&lt;/type&gt; not extend to the left of the
         second?
-        [a, b] &amp;&gt; [c, d] is true if a &gt;= c.
+        [a, b] &amp;amp;&amp;gt; [c, d] is true if a &amp;gt;= c.
+</span>
+1番目の<code class="type">seg</code>は2番目の左側にはみ出さないか。
+a &gt;= cならば[a, b] &amp;&gt; [c, d]は真です。
        </p></td></tr><tr><td class="func_table_entry"><p class="func_signature">
         <code class="type">seg</code> <code class="literal">=</code> <code class="type">seg</code>
         → <code class="returnvalue">boolean</code>
        </p>
        <p>
-        Are the two <code class="type">seg</code>s equal?
+<span class="original">
+        Are the two &lt;type&gt;seg&lt;/type&gt;s equal?
+</span>
+2つの<code class="type">seg</code>は等しいか。
        </p></td></tr><tr><td class="func_table_entry"><p class="func_signature">
         <code class="type">seg</code> <code class="literal">&amp;&amp;</code> <code class="type">seg</code>
         → <code class="returnvalue">boolean</code>
        </p>
        <p>
-        Do the two <code class="type">seg</code>s overlap?
+<span class="original">
+        Do the two &lt;type&gt;seg&lt;/type&gt;s overlap?
+</span>
+2つの<code class="type">seg</code>は重なるか。
        </p></td></tr><tr><td class="func_table_entry"><p class="func_signature">
         <code class="type">seg</code> <code class="literal">@&gt;</code> <code class="type">seg</code>
         → <code class="returnvalue">boolean</code>
        </p>
        <p>
-        Does the first <code class="type">seg</code> contain the second?
+<span class="original">
+        Does the first &lt;type&gt;seg&lt;/type&gt; contain the second?
+</span>
+1番目の<code class="type">seg</code>は2番目を包含するか。
        </p></td></tr><tr><td class="func_table_entry"><p class="func_signature">
         <code class="type">seg</code> <code class="literal">&lt;@</code> <code class="type">seg</code>
         → <code class="returnvalue">boolean</code>
        </p>
        <p>
-        Is the first <code class="type">seg</code> contained in the second?
+<span class="original">
+        Is the first &lt;type&gt;seg&lt;/type&gt; contained in the second?
+</span>
+1番目の<code class="type">seg</code>は2番目に包含されるか。
        </p></td></tr></tbody></table></div></div><br class="table-break" /><p>
 <span class="original">
    (Before PostgreSQL 8.2, the containment operators &lt;literal&gt;@&amp;gt;&lt;/literal&gt; and &lt;literal&gt;&amp;lt;@&lt;/literal&gt; were
@@ -299,15 +337,16 @@ GiST演算子クラスでサポートされる演算子を<a class="xref" href="
 以前の名前もまだ利用できますが、廃止予定であり、いずれなくなります。
 以前の名前は、コアの幾何データ型で以前従っていた規約と反対であることに注意してください。）
   </p><p>
+<span class="original">
    In addition to the above operators, the usual comparison
-   operators shown in <a class="xref" href="functions-comparison.html#FUNCTIONS-COMPARISON-OP-TABLE" title="表9.1 比較演算子">表 9.1</a> are
-   available for type <code class="type">seg</code>.  These operators
+   operators shown in &lt;xref linkend="functions-comparison-op-table"/&gt; are
+   available for type &lt;type&gt;seg&lt;/type&gt;.  These operators
    first compare (a) to (c),
    and if these are equal, compare (b) to (d). That results in
    reasonably good sorting in most cases, which is useful if
    you want to use ORDER BY with this type.
---&gt;
-これらの演算子はソート以外の実用的な目的に対して大きな意味を持ちません。
+</span>
+上記の演算子に加えて、<code class="type">seg</code>型では<a class="xref" href="functions-comparison.html#FUNCTIONS-COMPARISON-OP-TABLE" title="表9.1 比較演算子">表 9.1</a>にある通常の比較演算子が利用可能です。
 これらの演算子はまず(a)と(c)を比べ、等しければ(b)と(d)を比べます。
 論理的にはほとんどの場合優れたソート処理と思えます。
 こうした型をORDER BYで使用したい場合に有用です。
@@ -332,7 +371,10 @@ GiST演算子クラスでサポートされる演算子を<a class="xref" href="
 postgres=&gt; select '10(+-)1'::seg as seg;
       seg
 ---------
-9.0 .. 11             -- should be: 9 .. 11
+<span class="original">
+9.0 .. 11             &amp;#45;- should be: 9 .. 11
+</span>
+9.0 .. 11             -- 次のようになるべきです: 9 .. 11
 </pre><p>
   </p><p>
 <span class="original">
