@@ -128,7 +128,7 @@ CREATE [ UNIQUE ] INDEX [ CONCURRENTLY ] [ [ IF NOT EXISTS ] <em class="replacea
 このオプションを使用すると、<span class="productname">PostgreSQL</span>は、対象テーブルに対する同時挿入、更新、削除を防止するようなロックを獲得せずにインデックスを作成します。
 通常のインデックス作成処理では、完了するまで対象テーブルへの書き込みはできません（読み取りは可能です）。
 このオプションを使用する際に注意しなければならない点が複数あります。
-<a class="xref" href="sql-createindex.html#SQL-CREATEINDEX-CONCURRENTLY" title="Building Indexes Concurrently">Building Indexes Concurrently</a>を参照してください。
+下記の<a class="xref" href="sql-createindex.html#SQL-CREATEINDEX-CONCURRENTLY" title="インデックスの同時作成">Building Indexes Concurrently</a>を参照してください。
        </p><p>
 <span class="original">
         For temporary tables, &lt;command&gt;CREATE INDEX&lt;/command&gt; is always
@@ -177,6 +177,7 @@ CREATE [ UNIQUE ] INDEX [ CONCURRENTLY ] [ [ IF NOT EXISTS ] <em class="replacea
 インデックスに非キー列を加えることには、特に幅広の列については、保守的であるのが賢明です。
 インデックス列がインデックス型で許される最大サイズを超えた場合、データ挿入は失敗してしまいます。
 いかなる場合でも、非キー列はインデックスのテーブルからデータを複製して、インデックスのサイズを膨張させます。よって、潜在的に検索を遅くします。
+さらに、非キー列を持つインデックスではB-tree重複排除は決して使われません。
        </p><p>
 <span class="original">
         Columns listed in the &lt;literal&gt;INCLUDE&lt;/literal&gt; clause don't need
@@ -266,9 +267,14 @@ B-treeとGiSTインデックスでは<code class="literal">INCLUDE</code>句に�
 <span class="original">
         The name of an operator class. See below for details.
 </span>
-演算子クラスの名前です。詳細は下記を参照してください。
+演算子クラスの名前です。
+詳細は下記を参照してください。
        </p></dd><dt><span class="term"><em class="replaceable"><code>opclass_parameter</code></em></span></dt><dd><p>
+<span class="original">
         The name of an operator class parameter. See below for details.
+</span>
+演算子クラスパラメータの名前です。
+詳細は下記を参照してください。
        </p></dd><dt><span class="term"><code class="literal">ASC</code></span></dt><dd><p>
 <span class="original">
         Specifies ascending sort order (which is the default).
@@ -300,7 +306,7 @@ NULLを非NULLより後にソートすることを指定します。
         for details.
 </span>
 インデックスメソッド固有の格納パラメータの名前です。
-<a class="xref" href="sql-createindex.html#SQL-CREATEINDEX-STORAGE-PARAMETERS" title="Index Storage Parameters">Index Storage Parameters</a>を参照してください。
+詳細は下記の<a class="xref" href="sql-createindex.html#SQL-CREATEINDEX-STORAGE-PARAMETERS" title="インデックス格納パラメータ">Index Storage Parameters</a>を参照してください。
        </p></dd><dt><span class="term"><em class="replaceable"><code>tablespace_name</code></em></span></dt><dd><p>
 <span class="original">
         The tablespace in which to create the index.  If not specified,
@@ -315,7 +321,9 @@ NULLを非NULLより後にソートすることを指定します。
         The constraint expression for a partial index.
 </span>
 部分インデックス用の制約式です。
-       </p></dd></dl></div><div class="refsect2" id="SQL-CREATEINDEX-STORAGE-PARAMETERS"><h3>Index Storage Parameters</h3><p>
+       </p></dd></dl></div><div class="refsect2" id="SQL-CREATEINDEX-STORAGE-PARAMETERS"><h3>インデックス格納パラメータ</h3><span class="original">
+   &lt;title&gt;Index Storage Parameters&lt;/title&gt;
+</span><p>
 <span class="original">
     The optional &lt;literal&gt;WITH&lt;/literal&gt; clause specifies &lt;firstterm&gt;storage
     parameters&lt;/firstterm&gt; for the index.  Each index method has its own set of allowed
@@ -355,22 +363,31 @@ B-treeのデフォルトのフィルファクタは90ですが、10から100ま�
 <span class="original">
     B-tree indexes also accept these parameters:
 </span>
-B-treeインデックスは以下パラメータを追加的に受け付けます。
+B-treeインデックスは以下パラメータも受け付けます。
    </p><div class="variablelist"><dl class="variablelist"><dt id="INDEX-RELOPTION-DEDUPLICATE-ITEMS"><span class="term"><code class="literal">deduplicate_items</code> (<code class="type">boolean</code>)
      <a id="id-1.9.3.69.6.3.5.1.1.3" class="indexterm"></a>
     </span></dt><dd><p>
+<span class="original">
       Controls usage of the B-tree deduplication technique described
-      in <a class="xref" href="btree-implementation.html#BTREE-DEDUPLICATION" title="63.4.2. Deduplication">63.4.2</a>.  Set to
-      <code class="literal">ON</code> or <code class="literal">OFF</code> to enable or
+      in &lt;xref linkend="btree-deduplication"/&gt;.  Set to
+      &lt;literal&gt;ON&lt;/literal&gt; or &lt;literal&gt;OFF&lt;/literal&gt; to enable or
       disable the optimization.  (Alternative spellings of
-      <code class="literal">ON</code> and <code class="literal">OFF</code> are allowed as
-      described in <a class="xref" href="config-setting.html" title="19.1. パラメータの設定">19.1</a>.) The default is
-      <code class="literal">ON</code>.
+      &lt;literal&gt;ON&lt;/literal&gt; and &lt;literal&gt;OFF&lt;/literal&gt; are allowed as
+      described in &lt;xref linkend="config-setting"/&gt;.) The default is
+      &lt;literal&gt;ON&lt;/literal&gt;.
+</span>
+<a class="xref" href="btree-implementation.html#BTREE-DEDUPLICATION" title="63.4.2. Deduplication">63.4.2</a>に書かれているB-tree重複排除技法の使用を制御します。
+最適化を有効、無効にするには<code class="literal">ON</code>、<code class="literal">OFF</code>を設定します。
+(<a class="xref" href="config-setting.html" title="19.1. パラメータの設定">19.1</a>に書かれているように、<code class="literal">ON</code>や<code class="literal">OFF</code>の他の綴りも認められています。)
+デフォルトは<code class="literal">ON</code>です。
     </p><div class="note"><h3 class="title">注記</h3><p>
-      Turning <code class="literal">deduplicate_items</code> off via
-      <code class="command">ALTER INDEX</code> prevents future insertions from
+<span class="original">
+      Turning &lt;literal&gt;deduplicate_items&lt;/literal&gt; off via
+      &lt;command&gt;ALTER INDEX&lt;/command&gt; prevents future insertions from
       triggering deduplication, but does not in itself make existing
       posting list tuples use the standard tuple representation.
+</span>
+<code class="command">ALTER INDEX</code>で<code class="literal">deduplicate_items</code>をオフにすると、その後の挿入で重複排除のトリガは発生しなくなりますが、それ自体は既存のポスティングリストタプルが標準のタプル表現を使うようにはしません。
      </p></div></dd><dt id="INDEX-RELOPTION-VACUUM-CLEANUP-INDEX-SCALE-FACTOR"><span class="term"><code class="literal">vacuum_cleanup_index_scale_factor</code> (<code class="type">floating point</code>)
      <a id="id-1.9.3.69.6.3.5.2.1.3" class="indexterm"></a>
     </span></dt><dd><p>
@@ -414,7 +431,6 @@ GINインデックスでは以下の異なるパラメータを受け付けま�
 </span>
 この設定は<a class="xref" href="gin-implementation.html#GIN-FAST-UPDATE" title="66.4.1. GIN高速更新手法">66.4.1</a>で説明する高速更新技法を使用するかどうかを制御します。
 これは論理値パラメータであり、<code class="literal">ON</code>は高速更新を有効に、<code class="literal">OFF</code>は無効にします。
-（<a class="xref" href="config-setting.html" title="19.1. パラメータの設定">19.1</a>の説明のように、<code class="literal">ON</code>や<code class="literal">OFF</code>と異なる記載も可能です。）
 デフォルトは<code class="literal">ON</code>です。
     </p><div class="note"><h3 class="title">注記</h3><p>
 <span class="original">
@@ -459,7 +475,9 @@ GINインデックスでは以下の異なるパラメータを受け付けま�
      range whenever an insertion is detected on the next one.
 </span>
 次のページへの挿入が検知された時に、いつでも直前のページに対してサマリー処理を起動するかどうかを定義します。
-    </p></dd></dl></div></div><div class="refsect2" id="SQL-CREATEINDEX-CONCURRENTLY"><h3>Building Indexes Concurrently</h3><a id="id-1.9.3.69.6.4.2" class="indexterm"></a><p>
+    </p></dd></dl></div></div><div class="refsect2" id="SQL-CREATEINDEX-CONCURRENTLY"><h3>インデックスの同時作成</h3><span class="original">
+   &lt;title&gt;Building Indexes Concurrently&lt;/title&gt;
+</span><a id="id-1.9.3.69.6.4.2" class="indexterm"></a><p>
 <span class="original">
     Creating an index can interfere with regular operation of a database.
     Normally &lt;productname&gt;PostgreSQL&lt;/productname&gt; locks the table to be indexed against
@@ -637,7 +655,7 @@ Indexes:
    operator classes is in &lt;xref linkend="indexes-opclass"/&gt; and in &lt;xref
    linkend="xindex"/&gt;.
 </span>
-<em class="firstterm">演算子クラス</em>は、インデックスのそれぞれの列に指定することができます。
+オプションのパラメータのついた<em class="firstterm">演算子クラス</em>は、インデックスのそれぞれの列に指定することができます。
 演算子クラスは、その列のインデックスが使う演算子を識別します。
 例えば、4バイト整数に対するB-treeインデックスには、<code class="literal">int4_ops</code>クラスを使います。
 この演算子クラスには、4バイト整数の比較関数が含まれています。
@@ -817,7 +835,10 @@ CREATE UNIQUE INDEX title_idx ON films (title);
 CREATE UNIQUE INDEX title_idx ON films (title) INCLUDE (director, rating);
 </pre><p>
   </p><p>
+<span class="original">
    To create a B-Tree index with deduplication disabled:
+</span>
+重複排除を無効にしたB-Treeを作成します。
 </p><pre class="programlisting">
 CREATE INDEX title_idx ON films (title) WITH (deduplicate_items = off);
 </pre><p>

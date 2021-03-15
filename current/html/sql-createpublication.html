@@ -49,16 +49,26 @@ CREATE PUBLICATION <em class="replaceable"><code>name</code></em>
 テーブル名の前に<code class="literal">ONLY</code>が指定されているときは、そのテーブルだけがパブリケーションに追加されます。
 <code class="literal">ONLY</code>が指定されていないときは、そのテーブルと、そのすべての子テーブル（あれば）が追加されます。
 オプションで、テーブル名の後に<code class="literal">*</code>を指定して、子テーブルが含まれることを明示的に示すことができます。
+しかしながら、これはパーティションテーブルには適用されません。
+パーティションテーブルのパーティションは、パブリケーションに含まれると常に暗黙的にみなされますので、パブリケーションに明示的に追加されることは決してありません。
      </p><p>
+<span class="original">
       Only persistent base tables and partitioned tables can be part of a
       publication.  Temporary tables, unlogged tables, foreign tables,
       materialized views, and regular views cannot be part of a publication.
+</span>
+パブリケーションに含めることができるのは、永続的なベーステーブルとパーティションテーブルだけです。
+一時テーブル、ログを取らないテーブル、外部テーブル、マテリアライズドビュー、通常のビューはパブリケーションに含めることはできません。
      </p><p>
+<span class="original">
       When a partitioned table is added to a publication, all of its existing
       and future partitions are implicitly considered to be part of the
       publication.  So, even operations that are performed directly on a
       partition are also published via publications that its ancestors are
       part of.
+</span>
+パーティションテーブルがパブリケーションに追加された場合、既存のパーティションと将来のものすべてがパブリケーションに含められたと暗黙的にみなされます。
+ですので、パーティションに対して直接実行された操作であっても、その先祖を含むパブリケーション経由でパブリッシュされます。
      </p></dd><dt><span class="term"><code class="literal">FOR ALL TABLES</code></span></dt><dd><p>
 <span class="original">
       Marks the publication as one that replicates changes for all tables in
@@ -89,6 +99,7 @@ CREATE PUBLICATION <em class="replaceable"><code>name</code></em>
 使用できる操作は<code class="literal">insert</code>、<code class="literal">update</code>、<code class="literal">delete</code>、<code class="literal">truncate</code>です。
 デフォルトではすべての動作をパブリッシュするので、このオプションのデフォルト値は<code class="literal">'insert, update, delete, truncate'</code>です。
          </p></dd><dt><span class="term"><code class="literal">publish_via_partition_root</code> (<code class="type">boolean</code>)</span></dt><dd><p>
+<span class="original">
           This parameter determines whether changes in a partitioned table (or
           on its partitions) contained in the publication will be published
           using the identity and schema of the partitioned table rather than
@@ -96,9 +107,15 @@ CREATE PUBLICATION <em class="replaceable"><code>name</code></em>
           latter is the default.  Enabling this allows the changes to be
           replicated into a non-partitioned table or a partitioned table
           consisting of a different set of partitions.
+</span>
+このパラメータは、パブリケーションに含まれるパーティションテーブル(またはそのパーティション)での変更を、実際に変更された個々のパーティションではなく、パーティションテーブルの識別とスキーマを使ってパブリッシュするかどうかを決めます。実際に変更された個々のパーティションのものでパブリッシュされるのがデフォルトです。
+これを有効にすると、パーティション化されていないテーブルやパーティションの異なる集合からなるパーティションテーブルへ変更を複製できるようになります。
          </p><p>
-          If this is enabled, <code class="literal">TRUNCATE</code> operations performed
+<span class="original">
+          If this is enabled, &lt;literal&gt;TRUNCATE&lt;/literal&gt; operations performed
           directly on partitions are not replicated.
+</span>
+これが有効な場合、パーティションに対して直接実行された<code class="literal">TRUNCATE</code>操作は複製されません。
          </p></dd></dl></div></dd></dl></div></div><div class="refsect1" id="id-1.9.3.77.7"><h2>注釈</h2><span class="original">
   &lt;title&gt;Notes&lt;/title&gt;
 </span><p>
