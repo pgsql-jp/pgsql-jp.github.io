@@ -117,14 +117,14 @@
     connection strings, as described in &lt;xref linkend="libpq-paramkeywords"/&gt;,
     except that these options are not allowed or have special handling:
 </span>
-<code class="filename">postgres_fdw</code>外部データラッパを使用する外部サーバは、以下に記すものを除き、<a class="xref" href="libpq-connect.html#LIBPQ-PARAMKEYWORDS" title="33.1.2. パラメータキーワード">33.1.2</a>に記載されている<span class="application">libpq</span>が接続文字列としてサポートするものと同一のオプションを使用する事ができます。
+<code class="filename">postgres_fdw</code>外部データラッパを使用する外部サーバは、以下に記す許されていないものや特別な取り扱いのものを除き、<a class="xref" href="libpq-connect.html#LIBPQ-PARAMKEYWORDS" title="33.1.2. パラメータキーワード">33.1.2</a>に記載されている<span class="application">libpq</span>が接続文字列としてサポートするものと同一のオプションを使用する事ができます。
 
     </p><div class="itemizedlist"><ul class="itemizedlist compact" style="list-style-type: disc; "><li class="listitem"><p>
 <span class="original">
        &lt;literal&gt;user&lt;/literal&gt;, &lt;literal&gt;password&lt;/literal&gt; and &lt;literal&gt;sslpassword&lt;/literal&gt; (specify these
        in a user mapping, instead, or use a service file)
 </span>
-<code class="literal">user</code>および<code class="literal">password</code>（これらは代わりにユーザマッピングのオプションの中で指定します）
+<code class="literal">user</code>、<code class="literal">password</code>および<code class="literal">sslpassword</code>（これらは代わりにユーザマッピングのオプションの中で指定するか、サービスファイルを使用します）
       </p></li><li class="listitem"><p>
 <span class="original">
        &lt;literal&gt;client_encoding&lt;/literal&gt; (this is automatically set from the local
@@ -138,44 +138,63 @@
 </span>
 <code class="literal">fallback_application_name</code>（自動的に<code class="literal">postgres_fdw</code>とセットされます）
       </p></li><li class="listitem"><p>
-       <code class="literal">sslkey</code> and <code class="literal">sslcert</code> - these may
-       appear in <span class="emphasis"><em>either or both</em></span> a connection and a user
+<span class="original">
+       &lt;literal&gt;sslkey&lt;/literal&gt; and &lt;literal&gt;sslcert&lt;/literal&gt; - these may
+       appear in &lt;emphasis&gt;either or both&lt;/emphasis&gt; a connection and a user
        mapping. If both are present, the user mapping setting overrides the
        connection setting.
+</span>
+<code class="literal">sslkey</code>と<code class="literal">sslcert</code> - これは、接続とユーザマッピングの<span class="emphasis"><em>どちらか一方、または両方</em></span>に現れます。
+両方に存在する場合、ユーザマッピングの設定が接続設定に優先します。
       </p></li></ul></div><p>
    </p><p>
 <span class="original">
     Only superusers may create or modify user mappings with the
     &lt;literal&gt;sslcert&lt;/literal&gt; or &lt;literal&gt;sslkey&lt;/literal&gt; settings.
 </span>
-特権ユーザのみが外部サーバに対してパスワードなしの認証で接続できます。
+スーパーユーザのみが<code class="literal">sslcert</code>や<code class="literal">sslkey</code>の設定のあるユーザマッピングを作成したり修正したりできます。
+   </p><p>
+<span class="original">
+    Only superusers may connect to foreign servers without password
+    authentication, so always specify the &lt;literal&gt;password&lt;/literal&gt; option
+    for user mappings belonging to non-superusers.
+</span>
+スーパーユーザのみが外部サーバに対してパスワードなしの認証で接続できます。
 したがって、非特権ユーザのユーザマッピングには<code class="literal">password</code>を必ず指定するようにして下さい。
    </p><p>
-    Only superusers may connect to foreign servers without password
-    authentication, so always specify the <code class="literal">password</code> option
-    for user mappings belonging to non-superusers.
-   </p><p>
+<span class="original">
     A superuser may override this check on a per-user-mapping basis by setting
-    the user mapping option <code class="literal">password_required 'false'</code>, e.g.,
+    the user mapping option &lt;literal&gt;password_required 'false'&lt;/literal&gt;, e.g.,
+</span>
+ユーザマッピングオプション<code class="literal">password_required 'false'</code>を設定することで、スーパーユーザはこのユーザマッピング単位の検査を無効にできます。例えば以下の通りです。
 </p><pre class="programlisting">
 ALTER USER MAPPING FOR some_non_superuser SERVER loopback_nopw
 OPTIONS (ADD password_required 'false');
 </pre><p>
+<span class="original">
     To prevent unprivileged users from exploiting the authentication rights
     of the unix user the postgres server is running as to escalate to superuser
     rights, only the superuser may set this option on a user mapping.
+</span>
+非特権ユーザが、postgresサーバが動作しているunixユーザの認証権限を悪用して、スーパーユーザ権限へ昇格するのを防ぐため、スーパーユーザのみがユーザーマッピングでこのオプションを設定できます。
     </p><p>
+<span class="original">
     Care is required to ensure that this does not allow the mapped
     user the ability to connect as superuser to the mapped database per
     CVE-2007-3278 and CVE-2007-6601. Don't set
-    <code class="literal">password_required=false</code>
-    on the <code class="literal">public</code> role. Keep in mind that the mapped
+    &lt;literal&gt;password_required=false&lt;/literal&gt;
+    on the &lt;literal&gt;public&lt;/literal&gt; role. Keep in mind that the mapped
     user can potentially use any client certificates,
-    <code class="filename">.pgpass</code>,
-    <code class="filename">.pg_service.conf</code> etc in the unix home directory of the
+    &lt;filename&gt;.pgpass&lt;/filename&gt;,
+    &lt;filename&gt;.pg_service.conf&lt;/filename&gt; etc in the unix home directory of the
     system user the postgres server runs as. They can also use any trust
-    relationship granted by authentication modes like <code class="literal">peer</code>
-    or <code class="literal">ident</code> authentication.
+    relationship granted by authentication modes like &lt;literal&gt;peer&lt;/literal&gt;
+    or &lt;literal&gt;ident&lt;/literal&gt; authentication.
+</span>
+これが、CVE-2007-3278やCVE-2007-6601のように、マップされたユーザがマップされたデータベースにスーパーユーザとして接続するのを許可しないことを確実にするよう注意が必要です。
+<code class="literal">public</code>ロールでは<code class="literal">password_required=false</code>を設定しないでください。
+postgresサーバが動作しているシステムユーザのunixのホームディレクトリにある、任意のクライアント証明書や<code class="filename">.pgpass</code>、<code class="filename">.pg_service.conf</code>などをマップされたユーザは潜在的には利用可能なことを心に留めておいてください。
+<code class="literal">peer</code>や<code class="literal">ident</code>認証のような認証モードで付与された信頼関係を使うこともできます。
    </p></div><div class="sect3" id="id-1.11.7.42.10.3"><div class="titlepage"><div><div><h4 class="title">F.33.1.2. オブジェクト名オプション</h4></div></div></div><span class="original">
    &lt;title&gt;Object Name Options&lt;/title&gt;
 </span><p>
