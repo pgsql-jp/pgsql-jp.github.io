@@ -19,7 +19,7 @@ data type.
 <code class="literal">UNION</code> SQL構文は、似ていない可能性がある型を1つの検索結果になるように適合させなければなりません。
 解決アルゴリズムは1つのunion問い合わせの出力列ごとに適用されます。
 <code class="literal">INTERSECT</code>構文と<code class="literal">EXCEPT</code>構文は、<code class="literal">UNION</code>と同じ方法で、似ていない可能性がある型の解決を行います。
-<code class="literal">CASE</code>構文と<code class="literal">ARRAY</code>構文、<code class="literal">VALUES</code>、<code class="function">GREATEST</code>、<code class="function">LEAST</code> もまた、同一のアルゴリズムを使用して、その要素式を適合させ、結果のデータ型を選択します。
+<code class="literal">CASE</code>、<code class="literal">ARRAY</code>、<code class="literal">VALUES</code>を含むいくつかの構文と<code class="function">GREATEST</code>、<code class="function">LEAST</code>関数は同一のアルゴリズムを使用して、その要素式を適合させ、結果のデータ型を選択します。
 </p><div class="procedure" id="id-1.5.9.10.9"><p class="title"><strong><code class="literal">UNION</code>、<code class="literal">CASE</code>および関連する構文の型解決</strong></p><span class="original">
 &lt;title&gt;Type Resolution for &lt;literal&gt;UNION&lt;/literal&gt;, &lt;literal&gt;CASE&lt;/literal&gt;,
 and Related Constructs&lt;/title&gt;
@@ -55,21 +55,26 @@ If the non-unknown inputs are not all of the same type category, fail.
 Select the first non-unknown input type as the candidate type,
 then consider each other non-unknown input type, left to right.
 </span>
-最初のunknownではない入力データ型を選択します。
-もし存在すれば、このデータ型はそのカテゴリの優先される型です。
+最初のunknownではない入力データ型を候補の型として選択します。
+それから、他のunknownではない入力データ型をそれぞれ左から右へ考慮します。
   <a href="#ftn.id-1.5.9.10.9.6.1.1" class="footnote"><sup class="footnote" id="id-1.5.9.10.9.6.1.1">[12]</sup></a>
+<span class="original">
 If the candidate type can be implicitly converted to the other type,
 but not vice-versa, select the other type as the new candidate type.
 Then continue considering the remaining inputs.  If, at any stage of this
 process, a preferred type is selected, stop considering additional
 inputs.
+</span>
+候補の型が暗黙的にある別の型に変換できるが、その逆はできない場合、その別の型を新しい候補の型として選択します。
+それから残りの入力の考慮を続けます。
+この処理のある段階で、優先される型が選択されれば、追加の入力の考慮を止めます。
 </p></li><li class="step"><p>
 <span class="original">
 Convert all inputs to the final candidate type.  Fail if there is not an
 implicit conversion from a given input type to the candidate type.
 </span>
-全ての入力値を選択された型に変換します。
-指定された入力から選択された型への変換が存在しない場合は失敗します。
+入力値をすべて最終的な候補の型に変換します。
+指定された入力型から候補の型への暗黙の変換が存在しない場合は失敗します。
 </p></li></ol></div><p>
 <span class="original">
 Some examples follow.
@@ -172,12 +177,16 @@ section consider all of their inputs in one resolution step.
     careful to ensure that all inputs are implicitly or explicitly of that
     exact type.  Otherwise the domain's base type will be used.
 </span>
-演算子や関数に対するドメイン入力の取り扱いとある程度似ていて、この振舞いにより、利用者が注意して入力をすべて厳密な型であると保証する限り、ドメイン型を<code class="literal">UNION</code>や類似の構成体に保存できます。
-そうでなければ、ドメインの基本型が優先されます。
+演算子や関数に対するドメイン入力の取り扱いとある程度似ていて、この振舞いにより、利用者が注意して入力をすべて厳密な型であると明示的にもしくは暗黙的に保証する限り、ドメイン型を<code class="literal">UNION</code>や類似の構成体に保存できます。
+そうでなければ、ドメインの基本型が使われます。
    </p></div><div id="ftn.id-1.5.9.10.9.6.1.1" class="footnote"><p><a href="#id-1.5.9.10.9.6.1.1" class="para"><sup class="para">[12] </sup></a>
-    For historical reasons, <code class="literal">CASE</code> treats
-    its <code class="literal">ELSE</code> clause (if any) as the <span class="quote">「<span class="quote">first</span>」</span>
-    input, with the <code class="literal">THEN</code> clauses(s) considered after
-    that.  In all other cases, <span class="quote">「<span class="quote">left to right</span>」</span> means the order
+<span class="original">
+    For historical reasons, &lt;literal&gt;CASE&lt;/literal&gt; treats
+    its &lt;literal&gt;ELSE&lt;/literal&gt; clause (if any) as the &lt;quote&gt;first&lt;/quote&gt;
+    input, with the &lt;literal&gt;THEN&lt;/literal&gt; clauses(s) considered after
+    that.  In all other cases, &lt;quote&gt;left to right&lt;/quote&gt; means the order
     in which the expressions appear in the query text.
+</span>
+歴史的な理由により、<code class="literal">CASE</code>は(もしあれば)その<code class="literal">ELSE</code>句を<span class="quote">「<span class="quote">最初の</span>」</span>入力として扱い、<code class="literal">THEN</code>句はその後で考慮します。
+それ以外の場合では<span class="quote">「<span class="quote">左から右</span>」</span>は問い合わせテキスト内で式が現れる順を意味します。
    </p></div></div></div><div xmlns="http://www.w3.org/TR/xhtml1/transitional" class="navfooter"><hr></hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="typeconv-query.html" title="10.4. 値の格納">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="typeconv.html" title="第10章 型変換">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="typeconv-select.html" title="10.6. SELECT出力列">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">10.4. 値の格納 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 13.1文書">ホーム</a></td><td width="40%" align="right" valign="top"> 10.6. <code xmlns="http://www.w3.org/1999/xhtml" class="literal">SELECT</code>出力列</td></tr></table></div></body></html>

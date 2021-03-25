@@ -36,6 +36,7 @@ GIN (Generalized Inverted Index)インデックスを作ります。
        signature length in bytes (see below for details).
 </span>
 GiST (Generalized Search Tree)インデックスを作ります。<em class="replaceable"><code>column</code></em>は <code class="type">tsvector</code> または<code class="type">tsquery</code> 型です。
+オプションの整数パラメータ<code class="literal">siglen</code>は署名の長さをバイト単位で決定します(詳細は以下を参照してください)。
       </p></dd></dl></div><p>
   </p><p>
 <span class="original">
@@ -74,9 +75,12 @@ GINインデックスは<code class="type">tsvector</code>値の単語(語彙素
 GiSTインデックスは、<em class="firstterm">非可逆</em>です。つまり、インデックスは間違った結果を返すかも知れないので、間違った結果を排除するために、テーブルの行をチェックすることが必要です。
 (<span class="productname">PostgreSQL</span>はこの処理が必要とされた時に自動的に行います。)
 GiSTインデックスが非可逆なのは、インデックス中の各文書が固定長の署名によって表現されているからです。
+署名のバイト単位の長さはオプションの整数のパラメータ<code class="literal">siglen</code>の値で決まります。
+(<code class="literal">siglen</code>が指定されない場合)デフォルトの署名の長さは124バイトで、最大の署名の長さは2024バイトです。
 署名は、各々の単語をハッシュして単一なビットにして、これらのビットをnビットの文書署名にORし、nビットの列中のビットにすることで実現されています。
 2つの単語が同じビット位置を生成すると、間違った一致が起こります。
 問い合わせ対象のすべての単語が照合すると(それが正しいか間違っているかは別として)、その照合が正しいものかどうかテーブルの行を取得して調べなければなりません。
+長い署名では、インデックスはより大きくなってしまいますが、(インデックスのより小さな部分とより少ないヒープページを走査することで)検索がより正確になります。
   </p><p>
 <span class="original">
    A GiST index can be covering, i.e., use the &lt;literal&gt;INCLUDE&lt;/literal&gt;
