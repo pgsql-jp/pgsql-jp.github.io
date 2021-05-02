@@ -212,15 +212,15 @@ WITH ( MODULUS <em class="replaceable"><code>numeric_literal</code></em>, REMAIN
       or &lt;command&gt;UPDATE&lt;/command&gt; commands; it does not cause rows already
       in the table to change.
 </span>
-これらの構文を使用すると、列のデフォルト値を設定または削除できます。
-デフォルト値は、変更後に行われる<code class="command">INSERT</code>または<code class="command">UPDATE</code>コマンドにのみ適用されます。
+これらの構文を使用すると、列のデフォルト値を設定または削除できます(ここで、削除はデフォルト値をNULLに設定することと等価です)。
+新しいデフォルト値は、変更後に行われる<code class="command">INSERT</code>または<code class="command">UPDATE</code>コマンドにのみ適用されます。
 テーブル内の既存の行は変更されません。
      </p></dd><dt><span class="term"><code class="literal">SET</code>/<code class="literal">DROP NOT NULL</code></span></dt><dd><p>
 <span class="original">
       These forms change whether a column is marked to allow null
       values or to reject null values.
 </span>
-これらの構文は、列の値としてNULL値を使用できるかどうか設定します。
+これらの構文は、列の値としてNULL値を認めるか拒絶するかを変更します。
      </p><p>
 <span class="original">
       &lt;literal&gt;SET NOT NULL&lt;/literal&gt; may only be applied to a column
@@ -249,13 +249,21 @@ WITH ( MODULUS <em class="replaceable"><code>numeric_literal</code></em>, REMAIN
 親テーブルに<code class="literal">NOT NULL</code>制約がない場合でも、望むなら各パーティションにそのような制約を追加することができます。
 つまり、親テーブルがNULLを許していても子テーブルでNULLを禁止することができますが、その逆はできません。
      </p></dd><dt><span class="term"><code class="literal">DROP EXPRESSION [ IF EXISTS ]</code></span></dt><dd><p>
+<span class="original">
       This form turns a stored generated column into a normal base column.
       Existing data in the columns is retained, but future changes will no
       longer apply the generation expression.
+</span>
+この構文は、格納された生成列を通常の基本列に変換します。
+列の既存のデータは保持されますが、以後の変更はもはや生成式を適用しません。
      </p><p>
-      If <code class="literal">DROP EXPRESSION IF EXISTS</code> is specified and the
+<span class="original">
+      If &lt;literal&gt;DROP EXPRESSION IF EXISTS&lt;/literal&gt; is specified and the
       column is not a stored generated column, no error is thrown.  In this
       case a notice is issued instead.
+</span>
+<code class="literal">DROP EXPRESSION IF EXISTS</code>が指定され、その列が格納された生成列でない場合は、エラーを発生させません。
+この場合、注意メッセージが発行されます。
      </p></dd><dt><span class="term"><code class="literal">ADD GENERATED { ALWAYS | BY DEFAULT } AS IDENTITY</code><br /></span><span class="term"><code class="literal">SET GENERATED { ALWAYS | BY DEFAULT }</code><br /></span><span class="term"><code class="literal">DROP IDENTITY [ IF EXISTS ]</code></span></dt><dd><p>
 <span class="original">
       These forms change whether a column is an identity column or change the
@@ -268,6 +276,8 @@ WITH ( MODULUS <em class="replaceable"><code>numeric_literal</code></em>, REMAIN
 </span>
 この構文では、列がIDENTITY列であるかどうか、または既存のIDENTITY列の生成属性を変更することができます。
 詳細は<a class="xref" href="sql-createtable.html" title="CREATE TABLE"><span class="refentrytitle">CREATE TABLE</span></a>を参照してください。
+<code class="literal">SET DEFAULT</code>同様に、この構文は、変更後に行われる<code class="command">INSERT</code>または<code class="command">UPDATE</code>コマンドにのみ適用されます。
+テーブル内の既存の行は変更されません。
      </p><p>
 <span class="original">
       If &lt;literal&gt;DROP IDENTITY IF EXISTS&lt;/literal&gt; is specified and the
@@ -619,7 +629,7 @@ WITH ( MODULUS <em class="replaceable"><code>numeric_literal</code></em>, REMAIN
 これらの構文は、テーブルの行セキュリティポリシーの適用を制御します。
 有効にされ、かつテーブルにポリシーが存在しない場合は、デフォルトの拒絶ポリシーが適用されます。
 行単位セキュリティが無効になっている場合でも、テーブルのセキュリティが存在し得ることに注意してください。
-この場合、ポリシーは適用されず、無視されます。
+この場合、ポリシーは適用<span class="emphasis"><em>されず</em></span>、無視されます。
 <a class="xref" href="sql-createpolicy.html" title="CREATE POLICY"><span class="refentrytitle">CREATE POLICY</span></a>も参照してください。
      </p></dd><dt><span class="term"><code class="literal">NO FORCE</code>/<code class="literal">FORCE ROW LEVEL SECURITY</code></span></dt><dd><p>
 <span class="original">
@@ -684,7 +694,7 @@ clusterオプションの変更は<code class="literal">SHARE UPDATE EXCLUSIVE</
 この構文を使用すると、テーブルのテーブル空間を指定したテーブル空間に変更し、テーブルに関連するデータファイルを新しいテーブル空間に移動することができます。
 テーブルにインデックスがあっても移動されません。
 インデックスを移動するには、別途<code class="literal">SET TABLESPACE</code>コマンドを実行します。
-パーティションテーブルに適用された場合には何も移動されませんが、以後<code class="command">CREATE TABLE PARTITION OF</code>で作られるパーティションは、<code class="literal">TABLESPACE</code>句を使って上書きしない限り、そのテーブル空間を使うようになります。
+パーティションテーブルに適用された場合には何も移動されませんが、以後<code class="command">CREATE TABLE PARTITION OF</code>で作られるパーティションは、<code class="literal">TABLESPACE</code>句により上書きされない限り、そのテーブル空間を使うようになります。
      </p><p>
 <span class="original">
       All tables in the current database in a tablespace can be moved by using
@@ -732,7 +742,7 @@ clusterオプションの変更は<code class="literal">SHARE UPDATE EXCLUSIVE</
       affected.
 </span>
 この構文は、1つ以上のテーブルの格納パラメータを変更します。
-設定可能なパラメータの詳細に関しては<a class="xref" href="sql-createtable.html#SQL-CREATETABLE-STORAGE-PARAMETERS" title="Storage Parameters">Storage Parameters</a>を参照してください。
+設定可能なパラメータの詳細に関しては<a class="xref" href="sql-createtable.html" title="CREATE TABLE"><span class="refentrytitle">CREATE TABLE</span></a>文書の<a class="xref" href="sql-createtable.html#SQL-CREATETABLE-STORAGE-PARAMETERS" title="格納パラメータ">Storage Parameters</a>を参照してください。
 このコマンドによってテーブルの内容が即座に変更されない点に注意してください。
 パラメータによりますが、期待する効果を得るためにテーブルを書き換える必要がある場合があります。
 このためには、<a class="link" href="sql-vacuum.html" title="VACUUM">VACUUM FULL</a>、<a class="xref" href="sql-cluster.html" title="CLUSTER"><span class="refentrytitle">CLUSTER</span></a>またはテーブルを強制的に書き換える<code class="command">ALTER TABLE</code>の構文のいずれかを使用してください。
@@ -961,11 +971,6 @@ fillfactor、TOAST、およびautovacuumのストレージパラメータおよ�
       to be attached and on the default partition (if any).
 </span>
 パーティションの追加は、追加されるテーブルと（もしあれば）デフォルトパーティションでの<code class="literal">ACCESS EXCLUSIVE</code>ロックに加えて、親テーブルで<code class="literal">SHARE UPDATE EXCLUSIVE</code>ロックを取得します。
-     </p><p>
-      Attaching a partition acquires a
-      <code class="literal">SHARE UPDATE EXCLUSIVE</code> lock on the parent table,
-      in addition to <code class="literal">ACCESS EXCLUSIVE</code> locks on the table
-      to be attached and on the default partition (if any).
      </p></dd><dt><span class="term"><code class="literal">DETACH PARTITION</code> <em class="replaceable"><code>partition_name</code></em></span></dt><dd><p>
 <span class="original">
       This form detaches the specified partition of the target table.  The detached
@@ -1386,33 +1391,49 @@ IDENTITY列についての操作（<code class="literal">ADD GENERATED</code>、
 </p><pre class="programlisting">
 ALTER TABLE distributors ADD COLUMN address varchar(30);
 </pre><p>
+<span class="original">-
    That will cause all existing rows in the table to be filled with null
    values for the new column.
+</span>
+これは表の既存の行すべてで、新しい列をNULL値で埋めることになります。
   </p><p>
+<span class="original">
    To add a column with a non-null default:
+</span>
+デフォルトが非NULLの列を追加します。
 </p><pre class="programlisting">
 ALTER TABLE measurements
   ADD COLUMN mtime timestamp with time zone DEFAULT now();
 </pre><p>
+<span class="original">
    Existing rows will be filled with the current time as the value of the
    new column, and then new rows will receive the time of their insertion.
+</span>
+既存の行では、新しい列の値として現在時刻が入ります。また、新しい行では挿入時刻を受け取ります。
   </p><p>
+<span class="original">
    To add a column and fill it with a value different from the default to
    be used later:
+</span>
+列を追加して、後で使われるデフォルトとは異なる値で埋めます。
 </p><pre class="programlisting">
 ALTER TABLE transactions
   ADD COLUMN status varchar(30) DEFAULT 'old',
   ALTER COLUMN status SET default 'current';
 </pre><p>
-   Existing rows will be filled with <code class="literal">old</code>, but then
-   the default for subsequent commands will be <code class="literal">current</code>.
+<span class="original">-
+   Existing rows will be filled with &lt;literal&gt;old&lt;/literal&gt;, but then
+   the default for subsequent commands will be &lt;literal&gt;current&lt;/literal&gt;.
    The effects are the same as if the two sub-commands had been issued
-   in separate <code class="command">ALTER TABLE</code> commands.
+   in separate &lt;command&gt;ALTER TABLE&lt;/command&gt; commands.
+</span>
+既存の行は<code class="literal">old</code>で埋められますが、後続のコマンドに対するデフォルトは<code class="literal">current</code>になります。
+別々の<code class="command">ALTER TABLE</code>コマンドで2つの副コマンドを発行する場合と、効果は同じです。
   </p><p>
 <span class="original">
    To drop a column from a table:
 </span>
-   テーブルから列を削除します。
+テーブルから列を削除します。
 </p><pre class="programlisting">
 ALTER TABLE distributors DROP COLUMN address RESTRICT;
 </pre><p>
