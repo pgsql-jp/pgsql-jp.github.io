@@ -339,9 +339,10 @@ $$ LANGUAGE SQL;
      previous &lt;function&gt;add_em&lt;/function&gt; function to return
      type &lt;type&gt;float8&lt;/type&gt; instead.  It's sufficient to write
 </span>
-<acronym class="acronym">SQL</acronym>関数は正確に宣言された結果型を返さなければなりません。
-明示キャストの挿入を要するかもしれません。
-例えば、前出の<code class="function">add_em</code>関数が代わりに<code class="type">float8</code>型を返してほしいとします。
+<acronym class="acronym">SQL</acronym>関数の最後の<code class="literal">SELECT</code>句や<code class="literal">RETURNING</code>句が関数で定義された結果型を正確に返さない場合、<span class="productname">PostgreSQL</span>は可能な場合に暗黙的キャストまたは代入キャストで必要な型に自動でキャストします。
+そうでない場合は明示的にキャストをする必要があります。
+例えば、前出の<code class="function">add_em</code>関数が代わりに<code class="type">float8</code>型を返して欲しいとします。
+次のように記述すれば十分です。
 
 </p><pre class="programlisting">
 CREATE FUNCTION add_em(integer, integer) RETURNS float8 AS $$
@@ -355,14 +356,8 @@ $$ LANGUAGE SQL;
      (See &lt;xref linkend="typeconv"/&gt; or &lt;xref linkend="sql-createcast"/&gt;
      for more about casts.)
 </span>
-他の文脈では<span class="productname">PostgreSQL</span>は<code class="type">integer</code>から<code class="type">float8</code>への暗黙キャストを挿入するにもかかわらず、これは動作しません。
-以下のように書く必要があります。
-
-</p><pre class="programlisting">
-CREATE FUNCTION add_em(integer, integer) RETURNS float8 AS $$
-    SELECT ($1 + $2)::float8;
-$$ LANGUAGE SQL;
-</pre><p>
+<code class="type">integer</code>の和は<code class="type">float8</code>に暗黙キャストできるからです。
+（キャストについての詳細は<a class="xref" href="typeconv.html" title="第10章 型変換">第10章</a>または<a class="xref" href="sql-createcast.html" title="CREATE CAST"><span class="refentrytitle">CREATE CAST</span></a>を参照して下さい）。
     </p></div><div class="sect2" id="XFUNC-SQL-COMPOSITE-FUNCTIONS"><div class="titlepage"><div><div><h3 class="title">37.5.3. 複合型を使用する<acronym class="acronym">SQL</acronym>関数</h3></div></div></div><span class="original">
     &lt;title&gt;&lt;acronym&gt;SQL&lt;/acronym&gt; Functions on Composite Types&lt;/title&gt;
 </span><p>
@@ -476,7 +471,7 @@ $$ LANGUAGE SQL;
         (Naming the columns, as we did above,
         is irrelevant to the system.)
 </span>
-問い合わせにおける選択リストの順番は、複合型と関連したテーブル内で現れる列の順番と正確に一致する必要があります。
+問い合わせにおける選択リストの順番は、複合型に列が現れる順番と正確に一致する必要があります。
 （上で行ったように列に名前を付けても、システムは認識しません。）
        </p></li><li class="listitem"><p>
 <span class="original">
@@ -484,7 +479,7 @@ $$ LANGUAGE SQL;
         the corresponding column of the composite type.
         Otherwise we'll get errors like this:
 </span>
-必要に応じてキャストを挿入して、各式の型を対応する複合型の列と一致させなければなりません。
+各式の型が対応する複合型の列にキャスタができるようにする必要があります。
 さもなくば、以下のようなエラーとなります。
 </p><pre class="screen">
 <code class="computeroutput">
@@ -496,7 +491,7 @@ DETAIL:  Final statement returns text instead of point at column 4.
         As with the base-type case, the system will not insert explicit
         casts automatically, only implicit or assignment casts.
 </span>
-基本型の場合、関数はいかなるキャストも自動で挿入しません。
+基本型の場合と同様に、システムは明示的キャストを自動では挿入せず、暗黙または代入キャストのみをします。
        </p></li></ul></div><p>
     </p><p>
 <span class="original">
@@ -523,7 +518,8 @@ $$ LANGUAGE SQL;
 </span>
 ここで、正しい複合型の単一の列を単に返す<code class="command">SELECT</code>を記述しました。
 今回の例ではこれはより優れたものとはいえませんが、例えば、必要な複合値を返す他の関数を呼び出して結果を計算しなければならない場合など、便利な解法になることがあります。
-他の例としては、単なる複合型ではなく複合型のドメインを返す関数を書こうとしてる場合に、単一列を返すように書くことが常に必要となります。なぜなら、厳密にドメイン型の値を生成する他の手段が無いからです。
+他の例としては、単なる複合型ではなく複合型のドメインを返す関数を書こうとしてる場合に、単一列を返すように書くことが常に必要となります。
+なぜなら、行全体の結果を強制する方法がないからです。
     </p><p>
 <span class="original">
      We could call this function directly either by using it in
@@ -1352,8 +1348,7 @@ $$ LANGUAGE SQL;
      function &lt;function&gt;make_array&lt;/function&gt; that builds up an array
      from two arbitrary data type elements:
 </span>
-<acronym class="acronym">SQL</acronym>関数は、多様型<code class="type">anyelement</code>、<code class="type">anyarray</code>、<code class="type">anynonarray</code>、<code class="type">anyenum</code>および<code class="type">anyrange</code>を受け付け、返すように宣言することができます。
-多様関数の詳細説明については<a class="xref" href="extend-type-system.html#EXTEND-TYPES-POLYMORPHIC" title="37.2.5. 多様型">37.2.5</a>を参照してください。
+<acronym class="acronym">SQL</acronym>関数は、<a class="xref" href="extend-type-system.html#EXTEND-TYPES-POLYMORPHIC" title="37.2.5. 多様型">37.2.5</a>の多様型を受け付け、返すように宣言することができます。
 以下の<code class="function">make_array</code>多様関数は、任意の2つのデータ型要素から配列を作成します。
 </p><pre class="screen">
 CREATE FUNCTION make_array(anyelement, anyelement) RETURNS anyarray AS $$
@@ -1384,17 +1379,26 @@ SELECT make_array(1, 2) AS intarray, make_array('a'::text, 'b') AS textarray;
 ERROR:  could not determine polymorphic type because input has type unknown
 </pre><p>
     </p><p>
-     With <code class="function">make_array</code> declared as above, you must
+<span class="original">
+     With &lt;function&gt;make_array&lt;/function&gt; declared as above, you must
      provide two arguments that are of exactly the same data type; the
      system will not attempt to resolve any type differences.  Thus for
      example this does not work:
+</span>
+上記のように<code class="function">make_array</code>を宣言した場合、まったく同じデータ型の2つの引数を指定する必要があります。
+システムは型の違いを解決しようとしません。
+したがって、例えばこれはうまくいきません。
 </p><pre class="screen">
 SELECT make_array(1, 2.5) AS numericarray;
 ERROR:  function make_array(integer, numeric) does not exist
 </pre><p>
-     An alternative approach is to use the <span class="quote">「<span class="quote">common</span>」</span> family of
+<span class="original">
+     An alternative approach is to use the &lt;quote&gt;common&lt;/quote&gt; family of
      polymorphic types, which allows the system to try to identify a
      suitable common type:
+</span>
+別の方法として、<span class="quote">「<span class="quote">共通</span>」</span>族の多様型を使用する方法があります。
+これにより、システムは適切な共通の型を特定できます。
 </p><pre class="screen">
 CREATE FUNCTION make_array2(anycompatible, anycompatible)
 RETURNS anycompatiblearray AS $$
@@ -1407,9 +1411,12 @@ SELECT make_array2(1, 2.5) AS numericarray;
  {1,2.5}
 (1 row)
 </pre><p>
+<span class="original">
      Because the rules for common type resolution default to choosing
-     type <code class="type">text</code> when all inputs are of unknown types, this
+     type &lt;type&gt;text&lt;/type&gt; when all inputs are of unknown types, this
      also works:
+</span>
+すべての入力が未知の型である場合、共通の型を解決するルールはデフォルトで<code class="type">text</code>型を選択するので、これも動作します。
 </p><pre class="screen">
 SELECT make_array2('a', 'b') AS textarray;
  textarray 
