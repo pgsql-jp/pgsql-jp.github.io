@@ -286,7 +286,7 @@ tar形式アーカイブを展開すると、有効なディレクトリ形式�
         can write their data at the same time.
 </span>
 <em class="replaceable"><code>njobs</code></em>個のテーブルを同時にダンプすることによって、並行してダンプを実行します。
-このオプションはダンプにかかる時間を減らしますが、データベースサーバの負荷を増やします。
+このオプションはダンプを実行するのに必要な時間を減らすかもしれませんが、データベースサーバの負荷を増やします。
 このオプションはディレクトリ出力形式でのみ使用することができます。
 複数のプロセスが同時にそのデータを書き出すことができるのはディレクトリ形式だけだからです。
        </p><span class="original">
@@ -378,10 +378,10 @@ tar形式アーカイブを展開すると、有効なディレクトリ形式�
 これはスキーマ自体とそこに含まれるオブジェクトすべてを選択します。
 このオプションが指定されなければ、対象データベース内にあるシステム以外のスキーマ全てがダンプされます。
 複数の<code class="option">-n</code>オプションを記述することで、複数のスキーマを選択することができます。
-<em class="replaceable"><code>pattern</code></em>パラメータは<span class="application">psql</span>の<code class="literal">\d</code>コマンドと同じ規則に従うパターン（<a class="xref" href="app-psql.html#APP-PSQL-PATTERNS" title="パターン">Patterns</a>参照）として解釈されます。
+<em class="replaceable"><code>pattern</code></em>パラメータは<span class="application">psql</span>の<code class="literal">\d</code>コマンドと同じ規則に従うパターン（下記の<a class="xref" href="app-psql.html#APP-PSQL-PATTERNS" title="パターン">Patterns</a>参照）として解釈されます。
 ですので、ワイルドカード文字をパターン内に記述することで、複数のスキーマを選択することもできます。
 ワイルドカードを使用する時は、シェルがそのワイルドカードを展開しないように、必要であればパターンを引用符で括ってください。
-<a class="xref" href="app-pgdump.html#PG-DUMP-EXAMPLES" title="Examples">Examples</a>を参照してください。
+<a class="xref" href="app-pgdump.html#PG-DUMP-EXAMPLES" title="例">Examples</a>を参照してください。
        </p><div class="note"><h3 class="title">注記</h3><p>
 <span class="original">
          When &lt;option&gt;-n&lt;/option&gt; is specified, &lt;application&gt;pg_dump&lt;/application&gt;
@@ -505,18 +505,21 @@ tar形式アーカイブを展開すると、有効なディレクトリ形式�
         &lt;xref linkend="pg-dump-examples"/&gt; below.
 </span>
 <em class="replaceable"><code>pattern</code></em>にマッチする名前のテーブルのみをダンプします。
-この目的において、<span class="quote">「<span class="quote">テーブル</span>」</span>にはビュー、マテリアライズドビュー、シーケンス、外部テーブルが含まれます。
 複数の<code class="option">-t</code>オプションを記述することで複数のテーブルを選択することができます。
-<em class="replaceable"><code>pattern</code></em>パラメータは<span class="application">psql</span>の <code class="literal">\d</code>コマンドで使用される規則(<a class="xref" href="app-psql.html#APP-PSQL-PATTERNS" title="パターン">Patterns</a>参照)と同じ規則に従うパターンとして解釈されます。
+<em class="replaceable"><code>pattern</code></em>パラメータは<span class="application">psql</span>の <code class="literal">\d</code>コマンドで使用される規則(下記の<a class="xref" href="app-psql.html#APP-PSQL-PATTERNS" title="パターン">Patterns</a>参照)と同じ規則に従うパターンとして解釈されます。
 ですので、ワイルドカード文字をパターン内に記述することで、複数のテーブルを選択することもできます。
 ワイルドカードを使用する時は、シェルによりそのワイルドカードを展開させないように、パターンを引用符で括ってください。
-<a class="xref" href="app-pgdump.html#PG-DUMP-EXAMPLES" title="Examples">Examples</a>を参照してください。
+下記の<a class="xref" href="app-pgdump.html#PG-DUMP-EXAMPLES" title="例">Examples</a>を参照してください。
        </p><p>
+<span class="original">
         As well as tables, this option can be used to dump the definition of matching
         views, materialized views, foreign tables, and sequences.  It will not dump the
         contents of views or materialized views, and the contents of foreign tables will
         only be dumped if the corresponding foreign server is specified with
-        <code class="option">--include-foreign-data</code>.
+        &lt;option&gt;&amp;#45;-include-foreign-data&lt;/option&gt;.
+</span>
+このオプションは、テーブルだけでなく、ビュー、マテリアライズドビュー、外部テーブル、シーケンスの定義をダンプするのにも使えます。
+ビューやマテリアライズドビューの内容はダンプしませんし、対応する外部サーバに<code class="option">--include-foreign-data</code>が指定されている場合にのみ、外部テーブルの内容がダンプされます。
        </p><p>
 <span class="original">
         The &lt;option&gt;-n&lt;/option&gt; and &lt;option&gt;-N&lt;/option&gt; switches have no effect when
@@ -729,24 +732,35 @@ tarアーカイブ形式では現在圧縮を全くサポートしていませ�
 データベースオブジェクトを初期化するときに、条件コマンドを使います(つまり、<code class="literal">IF EXISTS</code>句を追加します)。
 このオプションは、<code class="option">--clean</code>も指定されているのでなければ、有効にはなりません。
        </p></dd><dt><span class="term"><code class="option">--include-foreign-data=<em class="replaceable"><code>foreignserver</code></em></code></span></dt><dd><p>
+<span class="original">
         Dump the data for any foreign table with a foreign server
-        matching <em class="replaceable"><code>foreignserver</code></em>
+        matching &lt;replaceable class="parameter"&gt;foreignserver&lt;/replaceable&gt;
         pattern. Multiple foreign servers can be selected by writing multiple
-        <code class="option">--include-foreign-data</code> switches.
-        Also, the <em class="replaceable"><code>foreignserver</code></em> parameter is
+        &lt;option&gt;&amp;#45;-include-foreign-data&lt;/option&gt; switches.
+        Also, the &lt;replaceable class="parameter"&gt;foreignserver&lt;/replaceable&gt; parameter is
         interpreted as a pattern according to the same rules used by
-        <span class="application">psql</span>'s <code class="literal">\d</code> commands
-        (see <a class="xref" href="app-psql.html#APP-PSQL-PATTERNS" title="パターン">Patterns</a> below),
+        &lt;application&gt;psql&lt;/application&gt;'s &lt;literal&gt;\d&lt;/literal&gt; commands
+        (see &lt;xref linkend="app-psql-patterns"/&gt; below),
         so multiple foreign servers can also be selected by writing wildcard characters
         in the pattern.  When using wildcards, be careful to quote the pattern
         if needed to prevent the shell from expanding the wildcards; see
-        <a class="xref" href="app-pgdump.html#PG-DUMP-EXAMPLES" title="Examples">Examples</a> below.
+        &lt;xref linkend="pg-dump-examples"/&gt; below.
         The only exception is that an empty pattern is disallowed.
+</span>
+<em class="replaceable"><code>foreignserver</code></em>パターンとマッチする外部サーバの外部テーブルのデータをダンプします。
+複数の<code class="option">--include-foreign-data</code>スイッチを書くことで、複数の外部サーバを選択できます。
+また、<em class="replaceable"><code>foreignserver</code></em>パラメータは<span class="application">psql</span>の<code class="literal">\d</code>コマンドで使われているのと同じ規則に従うパターンとして解釈されます(下記の<a class="xref" href="app-psql.html#APP-PSQL-PATTERNS" title="パターン">Patterns</a>を参照してください)ので、パターンにワイルドカード文字を書くことで複数の外部サーバを選択することもできます。
+ワイルドカードを使う時は、シェルがワイルドカードを展開しないよう必要ならパターンを引用符で囲むことに注意してください。下記の<a class="xref" href="app-pgdump.html#PG-DUMP-EXAMPLES" title="例">Examples</a>を参照してください。
+唯一の例外は空のパターンが許されていないことです。
        </p><div class="note"><h3 class="title">注記</h3><p>
-         When <code class="option">--include-foreign-data</code> is specified,
-         <span class="application">pg_dump</span> does not check that the foreign
+<span class="original">
+         When &lt;option&gt;&amp;#45;-include-foreign-data&lt;/option&gt; is specified,
+         &lt;application&gt;pg_dump&lt;/application&gt; does not check that the foreign
          table is writable.  Therefore, there is no guarantee that the
          results of a foreign table dump can be successfully restored.
+</span>
+<code class="option">--include-foreign-data</code>が指定された場合、<span class="application">pg_dump</span>は外部テーブルが書き込み可能かどうか確認しません。
+そのため、外部テーブルのダンプの結果をリストアするのに成功する保証はありません。
         </p></div></dd><dt><span class="term"><code class="option">--inserts</code></span></dt><dd><p>
 <span class="original">
         Dump data as &lt;command&gt;INSERT&lt;/command&gt; commands (rather
@@ -1065,6 +1079,8 @@ pg_dumpを始めた時に読み書きを行う実行中のトランザクショ�
 </span>
 接続するデータベースの名前を指定します。
 コマンドラインでオプション以外の最初の引数として<em class="replaceable"><code>dbname</code></em>を指定することと同じです。
+<em class="replaceable"><code>dbname</code></em>は<a class="link" href="libpq-connect.html#LIBPQ-CONNSTRING" title="33.1.1. 接続文字列">接続文字列</a>でも構いません。
+その場合、接続文字列パラメータは衝突するコマンドラインオプションに優先します。
       </p></dd><dt><span class="term"><code class="option">-h <em class="replaceable"><code>host</code></em></code><br /></span><span class="term"><code class="option">--host=<em class="replaceable"><code>host</code></em></code></span></dt><dd><p>
 <span class="original">
         Specifies the host name of the machine on which the server is
@@ -1277,7 +1293,9 @@ CREATE DATABASE foo WITH TEMPLATE template0;
 その後でサブスクリプションを適切な方法で再有効化するのはユーザの責任です。
 関連するホストが変更されたときは、接続情報も変更しなければならないかもしれません。
 新しく完全なテーブルコピーを開始する前に、コピー先のテーブルを空にするのが適切なこともあります。
-  </p></div><div class="refsect1" id="PG-DUMP-EXAMPLES"><h2>Examples</h2><p>
+  </p></div><div class="refsect1" id="PG-DUMP-EXAMPLES"><h2>例</h2><span class="original">
+  &lt;title&gt;Examples&lt;/title&gt;
+</span><p>
 <span class="original">
    To dump a database called &lt;literal&gt;mydb&lt;/literal&gt; into a SQL-script file:
 </span>
@@ -1405,7 +1423,7 @@ CREATE DATABASE foo WITH TEMPLATE template0;
    like
 </span>
 大文字または大文字小文字混在の名前を<code class="option">-t</code>などのスイッチに指定するには、名前を二重引用符で括らなければなりません。
-さもないと小文字に変換されます。（<a class="xref" href="app-psql.html#APP-PSQL-PATTERNS" title="パターン">Patterns</a>を参照してください。）
+さもないと小文字に変換されます（下記の<a class="xref" href="app-psql.html#APP-PSQL-PATTERNS" title="パターン">Patterns</a>を参照してください）。
 しかし、二重引用符はシェルでも特別に扱われますので、これも引用符で括らなければなりません。
 したがって、大文字小文字混在の名前を持つテーブルを1つダンプするには、以下のようにしなければなりません。
 
