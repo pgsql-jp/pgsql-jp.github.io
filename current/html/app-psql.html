@@ -153,6 +153,8 @@ EOF
 </span>
 接続するデータベースの名前を指定します。
 コマンドラインでオプション以外の最初の引数として<em class="replaceable"><code>dbname</code></em>を指定するのと同じ効力を持ちます。
+<em class="replaceable"><code>dbname</code></em>は<a class="link" href="libpq-connect.html#LIBPQ-CONNSTRING" title="33.1.1. 接続文字列">接続文字列</a>でも構いません。
+その場合、接続文字列パラメータは衝突するコマンドラインオプションに優先します。
       </p></dd><dt><span class="term"><code class="option">-e</code><br /></span><span class="term"><code class="option">--echo-queries</code></span></dt><dd><p>
 <span class="original">
       Copy all SQL commands sent to the server to standard output as well.
@@ -408,7 +410,7 @@ EOF
        scripts where no user is present to enter a password.
 </span>
 パスワードの入力を促しません。
-サーバがパスワード認証を必要とし、かつ、<code class="filename">.pgpass</code>ファイルなどの他の方法が利用できない場合、接続試行は失敗します。
+サーバがパスワード認証を必要とし、かつ、<code class="filename">.pgpass</code>ファイルなどの他の情報源からパスワードが入手可能でない場合、接続試行は失敗します。
 バッチジョブやスクリプトなどパスワードを入力するユーザが存在しない場合にこのオプションは有用かもしれません。
       </p><p>
 <span class="original">
@@ -419,9 +421,12 @@ EOF
 このオプションはセッション全体にわたって設定されたままであることに注意してください。
 このため<code class="command">\connect</code>メタコマンドの使用に関しても初期接続試行と同様に影響します。
       </p></dd><dt><span class="term"><code class="option">-W</code><br /></span><span class="term"><code class="option">--password</code></span></dt><dd><p>
-       Force <span class="application">psql</span> to prompt for a
+<span class="original">
+       Force &lt;application&gt;psql&lt;/application&gt; to prompt for a
        password before connecting to a database, even if the password will
        not be used.
+</span>
+パスワードが使われない場合であっても、データベースに接続する前に<span class="application">psql</span>は強制的にパスワード入力を促します。
       </p><p>
 <span class="original">
        If the server requires password authentication and a password is not
@@ -432,7 +437,7 @@ EOF
        password.  In some cases it is worth typing &lt;option&gt;-W&lt;/option&gt; to avoid
        the extra connection attempt.
 </span>
-サーバがパスワード認証を要求する場合<span class="application">psql</span>は自動的にパスワード入力を促しますので、これが重要になることはありません。
+サーバがパスワード認証を必要とし、かつ、<code class="filename">.pgpass</code>ファイルなどの他の情報源からパスワードが入手可能でない場合、<span class="application">psql</span>は常にパスワード入力を促します。
 しかし、<span class="application">psql</span>は、サーバにパスワードが必要かどうかを判断するための接続試行を無駄に行います。
 こうした余計な接続試行を防ぐために<code class="option">-W</code>の入力が有意となる場合もあります。
       </p><p>
@@ -742,7 +747,7 @@ Cの形式のブロックコメントは、サーバに送信され、サーバ�
     TRUE or FALSE.
     Escaping the colon with a backslash protects it from substitution.
 </span>
-<a class="xref" href="app-psql.html#APP-PSQL-INTERPOLATION" title="SQL差し替え">SQL Interpolation</a>で説明されているとおり、引数の中に引用符で囲まれていないコロン（ <code class="literal">:</code>）とそれに続く<span class="application">psql</span>変数がある場合、その部分は変数の値で置換されます。
+<a class="xref" href="app-psql.html#APP-PSQL-INTERPOLATION" title="SQL差し替え">SQL Interpolation</a>で説明されているとおり、引数の中に引用符で囲まれていないコロン（<code class="literal">:</code>）とそれに続く<span class="application">psql</span>変数がある場合、その部分は変数の値で置換されます。
 そこで説明されている<code class="literal">:'<em class="replaceable"><code>variable_name</code></em>'</code>および<code class="literal">:"<em class="replaceable"><code>variable_name</code></em>"</code>という形式も同様に機能します。
 <code class="literal">:{?<em class="replaceable"><code>variable_name</code></em>}</code>構文は、変数が定義済みかどうかをテストできます。
 これはTRUEかFALSEに置き換えられます。
@@ -846,8 +851,8 @@ Cの形式のブロックコメントは、サーバに送信され、サーバ�
         new connection is made using the same parameters as before.
 </span>
 <span class="productname">PostgreSQL</span>サーバへの新規の接続を確立します。
-接続のパラメータは、位置の構文、あるいは<em class="replaceable"><code>conninfo</code></em>接続文字列で指定することができます。
-後者の詳細は<a class="xref" href="libpq-connect.html#LIBPQ-CONNSTRING" title="33.1.1. 接続文字列">33.1.1</a>で説明します。
+接続のパラメータは、位置の構文(1つ以上のデータベース名、ユーザ、ホスト、ポート)、あるいは<em class="replaceable"><code>conninfo</code></em>接続文字列で指定できます。後者の詳細は<a class="xref" href="libpq-connect.html#LIBPQ-CONNSTRING" title="33.1.1. 接続文字列">33.1.1</a>で説明します。
+引数が与えられなければ、新しい接続は以前と同じパラメータを使って作られます。
         </p><p>
 <span class="original">
         Specifying any
@@ -857,29 +862,32 @@ Cの形式のブロックコメントは、サーバに送信され、サーバ�
         &lt;replaceable class="parameter"&gt;port&lt;/replaceable&gt;
         as &lt;literal&gt;-&lt;/literal&gt; is equivalent to omitting that parameter.
 </span>
-コマンドでデータベース名、ユーザ、ホストあるいはポートを省略した場合、新しい接続では以前の接続での値を再利用することができます。
-デフォルトでは、<em class="replaceable"><code>conninfo</code></em>文字列を処理する場合を除き、以前の接続での値が再利用されます。
-第一引数で<code class="literal">-reuse-previous=on</code>あるいは<code class="literal">-reuse-previous=off</code>を渡すことで、このデフォルトと異なる動作をさせることができます。
-コマンドで特定のパラメータを指定せず、かつ再利用もしない場合は、<span class="application">libpq</span>のデフォルトが使用されます。
 <em class="replaceable"><code>dbname</code></em>、<em class="replaceable"><code>username</code></em>、<em class="replaceable"><code>host</code></em>、<em class="replaceable"><code>port</code></em>のいずれについても<code class="literal">-</code>を指定するのは、パラメータを省略するのと同じになります。
-元の接続の<code class="structname">conninfo</code>で<code class="literal">hostaddr</code>が指定されていた場合、新しい接続では(他のホストの指定は無視して)そのアドレスが再利用されます。
         </p><p>
+<span class="original">
         The new connection can re-use connection parameters from the previous
         connection; not only database name, user, host, and port, but other
-        settings such as <em class="replaceable"><code>sslmode</code></em>.  By default,
+        settings such as &lt;replaceable&gt;sslmode&lt;/replaceable&gt;.  By default,
         parameters are re-used in the positional syntax, but not when
-        a <em class="replaceable"><code>conninfo</code></em> string is given.  Passing a
-        first argument of <code class="literal">-reuse-previous=on</code>
-        or <code class="literal">-reuse-previous=off</code> overrides that default.  If
+        a &lt;replaceable&gt;conninfo&lt;/replaceable&gt; string is given.  Passing a
+        first argument of &lt;literal&gt;-reuse-previous=on&lt;/literal&gt;
+        or &lt;literal&gt;-reuse-previous=off&lt;/literal&gt; overrides that default.  If
         parameters are re-used, then any parameter not explicitly specified as
-        a positional parameter or in the <em class="replaceable"><code>conninfo</code></em>
+        a positional parameter or in the &lt;replaceable&gt;conninfo&lt;/replaceable&gt;
         string is taken from the existing connection's parameters.  An
-        exception is that if the <em class="replaceable"><code>host</code></em> setting
+        exception is that if the &lt;replaceable&gt;host&lt;/replaceable&gt; setting
         is changed from its previous value using the positional syntax,
-        any <em class="replaceable"><code>hostaddr</code></em> setting present in the
+        any &lt;replaceable&gt;hostaddr&lt;/replaceable&gt; setting present in the
         existing connection's parameters is dropped.
         When the command neither specifies nor reuses a particular parameter,
-        the <span class="application">libpq</span> default is used.
+        the &lt;application&gt;libpq&lt;/application&gt; default is used.
+</span>
+新しい接続では以前の接続での接続パラメータを再利用できます。データベース名、ユーザ、ホスト、ポートだけでなく、<em class="replaceable"><code>sslmode</code></em>のようなその他の設定もです。
+デフォルトでは、パラメータは位置の構文では再利用されますが、<em class="replaceable"><code>conninfo</code></em>文字列が与えられた場合はそうではありません。
+第一引数で<code class="literal">-reuse-previous=on</code>あるいは<code class="literal">-reuse-previous=off</code>を渡すことで、このデフォルトと異なる動作をさせることができます。
+パラメータが再利用される場合、文字列として明示的に指定されなかったパラメータは既存の接続のパラメータから取得されます。
+例外は、<em class="replaceable"><code>host</code></em>設定が位置の構文を使った以前の値から変更された場合に、既存の接続のパラメータにある<em class="replaceable"><code>hostaddr</code></em>設定が削除されることです。
+コマンドで特定のパラメータを指定せず、かつ再利用もしない場合は、<span class="application">libpq</span>のデフォルトが使用されます。
         </p><p>
 <span class="original">
         If the new connection is successfully made, the previous
@@ -894,7 +902,7 @@ Cの形式のブロックコメントは、サーバに送信され、サーバ�
         wrong database on the other hand.
 </span>
 新規接続に成功した場合、以前の接続は閉じられます。
-接続の試行が（ユーザ名の間違いやアクセス拒否などの理由で）失敗した場合、<span class="application">psql</span>が対話式モードである場合に限り、それまでの接続が保持されます。
+接続の試行が（ユーザ名の間違いやアクセス拒否などの理由で）失敗した場合、<span class="application">psql</span>が対話式モードである場合、それまでの接続が保持されます。
 非対話式スクリプトを実行している場合は、処理はエラーとなり、即座に停止します。
 この実装の違いは、対話モードでは入力ミスに対するユーザの利便性を考慮し、非対話モードではスクリプトによって間違ったデータベースを操作することを防ぐための安全策を考慮した結果決められました。
         </p><p>
@@ -906,7 +914,10 @@ Cの形式のブロックコメントは、サーバに送信され、サーバ�
 =&gt; \c mydb myuser host.dom 6432
 =&gt; \c service=foo
 =&gt; \c "host=localhost port=5432 dbname=mydb connect_timeout=10 sslmode=disable"
-=&gt; \c -reuse-previous=on sslmode=require    -- changes only sslmode
+<span class="original">
+=&amp;gt; \c -reuse-previous=on sslmode=require    &amp;#45;- changes only sslmode
+</span>
+=&gt; \c -reuse-previous=on sslmode=require    -- sslmodeのみ変更
 =&gt; \c postgresql://tom@localhost/mydb?application_name=myapp
 </pre></dd><dt><span class="term"><code class="literal">\C [ <em class="replaceable"><code>title</code></em> ]</code></span></dt><dd><p>
 <span class="original">
@@ -1209,64 +1220,88 @@ Cの形式のブロックコメントは、サーバに送信され、サーバ�
               [<a class="link" href="app-psql.html#APP-PSQL-PATTERNS" title="パターン"><em class="replaceable"><code>input-type-pattern</code></em></a>]]
           </code>
         </span></dt><dd><p>
+<span class="original">
         Lists operator classes
-        (see <a class="xref" href="xindex.html#XINDEX-OPCLASS" title="37.16.1. インデックスメソッドと演算子クラス">37.16.1</a>).
-        If <em class="replaceable"><code>access-method-pattern</code></em>
+        (see &lt;xref linkend="xindex-opclass"/&gt;).
+        If &lt;replaceable class="parameter"&gt;access-method-pattern&lt;/replaceable&gt;
         is specified, only operator classes associated with access methods whose
         names match that pattern are listed.
-        If <em class="replaceable"><code>input-type-pattern</code></em>
+        If &lt;replaceable class="parameter"&gt;input-type-pattern&lt;/replaceable&gt;
         is specified, only operator classes associated with input types whose
         names match that pattern are listed.
-        If <code class="literal">+</code> is appended to the command name, each operator
+        If &lt;literal&gt;+&lt;/literal&gt; is appended to the command name, each operator
         class is listed with its associated operator family and owner.
+</span>
+演算子クラスの一覧を表示します(<a class="xref" href="xindex.html#XINDEX-OPCLASS" title="37.16.1. インデックスメソッドと演算子クラス">37.16.1</a>を参照してください)。
+<em class="replaceable"><code>access-method-pattern</code></em>が指定されていれば、そのパターンにマッチする名前のアクセスメソッドと関係する演算子クラスのみが表示されます。
+<em class="replaceable"><code>input-type-pattern</code></em>が指定されていれば、そのパターンにマッチする名前の入力型と関係する演算子クラスのみが表示されます。
+コマンド名の後に<code class="literal">+</code>が付加された場合は、各演算子クラスに関連付けられた演算子族および所有者も表示されます。
         </p></dd><dt><span class="term">
           <code class="literal">\dAf[+]
             [<a class="link" href="app-psql.html#APP-PSQL-PATTERNS" title="パターン"><em class="replaceable"><code>access-method-pattern</code></em></a>
               [<a class="link" href="app-psql.html#APP-PSQL-PATTERNS" title="パターン"><em class="replaceable"><code>input-type-pattern</code></em></a>]]
           </code>
         </span></dt><dd><p>
+<span class="original">
         Lists operator families
-        (see <a class="xref" href="xindex.html#XINDEX-OPFAMILY" title="37.16.5. 演算子クラスと演算子族">37.16.5</a>).
-        If <em class="replaceable"><code>access-method-pattern</code></em>
+        (see &lt;xref linkend="xindex-opfamily"/&gt;).
+        If &lt;replaceable class="parameter"&gt;access-method-pattern&lt;/replaceable&gt;
         is specified, only operator families associated with access methods whose
         names match that pattern are listed.
-        If <em class="replaceable"><code>input-type-pattern</code></em>
+        If &lt;replaceable class="parameter"&gt;input-type-pattern&lt;/replaceable&gt;
         is specified, only operator families associated with input types whose
         names match that pattern are listed.
-        If <code class="literal">+</code> is appended to the command name, each operator
+        If &lt;literal&gt;+&lt;/literal&gt; is appended to the command name, each operator
         family is listed with its owner.
+</span>
+演算子族の一覧を表示します(<a class="xref" href="xindex.html#XINDEX-OPFAMILY" title="37.16.5. 演算子クラスと演算子族">37.16.5</a>を参照してください)。
+<em class="replaceable"><code>access-method-pattern</code></em>が指定されていれば、そのパターンにマッチする名前のアクセスメソッドと関係する演算子族のみが表示されます。
+<em class="replaceable"><code>input-type-pattern</code></em>が指定されていれば、そのパターンにマッチする名前の入力型と関係する演算子族のみが表示されます。
+コマンド名の後に<code class="literal">+</code>が付加された場合は、各演算子族に関連付けられた所有者も表示されます。
         </p></dd><dt><span class="term">
           <code class="literal">\dAo[+]
             [<a class="link" href="app-psql.html#APP-PSQL-PATTERNS" title="パターン"><em class="replaceable"><code>access-method-pattern</code></em></a>
               [<a class="link" href="app-psql.html#APP-PSQL-PATTERNS" title="パターン"><em class="replaceable"><code>operator-family-pattern</code></em></a>]]
           </code>
         </span></dt><dd><p>
+<span class="original">
         Lists operators associated with operator families
-        (see <a class="xref" href="xindex.html#XINDEX-STRATEGIES" title="37.16.2. インデックスメソッドのストラテジ">37.16.2</a>).
-        If <em class="replaceable"><code>access-method-pattern</code></em>
+        (see &lt;xref linkend="xindex-strategies"/&gt;).
+        If &lt;replaceable class="parameter"&gt;access-method-pattern&lt;/replaceable&gt;
         is specified, only members of operator families associated with access
         methods whose names match that pattern are listed.
-        If <em class="replaceable"><code>operator-family-pattern</code></em>
+        If &lt;replaceable class="parameter"&gt;operator-family-pattern&lt;/replaceable&gt;
         is specified, only members of operator families whose names match that
         pattern are listed.
-        If <code class="literal">+</code> is appended to the command name, each operator
+        If &lt;literal&gt;+&lt;/literal&gt; is appended to the command name, each operator
         is listed with its sort operator family (if it is an ordering operator).
+</span>
+演算子族に関連する演算子の一覧を表示します(<a class="xref" href="xindex.html#XINDEX-STRATEGIES" title="37.16.2. インデックスメソッドのストラテジ">37.16.2</a>を参照してください)。
+<em class="replaceable"><code>access-method-pattern</code></em>が指定されていれば、そのパターンにマッチする名前のアクセスメソッドと関係する演算子族のメンバーのみが表示されます。
+<em class="replaceable"><code>operator-family-pattern</code></em>が指定されていれば、そのパターンにマッチする名前の演算子族のメンバーのみが表示されます。
+コマンド名の後に<code class="literal">+</code>が付加された場合は、(順序演算子であれば)ソート演算子族も表示されます。
         </p></dd><dt><span class="term">
           <code class="literal">\dAp[+]
             [<a class="link" href="app-psql.html#APP-PSQL-PATTERNS" title="パターン"><em class="replaceable"><code>access-method-pattern</code></em></a>
               [<a class="link" href="app-psql.html#APP-PSQL-PATTERNS" title="パターン"><em class="replaceable"><code>operator-family-pattern</code></em></a>]]
           </code>
         </span></dt><dd><p>
+<span class="original">
         Lists support functions associated with operator families
-        (see <a class="xref" href="xindex.html#XINDEX-SUPPORT" title="37.16.3. インデックスメソッドのサポートルーチン">37.16.3</a>).
-        If <em class="replaceable"><code>access-method-pattern</code></em>
+        (see &lt;xref linkend="xindex-support"/&gt;).
+        If &lt;replaceable class="parameter"&gt;access-method-pattern&lt;/replaceable&gt;
         is specified, only functions of operator families associated with
         access methods whose names match that pattern are listed.
-        If <em class="replaceable"><code>operator-family-pattern</code></em>
+        If &lt;replaceable class="parameter"&gt;operator-family-pattern&lt;/replaceable&gt;
         is specified, only functions of operator families whose names match
         that pattern are listed.
-        If <code class="literal">+</code> is appended to the command name, functions are
+        If &lt;literal&gt;+&lt;/literal&gt; is appended to the command name, functions are
         displayed verbosely, with their actual parameter lists.
+</span>
+演算子族に関連するサポート関数の一覧を表示します(<a class="xref" href="xindex.html#XINDEX-SUPPORT" title="37.16.3. インデックスメソッドのサポートルーチン">37.16.3</a>を参照してください)。
+<em class="replaceable"><code>access-method-pattern</code></em>が指定されていれば、そのパターンにマッチする名前のアクセスメソッドと関係する演算子族の関数のみが表示されます。
+<em class="replaceable"><code>operator-family-pattern</code></em>が指定されていれば、そのパターンにマッチする名前の演算子族の関数のみが表示されます。
+コマンド名の後に<code class="literal">+</code>が付加された場合は、実際のパラメータの一覧を伴って、冗長に表示されます。
         </p></dd><dt><span class="term"><code class="literal">\db[+] [ <a class="link" href="app-psql.html#APP-PSQL-PATTERNS" title="パターン"><em class="replaceable"><code>pattern</code></em></a> ]</code></span></dt><dd><p>
 <span class="original">
         Lists tablespaces. If &lt;replaceable
@@ -1399,8 +1434,8 @@ Cの形式のブロックコメントは、サーバに送信され、サーバ�
 </span>
 このコマンド群において、<code class="literal">E</code>、<code class="literal">i</code>、<code class="literal">m</code>、<code class="literal">s</code>、<code class="literal">t</code>、<code class="literal">v</code>という文字はそれぞれ、外部テーブル、インデックス、マテリアライズドビュー、シーケンス、テーブル、ビューを表します。
 これらの種類のオブジェクトの一覧を表示するために、これらの文字の中の任意の文字またはすべてを任意の順番で指定することができます。
-例えば、<code class="literal">\dit</code>はインデックスとテーブルを列挙します。
-<code class="literal">+</code>がコマンド名に付与された場合、各オブジェクトは、もしあればディスク上の物理容量と関連する説明をつけて表示されます。
+例えば、<code class="literal">\dti</code>はテーブルとインデックスを列挙します。
+<code class="literal">+</code>がコマンド名に付与された場合、各オブジェクトは、もしあれば永続性の状態(permanent、temporary、またはunlogged)、ディスク上の物理容量、関連する説明をつけて表示されます。
 <em class="replaceable"><code>pattern</code></em>が指定されている場合は、パターンに名称がマッチする項目のみが表示されます。
 デフォルトでは、ユーザが作成したオブジェクトのみが表示されます。
 システムオブジェクトを含めるためにはパターンまたは<code class="literal">S</code>修飾子を付与してください。
@@ -1824,20 +1859,20 @@ Cの形式のブロックコメントは、サーバに送信され、サーバ�
         the query buffer.  Whatever remains in the query buffer is
         redisplayed.  Type semicolon or &lt;literal&gt;\g&lt;/literal&gt; to send it,
         or &lt;literal&gt;\r&lt;/literal&gt; to cancel it by clearing the query buffer.
-        &lt;/para&gt;
-
-        &lt;para&gt;
+</span>
+次に、問い合わせバッファの新しい内容が、<span class="application">psql</span>の通常の規則に従い、全体を1行として再解析されます。
+完全な問い合わせはすべて即座に実行されます。
+つまり、問い合わせバッファにセミコロンが含まれるか、セミコロンで終わっている場合、そこまでの部分すべてが実行され、問い合わせバッファから削除されます。
+問い合わせバッファ内に残ったものはすべて再表示されます。
+送信するにはセミコロンまたは<code class="literal">\g</code>を、問い合わせバッファをクリアしてキャンセルするには<code class="literal">\r</code>を入力してください。
+        </p><p>
+<span class="original">
         Treating the buffer as a single line primarily affects meta-commands:
         whatever is in the buffer after a meta-command will be taken as
         argument(s) to the meta-command, even if it spans multiple lines.
         (Thus you cannot make meta-command-using scripts this way.
         Use &lt;command&gt;\i&lt;/command&gt; for that.)
 </span>
-次に、問い合わせバッファの新しい内容が、<span class="application">psql</span>の通常の規則に従い、全体を1行として再解析されます。
-完全な問い合わせはすべて即座に実行されます。
-つまり、問い合わせバッファにセミコロンが含まれるか、セミコロンで終わっている場合、そこまでの部分すべてが実行されます。
-それより後の部分はすべて問い合わせバッファ内で入力を待ちます。
-送信するにはセミコロンまたは<code class="literal">\g</code>を、問い合わせバッファをクリアしてキャンセルするには<code class="literal">\r</code>を入力してください。
 バッファ全体を1行として扱うので、特にメタコマンドに影響があります。
 バッファ内でメタコマンドより後にある部分はすべて、それが複数行にまたがっていたとしても、メタコマンドの引数として解釈されます。
 （従って、この方法ではメタコマンドを使用するスクリプトを作成できません。
@@ -1857,14 +1892,14 @@ Cの形式のブロックコメントは、サーバに送信され、サーバ�
         See &lt;xref linkend="app-psql-environment"/&gt;, below, for how to
         configure and customize your editor.
 </span>
-使用するエディタを設定、カスタマイズする方法については<a class="xref" href="app-psql.html#APP-PSQL-ENVIRONMENT" title="環境">Environment</a>を参照してください。
+使用するエディタを設定、カスタマイズする方法については、下記の<a class="xref" href="app-psql.html#APP-PSQL-ENVIRONMENT" title="環境">Environment</a>を参照してください。
         </p></div></dd><dt><span class="term"><code class="literal">\echo <em class="replaceable"><code>text</code></em> [ ... ]</code></span></dt><dd><p>
 <span class="original">
         Prints the evaluated arguments to standard output, separated by
         spaces and followed by a newline. This can be useful to
         intersperse information in the output of scripts. For example:
 </span>
-引数を空白で区切り、標準出力に出力し、改行します。
+評価された引数を空白で区切り、標準出力に出力し、改行します。
 スクリプトが出力するところどころに情報を記載する場合に有用です。
 使用例を次に示します。
 </p><pre class="programlisting">
@@ -1875,7 +1910,7 @@ Tue Oct 26 21:40:57 CEST 1999
         If the first argument is an unquoted &lt;literal&gt;-n&lt;/literal&gt; the trailing
         newline is not written (nor is the first argument).
 </span>
-最初の引数が引用符で囲まれていない<code class="literal">-n</code>である場合、最後の改行は出力されません。
+最初の引数が引用符で囲まれていない<code class="literal">-n</code>である場合、最後の改行は出力されません(し、最初の引数も出力されません)。
         </p><div class="tip"><h3 class="title">ヒント</h3><p>
 <span class="original">
         If you use the &lt;command&gt;\o&lt;/command&gt; command to redirect your
@@ -1883,6 +1918,7 @@ Tue Oct 26 21:40:57 CEST 1999
         instead of this command.  See also &lt;command&gt;\warn&lt;/command&gt;.
 </span>
 <code class="command">\o</code>コマンドを使用して問い合わせの出力先を変更した場合、このコマンドではなく、<code class="command">\qecho</code>を使用した方が良いかもしれません。
+<code class="command">\warn</code>コマンドも参照してください。
         </p></div></dd><dt><span class="term"><code class="literal">\ef [<span class="optional"> <em class="replaceable"><code>function_description</code></em> [<span class="optional">  <em class="replaceable"><code>line_number</code></em> </span>] </span>] </code></span></dt><dd><p>
 <span class="original">
          This command fetches and edits the definition of the named function or procedure,
@@ -1896,8 +1932,8 @@ Tue Oct 26 21:40:57 CEST 1999
 </span>
 このコマンドは指定された関数やプロシージャの定義を<code class="command">CREATE OR REPLACE FUNCTION</code>や<code class="command">CREATE OR REPLACE PROCEDURE</code>コマンド構文で取り出し、編集します。
 編集は<code class="literal">\edit</code>と同様の方法で行われます。
-エディタ終了後、更新されたコマンドは問い合わせバッファ内で待機しています。
-セミコロンか<code class="literal">\g</code>を入力して送信するか、<code class="literal">\r</code>を入力して取り消すかしてください。
+エディタ終了後、更新されたコマンドはセミコロンを付けていれば即座に実行されます。
+そうでなければ再表示されます。送信するにはセミコロンあるいは<code class="literal">\g</code>を、キャンセルするには<code class="literal">\r</code>を入力してください。
         </p><p>
 <span class="original">
          The target function can be specified by name alone, or by name
@@ -1935,7 +1971,7 @@ Tue Oct 26 21:40:57 CEST 1999
         See &lt;xref linkend="app-psql-environment"/&gt;, below, for how to
         configure and customize your editor.
 </span>
-使用するエディタを設定、カスタマイズする方法については<a class="xref" href="app-psql.html#APP-PSQL-ENVIRONMENT" title="環境">Environment</a>を参照してください。
+使用するエディタを設定、カスタマイズする方法については下記の<a class="xref" href="app-psql.html#APP-PSQL-ENVIRONMENT" title="環境">Environment</a>を参照してください。
         </p></div></dd><dt><span class="term"><code class="literal">\encoding [ <em class="replaceable"><code>encoding</code></em> ]</code></span></dt><dd><p>
 <span class="original">
         Sets the client character set encoding.  Without an argument, this command
@@ -1963,8 +1999,8 @@ Tue Oct 26 21:40:57 CEST 1999
 </span>
 このコマンドは、指定したビューの定義を<code class="command">CREATE OR REPLACE VIEW</code>コマンドの形式で取得して、編集します。
 編集は<code class="literal">\edit</code>の場合と同じ方法で行われます。
-エディタを終了した後、更新されたコマンドが問い合わせバッファで待っている状態になります。
-送信するにはセミコロンあるいは<code class="literal">\g</code>を、キャンセルするには<code class="literal">\r</code>を入力してください。
+エディタ終了後、更新されたコマンドはセミコロンを付けていれば即座に実行されます。
+そうでなければ再表示されます。送信するにはセミコロンあるいは<code class="literal">\g</code>を、キャンセルするには<code class="literal">\r</code>を入力してください。
         </p><p>
 <span class="original">
          If no view is specified, a blank &lt;command&gt;CREATE VIEW&lt;/command&gt;
@@ -1997,8 +2033,10 @@ Tue Oct 26 21:40:57 CEST 1999
         </p></dd><dt><span class="term"><code class="literal">\g [ (<em class="replaceable"><code>option</code></em>=<em class="replaceable"><code>value</code></em> [...]) ] [ <em class="replaceable"><code>filename</code></em> ]</code><br /></span><span class="term"><code class="literal">\g [ (<em class="replaceable"><code>option</code></em>=<em class="replaceable"><code>value</code></em> [...]) ] [ |<em class="replaceable"><code>command</code></em> ]</code></span></dt><dd><p>
 <span class="original">
         Sends the current query buffer to the server for execution.
-        &lt;/para&gt;
-        &lt;para&gt;
+</span>
+現在の問い合わせ入力バッファをサーバに送って実行します。
+        </p><p>
+<span class="original">
         If parentheses appear after &lt;literal&gt;\g&lt;/literal&gt;, they surround a
         space-separated list
         of &lt;replaceable class="parameter"&gt;option&lt;/replaceable&gt;&lt;literal&gt;=&lt;/literal&gt;&lt;replaceable class="parameter"&gt;value&lt;/replaceable&gt;
@@ -2015,8 +2053,12 @@ Tue Oct 26 21:40:57 CEST 1999
         in the same way as for
         &lt;literal&gt;\pset&lt;/literal&gt; &lt;replaceable class="parameter"&gt;option&lt;/replaceable&gt;
         with no explicit &lt;replaceable class="parameter"&gt;value&lt;/replaceable&gt;.
-        &lt;/para&gt;
-        &lt;para&gt;
+</span>
+<code class="literal">\g</code>の後に括弧が現れる場合は、括弧は<em class="replaceable"><code>option</code></em><code class="literal">=</code><em class="replaceable"><code>value</code></em>書式オプション句の空白で区切られた一覧を囲んでいます。書式オプション句は<code class="literal">\pset</code> <em class="replaceable"><code>option</code></em> <em class="replaceable"><code>value</code></em>コマンドと同じように解釈されますが、この問い合わせの間でのみ有効です。
+この一覧の中では、空白は<code class="literal">=</code>の周りでは許されていませんが、オプション句の間には必要です。
+<code class="literal">=</code><em class="replaceable"><code>value</code></em>が省略された場合、指名された<em class="replaceable"><code>option</code></em>は、明示された<em class="replaceable"><code>value</code></em>がない<code class="literal">\pset</code> <em class="replaceable"><code>option</code></em>と同じように変更されます。
+        </p><p>
+<span class="original">
         If a &lt;replaceable class="parameter"&gt;filename&lt;/replaceable&gt;
         or &lt;literal&gt;|&lt;/literal&gt;&lt;replaceable class="parameter"&gt;command&lt;/replaceable&gt;
         argument is given, the query's output is written to the named
@@ -2025,8 +2067,7 @@ Tue Oct 26 21:40:57 CEST 1999
         successfully returns zero or more tuples, not if the query fails or
         is a non-data-returning SQL command.
 </span>
-現在の問い合わせ入力バッファをサーバに送って実行します。
-引数を指定すると、問い合わせ出力を通常通りに表示する代わりに、指定したファイルに書き込んだり、指定のシェルコマンドにパイプで渡します。
+<em class="replaceable"><code>filename</code></em>や<code class="literal">|</code><em class="replaceable"><code>command</code></em>引数を指定すると、問い合わせ出力を通常通りに表示する代わりに、指定したファイルに書き込んだり、指定のシェルコマンドにパイプで渡します。
 問い合わせが成功しゼロ以上のタプルが返る場合にのみファイルまたはコマンドに書き出されます。
 問い合わせが失敗する場合やデータを返さないSQLコマンドでは書き出されません。
         </p><p>
@@ -2038,24 +2079,20 @@ Tue Oct 26 21:40:57 CEST 1999
         a &lt;quote&gt;one-shot&lt;/quote&gt; alternative to the &lt;command&gt;\o&lt;/command&gt;
         command, and additionally allows one-shot adjustments of the
         output formatting options normally set by &lt;literal&gt;\pset&lt;/literal&gt;.
-        &lt;/para&gt;
-        &lt;para&gt;
-        When the last argument begins with &lt;literal&gt;|&lt;/literal&gt;, the entire
-        remainder of the line is taken to be
 </span>
 現在の問い合わせバッファが空の場合、最も最近に送信された問い合わせが再実行されます。
 その点を除けば、<code class="literal">\g</code>だけを指定した場合は、セミコロンと実質的に同じです。
-<code class="literal">\g</code>に引数を指定した場合は、<code class="literal">\o</code>コマンドの<span class="quote">「<span class="quote">一度限りの</span>」</span>代替手段として使用できます。
+<code class="literal">\g</code>に引数を指定した場合は、<code class="literal">\o</code>コマンドの<span class="quote">「<span class="quote">一度限りの</span>」</span>代替手段として使用でき、さらに通常は<code class="literal">\pset</code>で設定される出力書式のオプションの一度限りの調整もできます。
         </p><p>
 <span class="original">
-        If the argument begins with &lt;literal&gt;|&lt;/literal&gt;, then the entire remainder
-        of the line is taken to be
+        When the last argument begins with &lt;literal&gt;|&lt;/literal&gt;, the entire
+        remainder of the line is taken to be
         the &lt;replaceable class="parameter"&gt;command&lt;/replaceable&gt; to execute,
         and neither variable interpolation nor backquote expansion are
         performed in it.  The rest of the line is simply passed literally to
         the shell.
 </span>
-引数が<code class="literal">|</code>で始まっている場合、行の残りの部分はすべて実行する<em class="replaceable"><code>command</code></em>であると解釈され、その中では変数の置換も逆引用符の展開も行われません。
+最後の引数が<code class="literal">|</code>で始まっている場合、行の残りの部分はすべて実行する<em class="replaceable"><code>command</code></em>であると解釈され、その中では変数の置換も逆引用符の展開も行なわれません。
 行の残り部分は、単にあるがままにシェルに渡されます。
         </p></dd><dt><span class="term"><code class="literal">\gdesc</code></span></dt><dd><p>
 <span class="original">
@@ -2131,7 +2168,7 @@ NULLのフィールドは無視されます。
          the row is stored into a separate variable, named the same as the
          column.  For example:
 </span>
-現在の問い合わせバッファをサーバに送信し、問い合わせの出力を<span class="application">psql</span>変数（<a class="xref" href="app-psql.html#APP-PSQL-VARIABLES" title="変数">Variables</a>参照）に格納します。
+現在の問い合わせバッファをサーバに送信し、問い合わせの出力を<span class="application">psql</span>変数（下記の<a class="xref" href="app-psql.html#APP-PSQL-VARIABLES" title="変数">Variables</a>参照）に格納します。
 実行される問い合わせは正確に１行を返さなければなりません。
 行の各列は、列と同じ名前を持つ別々の変数に格納されます。
 例えば、以下のようになります。
@@ -2179,8 +2216,8 @@ hello 10
         if &lt;literal&gt;expanded=on&lt;/literal&gt; were included in the list of
         &lt;literal&gt;\pset&lt;/literal&gt; options.  See also &lt;literal&gt;\x&lt;/literal&gt;.
 </span>
-<code class="literal">\gx</code>は<code class="literal">\g</code>と同じですが、この問い合わせに対して拡張出力モードを使用します。
-<code class="literal">\x</code>を参照してください。
+<code class="literal">\gx</code>は、<code class="literal">\pset</code>オプションの一覧に<code class="literal">expanded=on</code>が含まれているかのように、この問い合わせに対して拡張出力モードを使用することを除いて<code class="literal">\g</code>と同じです。
+<code class="literal">\x</code>も参照してください。
         </p></dd><dt><span class="term"><code class="literal">\h</code>または<code class="literal">\help</code> <code class="literal">[ <em class="replaceable"><code>command</code></em> ]</code></span></dt><dd><p>
 <span class="original">
         Gives syntax help on the specified &lt;acronym&gt;SQL&lt;/acronym&gt;
@@ -2965,7 +3002,7 @@ null値の代わりに表示する文字列を設定します。
         Illustrations of how these different formats look can be seen in
         &lt;xref linkend="app-psql-examples"/&gt;, below.
 </span>
-<a class="xref" href="app-psql.html#APP-PSQL-EXAMPLES" title="例">Examples</a>節に、これらの書式がどのように見えるかを示した図があります。
+これらの異なる書式がどのように見えるかを示した実例が、下記の<a class="xref" href="app-psql.html#APP-PSQL-EXAMPLES" title="例">Examples</a>にあります。
         </p><div class="tip"><h3 class="title">ヒント</h3><p>
 <span class="original">
         There are various shortcut commands for &lt;command&gt;\pset&lt;/command&gt;. See
@@ -3188,9 +3225,12 @@ testdb=&gt; <strong class="userinput"><code>\setenv LESS -imx4F</code></strong>
 引数が<code class="literal">|</code>で始まっている場合、行の残りの部分はすべて実行する<em class="replaceable"><code>command</code></em>であると解釈され、その中では変数の置換も逆引用符の展開も行われません。
 行の残り部分は、単にあるがままにシェルに渡されます。
         </p></dd><dt><span class="term"><code class="literal">\warn <em class="replaceable"><code>text</code></em> [ ... ]</code></span></dt><dd><p>
-        This command is identical to <code class="command">\echo</code> except
-        that the output will be written to <span class="application">psql</span>'s
+<span class="original">
+        This command is identical to &lt;command&gt;\echo&lt;/command&gt; except
+        that the output will be written to &lt;application&gt;psql&lt;/application&gt;'s
         standard error channel, rather than standard output.
+</span>
+このコマンドは、出力が標準出力ではなく<span class="application">psql</span>の標準エラーチャネルに書かれることを除いて<code class="command">\echo</code>と同一です。
         </p></dd><dt><span class="term"><code class="literal">\watch [ <em class="replaceable"><code>seconds</code></em> ]</code></span></dt><dd><p>
 <span class="original">
         Repeatedly execute the current query buffer (as &lt;literal&gt;\g&lt;/literal&gt; does)
@@ -4181,7 +4221,7 @@ SQLリテラルまたは識別子として変数の値をエスケープさせ�
         &lt;xref linkend="app-psql-variables"/&gt;, above, for details.
 </span>
 <span class="application">psql</span>の変数<em class="replaceable"><code>name</code></em>の値です。
-詳細は<a class="xref" href="app-psql.html#APP-PSQL-VARIABLES" title="変数">Variables</a>を参照してください。
+詳細は上記の<a class="xref" href="app-psql.html#APP-PSQL-VARIABLES" title="変数">Variables</a>を参照してください。
         </p></dd><dt><span class="term"><code class="literal">%`</code><em class="replaceable"><code>command</code></em><code class="literal">`</code></span></dt><dd><p>
 <span class="original">
         The output of &lt;replaceable
@@ -4215,10 +4255,14 @@ testdb=&gt; \set PROMPT1 '%[%033[1;33;40m%]%n@%/%R%[%033[0m%]%# '
 </span>
 これにより、VT100互換のカラー端末では、太字フォントで（<code class="literal">1;</code>）、黒地に黄色の（<code class="literal">33;40</code>）プロンプトが表示されます。
         </p></dd><dt><span class="term"><code class="literal">%w</code></span></dt><dd><p>
+<span class="original">
         Whitespace of the same width as the most recent output of
-        <code class="varname">PROMPT1</code>.  This can be used as a
-        <code class="varname">PROMPT2</code> setting, so that multi-line statements are
+        &lt;varname&gt;PROMPT1&lt;/varname&gt;.  This can be used as a
+        &lt;varname&gt;PROMPT2&lt;/varname&gt; setting, so that multi-line statements are
         aligned with the first line, but there is no visible secondary prompt.
+</span>
+<code class="varname">PROMPT1</code>の直近の出力と同じ幅の空白です。
+これは、複数行の文が最初の行とそろっているが第2のプロンプトが見えないようにするために<code class="varname">PROMPT2</code>の設定として使えます。
         </p></dd></dl></div><p>
 
 <span class="original">
@@ -4228,7 +4272,7 @@ testdb=&gt; \set PROMPT1 '%[%033[1;33;40m%]%n@%/%R%[%033[0m%]%# '
     &lt;literal&gt;'&amp;gt;&amp;gt; '&lt;/literal&gt; for prompt 3.
 </span>
 プロンプトにパーセント記号を入れる場合は、<code class="literal">%%</code>と記述してください。
-デフォルトのプロンプトは、プロンプト1と2が<code class="literal">'%/%R%# '</code>、プロンプト3が<code class="literal">'&gt;&gt; '</code>です。
+デフォルトのプロンプトは、プロンプト1と2が<code class="literal">'%/%R%x%# '</code>、プロンプト3が<code class="literal">'&gt;&gt; '</code>です。
     </p><div class="note"><h3 class="title">注記</h3><p>
 <span class="original">
     This feature was shamelessly plagiarized from
@@ -4659,8 +4703,11 @@ first  | 4
 second | four
 </pre><p>
   </p><p>
+<span class="original">
   Also, these output format options can be set for just one query by using
-  <code class="literal">\g</code>:
+  &lt;literal&gt;\g&lt;/literal&gt;:
+</span>
+また、この出力書式オプションは<code class="literal">\g</code>を使って1つの問い合わせにだけ設定できます。
 </p><pre class="programlisting">
 peter@localhost testdb=&gt; <strong class="userinput"><code>SELECT * FROM my_table</code></strong>
 peter@localhost testdb-&gt; <strong class="userinput"><code>\g (format=aligned tuples_only=off expanded=on)</code></strong>
