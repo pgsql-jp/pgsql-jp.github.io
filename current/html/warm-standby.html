@@ -180,7 +180,7 @@ WALファイル(16MB)は隣り合うシステム、同じサイトの別シス�
     any WAL immediately available in the archive or in &lt;filename&gt;pg_wal&lt;/filename&gt; will be
     restored, but no attempt is made to connect to the master.
 </span>
-<code class="command">pg_ctl promote</code>が実行された時またはトリガファイル(<code class="varname">promote_trigger_file</code>)が存在する時、スタンバイモードは終了し、サーバは通常の動作に切り替わります。
+<code class="command">pg_ctl promote</code>が実行された時、<code class="function">pg_promote()</code>が呼び出された時、またはトリガファイル(<code class="varname">promote_trigger_file</code>)が存在する時、スタンバイモードは終了し、サーバは通常の動作に切り替わります。
 フェイルオーバーの前に、アーカイブまたは<code class="filename">pg_wal</code>内の即座に利用可能なWALをすべてリストアします。
 しかし、マスタへの接続を行おうとはしません。
    </p></div><div class="sect2" id="PREPARING-MASTER-FOR-STANDBY"><div class="titlepage"><div><div><h3 class="title">26.2.3. スタンバイサーバのためのマスタの準備</h3></div></div></div><span class="original">
@@ -339,7 +339,7 @@ archive_cleanup_command = 'pg_archivecleanup /path/to/archive %r'
 </span>
 ファイルベースの継続的アーカイブのないストリーミングレプリケーションを使用している場合、スタンバイが受け取る前に古いWALセグメントを再利用するかもしれません。
 もし、そうなった場合はスタンバイは新しいベースバックアップから再作成しなければならなくなります。
-<code class="varname">wal_keep_segments</code>を十分に大きくしたり、レプリケーションスロットにスタンバイを設定することでWALセグメントがすぐに再利用されることを防ぎ、これを防ぐことができます。WALアーカイブをスタンバイからアクセスできる位置に設定する場合は、スタンバイが常にWALセグメントを追随することができるため、これらの解決策は要求されません。
+<code class="varname">wal_keep_size</code>を十分に大きくしたり、レプリケーションスロットにスタンバイを設定することでWALセグメントがすぐに再利用されることを防ぎ、これを防ぐことができます。WALアーカイブをスタンバイからアクセスできる位置に設定する場合は、スタンバイが常にWALセグメントを追随することができるため、これらの解決策は要求されません。
    </p><p>
 <span class="original">
     To use streaming replication, set up a file-based log-shipping standby
@@ -379,7 +379,7 @@ archive_cleanup_command = 'pg_archivecleanup /path/to/archive %r'
     a corresponding &lt;literal&gt;walsender&lt;/literal&gt; process in the primary.
 </span>
 スタンバイが起動し、<code class="varname">primary_conninfo</code>が正しく設定されると、スタンバイはアーカイブ内で利用可能なWALファイルをすべて再生した後にプライマリと接続します。
-接続の確立に成功すると、スタンバイでWAL受信プロセスが存在し、プライマリで対応するWAL送信プロセスが存在します。
+接続の確立に成功すると、スタンバイで<code class="literal">walreceiver</code>が存在し、プライマリで対応する<code class="literal">walsender</code>が存在します。
    </p><div class="sect3" id="STREAMING-REPLICATION-AUTHENTICATION"><div class="titlepage"><div><div><h4 class="title">26.2.5.1. 認証</h4></div></div></div><span class="original">
     &lt;title&gt;Authentication&lt;/title&gt;
 </span><p>
@@ -398,7 +398,7 @@ archive_cleanup_command = 'pg_archivecleanup /path/to/archive %r'
 </span>
 信頼できるユーザのみがWALストリームを読み取ることができるように、レプリケーション用のアクセス権限を設定することは非常に重要です。
 WALから機密情報を取り出すことは簡単だからです。
-スタンバイサーバはプライマリに対してプライマリのスーパーユーザか<code class="literal">REPLICATION</code>権限を持つアカウントとして認証されなければなりません。
+スタンバイサーバはプライマリに対してプライマリの<code class="literal">REPLICATION</code>権限を持つアカウントか、スーパーユーザとして認証されなければなりません。
 レプリケーションのための<code class="literal">REPLICATION</code>権限 と <code class="literal">LOGIN</code>権限を持つ専用のユーザを作成することをお勧めします。
 <code class="literal">REPLICATION</code>権限は非常に強力な権限なので、<code class="literal">SUPERUSER</code>のようにプライマリのデータを変更することを許可されていません。
     </p><p>
@@ -482,7 +482,7 @@ primary_conninfo = 'host=192.168.1.50 port=5432 user=foo password=foopass'
      &lt;function&gt;pg_last_wal_receive_lsn&lt;/function&gt; on the standby might indicate
      network delay, or that the standby is under heavy load.
 </span>
-<a class="xref" href="monitoring-stats.html#PG-STAT-REPLICATION-VIEW" title="表27.14 pg_stat_replication View">pg_stat_replication</a>ビューを介してWAL送信処理プロセスのリストを入手することができます。
+<a class="link" href="monitoring-stats.html#MONITORING-PG-STAT-REPLICATION-VIEW" title="27.2.4. pg_stat_replication"><code class="structname">pg_stat_replication</code></a>ビューを介してWAL送信処理プロセスのリストを入手することができます。
 <code class="function">pg_current_wal_lsn</code>とビューの<code class="literal">sent_lsn</code>フィールドとの違いが大きい場合、マスタサーバが高負荷状態であることを示している可能性があります。
 一方でスタンバイサーバ上の<code class="literal">sent_lsn</code>と<code class="function">pg_last_wal_receive_lsn</code>の値の差異は、ネットワーク遅延、またはスタンバイが高負荷状態であることを示す可能性があります。
     </p><p>
@@ -494,7 +494,7 @@ primary_conninfo = 'host=192.168.1.50 port=5432 user=foo password=foopass'
      view's &lt;literal&gt;flushed_lsn&lt;/literal&gt; indicates that WAL is being
      received faster than it can be replayed.
 </span>
-ホットスタンバイ上では、WAL受信プロセスの状態は、<a class="xref" href="monitoring-stats.html#PG-STAT-WAL-RECEIVER-VIEW" title="表27.15 pg_stat_wal_receiver View">pg_stat_wal_receiver</a>ビューを通じて入手することができます。
+ホットスタンバイ上では、WAL受信プロセスの状態は、<a class="link" href="monitoring-stats.html#MONITORING-PG-STAT-WAL-RECEIVER-VIEW" title="27.2.5. pg_stat_wal_receiver"><code class="structname">pg_stat_wal_receiver</code></a>ビューを通じて入手することができます。
 <code class="function">pg_last_wal_replay_lsn</code>とビューの<code class="literal">received_lsn</code>との違いが大きい場合、WALのリプレイを上回る速さでWALが受信されていることを示しています。
     </p></div></div><div class="sect2" id="STREAMING-REPLICATION-SLOTS"><div class="titlepage"><div><div><h3 class="title">26.2.6. レプリケーションスロット</h3></div></div></div><span class="original">
    &lt;title&gt;Replication Slots&lt;/title&gt;
@@ -524,6 +524,7 @@ primary_conninfo = 'host=192.168.1.50 port=5432 user=foo password=foopass'
 </span>
 レプリケーションスロットを使う代わりに、<a class="xref" href="runtime-config-replication.html#GUC-WAL-KEEP-SIZE">wal_keep_size</a>を使う、あるいは<a class="xref" href="runtime-config-wal.html#GUC-ARCHIVE-COMMAND">archive_command</a>を使用してセグメントをアーカイブに保存することによっても、古いWALセグメントの削除を防ぐことができます。
 しかし、これらの方法はしばしば要求される以上のWALセグメントを残すことになってしまうのに対し、レプリケーションスロットは必要と判断されたセグメントのみを残します。
+一方で、レプリケーションスロットは<code class="literal">pg_wal</code>のための領域を埋め尽くす大量のWALセグメントを残してしまうかも知れません。
 これらの方法のメリットの一つは<code class="literal">pg_wal</code>が要求する領域を制限できることです。現時点でレプリケーションスロットを使って同じことをする方法はありません。
    </p><p>
 <span class="original">
@@ -1100,7 +1101,7 @@ WALアーカイブがプライマリとスタンバイで共有されるケー�
 </span>
 <code class="varname">archive_mode</code>が<code class="literal">on</code>の場合には、リカバリモードあるいはスタンバイモードではアーカイブは有効になりません。
 スタンバイサーバが昇格すると、昇格後にスタンバイサーバはアーカイブを開始します。
-しかし、自分が生成しなかったWALは一切アーカイブしません。
+しかし、自分が生成しなかったWALやタイムライン履歴ファイルは一切アーカイブしません。
 完全な一連のWALファイルをアーカイブから取り出すためには、WALがスタンバイに到着する前に、すべてのWALがアーカイブされていることを保証しなければなりません。
 ファイルベースのログシッピングにおいても本質的にはこの通りです。
 というのも、スタンバイはアーカイブにあるファイルだけをリストアできるからです。
