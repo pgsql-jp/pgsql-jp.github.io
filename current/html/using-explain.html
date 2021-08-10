@@ -41,7 +41,7 @@
     (XML, JSON, or YAML) instead.
 </span>
 例では、簡潔で人が読みやすい<code class="command">EXPLAIN</code>のデフォルトの<span class="quote">「<span class="quote">text</span>」</span>出力書式を使用します。
-今後の解析で<code class="command">EXPLAIN</code>の出力をプログラムに渡すことを考えているのであれば、代わりに機械読み取りが容易な出力書式（XML、JSON、YAML）のいずれかを使用すべきです。
+今後の解析で<code class="command">EXPLAIN</code>の出力をプログラムに渡すことを考えているのであれば、代わりに機械読み取りが容易な出力書式（XML、JSON、YAML）のいずれかを使用する必要があります。
    </p><div class="sect2" id="USING-EXPLAIN-BASICS"><div class="titlepage"><div><div><h3 class="title">14.1.1. <code class="command">EXPLAIN</code>の基本</h3></div></div></div><span class="original">
    &lt;title&gt;&lt;command&gt;EXPLAIN&lt;/command&gt; Basics&lt;/title&gt;
 </span><p>
@@ -190,7 +190,7 @@ EXPLAIN SELECT * FROM tenk1;
 <span class="original">
     These numbers are derived very straightforwardly.  If you do:
 </span>
-この数は非常に素直に導かれます。
+これらの数値はとても素直に導かれます。以下を実行すると、
 
 </p><pre class="programlisting">
 SELECT relpages, reltuples FROM pg_class WHERE relname = 'tenk1';
@@ -204,7 +204,7 @@ SELECT relpages, reltuples FROM pg_class WHERE relname = 'tenk1';
     &lt;varname&gt;seq_page_cost&lt;/varname&gt; is 1.0 and &lt;varname&gt;cpu_tuple_cost&lt;/varname&gt; is 0.01,
     so the estimated cost is (358 * 1.0) + (10000 * 0.01) = 458.
 </span>
-を実行すると、<code class="classname">tenk1</code>には358のディスクページと10000の行があることがわかります。
+<code class="classname">tenk1</code>には358のディスクページと10000の行があることがわかります。
 推定コストは（ディスクページ読み取り * <a class="xref" href="runtime-config-query.html#GUC-SEQ-PAGE-COST">seq_page_cost</a>）+（スキャンした行 * <a class="xref" href="runtime-config-query.html#GUC-CPU-TUPLE-COST">cpu_tuple_cost</a>）と計算されます。
 デフォルトでは、<code class="varname">seq_page_cost</code>は1.0、<code class="varname">cpu_tuple_cost</code>は0.01です。
 ですから、推定コストは(358 * 1.0) + (10000 * 0.01) = 458となります。
@@ -286,7 +286,7 @@ EXPLAIN SELECT * FROM tenk1 WHERE unique1 &lt; 100;
     does the sorting.)
 </span>
 ここでは、プランナは2段階の計画を使用することを決定しました。
-子の計画ノードは、インデックスを使用して、インデックス条件に合う行の場所を検索します。
+子の計画ノードは、インデックスを使用して、インデックス条件(index condition)に合う行の場所を検索します。
 そして、上位計画ノードが実際にテーブル自体からこれらの行を取り出します。
 行を別々に取り出すことは、シーケンシャルな読み取りに比べ非常に高価です。
 しかし、テーブルのすべてのページを読み取る必要はありませんので、シーケンシャルスキャンより低価になります。
@@ -338,20 +338,32 @@ EXPLAIN SELECT * FROM tenk1 WHERE unique1 = 42;
    Index Cond: (unique1 = 42)
 </pre><p>
 
+<span class="original">
     In this type of plan the table rows are fetched in index order, which
     makes them even more expensive to read, but there are so few that the
     extra cost of sorting the row locations is not worth it.  You'll most
     often see this plan type for queries that fetch just a single row.  It's
-    also often used for queries that have an <code class="literal">ORDER BY</code> condition
+    also often used for queries that have an &lt;literal&gt;ORDER BY&lt;/literal&gt; condition
     that matches the index order, because then no extra sorting step is needed
-    to satisfy the <code class="literal">ORDER BY</code>.  In this example, adding
-    <code class="literal">ORDER BY unique1</code> would use the same plan because the
+    to satisfy the &lt;literal&gt;ORDER BY&lt;/literal&gt;.  In this example, adding
+    &lt;literal&gt;ORDER BY unique1&lt;/literal&gt; would use the same plan because the
     index already implicitly provides the requested ordering.
+</span>
+この種の計画では、テーブル行はインデックス順で取り出されます。
+このため読み取りがより高価になりますが、この場合取り出す行数が少ないため、改めて行位置をソートし直すための追加コストは割に合いません。
+単一の行のみを取り出す問い合わせでは、この計画種類がよく現れます。
+また、<code class="literal">ORDER BY</code>を満たすために必要となる余分な必要なソート処理がないため、インデックスの順序に一致する<code class="literal">ORDER BY</code>条件を持つ問い合わせでよく使用されます。
+この例では、<code class="literal">ORDER BY unique1</code>を追加すると、要求された順序がインデックスによってすでに暗黙的に提供されているため、同じ計画が使用されます。
    </p><p>
-     The planner may implement an <code class="literal">ORDER BY</code> clause in several
+<span class="original">
+     The planner may implement an &lt;literal&gt;ORDER BY&lt;/literal&gt; clause in several
      ways.  The above example shows that such an ordering clause may be
      implemented implicitly.  The planner may also add an explicit
-     <code class="literal">sort</code> step:
+     &lt;literal&gt;sort&lt;/literal&gt; step:
+</span>
+プランナは<code class="literal">ORDER BY</code>句をいくつかの方法で実装できます。
+上の例ではこのような<code class="literal">ORDER BY</code>句を暗黙的に実装できることを示しています。
+プランナは明示的な<code class="literal">sort</code>ステップを追加もします。
 
 </p><pre class="screen">
 EXPLAIN SELECT * FROM tenk1 ORDER BY unique1;
@@ -362,9 +374,12 @@ EXPLAIN SELECT * FROM tenk1 ORDER BY unique1;
    -&gt;  Seq Scan on tenk1  (cost=0.00..445.00 rows=10000 width=244)
 </pre><p>
 
+<span class="original">
     If a part of the plan guarantees an ordering on a prefix of the
     required sort keys, then the planner may instead decide to use an
-    <code class="literal">incremental sort</code> step:
+    &lt;literal&gt;incremental sort&lt;/literal&gt; step:
+</span>
+ソートキーで必要な接頭辞の順序がプランの一部で保証されている場合、<code class="literal">インクリメンタルソート(incremental sort)</code>ステップを使用することを決定できます。
 
 </p><pre class="screen">
 EXPLAIN SELECT * FROM tenk1 ORDER BY four, ten LIMIT 100;
@@ -377,12 +392,17 @@ EXPLAIN SELECT * FROM tenk1 ORDER BY four, ten LIMIT 100;
          -&gt;  Index Scan using index_tenk1_on_four on tenk1  (cost=0.29..1510.08 rows=10000 width=244)
 </pre><p>
 
+<span class="original">
     Compared to regular sorts, sorting incrementally allows returning tuples
     before the entire result set has been sorted, which particularly enables
-    optimizations with <code class="literal">LIMIT</code> queries.  It may also reduce
+    optimizations with &lt;literal&gt;LIMIT&lt;/literal&gt; queries.  It may also reduce
     memory usage and the likelihood of spilling sorts to disk, but it comes at
     the cost of the increased overhead of splitting the result set into multiple
     sorting batches.
+</span>
+通常のソートと比較して、インクリメンタルソートは、結果セット全体がソートされる前にタプルを戻すことができます。
+これにより、特に<code class="literal">LIMIT</code>がある問い合わせで最適化が可能になります。
+また、メモリ使用量が削減され、ソートがディスクにオーバーフローする可能性が減少しますが、結果セットを複数のソートバッチに分割するオーバーヘッドが増加という代償を払うことになります。
    </p><p>
 <span class="original">
     If there are separate indexes on several of the columns referenced
