@@ -100,6 +100,7 @@ Unixシステムでは、<code class="filename">server.key</code>の権限は所
 <code class="filename">server.crt</code>の最初の証明書は、サーバ証明書になり、秘密鍵とマッチしなければなりません。
 <span class="quote">「<span class="quote">中間</span>」</span>認証局の証明書をファイルに追加することもできます。
 これにより、ルートと中間証明書が<code class="literal">v3_ca</code>拡張により作成されていることが前提になりますが、中間証明書をクライアントに保存する必要が無くなります。
+（これにより、<code class="literal">CA</code>の証明書の基本制約が<code class="literal">true</code>に設定されます。）
 これは、中間証明書の有効期限の扱いをより簡単にします。
   </p><p>
 <span class="original">
@@ -163,7 +164,7 @@ Unixシステムでは、<code class="filename">server.key</code>の権限は所
    connection startup.  (See &lt;xref linkend="libpq-ssl"/&gt; for a description
    of how to set up certificates on the client.)
 </span>
-信頼できる証明書をクライアントに要求するには、信頼するルート認証局（<acronym class="acronym">CA</acronym>）の証明書をデータディレクトリ内のファイルに置き、<code class="filename">postgresql.conf</code>の<a class="xref" href="runtime-config-connection.html#GUC-SSL-CA-FILE">ssl_ca_file</a>パラメータを<code class="literal">root.crt</code>に設定し、認証オプション<code class="literal">clientcert=verify-ca</code>または<code class="literal">clientcert=verify-full</code>を<code class="filename">pg_hba.conf</code>の適切な<code class="literal">hostssl</code>行に追加します。
+信頼できる証明書をクライアントに要求するには、信頼するルート認証局（<acronym class="acronym">CA</acronym>）の証明書をデータディレクトリ内のファイルに置き、<code class="filename">postgresql.conf</code>の<a class="xref" href="runtime-config-connection.html#GUC-SSL-CA-FILE">ssl_ca_file</a>パラメータを設定し、認証オプション<code class="literal">clientcert=verify-ca</code>または<code class="literal">clientcert=verify-full</code>を<code class="filename">pg_hba.conf</code>の適切な<code class="literal">hostssl</code>行に追加します。
 そうすると、SSL接続の開始時にクライアントへ証明書が要求されます。
 （クライアント上での証明書の設定方法については<a class="xref" href="libpq-ssl.html" title="33.18. SSLサポート">33.18</a>を参照してください。）
   </p><p>
@@ -192,7 +193,7 @@ Unixシステムでは、<code class="filename">server.key</code>の権限は所
    extensions).  Certificate Revocation List (CRL) entries are also
    checked if the parameter &lt;xref linkend="guc-ssl-crl-file"/&gt; is set.
 </span>
-既存のルート証明書に連鎖する中間証明書は、クライアントに保存することを避けたい場合に<code class="filename">root.crt</code>に含めることができます（ルート証明書と中間証明書が<code class="literal">v3_ca</code>拡張で作成されている場合）。
+既存のルート証明書に連鎖する中間証明書は、クライアントに保存することを避けたい場合に<a class="xref" href="runtime-config-connection.html#GUC-SSL-CA-FILE">ssl_ca_file</a>に含めることができます（ルート証明書と中間証明書が<code class="literal">v3_ca</code>拡張で作成されている場合）。
 <a class="xref" href="runtime-config-connection.html#GUC-SSL-CRL-FILE">ssl_crl_file</a>パラメータが設定されている場合、証明書失効リスト（CRL）項目も検査されます。
   </p><p>
 <span class="original">
@@ -273,7 +274,9 @@ Unixシステムでは、<code class="filename">server.key</code>の権限は所
 ただし、設定のリロード中にエラーが検出された場合、ファイルは無視され、古いSSL設定が引き続き使用されます。
 <span class="systemitem">Windows</span>システム上ではバックエンドの開始時にこれらのファイルのエラーが検出された場合、そのバックエンドはSSL接続を確立出来ません。
 これらのすべてのケースでは、エラー状態がサーバログに記録されます。
-   </p></div><div class="sect2" id="SSL-CERTIFICATE-CREATION"><div class="titlepage"><div><div><h3 class="title">18.9.5. Creating Certificates</h3></div></div></div><p>
+   </p></div><div class="sect2" id="SSL-CERTIFICATE-CREATION"><div class="titlepage"><div><div><h3 class="title">18.9.5. 証明書の作成</h3></div></div></div><span class="original">
+   &lt;title&gt;Creating Certificates&lt;/title&gt;
+</span><p>
 <span class="original">
      To create a simple self-signed certificate for the server, valid for 365
      days, use the following &lt;productname&gt;OpenSSL&lt;/productname&gt; command,
@@ -398,7 +401,7 @@ openssl x509 -req -in server.csr -text -days 365 \
     should be stored offline for use in creating future certificates.
 </span>
 <code class="filename">server.crt</code>と<code class="filename">intermediate.crt</code>は証明書ファイルに束ねて連結し、サーバに格納する必要があります。
-<code class="filename">server.key</code>もまたサーバーに格納される必要があります。
+<code class="filename">server.key</code>もまたサーバに格納される必要があります。
 サーバのリーフ証明書が信頼されたルート証明書にリンクされた一連の証明書によって署名されていることをクライアントが確認できるように、<code class="filename">root.crt</code>をクライアントに格納する必要があります。
 <code class="filename">root.key</code>と<code class="filename">intermediate.key</code>は将来の証明書を作成に使用するためにオフラインで格納する必要があります。
    </p></div></div><div xmlns="http://www.w3.org/TR/xhtml1/transitional" class="navfooter"><hr></hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="encryption-options.html" title="18.8. 暗号化オプション">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="runtime.html" title="第18章 サーバの準備と運用">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="gssapi-enc.html" title="18.10. GSSAPIによる安全なTCP/IP接続">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">18.8. 暗号化オプション </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 13.1文書">ホーム</a></td><td width="40%" align="right" valign="top"> 18.10. GSSAPIによる安全なTCP/IP接続</td></tr></table></div></body></html>

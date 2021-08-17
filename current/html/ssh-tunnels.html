@@ -27,7 +27,10 @@
    machine to the remote machine &lt;literal&gt;foo.com&lt;/literal&gt;:
 </span>
 まず<span class="application">SSH</span>サーバが<span class="productname">PostgreSQL</span>サーバと同じマシン上で正しく起動していて、<code class="command">ssh</code>を使ってログインできるユーザが存在することを確かめてください。
-そうすると、次に示すコマンドでクライアントマシンから安全なトンネルを確立することができます。
+リモートサーバへ安全なトンネルを確立することができます。
+安全なトンネルは、ローカルポートをリッスンし、すべてのトラフィックをリモートマシン上のポートに転送します。
+リモートポートに送信されたトラフィックは、<code class="literal">localhost</code>アドレスまたは必要に応じて別のバインドアドレスに到達することができ、ローカルマシンからのトラフィックとは表示されません。
+次のコマンドは、クライアントマシンからリモートマシン<code class="literal">foo.com</code>への安全なトンネルを作成します。
 </p><pre class="programlisting">
 ssh -L 63333:localhost:5432 joe@foo.com
 </pre><p>
@@ -43,8 +46,8 @@ ssh -L 63333:localhost:5432 joe@foo.com
    machine:
 </span>
 <code class="option">-L</code>引数の1番目の数字（63333）はトンネルのローカル側のポート番号で、未使用のポートを選択することが可能です。（IANAは49152から65535までのポートを私的使用のため予約しています。）
+この後の名前かIPアドレスは、接続先のリモート側のバインドアドレス（デフォルトは<code class="literal">localhost</code>）です。
 2番目の数字（5432）は、トンネルのリモート側のサーバが使用しているポート番号です。
-2つのポート番号間の名前もしくはアドレスは、ログインしているホスト（この例では、<code class="literal">foo.com</code>）から見られる、あなたが接続しようとするデータベースサーバホストです。
 このトンネルを使ってデータベースサーバに接続するためには、ローカルマシンのポート63333に接続します。
 </p><pre class="programlisting">
 psql -h localhost -p 63333 postgres
@@ -61,10 +64,9 @@ psql -h localhost -p 63333 postgres
    &lt;productname&gt;PostgreSQL&lt;/productname&gt; server.  This should not pose any
    extra security risk because they are on the same machine.
 </span>
-データベースサーバにとっては、ユーザが実際にホスト<code class="literal">foo.com</code>上のユーザ<code class="literal">joe</code>であるかのように見え、このユーザとホストによる<code class="literal">localhost</code>接続向けに設定された認証手続きが使用されます。
-サーバはこの接続がSSLで暗号化されているとみなさないことに注意してください。
-実際、<span class="application">SSH</span>サーバと<span class="productname">PostgreSQL</span>サーバとの間は暗号化されません。
-この2つのサーバが同一マシンにある限り、セキュリティ上の危険性が増すことはありません。
+データベースサーバにとっては、ユーザがホスト<code class="literal">foo.com</code>上のユーザ<code class="literal">joe</code>であり、<code class="literal">localhost</code>バインドアドレスに接続しているように見え、そのバインドアドレスに対するそのユーザの接続向けに設定された認証手続きが使用されます。
+実際、<span class="application">SSH</span>サーバと<span class="productname">PostgreSQL</span>サーバとの間は暗号化されていないため、サーバはこの接続がSSLで暗号化されているとみなさないことに注意してください。
+それらが、同じマシン上にあるため、セキュリティ上の危険性が増すことはありません。
   </p><p>
 <span class="original">
    In order for the
@@ -88,7 +90,7 @@ ssh -L 63333:foo.com:5432 joe@foo.com
    the default setting &lt;literal&gt;listen_addresses =
    'localhost'&lt;/literal&gt;.  This is usually not what you want.
 </span>
-しかしそうすると、データベースサーバはその<code class="literal">foo.com</code>インタフェースから接続が来たように判断し、デフォルトの設定である<code class="literal">listen_addresses = 'localhost'</code>では開かれません。
+しかしそうすると、データベースサーバはその<code class="literal">foo.com</code>バインドアドレスから接続が来たように判断し、デフォルトの設定である<code class="literal">listen_addresses = 'localhost'</code>では開かれません。
 通常これは好ましいことではありません。
   </p><p>
 <span class="original">
