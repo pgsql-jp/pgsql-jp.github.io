@@ -13,6 +13,12 @@ last-updated: 2021-09-23 04:24:07 JST
 |:---------------------------|:-------------------:|
 | [html](current/html) | [PDF](current/postgres-A4.pdf) |
 
+### PostgreSQL 13
+
+| HTML （オンライン）           | PDF                                           | EPUB                                         | man | 更新日     |
+|:---------------------------|:---------------------------------------------:|:--------------------------------------------:|:---:|:----------:|
+| [13.1](jpug-doc/13.1/html/) | [PDF](jpug-doc/13.1/postgresql-13.1-A4.pdf) | [EPUB](jpug-doc/13.1/postgresql-13.1.epub) | [man.tar.gz](jpug-doc/13.1/man.tar.gz) | 2021-09-23 |
+
 ### PostgreSQL 12
 
 | HTML （オンライン）           | PDF                                           | EPUB                                         | man | 更新日     |
