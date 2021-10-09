@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>9.16. JSON関数と演算子</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="functions-xml.html" title="9.15. XML関数" /><link rel="next" href="functions-sequence.html" title="9.17. シーケンス操作関数" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 13.1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="functions.html" title="第9章 関数と演算子">第9章 関数と演算子</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 13.1 &#10;                      functions-json.html">誤訳等の報告
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>9.16. JSON関数と演算子</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="functions-xml.html" title="9.15. XML関数" /><link rel="next" href="functions-sequence.html" title="9.17. シーケンス操作関数" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 14.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="functions.html" title="第9章 関数と演算子">第9章 関数と演算子</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 14.0 &#10;                      functions-json.html">誤訳等の報告
                     </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="functions-xml.html" title="9.15. XML関数">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="functions.html" title="第9章 関数と演算子">上へ</a></td><td width="60%" align="center">9.16. JSON関数と演算子</td><td width="20%" align="right"> <a accesskey="n" href="functions-sequence.html" title="9.17. シーケンス操作関数">次へ</a></td></tr></table><hr /></div><div class="sect1" id="FUNCTIONS-JSON"><div class="titlepage"><div><div><h2 class="title" style="clear: both">9.16. JSON関数と演算子</h2></div></div></div><span class="original">
   &lt;title&gt;JSON Functions and Operators&lt;/title&gt;
 </span><a id="id-1.5.8.22.2" class="indexterm"></a><p>
@@ -292,8 +292,12 @@ JSON入力が要求と一致する正しい構造をしていなければ、フ�
        <p>
 <span class="original">
         Concatenates two &lt;type&gt;jsonb&lt;/type&gt; values.
-        Concatenating two objects generates an object with the union of their
+        Concatenating two arrays generates an array containing all the
+        elements of each input.  Concatenating two objects generates an
+        object containing the union of their
         keys, taking the second object's value when there are duplicate keys.
+        All other cases are treated by converting a non-array input into a
+        single-element array, and then proceeding as for two arrays.
         Does not operate recursively: only the top-level array or object
         structure is merged.
 </span>
@@ -308,6 +312,22 @@ JSON入力が要求と一致する正しい構造をしていなければ、フ�
        <p>
         <code class="literal">'{"a": "b"}'::jsonb || '{"c": "d"}'::jsonb</code>
         → <code class="returnvalue">{"a": "b", "c": "d"}</code>
+       </p>
+       <p>
+        <code class="literal">'[1, 2]'::jsonb || '3'::jsonb</code>
+        → <code class="returnvalue">[1, 2, 3]</code>
+       </p>
+       <p>
+        <code class="literal">'{"a": "b"}'::jsonb || '42'::jsonb</code>
+        → <code class="returnvalue">[{"a": "b"}, 42]</code>
+       </p>
+       <p>
+        To append an array to another array as a single entry, wrap it
+        in an additional layer of array, for example:
+       </p>
+       <p>
+        <code class="literal">'[1, 2]'::jsonb || jsonb_build_array('[3, 4]'::jsonb)</code>
+        → <code class="returnvalue">[1, 2, [3, 4]]</code>
        </p></td></tr><tr><td class="func_table_entry"><p class="func_signature">
         <code class="type">jsonb</code> <code class="literal">-</code> <code class="type">text</code>
         → <code class="returnvalue">jsonb</code>
@@ -482,7 +502,7 @@ SQL値を<code class="type">json</code>あるいは<code class="type">jsonb</cod
        </p>
        <p>
 <span class="original">
-        Converts a SQL array to a JSON array.  The behavior is the same
+        Converts an SQL array to a JSON array.  The behavior is the same
         as &lt;function&gt;to_json&lt;/function&gt; except that line feeds will be added
         between top-level array elements if the optional boolean parameter is
         true.
@@ -500,7 +520,7 @@ SQL配列をJSON配列に変換します。
        </p>
        <p>
 <span class="original">
-        Converts a SQL composite value to a JSON object.  The behavior is the
+        Converts an SQL composite value to a JSON object.  The behavior is the
         same as &lt;function&gt;to_json&lt;/function&gt; except that line feeds will be
         added between top-level elements if the optional boolean parameter is
         true.
@@ -878,7 +898,7 @@ JSONオブジェクトは出力行型の列名と一致するフィールドが�
 JSON値を出力列のSQL型に変換する際に以下のルールが順に適用されます。
         </p><div class="itemizedlist"><ul class="itemizedlist compact" style="list-style-type: disc; "><li class="listitem"><p>
 <span class="original">
-           A JSON null value is converted to a SQL null in all cases.
+           A JSON null value is converted to an SQL null in all cases.
 </span>
 すべての場合にJSONのNULL値はSQLのNULLに変換されます。
           </p></li><li class="listitem"><p>
@@ -936,6 +956,10 @@ JSON値を出力列のSQL型に変換する際に以下のルールが順に適�
         <code class="literal">create type myrowtype as (a int, b text[], c subrowtype);</code>
        </p>
        <p>
+        <code class="literal">create type subrowtype as (d int, e text);</code>
+        <code class="literal">create type myrowtype as (a int, b text[], c subrowtype);</code>
+       </p>
+       <p>
         <code class="literal">select * from json_populate_record(null::myrowtype,
          '{"a": 1, "b": ["2", "a b"], "c": {"d": 4, "e": "a  b c"}, "x": "foo"}')</code>
         → <code class="returnvalue"></code>
@@ -963,6 +987,9 @@ JSON値を出力列のSQL型に変換する際に以下のルールが順に適�
 </span>
 トップレベルのJSONオブジェクトを<em class="parameter"><code>base</code></em>引数である複合型を持つ行の集合に展開します。
 JSON配列の個々の要素は上の<code class="function">json[b]_populate_record</code>で説明したように処理されます。
+       </p>
+       <p>
+        <code class="literal">create type twoints as (a int, b int);</code>
        </p>
        <p>
         <code class="literal">create type twoints as (a int, b int);</code>
@@ -1001,6 +1028,9 @@ JSON配列の個々の要素は上の<code class="function">json[b]_populate_rec
 （<code class="type">record</code>を返すすべての関数では、呼び出す問い合わせは明示的に<code class="literal">AS</code>句でレコードの構造を定義しなければなりません。）
 上の<code class="function">json[b]_populate_record</code>で説明した方法で、出力レコードはJSONオブジェクトのフィールドで満たされます。
 入力レコード値がないので、一致しない列は常にNULLで満たされます。
+       </p>
+       <p>
+        <code class="literal">create type myrowtype as (a int, b text);</code>
        </p>
        <p>
         <code class="literal">create type myrowtype as (a int, b text);</code>
@@ -1372,7 +1402,7 @@ JSON値に対するJSONパスによって返される最初のJSON項目を返�
         &lt;literal&gt;string&lt;/literal&gt;, &lt;literal&gt;number&lt;/literal&gt;,
         &lt;literal&gt;boolean&lt;/literal&gt;, and &lt;literal&gt;null&lt;/literal&gt;.
         (The &lt;literal&gt;null&lt;/literal&gt; result should not be confused
-        with a SQL NULL; see the examples.)
+        with an SQL NULL; see the examples.)
 </span>
 トップレベルのJSON値の型をテキスト文字列として返します。
 可能な型は次のとおりです。
@@ -1412,7 +1442,7 @@ JSON値に対するJSONパスによって返される最初のJSON項目を返�
    &lt;xref linkend="datatype-jsonpath"/&gt;.
 </span>
 SQL/JSONパス式は、XMLへのSQLアクセスで使用されるXPath同様、JSONデータから取り出す項目を指定します。
-<span class="productname">PostgreSQL</span>ではパス式は<code class="type">jsonpath</code>データ型として実装されており、<a class="xref" href="datatype-json.html#DATATYPE-JSONPATH" title="8.14.6. jsonpath型">8.14.6</a>で説明されているすべての要素を使うことができます。
+<span class="productname">PostgreSQL</span>ではパス式は<code class="type">jsonpath</code>データ型として実装されており、<a class="xref" href="datatype-json.html#DATATYPE-JSONPATH" title="8.14.7. jsonpath型">8.14.7</a>で説明されているすべての要素を使うことができます。
   </p><p>
 <span class="original">
    JSON query functions and operators
@@ -1738,6 +1768,22 @@ lax $.track.segments.location
 非厳密モードと同じ結果を得るためには、<code class="literal">segments</code>配列を明示的に展開する必要があります。
 </p><pre class="programlisting">
 strict $.track.segments[*].location
+</pre><p>
+   </p><p>
+    The <code class="literal">.**</code> accessor can lead to surprising results
+    when using the lax mode. For instance, the following query selects every
+    <code class="literal">HR</code> value twice:
+</p><pre class="programlisting">
+lax $.**.HR
+</pre><p>
+    This happens because the <code class="literal">.**</code> accessor selects both
+    the <code class="literal">segments</code> array and each of its elements, while
+    the <code class="literal">.HR</code> accessor automatically unwraps arrays when
+    using the lax mode. To avoid surprising results, we recommend using
+    the <code class="literal">.**</code> accessor only in the strict mode. The
+    following query selects each <code class="literal">HR</code> value just once:
+</p><pre class="programlisting">
+strict $.**.HR
 </pre><p>
    </p></div><div class="sect3" id="FUNCTIONS-SQLJSON-PATH-OPERATORS"><div class="titlepage"><div><div><h4 class="title">9.16.2.2. SQL/JSONパス演算子とメソッド</h4></div></div></div><span class="original">
    &lt;title&gt;SQL/JSON Path Operators and Methods&lt;/title&gt;
@@ -2364,12 +2410,13 @@ PostgreSQLは今の所<code class="literal">LIKE_REGEX</code>演算子をサポ�
      is a JSON path string literal, written according to the rules given in
      &lt;xref linkend="datatype-jsonpath"/&gt;.  This means in particular that any
      backslashes you want to use in the regular expression must be doubled.
-     For example, to match strings that contain only digits:
+     For example, to match string values of the root document that contain
+     only digits:
 </span>
-<code class="literal">like_regex</code>のパターン引数は<a class="xref" href="datatype-json.html#DATATYPE-JSONPATH" title="8.14.6. jsonpath型">8.14.6</a>で説明されているルールにしたがって書かれたJSONパス文字列リテラルであることに注意してください。
+<code class="literal">like_regex</code>のパターン引数は<a class="xref" href="datatype-json.html#DATATYPE-JSONPATH" title="8.14.7. jsonpath型">8.14.7</a>で説明されているルールにしたがって書かれたJSONパス文字列リテラルであることに注意してください。
 これは、正規表現で使用するすべてのバックスラッシュを二重に書かなければならないことを意味します。
 たとえば、数字のみを含む文字列にマッチさせるには以下のようにします。
 </p><pre class="programlisting">
-$ ? (@ like_regex "^\\d+$")
+$.* ? (@ like_regex "^\\d+$")
 </pre><p>
-    </p></div></div></div><div xmlns="http://www.w3.org/TR/xhtml1/transitional" class="navfooter"><hr></hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="functions-xml.html" title="9.15. XML関数">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="functions.html" title="第9章 関数と演算子">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="functions-sequence.html" title="9.17. シーケンス操作関数">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">9.15. XML関数 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 13.1文書">ホーム</a></td><td width="40%" align="right" valign="top"> 9.17. シーケンス操作関数</td></tr></table></div></body></html>
+    </p></div></div></div><div xmlns="http://www.w3.org/TR/xhtml1/transitional" class="navfooter"><hr></hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="functions-xml.html" title="9.15. XML関数">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="functions.html" title="第9章 関数と演算子">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="functions-sequence.html" title="9.17. シーケンス操作関数">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">9.15. XML関数 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 14.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 9.17. シーケンス操作関数</td></tr></table></div></body></html>

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>CREATE TYPE</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="sql-createtrigger.html" title="CREATE TRIGGER" /><link rel="next" href="sql-createuser.html" title="CREATE USER" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 13.1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="sql-commands.html" title="SQLコマンド">SQLコマンド</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 13.1 &#10;                      sql-createtype.html">誤訳等の報告
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>CREATE TYPE</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="sql-createtrigger.html" title="CREATE TRIGGER" /><link rel="next" href="sql-createuser.html" title="CREATE USER" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 14.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="sql-commands.html" title="SQLコマンド">SQLコマンド</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 14.0 &#10;                      sql-createtype.html">誤訳等の報告
                     </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="sql-createtrigger.html" title="CREATE TRIGGER">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="sql-commands.html" title="SQLコマンド">上へ</a></td><td width="60%" align="center">CREATE TYPE</td><td width="20%" align="right"> <a accesskey="n" href="sql-createuser.html" title="CREATE USER">次へ</a></td></tr></table><hr /></div><div class="refentry" id="SQL-CREATETYPE"><div class="titlepage"></div><a id="id-1.9.3.94.1" class="indexterm"></a><div class="refnamediv"><h2><span class="refentrytitle">CREATE TYPE</span></h2><p>CREATE TYPE<span class="original">
   &lt;refpurpose&gt;define a new data type&lt;/refpurpose&gt;
 </span> — 新しいデータ型を定義する</p></div><div class="refsynopsisdiv"><h2>概要</h2><pre class="synopsis">
@@ -15,6 +15,7 @@ CREATE TYPE <em class="replaceable"><code>name</code></em> AS RANGE (
     [ , COLLATION = <em class="replaceable"><code>collation</code></em> ]
     [ , CANONICAL = <em class="replaceable"><code>canonical_function</code></em> ]
     [ , SUBTYPE_DIFF = <em class="replaceable"><code>subtype_diff_function</code></em> ]
+    [ , MULTIRANGE_TYPE_NAME = <em class="replaceable"><code>multirange_type_name</code></em> ]
 )
 
 CREATE TYPE <em class="replaceable"><code>name</code></em> (
@@ -25,6 +26,7 @@ CREATE TYPE <em class="replaceable"><code>name</code></em> (
     [ , TYPMOD_IN = <em class="replaceable"><code>type_modifier_input_function</code></em> ]
     [ , TYPMOD_OUT = <em class="replaceable"><code>type_modifier_output_function</code></em> ]
     [ , ANALYZE = <em class="replaceable"><code>analyze_function</code></em> ]
+    [ , SUBSCRIPT = <em class="replaceable"><code>subscript_function</code></em> ]
     [ , INTERNALLENGTH = { <em class="replaceable"><code>internallength</code></em> | VARIABLE } ]
     [ , PASSEDBYVALUE ]
     [ , ALIGNMENT = <em class="replaceable"><code>alignment</code></em> ]
@@ -115,8 +117,8 @@ CREATE TYPE <em class="replaceable"><code>name</code></em>
     must be less than &lt;symbol&gt;NAMEDATALEN&lt;/symbol&gt; bytes long (64 bytes in a
     standard &lt;productname&gt;PostgreSQL&lt;/productname&gt; build).  (It is possible to
     create an enumerated type with zero labels, but such a type cannot be used
-    to hold values before at least one label is added using &lt;xref
-    linkend="sql-altertype"/&gt;.)
+    to hold values before at least one label is added using &lt;link
+    linkend="sql-altertype"&gt;&lt;command&gt;ALTER TYPE&lt;/command&gt;&lt;/link&gt;.)
 </span>
 <code class="command">CREATE TYPE</code>の2つ目の構文を使用すると、<a class="xref" href="datatype-enum.html" title="8.7. 列挙型">8.7</a>で説明する列挙型（enum）を作成します。
 列挙型は、引用符付きのラベルのリストを取ります。
@@ -186,6 +188,15 @@ CREATE TYPE <em class="replaceable"><code>name</code></em>
 <em class="replaceable"><code>subtype_diff</code></em>関数(省略可能)は、<em class="replaceable"><code>subtype</code></em>型の２つの値を引数として取り、与えられた２つの値の差異を表す<code class="type">double precision</code>型を返さなければなりません。
 これは省略することができますが、提供することでその範囲型の列に対するGiSTインデックスの効率を大きく向上させることができます。
 詳細については<a class="xref" href="rangetypes.html#RANGETYPES-DEFINING" title="8.17.8. 新しい範囲型の定義">8.17.8</a>を参照してください。
+   </p><p>
+    The optional <em class="replaceable"><code>multirange_type_name</code></em>
+    parameter specifies the name of the corresponding multirange type.  If not
+    specified, this name is chosen automatically as follows.
+    If the range type name contains the substring <code class="literal">range</code>, then
+    the multirange type name is formed by replacement of the <code class="literal">range</code>
+    substring with <code class="literal">multirange</code> in the range
+    type name.  Otherwise, the multirange type name is formed by appending a
+    <code class="literal">_multirange</code> suffix to the range type name.
    </p></div><div class="refsect2" id="id-1.9.3.94.5.8"><h3>基本型</h3><span class="original">
    &lt;title&gt;Base Types&lt;/title&gt;
 </span><p>
@@ -210,8 +221,9 @@ CREATE TYPE <em class="replaceable"><code>name</code></em>
    &lt;replaceable class="parameter"&gt;receive_function&lt;/replaceable&gt;,
    &lt;replaceable class="parameter"&gt;send_function&lt;/replaceable&gt;,
    &lt;replaceable class="parameter"&gt;type_modifier_input_function&lt;/replaceable&gt;,
-   &lt;replaceable class="parameter"&gt;type_modifier_output_function&lt;/replaceable&gt; and
-   &lt;replaceable class="parameter"&gt;analyze_function&lt;/replaceable&gt;
+   &lt;replaceable class="parameter"&gt;type_modifier_output_function&lt;/replaceable&gt;,
+   &lt;replaceable class="parameter"&gt;analyze_function&lt;/replaceable&gt;, and
+   &lt;replaceable class="parameter"&gt;subscript_function&lt;/replaceable&gt;
    are optional.  Generally these functions have to be coded in C
    or another low-level language.
 </span>
@@ -392,6 +404,26 @@ CREATE TYPE <em class="replaceable"><code>name</code></em>
 この解析関数は、<code class="type">internal</code>型の引数を1つ取り、戻り値として<code class="type">boolean</code>を返すように宣言する必要があります。
 解析関数用のAPIの詳細は、<code class="filename">src/include/commands/vacuum.h</code>にあります。
   </p><p>
+   The optional <em class="replaceable"><code>subscript_function</code></em>
+   allows the data type to be subscripted in SQL commands.  Specifying this
+   function does not cause the type to be considered a <span class="quote">「<span class="quote">true</span>」</span>
+   array type; for example, it will not be a candidate for the result type
+   of <code class="literal">ARRAY[]</code> constructs.  But if subscripting a value
+   of the type is a natural notation for extracting data from it, then
+   a <em class="replaceable"><code>subscript_function</code></em> can
+   be written to define what that means.  The subscript function must be
+   declared to take a single argument of type <code class="type">internal</code>, and
+   return an <code class="type">internal</code> result, which is a pointer to a struct
+   of methods (functions) that implement subscripting.
+   The detailed API for subscript functions appears
+   in <code class="filename">src/include/nodes/subscripting.h</code>.
+   It may also be useful to read the array implementation
+   in <code class="filename">src/backend/utils/adt/arraysubs.c</code>,
+   or the simpler code
+   in <code class="filename">contrib/hstore/hstore_subs.c</code>.
+   Additional information appears in
+   <a class="xref" href="sql-createtype.html#SQL-CREATETYPE-ARRAY" title="配列型">Array Types</a> below.
+  </p><p>
 <span class="original">
    While the details of the new type's internal representation are only
    known to the I/O functions and other functions you create to work with
@@ -415,7 +447,7 @@ CREATE TYPE <em class="replaceable"><code>name</code></em>
 基本データ型は、<em class="replaceable"><code>internallength</code></em>に正の整数を指定して固定長として作成するだけでなく、<em class="replaceable"><code>internallength</code></em>に<code class="literal">VARIABLE</code>と設定し可変長として作成することもできます
 （内部的には、これは<code class="literal">typlen</code>を-1に設定することで表現されます）。
 全ての可変長型の内部表現は、型の値の全長を示す4バイトの整数値から始まらなければなりません。
-（長さフィールドは多くの場合<a class="xref" href="storage-toast.html" title="68.2. TOAST">68.2</a>に記述されているようにエンコードされており、それに直接アクセスすることは賢明ではないことに注意してください。）
+（長さフィールドは多くの場合<a class="xref" href="storage-toast.html" title="70.2. TOAST">70.2</a>に記述されているようにエンコードされており、それに直接アクセスすることは賢明ではないことに注意してください。）
   </p><p>
 <span class="original">
    The optional flag &lt;literal&gt;PASSEDBYVALUE&lt;/literal&gt; indicates that
@@ -475,7 +507,7 @@ CREATE TYPE <em class="replaceable"><code>name</code></em>
    other strategies for individual columns using &lt;literal&gt;ALTER TABLE
    SET STORAGE&lt;/literal&gt;.
 </span>
-<code class="literal">plain</code>を除くすべての<em class="replaceable"><code>storage</code></em>の値は、そのデータ型の関数が、<a class="xref" href="storage-toast.html" title="68.2. TOAST">68.2</a>および<a class="xref" href="xtypes.html#XTYPES-TOAST" title="37.13.1. TOASTの考慮">37.13.1</a>に記述されているように<em class="firstterm">toast</em>された値を処理できることを暗示します。
+<code class="literal">plain</code>を除くすべての<em class="replaceable"><code>storage</code></em>の値は、そのデータ型の関数が、<a class="xref" href="storage-toast.html" title="70.2. TOAST">70.2</a>および<a class="xref" href="xtypes.html#XTYPES-TOAST" title="38.13.1. TOASTの考慮">38.13.1</a>に記述されているように<em class="firstterm">toast</em>された値を処理できることを暗示します。
 その他の特定の値を指定するのは、TOAST可能なデータ型の列について、単にデフォルトのTOAST戦略を決めるだけです。
 ユーザは個々の列について<code class="literal">ALTER TABLE SET STORAGE</code>を使って他の戦略を選択できます。
   </p><p>
@@ -540,11 +572,12 @@ CREATE TYPE <em class="replaceable"><code>name</code></em>
 （この方法で指定されたデフォルト値を、特定の列に付与された、明示的な<code class="literal">DEFAULT</code>句によって上書きすることができます）。
   </p><p>
 <span class="original">
-   To indicate that a type is an array, specify the type of the array
+   To indicate that a type is a fixed-length array type,
+   specify the type of the array
    elements using the &lt;literal&gt;ELEMENT&lt;/literal&gt; key word.  For example, to
    define an array of 4-byte integers (&lt;type&gt;int4&lt;/type&gt;), specify
-   &lt;literal&gt;ELEMENT = int4&lt;/literal&gt;. More details about array types
-   appear below.
+   &lt;literal&gt;ELEMENT = int4&lt;/literal&gt;.  For more details,
+   see &lt;xref linkend="sql-createtype-array"/&gt; below.
 </span>
 データ型が配列であることを示すには、<code class="literal">ELEMENT</code>キーワードを使用して配列要素の型を指定してください。
 例えば、4バイト整数（<code class="type">int4</code>）の配列を定義するには、<code class="literal">ELEMENT = int4</code>と指定してください。
@@ -575,7 +608,7 @@ CREATE TYPE <em class="replaceable"><code>name</code></em>
 論理型の<em class="replaceable"><code>collatable</code></em>パラメータ(省略可能)が真の場合、<code class="literal">COLLATE</code>句を使用することによって、型の列定義と式は照合順序情報を持つことができます。
 照合順序情報を実際に使用するかどうかは、型に対する操作を行う関数実装に任されています。
 照合順序を設定可能な型を作成することにより、これが自動的に行われることはありません。
-  </p></div><div class="refsect2" id="id-1.9.3.94.5.9"><h3>配列型</h3><span class="original">
+  </p></div><div class="refsect2" id="SQL-CREATETYPE-ARRAY"><h3>配列型</h3><span class="original">
    &lt;title&gt;Array Types&lt;/title&gt;
 </span><p>
 <span class="original">
@@ -588,7 +621,9 @@ CREATE TYPE <em class="replaceable"><code>name</code></em>
     repeated until a non-colliding name is found.)
     This implicitly-created array type is variable length and uses the
     built-in input and output functions &lt;literal&gt;array_in&lt;/literal&gt; and
-    &lt;literal&gt;array_out&lt;/literal&gt;.  The array type tracks any changes in its
+    &lt;literal&gt;array_out&lt;/literal&gt;.  Furthermore, this type is what the system
+    uses for constructs such as &lt;literal&gt;ARRAY[]&lt;/literal&gt; over the
+    user-defined type.  The array type tracks any changes in its
     element type's owner or schema, and is dropped if the element type is.
 </span>
 ユーザ定義型が作成されると、<span class="productname">PostgreSQL</span>は、自動的に関連する配列型を作成します。
@@ -600,7 +635,7 @@ CREATE TYPE <em class="replaceable"><code>name</code></em>
 <span class="original">
     You might reasonably ask why there is an &lt;option&gt;ELEMENT&lt;/option&gt;
     option, if the system makes the correct array type automatically.
-    The only case where it's useful to use &lt;option&gt;ELEMENT&lt;/option&gt; is when you are
+    The main case where it's useful to use &lt;option&gt;ELEMENT&lt;/option&gt; is when you are
     making a fixed-length type that happens to be internally an array of a number of
     identical things, and you want to allow these things to be accessed
     directly by subscripting, in addition to whatever operations you plan
@@ -609,9 +644,7 @@ CREATE TYPE <em class="replaceable"><code>name</code></em>
     using &lt;literal&gt;point[0]&lt;/literal&gt; and &lt;literal&gt;point[1]&lt;/literal&gt;.
     Note that
     this facility only works for fixed-length types whose internal form
-    is exactly a sequence of identical fixed-length fields.  A subscriptable
-    variable-length type must have the generalized internal representation
-    used by &lt;literal&gt;array_in&lt;/literal&gt; and &lt;literal&gt;array_out&lt;/literal&gt;.
+    is exactly a sequence of identical fixed-length fields.
     For historical reasons (i.e., this is clearly wrong but it's far too
     late to change it), subscripting of fixed-length array types starts from
     zero, rather than from one as for variable-length arrays.
@@ -623,6 +656,23 @@ CREATE TYPE <em class="replaceable"><code>name</code></em>
 この機能は、その内部形式が同一の固定長フィールドの正確な並びである、固定長の型でのみ動作することに注意してください。
 添字による指定が可能な可変長型は、<code class="literal">array_in</code>と<code class="literal">array_out</code>を使用して、一般化された内部表現を持つ必要があります。
 歴史的な理由（明らかに間違いなのですが、変更するには遅すぎたため）により、固定長配列型への要素番号指定は0から始まり、可変長配列の場合は1から始まります。
+   </p><p>
+    Specifying the <code class="option">SUBSCRIPT</code> option allows a data type to
+    be subscripted, even though the system does not otherwise regard it as
+    an array type.  The behavior just described for fixed-length arrays is
+    actually implemented by the <code class="option">SUBSCRIPT</code> handler
+    function <code class="function">raw_array_subscript_handler</code>, which is
+    used automatically if you specify <code class="option">ELEMENT</code> for a
+    fixed-length type without also writing <code class="option">SUBSCRIPT</code>.
+   </p><p>
+    When specifying a custom <code class="option">SUBSCRIPT</code> function, it is
+    not necessary to specify <code class="option">ELEMENT</code> unless
+    the <code class="option">SUBSCRIPT</code> handler function needs to
+    consult <code class="structfield">typelem</code> to find out what to return.
+    Be aware that specifying <code class="option">ELEMENT</code> causes the system to
+    assume that the new type contains, or is somehow physically dependent on,
+    the element type; thus for example changing properties of the element
+    type won't be allowed if there are any columns of the dependent type.
    </p></div></div><div class="refsect1" id="id-1.9.3.94.6"><h2>パラメータ</h2><span class="original">
   &lt;title&gt;Parameters&lt;/title&gt;
 </span><div class="variablelist"><dl class="variablelist"><dt><span class="term"><em class="replaceable"><code>name</code></em></span></dt><dd><p>
@@ -674,6 +724,8 @@ CREATE TYPE <em class="replaceable"><code>name</code></em>
       The name of a difference function for the subtype.
 </span>
 派生元型の差異をとる関数の名前です。
+     </p></dd><dt><span class="term"><em class="replaceable"><code>multirange_type_name</code></em></span></dt><dd><p>
+      The name of the corresponding multirange type.
      </p></dd><dt><span class="term"><em class="replaceable"><code>input_function</code></em></span></dt><dd><p>
 <span class="original">
       The name of a function that converts data from the type's
@@ -716,6 +768,9 @@ CREATE TYPE <em class="replaceable"><code>name</code></em>
       data type.
 </span>
 指定したデータ型の統計情報解析を行う関数の名前です。
+     </p></dd><dt><span class="term"><em class="replaceable"><code>subscript_function</code></em></span></dt><dd><p>
+      The name of a function that defines what subscripting a value of the
+      data type does.
      </p></dd><dt><span class="term"><em class="replaceable"><code>internallength</code></em></span></dt><dd><p>
 <span class="original">
       A numeric constant that specifies the length in bytes of the new
@@ -767,7 +822,7 @@ CREATE TYPE <em class="replaceable"><code>name</code></em>
 </span>
 この型用のカテゴリコード（単一のASCII文字）です。
 デフォルトは<span class="quote">「<span class="quote">ユーザ定義型</span>」</span>を表す<code class="literal">'U'</code>です。
-他の標準カテゴリコードを<a class="xref" href="catalog-pg-type.html#CATALOG-TYPCATEGORY-TABLE" title="表51.63 typcategoryのコード">表 51.63</a>に示します。
+他の標準カテゴリコードを<a class="xref" href="catalog-pg-type.html#CATALOG-TYPCATEGORY-TABLE" title="表52.63 typcategoryのコード">表 52.63</a>に示します。
 独自のカテゴリを作成するために他のASCII文字を選択することもできます。
      </p></dd><dt><span class="term"><em class="replaceable"><code>preferred</code></em></span></dt><dd><p>
 <span class="original">
@@ -826,7 +881,7 @@ CREATE TYPE <em class="replaceable"><code>name</code></em>
    Before &lt;productname&gt;PostgreSQL&lt;/productname&gt; version 8.3, the name of
    a generated array type was always exactly the element type's name with one
    underscore character (&lt;literal&gt;_&lt;/literal&gt;) prepended.  (Type names were
-   therefore restricted in length to one less character than other names.)
+   therefore restricted in length to one fewer character than other names.)
    While this is still usually the case, the array type name may vary from
    this in case of maximum-length names or collisions with user type names
    that begin with underscore.  Writing code that depends on this convention
@@ -974,7 +1029,7 @@ CREATE TABLE big_objs (
    More examples, including suitable input and output functions, are
    in &lt;xref linkend="xtypes"/&gt;.
 </span>
-その他の例は、<a class="xref" href="xtypes.html" title="37.13. ユーザ定義の型">37.13</a>を参照してください。ここには、入力関数、出力関数などを使った例があります。
+その他の例は、<a class="xref" href="xtypes.html" title="38.13. ユーザ定義の型">38.13</a>を参照してください。ここには、入力関数、出力関数などを使った例があります。
   </p></div><div class="refsect1" id="SQL-CREATETYPE-COMPATIBILITY"><h2>互換性</h2><span class="original">
   &lt;title&gt;Compatibility&lt;/title&gt;
 </span><p>
@@ -998,4 +1053,4 @@ CREATE TABLE big_objs (
 ゼロ個の要素を持つ複合型を作成する機能は標準から派生した<span class="productname">PostgreSQL</span>固有のもの（<code class="command">CREATE TABLE</code>の場合と同様）です。
   </p></div><div class="refsect1" id="SQL-CREATETYPE-SEE-ALSO"><h2>関連項目</h2><span class="original">
   &lt;title&gt;See Also&lt;/title&gt;
-</span><span class="simplelist"><a class="xref" href="sql-altertype.html" title="ALTER TYPE"><span class="refentrytitle">ALTER TYPE</span></a>, <a class="xref" href="sql-createdomain.html" title="CREATE DOMAIN"><span class="refentrytitle">CREATE DOMAIN</span></a>, <a class="xref" href="sql-createfunction.html" title="CREATE FUNCTION"><span class="refentrytitle">CREATE FUNCTION</span></a>, <a class="xref" href="sql-droptype.html" title="DROP TYPE"><span class="refentrytitle">DROP TYPE</span></a></span></div></div><div xmlns="http://www.w3.org/TR/xhtml1/transitional" class="navfooter"><hr></hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="sql-createtrigger.html" title="CREATE TRIGGER">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="sql-commands.html" title="SQLコマンド">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="sql-createuser.html" title="CREATE USER">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">CREATE TRIGGER </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 13.1文書">ホーム</a></td><td width="40%" align="right" valign="top"> CREATE USER</td></tr></table></div></body></html>
+</span><span class="simplelist"><a class="xref" href="sql-altertype.html" title="ALTER TYPE"><span class="refentrytitle">ALTER TYPE</span></a>, <a class="xref" href="sql-createdomain.html" title="CREATE DOMAIN"><span class="refentrytitle">CREATE DOMAIN</span></a>, <a class="xref" href="sql-createfunction.html" title="CREATE FUNCTION"><span class="refentrytitle">CREATE FUNCTION</span></a>, <a class="xref" href="sql-droptype.html" title="DROP TYPE"><span class="refentrytitle">DROP TYPE</span></a></span></div></div><div xmlns="http://www.w3.org/TR/xhtml1/transitional" class="navfooter"><hr></hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="sql-createtrigger.html" title="CREATE TRIGGER">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="sql-commands.html" title="SQLコマンド">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="sql-createuser.html" title="CREATE USER">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">CREATE TRIGGER </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 14.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> CREATE USER</td></tr></table></div></body></html>

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>COPY</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="sql-commit-prepared.html" title="COMMIT PREPARED" /><link rel="next" href="sql-create-access-method.html" title="CREATE ACCESS METHOD" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 13.1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="sql-commands.html" title="SQLコマンド">SQLコマンド</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 13.1 &#10;                      sql-copy.html">誤訳等の報告
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>COPY</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="sql-commit-prepared.html" title="COMMIT PREPARED" /><link rel="next" href="sql-create-access-method.html" title="CREATE ACCESS METHOD" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 14.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="sql-commands.html" title="SQLコマンド">SQLコマンド</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 14.0 &#10;                      sql-copy.html">誤訳等の報告
                     </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="sql-commit-prepared.html" title="COMMIT PREPARED">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="sql-commands.html" title="SQLコマンド">上へ</a></td><td width="60%" align="center">COPY</td><td width="20%" align="right"> <a accesskey="n" href="sql-create-access-method.html" title="CREATE ACCESS METHOD">次へ</a></td></tr></table><hr /></div><div class="refentry" id="SQL-COPY"><div class="titlepage"></div><a id="id-1.9.3.55.1" class="indexterm"></a><div class="refnamediv"><h2><span class="refentrytitle">COPY</span></h2><p>COPY<span class="original">
   &lt;refpurpose&gt;copy data between a file and a table&lt;/refpurpose&gt;
 </span> — ファイルとテーブルの間でデータをコピーする</p></div><div class="refsynopsisdiv"><h2>概要</h2><pre class="synopsis">
@@ -77,6 +77,10 @@ COPY { <em class="replaceable"><code>table_name</code></em> [ ( <em class="repla
 <code class="literal">PROGRAM</code>が指定された場合、サーバは指定したコマンドを実行しその標準出力を読み取る、または、プログラムの標準入力に書き出します。
 コマンドはサーバからの視点で指定しなければならず、また、<code class="literal">PostgreSQL</code>ユーザによって実行できなければなりません。
 <code class="literal">STDIN</code>や<code class="literal">STDOUT</code>が指定された場合、データはクライアントとサーバ間を流れます。
+  </p><p>
+    Each backend running <code class="command">COPY</code> will report its progress
+    in the <code class="structname">pg_stat_progress_copy</code> view. See
+    <a class="xref" href="progress-reporting.html#COPY-PROGRESS-REPORTING" title="28.4.6. COPY Progress Reporting">28.4.6</a> for details.
   </p></div><div class="refsect1" id="id-1.9.3.55.6"><h2>パラメータ</h2><span class="original">
   &lt;title&gt;Parameters&lt;/title&gt;
 </span><div class="variablelist"><dl class="variablelist"><dt><span class="term"><em class="replaceable"><code>table_name</code></em></span></dt><dd><p>
@@ -94,9 +98,11 @@ COPY { <em class="replaceable"><code>table_name</code></em> [ ( <em class="repla
 列リストが指定されていない場合は、生成列を除いてテーブルの全ての列がコピーされます。
      </p></dd><dt><span class="term"><em class="replaceable"><code>query</code></em></span></dt><dd><p>
 <span class="original">
-      A &lt;xref linkend="sql-select"/&gt;, &lt;xref linkend="sql-values"/&gt;,
-      &lt;xref linkend="sql-insert"/&gt;, &lt;xref linkend="sql-update"/&gt; or
-      &lt;xref linkend="sql-delete"/&gt; command whose results are to be
+      A &lt;link linkend="sql-select"&gt;&lt;command&gt;SELECT&lt;/command&gt;&lt;/link&gt;,
+      &lt;link linkend="sql-values"&gt;&lt;command&gt;VALUES&lt;/command&gt;&lt;/link&gt;,
+      &lt;link linkend="sql-insert"&gt;&lt;command&gt;INSERT&lt;/command&gt;&lt;/link&gt;,
+      &lt;link linkend="sql-update"&gt;&lt;command&gt;UPDATE&lt;/command&gt;&lt;/link&gt;, or
+      &lt;link linkend="sql-delete"&gt;&lt;command&gt;DELETE&lt;/command&gt;&lt;/link&gt; command whose results are to be
       copied.  Note that parentheses are required around the query.
 </span>
 <a class="xref" href="sql-select.html" title="SELECT"><span class="refentrytitle">SELECT</span></a>、<a class="xref" href="sql-values.html" title="VALUES"><span class="refentrytitle">VALUES</span></a>、<a class="xref" href="sql-insert.html" title="INSERT"><span class="refentrytitle">INSERT</span></a>、<a class="xref" href="sql-update.html" title="UPDATE"><span class="refentrytitle">UPDATE</span></a>あるいは<a class="xref" href="sql-delete.html" title="DELETE"><span class="refentrytitle">DELETE</span></a>コマンドで、その結果がコピーされます。
@@ -370,10 +376,16 @@ COPY <em class="replaceable"><code>count</code></em>
   &lt;title&gt;Notes&lt;/title&gt;
 </span><p>
 <span class="original">
-    &lt;command&gt;COPY TO&lt;/command&gt; can only be used with plain tables, not
-    with views.  However, you can write &lt;literal&gt;COPY (SELECT * FROM
-    &lt;replaceable class="parameter"&gt;viewname&lt;/replaceable&gt;) TO ...&lt;/literal&gt;
-    to copy the current contents of a view.
+    &lt;command&gt;COPY TO&lt;/command&gt; can be used only with plain
+    tables, not views, and does not copy rows from child tables
+    or child partitions.  For example, &lt;literal&gt;COPY &lt;replaceable
+    class="parameter"&gt;table&lt;/replaceable&gt; TO&lt;/literal&gt; copies
+    the same rows as &lt;literal&gt;SELECT * FROM ONLY &lt;replaceable
+    class="parameter"&gt;table&lt;/replaceable&gt;&lt;/literal&gt;.
+    The syntax &lt;literal&gt;COPY (SELECT * FROM &lt;replaceable
+    class="parameter"&gt;table&lt;/replaceable&gt;) TO ...&lt;/literal&gt; can be used to
+    dump all of the rows in an inheritance hierarchy, partitioned table,
+    or view.
 </span>
 <code class="command">COPY TO</code>は通常のテーブルに対してのみ使用することができます。
 ビューに対して使用することはできません。
@@ -385,20 +397,6 @@ COPY <em class="replaceable"><code>count</code></em>
     &lt;literal&gt;INSTEAD OF INSERT&lt;/literal&gt; triggers.
 </span>
 <code class="command">COPY FROM</code>は通常のテーブル、外部テーブル、パーティションテーブルおよび<code class="literal">INSTEAD OF INSERT</code>トリガを持つビューに対して使用することができます。
-   </p><p>
-<span class="original">
-    &lt;command&gt;COPY&lt;/command&gt; only deals with the specific table named;
-    it does not copy data to or from child tables.  Thus for example
-    &lt;literal&gt;COPY &lt;replaceable class="parameter"&gt;table&lt;/replaceable&gt; TO&lt;/literal&gt;
-    shows the same data as &lt;literal&gt;SELECT * FROM ONLY &lt;replaceable
-    class="parameter"&gt;table&lt;/replaceable&gt;&lt;/literal&gt;.  But &lt;literal&gt;COPY
-    (SELECT * FROM &lt;replaceable class="parameter"&gt;table&lt;/replaceable&gt;) TO ...&lt;/literal&gt;
-    can be used to dump all of the data in an inheritance hierarchy.
-</span>
-<code class="command">COPY</code>は指定された特定のテーブルのみを扱います。
-つまり子テーブルへまたは子テーブルからのデータのコピーは行いません。
-したがって例えば、<code class="literal">COPY <em class="replaceable"><code>table</code></em> TO</code>は<code class="literal">SELECT * FROM ONLY <em class="replaceable"><code>table</code></em></code>と同じデータを示します。
-しかし<code class="literal">COPY (SELECT * FROM <em class="replaceable"><code>table</code></em>) TO ...</code>を使用して、継承階層内のすべてのデータをダンプすることができます。
    </p><p>
 <span class="original">
     You must have select privilege on the table
@@ -433,7 +431,7 @@ COPY <em class="replaceable"><code>count</code></em>
     by the server, not by the client application, must be executable by the
     &lt;productname&gt;PostgreSQL&lt;/productname&gt; user.
     &lt;command&gt;COPY&lt;/command&gt; naming a file or command is only allowed to
-    database superusers or users who are granted one of the default roles
+    database superusers or users who are granted one of the roles
     &lt;literal&gt;pg_read_server_files&lt;/literal&gt;,
     &lt;literal&gt;pg_write_server_files&lt;/literal&gt;,
     or &lt;literal&gt;pg_execute_server_program&lt;/literal&gt;, since it allows reading
@@ -644,6 +642,10 @@ IDENTITY列については、<code class="command">COPY FROM</code>コマンド�
 しかし、こういった表現は今後のリリースでは、受け付けられなくなる可能性があります。
 また、<code class="command">COPY</code>ファイルが異なるマシンをまたがって転送される場合、破損するおそれがかなりあります
 （例えば、UnixからWindowsあるいはその逆）。
+   </p><p>
+     All backslash sequences are interpreted after encoding conversion.
+     The bytes specified with the octal and hex-digit backslash sequences must
+     form valid characters in the database encoding.
    </p><p>
 <span class="original">
     &lt;command&gt;COPY TO&lt;/command&gt; will terminate each row with a Unix-style
@@ -1081,4 +1083,4 @@ COPY [ BINARY ] <em class="replaceable"><code>table_name</code></em>
     TO { '<em class="replaceable"><code>filename</code></em>' | STDOUT }
     [ [USING] DELIMITERS '<em class="replaceable"><code>delimiter_character</code></em>' ]
     [ WITH NULL AS '<em class="replaceable"><code>null_string</code></em>' ]
-</pre></div></div><div xmlns="http://www.w3.org/TR/xhtml1/transitional" class="navfooter"><hr></hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="sql-commit-prepared.html" title="COMMIT PREPARED">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="sql-commands.html" title="SQLコマンド">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="sql-create-access-method.html" title="CREATE ACCESS METHOD">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">COMMIT PREPARED </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 13.1文書">ホーム</a></td><td width="40%" align="right" valign="top"> CREATE ACCESS METHOD</td></tr></table></div></body></html>
+</pre></div><div class="refsect1" id="id-1.9.3.55.12"><h2>See Also</h2><span class="simplelist"><a class="xref" href="progress-reporting.html#COPY-PROGRESS-REPORTING" title="28.4.6. COPY Progress Reporting">28.4.6</a></span></div></div><div xmlns="http://www.w3.org/TR/xhtml1/transitional" class="navfooter"><hr></hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="sql-commit-prepared.html" title="COMMIT PREPARED">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="sql-commands.html" title="SQLコマンド">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="sql-create-access-method.html" title="CREATE ACCESS METHOD">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">COMMIT PREPARED </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 14.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> CREATE ACCESS METHOD</td></tr></table></div></body></html>

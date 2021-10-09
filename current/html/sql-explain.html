@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>EXPLAIN</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="sql-execute.html" title="EXECUTE" /><link rel="next" href="sql-fetch.html" title="FETCH" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 13.1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="sql-commands.html" title="SQLコマンド">SQLコマンド</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 13.1 &#10;                      sql-explain.html">誤訳等の報告
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>EXPLAIN</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="sql-execute.html" title="EXECUTE" /><link rel="next" href="sql-fetch.html" title="FETCH" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 14.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="sql-commands.html" title="SQLコマンド">SQLコマンド</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 14.0 &#10;                      sql-explain.html">誤訳等の報告
                     </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="sql-execute.html" title="EXECUTE">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="sql-commands.html" title="SQLコマンド">上へ</a></td><td width="60%" align="center">EXPLAIN</td><td width="20%" align="right"> <a accesskey="n" href="sql-fetch.html" title="FETCH">次へ</a></td></tr></table><hr /></div><div class="refentry" id="SQL-EXPLAIN"><div class="titlepage"></div><a id="id-1.9.3.148.1" class="indexterm"></a><a id="id-1.9.3.148.2" class="indexterm"></a><a id="id-1.9.3.148.3" class="indexterm"></a><div class="refnamediv"><h2><span class="refentrytitle">EXPLAIN</span></h2><p>EXPLAIN<span class="original">
   &lt;refpurpose&gt;show the execution plan of a statement&lt;/refpurpose&gt;
 </span> — 問い合わせ文の実行計画を表示する</p></div><div class="refsynopsisdiv"><h2>概要</h2><pre class="synopsis">
@@ -115,8 +115,10 @@ ROLLBACK;
       the output column list for each node in the plan tree, schema-qualify
       table and function names, always label variables in expressions with
       their range table alias, and always print the name of each trigger for
-      which statistics are displayed.  This parameter defaults to
-      &lt;literal&gt;FALSE&lt;/literal&gt;.
+      which statistics are displayed.  The query identifier will also be
+      displayed if one has been computed, see &lt;xref
+      linkend="guc-compute-query-id"/&gt; for more details.  This parameter
+      defaults to &lt;literal&gt;FALSE&lt;/literal&gt;.
 </span>
 計画についての追加情報を出力します。
 具体的には、計画ツリー、スキーマ修飾テーブル、関数名内の各ノードに対して出力列リストを含めます。
@@ -177,9 +179,9 @@ ROLLBACK;
      </p></dd><dt><span class="term"><code class="literal">WAL</code></span></dt><dd><p>
 <span class="original">
       Include information on WAL record generation. Specifically, include the
-      number of records, number of full page images (fpi) and amount of WAL
-      bytes generated.  In text format, only non-zero values are printed.  This
-      parameter may only be used when &lt;literal&gt;ANALYZE&lt;/literal&gt; is also
+      number of records, number of full page images (fpi) and the amount of WAL
+      generated in bytes. In text format, only non-zero values are printed.
+      This parameter may only be used when &lt;literal&gt;ANALYZE&lt;/literal&gt; is also
       enabled.  It defaults to &lt;literal&gt;FALSE&lt;/literal&gt;.
 </span>
 WALレコード生成に関する情報を含めます。
@@ -276,11 +278,11 @@ TEXT以外の出力にはTEXT出力と同じ情報が含まれていますが、
    the &lt;link linkend="autovacuum"&gt;autovacuum daemon&lt;/link&gt; will take care
    of that automatically.  But if a table has recently had substantial
    changes in its contents, you might need to do a manual
-   &lt;xref linkend="sql-analyze"/&gt; rather than wait for autovacuum to catch up
+   &lt;link linkend="sql-analyze"&gt;&lt;command&gt;ANALYZE&lt;/command&gt;&lt;/link&gt; rather than wait for autovacuum to catch up
    with the changes.
 </span>
-<span class="productname">PostgreSQL</span>問い合わせプランナが十分な情報を使って問合せを最適化できるようにするには、問い合わせ内で使用されるすべてのテーブルに関する<a class="link" href="catalog-pg-statistic.html" title="51.49. pg_statistic"><code class="structname">pg_statistic</code></a>のデータを最新状態にしなければなりません。
-通常<a class="link" href="routine-vacuuming.html#AUTOVACUUM" title="24.1.6. 自動バキュームデーモン">自動バキュームデーモン</a>により自動的に処理されます。
+<span class="productname">PostgreSQL</span>問い合わせプランナが十分な情報を使って問合せを最適化できるようにするには、問い合わせ内で使用されるすべてのテーブルに関する<a class="link" href="catalog-pg-statistic.html" title="52.49. pg_statistic"><code class="structname">pg_statistic</code></a>のデータを最新状態にしなければなりません。
+通常<a class="link" href="routine-vacuuming.html#AUTOVACUUM" title="25.1.6. 自動バキュームデーモン">自動バキュームデーモン</a>により自動的に処理されます。
 しかし最近その内容が大きく変更されたテーブルでは、自動バキュームがその変更に追いつくまで待つのではなく、手作業による<a class="xref" href="sql-analyze.html" title="ANALYZE"><span class="refentrytitle">ANALYZE</span></a>を実行する必要があるかもしれません。
   </p><p>
 <span class="original">
@@ -464,4 +466,4 @@ EXPLAIN ANALYZE EXECUTE query(100, 200);
 標準SQLでは<code class="command">EXPLAIN</code>文は定義されていません。
   </p></div><div class="refsect1" id="id-1.9.3.148.13"><h2>関連項目</h2><span class="original">
   &lt;title&gt;See Also&lt;/title&gt;
-</span><span class="simplelist"><a class="xref" href="sql-analyze.html" title="ANALYZE"><span class="refentrytitle">ANALYZE</span></a></span></div></div><div xmlns="http://www.w3.org/TR/xhtml1/transitional" class="navfooter"><hr></hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="sql-execute.html" title="EXECUTE">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="sql-commands.html" title="SQLコマンド">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="sql-fetch.html" title="FETCH">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">EXECUTE </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 13.1文書">ホーム</a></td><td width="40%" align="right" valign="top"> FETCH</td></tr></table></div></body></html>
+</span><span class="simplelist"><a class="xref" href="sql-analyze.html" title="ANALYZE"><span class="refentrytitle">ANALYZE</span></a></span></div></div><div xmlns="http://www.w3.org/TR/xhtml1/transitional" class="navfooter"><hr></hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="sql-execute.html" title="EXECUTE">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="sql-commands.html" title="SQLコマンド">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="sql-fetch.html" title="FETCH">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">EXECUTE </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 14.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> FETCH</td></tr></table></div></body></html>

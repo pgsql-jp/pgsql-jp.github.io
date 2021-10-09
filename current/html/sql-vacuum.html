@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>VACUUM</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="sql-update.html" title="UPDATE" /><link rel="next" href="sql-values.html" title="VALUES" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 13.1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="sql-commands.html" title="SQLコマンド">SQLコマンド</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 13.1 &#10;                      sql-vacuum.html">誤訳等の報告
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>VACUUM</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="sql-update.html" title="UPDATE" /><link rel="next" href="sql-values.html" title="VALUES" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 14.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="sql-commands.html" title="SQLコマンド">SQLコマンド</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 14.0 &#10;                      sql-vacuum.html">誤訳等の報告
                     </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="sql-update.html" title="UPDATE">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="sql-commands.html" title="SQLコマンド">上へ</a></td><td width="60%" align="center">VACUUM</td><td width="20%" align="right"> <a accesskey="n" href="sql-values.html" title="VALUES">次へ</a></td></tr></table><hr /></div><div class="refentry" id="SQL-VACUUM"><div class="titlepage"></div><a id="id-1.9.3.183.1" class="indexterm"></a><div class="refnamediv"><h2><span class="refentrytitle">VACUUM</span></h2><p>VACUUM<span class="original">
   &lt;refpurpose&gt;garbage-collect and optionally analyze a database&lt;/refpurpose&gt;
 </span> — 
@@ -19,7 +19,8 @@ VACUUM [ FULL ] [ FREEZE ] [ VERBOSE ] [ ANALYZE ] [ <em class="replaceable"><co
     ANALYZE [ <em class="replaceable"><code>boolean</code></em> ]
     DISABLE_PAGE_SKIPPING [ <em class="replaceable"><code>boolean</code></em> ]
     SKIP_LOCKED [ <em class="replaceable"><code>boolean</code></em> ]
-    INDEX_CLEANUP [ <em class="replaceable"><code>boolean</code></em> ]
+    INDEX_CLEANUP { AUTO | ON | OFF }
+    PROCESS_TOAST [ <em class="replaceable"><code>boolean</code></em> ]
     TRUNCATE [ <em class="replaceable"><code>boolean</code></em> ]
     PARALLEL <em class="replaceable"><code>integer</code></em>
 
@@ -78,8 +79,8 @@ VACUUM [ FULL ] [ FREEZE ] [ VERBOSE ] [ ANALYZE ] [ <em class="replaceable"><co
    specify parallel workers as zero.  &lt;command&gt;VACUUM FULL&lt;/command&gt; rewrites
    the entire contents of the table into a new disk file with no extra space,
    allowing unused space to be returned to the operating system.  This form is
-   much slower and requires an exclusive lock on each table while it is being
-   processed.
+   much slower and requires an &lt;literal&gt;ACCESS EXCLUSIVE&lt;/literal&gt; lock on
+   each table while it is being processed.
 </span>
 （<code class="literal">FULL</code>が指定されていない）通常の<code class="command">VACUUM</code>は、単に領域を回収し、そこを再利用可能な状態に変更します。
 この形式のコマンドでは排他的ロックを取得しないため、テーブルへの通常の読み書き操作と並行して実行することができます。
@@ -158,7 +159,7 @@ VACUUM [ FULL ] [ FREEZE ] [ VERBOSE ] [ ANALYZE ] [ <em class="replaceable"><co
       suspect, which should happen only if there is a hardware or software
       issue causing database corruption.
 </span>
-通常、<code class="command">VACUUM</code>は<a class="link" href="routine-vacuuming.html#VACUUM-FOR-VISIBILITY-MAP" title="24.1.4. 可視性マップの更新">可視性マップ</a>に基いてページをスキップします。
+通常、<code class="command">VACUUM</code>は<a class="link" href="routine-vacuuming.html#VACUUM-FOR-VISIBILITY-MAP" title="25.1.4. 可視性マップの更新">可視性マップ</a>に基いてページをスキップします。
 すべてのタプルが凍結されていることがわかっているページは、常にスキップできます。
 また、すべてのタプルがすべてのトランザクションに対して可視であることがわかっているページは、積極的なバキュームを実行している場合を除き、スキップできます。
 さらに、積極的なバキュームを実行している場合を除き、一部のページは、他のセッションがその使用を終了するのを待つのを避けるため、スキップされます。
@@ -184,25 +185,54 @@ VACUUM [ FULL ] [ FREEZE ] [ VERBOSE ] [ ANALYZE ] [ <em class="replaceable"><co
 さらに加えて、<code class="command">VACUUM ANALYZE</code>は、パーティションやテーブル継承の子、ある種類の外部テーブルからサンプル行を取得する時にブロックするかもしれません。
 また、<code class="command">VACUUM</code>は通常、指定されたパーティションテーブルの全パーティションを処理しますが、このオプションが指定されると、パーティションテーブルに衝突するロックがある場合<code class="command">VACUUM</code>は全パーティションを飛ばすようになります。
      </p></dd><dt><span class="term"><code class="literal">INDEX_CLEANUP</code></span></dt><dd><p>
+      Normally, <code class="command">VACUUM</code> will skip index vacuuming
+      when there are very few dead tuples in the table.  The cost of
+      processing all of the table's indexes is expected to greatly
+      exceed the benefit of removing dead index tuples when this
+      happens.  This option can be used to force
+      <code class="command">VACUUM</code> to process indexes when there are more
+      than zero dead tuples.  The default is <code class="literal">AUTO</code>,
+      which allows <code class="command">VACUUM</code> to skip index vacuuming
+      when appropriate.  If <code class="literal">INDEX_CLEANUP</code> is set to
+      <code class="literal">ON</code>, <code class="command">VACUUM</code> will
+      conservatively remove all dead tuples from indexes.  This may be
+      useful for backwards compatibility with earlier releases of
+      <span class="productname">PostgreSQL</span> where this was the
+      standard behavior.
+     </p><p>
+      <code class="literal">INDEX_CLEANUP</code> can also be set to
+      <code class="literal">OFF</code> to force <code class="command">VACUUM</code> to
+      <span class="emphasis"><em>always</em></span> skip index vacuuming, even when
+      there are many dead tuples in the table.  This may be useful
+      when it is necessary to make <code class="command">VACUUM</code> run as
+      quickly as possible to avoid imminent transaction ID wraparound
+      (see <a class="xref" href="routine-vacuuming.html#VACUUM-FOR-WRAPAROUND" title="25.1.5. トランザクションIDの周回エラーの防止">25.1.5</a>).  However, the
+      wraparound failsafe mechanism controlled by <a class="xref" href="runtime-config-client.html#GUC-VACUUM-FAILSAFE-AGE">vacuum_failsafe_age</a>  will generally trigger
+      automatically to avoid transaction ID wraparound failure, and
+      should be preferred.  If index cleanup is not performed
+      regularly, performance may suffer, because as the table is
+      modified indexes will accumulate dead tuples and the table
+      itself will accumulate dead line pointers that cannot be removed
+      until index cleanup is completed.
+     </p><p>
+      This option has no effect for tables that have no index and is
+      ignored if the <code class="literal">FULL</code> option is used.  It also
+      has no effect on the transaction ID wraparound failsafe
+      mechanism.  When triggered it will skip index vacuuming, even
+      when <code class="literal">INDEX_CLEANUP</code> is set to
+      <code class="literal">ON</code>.
+     </p></dd><dt><span class="term"><code class="literal">PROCESS_TOAST</code></span></dt><dd><p>
 <span class="original">
-      Specifies that &lt;command&gt;VACUUM&lt;/command&gt; should attempt to remove
-      index entries pointing to dead tuples.  This is normally the desired
-      behavior and is the default unless the
-      &lt;literal&gt;vacuum_index_cleanup&lt;/literal&gt; option has been set to false
-      for the table to be vacuumed.  Setting this option to false may be
-      useful when it is necessary to make vacuum run as quickly as possible,
-      for example to avoid imminent transaction ID wraparound
-      (see &lt;xref linkend="vacuum-for-wraparound"/&gt;).  However, if index
-      cleanup is not performed regularly, performance may suffer, because
-      as the table is modified, indexes will accumulate dead tuples
-      and the table itself will accumulate dead line pointers that cannot be
-      removed until index cleanup is completed.  This option has no effect
-      for tables that do not have an index and is ignored if the
+      Specifies that &lt;command&gt;VACUUM&lt;/command&gt; should attempt to process the
+      corresponding &lt;literal&gt;TOAST&lt;/literal&gt; table for each relation, if one
+      exists. This is usually the desired behavior and is the default.
+      Setting this option to false may be useful when it is only necessary to
+      vacuum the main relation. This option is required when the
       &lt;literal&gt;FULL&lt;/literal&gt; option is used.
 </span>
 <code class="command">VACUUM</code>に、無効なタプルを指しているインデックスのエントリーの削除を試みるよう指定します。
 これは普通は望まれる振舞いであり、バキュームされるテーブルに対して<code class="literal">vacuum_index_cleanup</code>オプションが偽に設定されていない限りデフォルトです。
-このオプションを偽に設定するのは、バキュームの実行をできる限り速くする必要がある場合には有用かもしれません。例えば、切迫したトランザクションIDの周回を避ける場合です(<a class="xref" href="routine-vacuuming.html#VACUUM-FOR-WRAPAROUND" title="24.1.5. トランザクションIDの周回エラーの防止">24.1.5</a>を参照してください)。
+このオプションを偽に設定するのは、バキュームの実行をできる限り速くする必要がある場合には有用かもしれません。例えば、切迫したトランザクションIDの周回を避ける場合です(<a class="xref" href="routine-vacuuming.html#VACUUM-FOR-WRAPAROUND" title="25.1.5. トランザクションIDの周回エラーの防止">25.1.5</a>を参照してください)。
 しかしながら、インデックスの掃除を定期的に行なわない場合、テーブルが修正されるに従い、インデックスは無効なタプルを蓄積し、テーブル自身もインデックスの掃除が完了するまで削除できない無効な行ポインタを蓄積していきますので、パフォーマンスは悪くなるでしょう。
 このオプションはインデックスを持たないテーブルには影響せず、<code class="literal">FULL</code>オプションが使われていれば無視されます。
      </p></dd><dt><span class="term"><code class="literal">TRUNCATE</code></span></dt><dd><p>
@@ -231,7 +261,7 @@ VACUUM [ FULL ] [ FREEZE ] [ VERBOSE ] [ ANALYZE ] [ <em class="replaceable"><co
       to perform the operation is equal to the number of indexes on the
       relation that support parallel vacuum which is limited by the number of
       workers specified with &lt;literal&gt;PARALLEL&lt;/literal&gt; option if any which is
-      further limited by &lt;xref linkend="guc-max-parallel-workers-maintenance"/&gt;.
+      further limited by &lt;xref linkend="guc-max-parallel-maintenance-workers"/&gt;.
       An index can participate in parallel vacuum if and only if the size of the
       index is more than &lt;xref linkend="guc-min-parallel-index-scan-size"/&gt;.
       Please note that it is not guaranteed that the number of parallel workers
@@ -244,8 +274,8 @@ VACUUM [ FULL ] [ FREEZE ] [ VERBOSE ] [ ANALYZE ] [ <em class="replaceable"><co
       the phase.  These behaviors might change in a future release.  This
       option can't be used with the &lt;literal&gt;FULL&lt;/literal&gt; option.
 </span>
-<em class="replaceable"><code>integer</code></em>個のバックグラウンドワーカーを使用して、<code class="command">VACUUM</code>のインデックスバキュームフェーズとインデックスクリーンアップフェーズを並列に実行します（各バキュームフェーズの詳細については、<a class="xref" href="progress-reporting.html#VACUUM-PHASES" title="表27.37 VACUUMのフェーズ">表 27.37</a>を参照してください）。
-操作の実行に使用されるワーカーの数は、並列バキュームをサポートするリレーションのインデックスの数と同じです。この数は<code class="literal">PARALLEL</code>オプションで指定されたワーカーの数によって制限され、<a class="xref" href="runtime-config-resource.html#GUC-MAX-PARALLEL-WORKERS-MAINTENANCE">max_parallel_maintenance_workers</a>パラメータによってさらに制限されます。
+<em class="replaceable"><code>integer</code></em>個のバックグラウンドワーカーを使用して、<code class="command">VACUUM</code>のインデックスバキュームフェーズとインデックスクリーンアップフェーズを並列に実行します（各バキュームフェーズの詳細については、<a class="xref" href="progress-reporting.html#VACUUM-PHASES" title="表28.39 VACUUMのフェーズ">表 28.39</a>を参照してください）。
+操作の実行に使用されるワーカーの数は、並列バキュームをサポートするリレーションのインデックスの数と同じです。この数は<code class="literal">PARALLEL</code>オプションで指定されたワーカーの数によって制限され、<a class="xref" href="runtime-config-resource.html#GUC-MAX-PARALLEL-MAINTENANCE-WORKERS">max_parallel_maintenance_workers</a>パラメータによってさらに制限されます。
 インデックスは、インデックスのサイズが<a class="xref" href="runtime-config-query.html#GUC-MIN-PARALLEL-INDEX-SCAN-SIZE">min_parallel_index_scan_size</a>パラメータよりも大きい場合にのみ、並列バキュームに参加できます。
 <em class="replaceable"><code>integer</code></em>で指定されたパラレルワーカー数が実行中に使用されることは保証されないことに注意してください。
 指定されたワーカー数より少ないワーカーでバキュームが実行されたり、ワーカーがまったくない状態で実行される可能性があります。
@@ -325,7 +355,7 @@ VACUUM [ FULL ] [ FREEZE ] [ VERBOSE ] [ ANALYZE ] [ <em class="replaceable"><co
     structure.  See &lt;xref linkend="gin-fast-update"/&gt; for details.
 </span>
 <acronym class="acronym">GIN</acronym>インデックスを持つテーブルでは、<code class="command">VACUUM</code>（全構文）は待ち状態のインデックス挿入を主<acronym class="acronym">GIN</acronym>インデックス構造内の適切なところに移動させることにより、待ち状態のインデックス挿入をすべて完了させます。
-<a class="xref" href="gin-implementation.html#GIN-FAST-UPDATE" title="66.4.1. GIN高速更新手法">66.4.1</a>を参照してください。
+<a class="xref" href="gin-implementation.html#GIN-FAST-UPDATE" title="67.4.1. GIN高速更新手法">67.4.1</a>を参照してください。
    </p><p>
 <span class="original">
     We recommend that active production databases be
@@ -373,7 +403,7 @@ VACUUM [ FULL ] [ FREEZE ] [ VERBOSE ] [ ANALYZE ] [ <em class="replaceable"><co
 <code class="command">VACUUM</code>によりI/Oトラフィックがかなり増大しますので、実行中の他のセッションの性能が悪化する可能性があります。
 このため、コストベースのバキューム遅延機能の使用が推奨される場合があります。
 並列バキュームの場合、各ワーカーはそのワーカーが行った作業に比例してスリープします。
-詳細は<a class="xref" href="runtime-config-resource.html#RUNTIME-CONFIG-RESOURCE-VACUUM-COST" title="19.4.4. コストに基づくVacuum遅延">19.4.4</a>を参照してください。
+詳細は<a class="xref" href="runtime-config-resource.html#RUNTIME-CONFIG-RESOURCE-VACUUM-COST" title="20.4.4. コストに基づくVacuum遅延">20.4.4</a>を参照してください。
    </p><p>
 <span class="original">
     &lt;productname&gt;PostgreSQL&lt;/productname&gt; includes an &lt;quote&gt;autovacuum&lt;/quote&gt;
@@ -382,7 +412,15 @@ VACUUM [ FULL ] [ FREEZE ] [ VERBOSE ] [ ANALYZE ] [ <em class="replaceable"><co
     &lt;xref linkend="routine-vacuuming"/&gt;.
 </span>
 <span class="productname">PostgreSQL</span>には、バキューム保守作業を自動化する<span class="quote">「<span class="quote">autovacuum</span>」</span>機能があります。
-自動バキューム処理および手作業によるバキューム処理に関する詳細については、<a class="xref" href="routine-vacuuming.html" title="24.1. 定常的なバキューム作業">24.1</a>を参照してください。
+自動バキューム処理および手作業によるバキューム処理に関する詳細については、<a class="xref" href="routine-vacuuming.html" title="25.1. 定常的なバキューム作業">25.1</a>を参照してください。
+   </p><p>
+    Each backend running <code class="command">VACUUM</code> without the
+    <code class="literal">FULL</code> option will report its progress in the
+    <code class="structname">pg_stat_progress_vacuum</code> view. Backends running
+    <code class="command">VACUUM FULL</code> will instead report their progress in the
+    <code class="structname">pg_stat_progress_cluster</code> view. See
+    <a class="xref" href="progress-reporting.html#VACUUM-PROGRESS-REPORTING" title="28.4.3. VACUUMの進捗状況のレポート">28.4.3</a> and
+    <a class="xref" href="progress-reporting.html#CLUSTER-PROGRESS-REPORTING" title="28.4.4. CLUSTERの進捗状況のレポート">28.4.4</a> for details.
    </p></div><div class="refsect1" id="id-1.9.3.183.9"><h2>例</h2><span class="original">
   &lt;title&gt;Examples&lt;/title&gt;
 </span><p>
@@ -403,4 +441,4 @@ VACUUM (VERBOSE, ANALYZE) onek;
 標準SQLには<code class="command">VACUUM</code>文はありません。
   </p></div><div class="refsect1" id="id-1.9.3.183.11"><h2>関連項目</h2><span class="original">
   &lt;title&gt;See Also&lt;/title&gt;
-</span><span class="simplelist"><a class="xref" href="app-vacuumdb.html" title="vacuumdb"><span class="refentrytitle"><span class="application">vacuumdb</span></span></a>, <a class="xref" href="runtime-config-resource.html#RUNTIME-CONFIG-RESOURCE-VACUUM-COST" title="19.4.4. コストに基づくVacuum遅延">19.4.4</a>, <a class="xref" href="routine-vacuuming.html#AUTOVACUUM" title="24.1.6. 自動バキュームデーモン">24.1.6</a></span></div></div><div xmlns="http://www.w3.org/TR/xhtml1/transitional" class="navfooter"><hr></hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="sql-update.html" title="UPDATE">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="sql-commands.html" title="SQLコマンド">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="sql-values.html" title="VALUES">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">UPDATE </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 13.1文書">ホーム</a></td><td width="40%" align="right" valign="top"> VALUES</td></tr></table></div></body></html>
+</span><span class="simplelist"><a class="xref" href="app-vacuumdb.html" title="vacuumdb"><span class="refentrytitle"><span class="application">vacuumdb</span></span></a>, <a class="xref" href="runtime-config-resource.html#RUNTIME-CONFIG-RESOURCE-VACUUM-COST" title="20.4.4. コストに基づくVacuum遅延">20.4.4</a>, <a class="xref" href="routine-vacuuming.html#AUTOVACUUM" title="25.1.6. 自動バキュームデーモン">25.1.6</a>, <a class="xref" href="progress-reporting.html#VACUUM-PROGRESS-REPORTING" title="28.4.3. VACUUMの進捗状況のレポート">28.4.3</a>, <a class="xref" href="progress-reporting.html#CLUSTER-PROGRESS-REPORTING" title="28.4.4. CLUSTERの進捗状況のレポート">28.4.4</a></span></div></div><div xmlns="http://www.w3.org/TR/xhtml1/transitional" class="navfooter"><hr></hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="sql-update.html" title="UPDATE">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="sql-commands.html" title="SQLコマンド">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="sql-values.html" title="VALUES">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">UPDATE </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 14.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> VALUES</td></tr></table></div></body></html>

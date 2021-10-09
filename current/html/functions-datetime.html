@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>9.9. 日付/時刻関数と演算子</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="functions-formatting.html" title="9.8. データ型書式設定関数" /><link rel="next" href="functions-enum.html" title="9.10. 列挙型サポート関数" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 13.1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="functions.html" title="第9章 関数と演算子">第9章 関数と演算子</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 13.1 &#10;                      functions-datetime.html">誤訳等の報告
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>9.9. 日付/時刻関数と演算子</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="functions-formatting.html" title="9.8. データ型書式設定関数" /><link rel="next" href="functions-enum.html" title="9.10. 列挙型サポート関数" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 14.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="functions.html" title="第9章 関数と演算子">第9章 関数と演算子</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 14.0 &#10;                      functions-datetime.html">誤訳等の報告
                     </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="functions-formatting.html" title="9.8. データ型書式設定関数">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="functions.html" title="第9章 関数と演算子">上へ</a></td><td width="60%" align="center">9.9. 日付/時刻関数と演算子</td><td width="20%" align="right"> <a accesskey="n" href="functions-enum.html" title="9.10. 列挙型サポート関数">次へ</a></td></tr></table><hr /></div><div class="sect1" id="FUNCTIONS-DATETIME"><div class="titlepage"><div><div><h2 class="title" style="clear: both">9.9. 日付/時刻関数と演算子</h2></div></div></div><span class="original">
    &lt;title&gt;Date/Time Functions and Operators&lt;/title&gt;
 </span><p>
@@ -19,14 +19,28 @@
 書式設定関数については<a class="xref" href="functions-formatting.html" title="9.8. データ型書式設定関数">9.8</a>を参照してください。
 <a class="xref" href="datatype-datetime.html" title="8.5. 日付/時刻データ型">8.5</a>を参照して、日付/時刻データ型についての背景となっている情報に精通していなければなりません。
   </p><p>
+   In addition, the usual comparison operators shown in
+   <a class="xref" href="functions-comparison.html#FUNCTIONS-COMPARISON-OP-TABLE" title="表9.1 比較演算子">表 9.1</a> are available for the
+   date/time types.  Dates and timestamps (with or without time zone) are
+   all comparable, while times (with or without time zone) and intervals
+   can only be compared to other values of the same data type.  When
+   comparing a timestamp without time zone to a timestamp with time zone,
+   the former value is assumed to be given in the time zone specified by
+   the <a class="xref" href="runtime-config-client.html#GUC-TIMEZONE">TimeZone</a> configuration parameter, and is
+   rotated to UTC for comparison to the latter value (which is already
+   in UTC internally).  Similarly, a date value is assumed to represent
+   midnight in the <code class="varname">TimeZone</code> zone when comparing it
+   to a timestamp.
+  </p><p>
 <span class="original">
    All the functions and operators described below that take &lt;type&gt;time&lt;/type&gt; or &lt;type&gt;timestamp&lt;/type&gt;
    inputs actually come in two variants: one that takes &lt;type&gt;time with time zone&lt;/type&gt; or &lt;type&gt;timestamp
    with time zone&lt;/type&gt;, and one that takes &lt;type&gt;time without time zone&lt;/type&gt; or &lt;type&gt;timestamp without time zone&lt;/type&gt;.
    For brevity, these variants are not shown separately.  Also, the
    &lt;literal&gt;+&lt;/literal&gt; and &lt;literal&gt;*&lt;/literal&gt; operators come in commutative pairs (for
-   example both date + integer and integer + date); we show only one of each
-   such pair.
+   example both &lt;type&gt;date&lt;/type&gt; &lt;literal&gt;+&lt;/literal&gt; &lt;type&gt;integer&lt;/type&gt;
+   and &lt;type&gt;integer&lt;/type&gt; &lt;literal&gt;+&lt;/literal&gt; &lt;type&gt;date&lt;/type&gt;); we show
+   only one of each such pair.
 </span>
 以下の<code class="type">time</code>もしくは<code class="type">timestamp</code>型の入力を受け取る関数および演算子は全て、実際には2つの種類があります。1つは<code class="type">time with time zone</code>型または<code class="type">timestamp with time zone</code>型を取るもので、もう1つは<code class="type">time without time zone</code>型もしくは<code class="type">timestamp without time zone</code>型を取るものです。
 簡略化のため、これらの種類の違いは個別に示していません。
@@ -300,7 +314,7 @@
 </span>
 例
         </p></th></tr></thead><tbody><tr><td class="func_table_entry"><p class="func_signature">
-         <a id="id-1.5.8.15.5.2.2.1.1.1.1" class="indexterm"></a>
+         <a id="id-1.5.8.15.6.2.2.1.1.1.1" class="indexterm"></a>
          <code class="function">age</code> ( <code class="type">timestamp</code>, <code class="type">timestamp</code> )
          → <code class="returnvalue">interval</code>
         </p>
@@ -328,7 +342,7 @@
          <code class="literal">age(timestamp '1957-06-13')</code>
          → <code class="returnvalue">62 years 6 mons 10 days</code>
         </p></td></tr><tr><td class="func_table_entry"><p class="func_signature">
-         <a id="id-1.5.8.15.5.2.2.3.1.1.1" class="indexterm"></a>
+         <a id="id-1.5.8.15.6.2.2.3.1.1.1" class="indexterm"></a>
          <code class="function">clock_timestamp</code> ( )
          → <code class="returnvalue">timestamp with time zone</code>
         </p>
@@ -337,13 +351,13 @@
          Current date and time (changes during statement execution);
          see &lt;xref linkend="functions-datetime-current"/&gt;
 </span>
-現在の日付と時刻（文実行中に変化する）。<a class="xref" href="functions-datetime.html#FUNCTIONS-DATETIME-CURRENT" title="9.9.4. 現在の日付/時刻">9.9.4</a>を参照。
+現在の日付と時刻（文実行中に変化する）。<a class="xref" href="functions-datetime.html#FUNCTIONS-DATETIME-CURRENT" title="9.9.5. 現在の日付/時刻">9.9.5</a>を参照。
         </p>
         <p>
          <code class="literal">clock_timestamp()</code>
          → <code class="returnvalue">2019-12-23 14:39:53.662522-05</code>
         </p></td></tr><tr><td class="func_table_entry"><p class="func_signature">
-         <a id="id-1.5.8.15.5.2.2.4.1.1.1" class="indexterm"></a>
+         <a id="id-1.5.8.15.6.2.2.4.1.1.1" class="indexterm"></a>
          <code class="function">current_date</code>
          → <code class="returnvalue">date</code>
         </p>
@@ -351,13 +365,13 @@
 <span class="original">
          Current date; see &lt;xref linkend="functions-datetime-current"/&gt;
 </span>
-現在の日付。<a class="xref" href="functions-datetime.html#FUNCTIONS-DATETIME-CURRENT" title="9.9.4. 現在の日付/時刻">9.9.4</a>を参照
+現在の日付。<a class="xref" href="functions-datetime.html#FUNCTIONS-DATETIME-CURRENT" title="9.9.5. 現在の日付/時刻">9.9.5</a>を参照
         </p>
         <p>
          <code class="literal">current_date</code>
          → <code class="returnvalue">2019-12-23</code>
         </p></td></tr><tr><td class="func_table_entry"><p class="func_signature">
-         <a id="id-1.5.8.15.5.2.2.5.1.1.1" class="indexterm"></a>
+         <a id="id-1.5.8.15.6.2.2.5.1.1.1" class="indexterm"></a>
          <code class="function">current_time</code>
          → <code class="returnvalue">time with time zone</code>
         </p>
@@ -365,7 +379,7 @@
 <span class="original">
          Current time of day; see &lt;xref linkend="functions-datetime-current"/&gt;
 </span>
-現在の時刻。<a class="xref" href="functions-datetime.html#FUNCTIONS-DATETIME-CURRENT" title="9.9.4. 現在の日付/時刻">9.9.4</a>を参照。
+現在の時刻。<a class="xref" href="functions-datetime.html#FUNCTIONS-DATETIME-CURRENT" title="9.9.5. 現在の日付/時刻">9.9.5</a>を参照。
         </p>
         <p>
          <code class="literal">current_time</code>
@@ -379,13 +393,13 @@
          Current time of day, with limited precision;
          see &lt;xref linkend="functions-datetime-current"/&gt;
 </span>
-精度を限定した現在の時刻。<a class="xref" href="functions-datetime.html#FUNCTIONS-DATETIME-CURRENT" title="9.9.4. 現在の日付/時刻">9.9.4</a>を参照。
+精度を限定した現在の時刻。<a class="xref" href="functions-datetime.html#FUNCTIONS-DATETIME-CURRENT" title="9.9.5. 現在の日付/時刻">9.9.5</a>を参照。
         </p>
         <p>
          <code class="literal">current_time(2)</code>
          → <code class="returnvalue">14:39:53.66-05</code>
         </p></td></tr><tr><td class="func_table_entry"><p class="func_signature">
-         <a id="id-1.5.8.15.5.2.2.7.1.1.1" class="indexterm"></a>
+         <a id="id-1.5.8.15.6.2.2.7.1.1.1" class="indexterm"></a>
          <code class="function">current_timestamp</code>
          → <code class="returnvalue">timestamp with time zone</code>
         </p>
@@ -394,7 +408,7 @@
          Current date and time (start of current transaction);
          see &lt;xref linkend="functions-datetime-current"/&gt;
 </span>
-現在の日付と時刻（現在のトランザクションの開始時）。<a class="xref" href="functions-datetime.html#FUNCTIONS-DATETIME-CURRENT" title="9.9.4. 現在の日付/時刻">9.9.4</a>を参照。
+現在の日付と時刻（現在のトランザクションの開始時）。<a class="xref" href="functions-datetime.html#FUNCTIONS-DATETIME-CURRENT" title="9.9.5. 現在の日付/時刻">9.9.5</a>を参照。
         </p>
         <p>
          <code class="literal">current_timestamp</code>
@@ -408,13 +422,23 @@
          Current date and time (start of current transaction), with limited precision;
          see &lt;xref linkend="functions-datetime-current"/&gt;
 </span>
-精度を限定した現在の日付と時刻（現在のトランザクションの開始時）。<a class="xref" href="functions-datetime.html#FUNCTIONS-DATETIME-CURRENT" title="9.9.4. 現在の日付/時刻">9.9.4</a>を参照。
+精度を限定した現在の日付と時刻（現在のトランザクションの開始時）。<a class="xref" href="functions-datetime.html#FUNCTIONS-DATETIME-CURRENT" title="9.9.5. 現在の日付/時刻">9.9.5</a>を参照。
         </p>
         <p>
          <code class="literal">current_timestamp(0)</code>
          → <code class="returnvalue">2019-12-23 14:39:53-05</code>
         </p></td></tr><tr><td class="func_table_entry"><p class="func_signature">
-         <a id="id-1.5.8.15.5.2.2.9.1.1.1" class="indexterm"></a>
+         <code class="function">date_bin</code> ( <code class="type">interval</code>, <code class="type">timestamp</code>, <code class="type">timestamp</code> )
+         → <code class="returnvalue">timestamp</code>
+        </p>
+        <p>
+         Bin input into specified interval aligned with specified origin; see <a class="xref" href="functions-datetime.html#FUNCTIONS-DATETIME-BIN" title="9.9.3. date_bin">9.9.3</a>
+        </p>
+        <p>
+         <code class="literal">date_bin('15 minutes', timestamp '2001-02-16 20:38:40', timestamp '2001-02-16 20:05:00')</code>
+         → <code class="returnvalue">2001-02-16 20:35:00</code>
+        </p></td></tr><tr><td class="func_table_entry"><p class="func_signature">
+         <a id="id-1.5.8.15.6.2.2.10.1.1.1" class="indexterm"></a>
          <code class="function">date_part</code> ( <code class="type">text</code>, <code class="type">timestamp</code> )
          → <code class="returnvalue">double precision</code>
         </p>
@@ -443,7 +467,7 @@
          <code class="literal">date_part('month', interval '2 years 3 months')</code>
          → <code class="returnvalue">3</code>
         </p></td></tr><tr><td class="func_table_entry"><p class="func_signature">
-         <a id="id-1.5.8.15.5.2.2.11.1.1.1" class="indexterm"></a>
+         <a id="id-1.5.8.15.6.2.2.12.1.1.1" class="indexterm"></a>
          <code class="function">date_trunc</code> ( <code class="type">text</code>, <code class="type">timestamp</code> )
          → <code class="returnvalue">timestamp</code>
         </p>
@@ -485,9 +509,9 @@
          <code class="literal">date_trunc('hour', interval '2 days 3 hours 40 minutes')</code>
          → <code class="returnvalue">2 days 03:00:00</code>
         </p></td></tr><tr><td class="func_table_entry"><p class="func_signature">
-         <a id="id-1.5.8.15.5.2.2.14.1.1.1" class="indexterm"></a>
+         <a id="id-1.5.8.15.6.2.2.15.1.1.1" class="indexterm"></a>
          <code class="function">extract</code> ( <em class="parameter"><code>field</code></em> <code class="literal">from</code> <code class="type">timestamp</code> )
-         → <code class="returnvalue">double precision</code>
+         → <code class="returnvalue">numeric</code>
         </p>
         <p>
 <span class="original">
@@ -500,7 +524,7 @@
          → <code class="returnvalue">20</code>
         </p></td></tr><tr><td class="func_table_entry"><p class="func_signature">
          <code class="function">extract</code> ( <em class="parameter"><code>field</code></em> <code class="literal">from</code> <code class="type">interval</code> )
-         → <code class="returnvalue">double precision</code>
+         → <code class="returnvalue">numeric</code>
         </p>
         <p>
 <span class="original">
@@ -512,7 +536,7 @@
          <code class="literal">extract(month from interval '2 years 3 months')</code>
          → <code class="returnvalue">3</code>
         </p></td></tr><tr><td class="func_table_entry"><p class="func_signature">
-         <a id="id-1.5.8.15.5.2.2.16.1.1.1" class="indexterm"></a>
+         <a id="id-1.5.8.15.6.2.2.17.1.1.1" class="indexterm"></a>
          <code class="function">isfinite</code> ( <code class="type">date</code> )
          → <code class="returnvalue">boolean</code>
         </p>
@@ -552,7 +576,7 @@
          <code class="literal">isfinite(interval '4 hours')</code>
          → <code class="returnvalue">true</code>
         </p></td></tr><tr><td class="func_table_entry"><p class="func_signature">
-         <a id="id-1.5.8.15.5.2.2.19.1.1.1" class="indexterm"></a>
+         <a id="id-1.5.8.15.6.2.2.20.1.1.1" class="indexterm"></a>
          <code class="function">justify_days</code> ( <code class="type">interval</code> )
          → <code class="returnvalue">interval</code>
         </p>
@@ -566,7 +590,7 @@
          <code class="literal">justify_days(interval '35 days')</code>
          → <code class="returnvalue">1 mon 5 days</code>
         </p></td></tr><tr><td class="func_table_entry"><p class="func_signature">
-         <a id="id-1.5.8.15.5.2.2.20.1.1.1" class="indexterm"></a>
+         <a id="id-1.5.8.15.6.2.2.21.1.1.1" class="indexterm"></a>
          <code class="function">justify_hours</code> ( <code class="type">interval</code> )
          → <code class="returnvalue">interval</code>
         </p>
@@ -580,7 +604,7 @@
          <code class="literal">justify_hours(interval '27 hours')</code>
          → <code class="returnvalue">1 day 03:00:00</code>
         </p></td></tr><tr><td class="func_table_entry"><p class="func_signature">
-         <a id="id-1.5.8.15.5.2.2.21.1.1.1" class="indexterm"></a>
+         <a id="id-1.5.8.15.6.2.2.22.1.1.1" class="indexterm"></a>
          <code class="function">justify_interval</code> ( <code class="type">interval</code> )
          → <code class="returnvalue">interval</code>
         </p>
@@ -596,7 +620,7 @@
          <code class="literal">justify_interval(interval '1 mon -1 hour')</code>
          → <code class="returnvalue">29 days 23:00:00</code>
         </p></td></tr><tr><td class="func_table_entry"><p class="func_signature">
-         <a id="id-1.5.8.15.5.2.2.22.1.1.1" class="indexterm"></a>
+         <a id="id-1.5.8.15.6.2.2.23.1.1.1" class="indexterm"></a>
          <code class="function">localtime</code>
          → <code class="returnvalue">time</code>
         </p>
@@ -605,7 +629,7 @@
          Current time of day;
          see &lt;xref linkend="functions-datetime-current"/&gt;
 </span>
-現在の時刻。<a class="xref" href="functions-datetime.html#FUNCTIONS-DATETIME-CURRENT" title="9.9.4. 現在の日付/時刻">9.9.4</a>を参照。
+現在の時刻。<a class="xref" href="functions-datetime.html#FUNCTIONS-DATETIME-CURRENT" title="9.9.5. 現在の日付/時刻">9.9.5</a>を参照。
         </p>
         <p>
          <code class="literal">localtime</code>
@@ -619,13 +643,13 @@
          Current time of day, with limited precision;
          see &lt;xref linkend="functions-datetime-current"/&gt;
 </span>
-精度を限定した現在の時刻。<a class="xref" href="functions-datetime.html#FUNCTIONS-DATETIME-CURRENT" title="9.9.4. 現在の日付/時刻">9.9.4</a>を参照。
+精度を限定した現在の時刻。<a class="xref" href="functions-datetime.html#FUNCTIONS-DATETIME-CURRENT" title="9.9.5. 現在の日付/時刻">9.9.5</a>を参照。
         </p>
         <p>
          <code class="literal">localtime(0)</code>
          → <code class="returnvalue">14:39:53</code>
         </p></td></tr><tr><td class="func_table_entry"><p class="func_signature">
-         <a id="id-1.5.8.15.5.2.2.24.1.1.1" class="indexterm"></a>
+         <a id="id-1.5.8.15.6.2.2.25.1.1.1" class="indexterm"></a>
          <code class="function">localtimestamp</code>
          → <code class="returnvalue">timestamp</code>
         </p>
@@ -634,7 +658,7 @@
          Current date and time (start of current transaction);
          see &lt;xref linkend="functions-datetime-current"/&gt;
 </span>
-現在の日付と時刻（現在のトランザクションの開始時）。<a class="xref" href="functions-datetime.html#FUNCTIONS-DATETIME-CURRENT" title="9.9.4. 現在の日付/時刻">9.9.4</a>を参照。
+現在の日付と時刻（現在のトランザクションの開始時）。<a class="xref" href="functions-datetime.html#FUNCTIONS-DATETIME-CURRENT" title="9.9.5. 現在の日付/時刻">9.9.5</a>を参照。
         </p>
         <p>
          <code class="literal">localtimestamp</code>
@@ -649,13 +673,13 @@
          transaction), with limited precision;
          see &lt;xref linkend="functions-datetime-current"/&gt;
 </span>
-精度を限定した現在の日付と時刻（現在のトランザクションの開始時）。<a class="xref" href="functions-datetime.html#FUNCTIONS-DATETIME-CURRENT" title="9.9.4. 現在の日付/時刻">9.9.4</a>を参照。
+精度を限定した現在の日付と時刻（現在のトランザクションの開始時）。<a class="xref" href="functions-datetime.html#FUNCTIONS-DATETIME-CURRENT" title="9.9.5. 現在の日付/時刻">9.9.5</a>を参照。
         </p>
         <p>
          <code class="literal">localtimestamp(2)</code>
          → <code class="returnvalue">2019-12-23 14:39:53.66</code>
         </p></td></tr><tr><td class="func_table_entry"><p class="func_signature">
-         <a id="id-1.5.8.15.5.2.2.26.1.1.1" class="indexterm"></a>
+         <a id="id-1.5.8.15.6.2.2.27.1.1.1" class="indexterm"></a>
          <code class="function">make_date</code> ( <em class="parameter"><code>year</code></em> <code class="type">int</code>,
          <em class="parameter"><code>month</code></em> <code class="type">int</code>,
          <em class="parameter"><code>day</code></em> <code class="type">int</code> )
@@ -664,13 +688,14 @@
         <p>
 <span class="original">
          Create date from year, month and day fields
+         (negative years signify BC)
 </span>
 年、月、日フィールドから日付を作成
         </p>
         <p>
          <code class="literal">make_date(2013, 7, 15)</code>
          → <code class="returnvalue">2013-07-15</code>
-        </p></td></tr><tr><td class="func_table_entry"><p class="func_signature"><a id="id-1.5.8.15.5.2.2.27.1.1.1" class="indexterm"></a>
+        </p></td></tr><tr><td class="func_table_entry"><p class="func_signature"><a id="id-1.5.8.15.6.2.2.28.1.1.1" class="indexterm"></a>
          <code class="function">make_interval</code> ( [<span class="optional"> <em class="parameter"><code>years</code></em> <code class="type">int</code>
          [<span class="optional">, <em class="parameter"><code>months</code></em> <code class="type">int</code>
          [<span class="optional">, <em class="parameter"><code>weeks</code></em> <code class="type">int</code>
@@ -692,7 +717,7 @@
          <code class="literal">make_interval(days =&gt; 10)</code>
          → <code class="returnvalue">10 days</code>
         </p></td></tr><tr><td class="func_table_entry"><p class="func_signature">
-         <a id="id-1.5.8.15.5.2.2.28.1.1.1" class="indexterm"></a>
+         <a id="id-1.5.8.15.6.2.2.29.1.1.1" class="indexterm"></a>
          <code class="function">make_time</code> ( <em class="parameter"><code>hour</code></em> <code class="type">int</code>,
          <em class="parameter"><code>min</code></em> <code class="type">int</code>,
          <em class="parameter"><code>sec</code></em> <code class="type">double precision</code> )
@@ -708,7 +733,7 @@
          <code class="literal">make_time(8, 15, 23.5)</code>
          → <code class="returnvalue">08:15:23.5</code>
         </p></td></tr><tr><td class="func_table_entry"><p class="func_signature">
-         <a id="id-1.5.8.15.5.2.2.29.1.1.1" class="indexterm"></a>
+         <a id="id-1.5.8.15.6.2.2.30.1.1.1" class="indexterm"></a>
          <code class="function">make_timestamp</code> ( <em class="parameter"><code>year</code></em> <code class="type">int</code>,
          <em class="parameter"><code>month</code></em> <code class="type">int</code>,
          <em class="parameter"><code>day</code></em> <code class="type">int</code>,
@@ -720,6 +745,7 @@
         <p>
 <span class="original">
          Create timestamp from year, month, day, hour, minute and seconds fields
+         (negative years signify BC)
 </span>
 年、月、日、時、分、秒フィールドから時刻を作成
         </p>
@@ -727,7 +753,7 @@
          <code class="literal">make_timestamp(2013, 7, 15, 8, 15, 23.5)</code>
          → <code class="returnvalue">2013-07-15 08:15:23.5</code>
         </p></td></tr><tr><td class="func_table_entry"><p class="func_signature">
-         <a id="id-1.5.8.15.5.2.2.30.1.1.1" class="indexterm"></a>
+         <a id="id-1.5.8.15.6.2.2.31.1.1.1" class="indexterm"></a>
          <code class="function">make_timestamptz</code> ( <em class="parameter"><code>year</code></em> <code class="type">int</code>,
          <em class="parameter"><code>month</code></em> <code class="type">int</code>,
          <em class="parameter"><code>day</code></em> <code class="type">int</code>,
@@ -740,16 +766,22 @@
         <p>
 <span class="original">
          Create timestamp with time zone from year, month, day, hour, minute
-         and seconds fields; if &lt;parameter&gt;timezone&lt;/parameter&gt; is not
-         specified, the current time zone is used
+         and seconds fields (negative years signify BC).
+         If &lt;parameter&gt;timezone&lt;/parameter&gt; is not
+         specified, the current time zone is used; the examples assume the
+         session time zone is &lt;literal&gt;Europe/London&lt;/literal&gt;
 </span>
 年、月、日、時、分、秒フィールドから時間帯付きの時刻を作成。<em class="parameter"><code>timezone</code></em>が指定されていなければ、現在の時間帯が使われる。
         </p>
         <p>
          <code class="literal">make_timestamptz(2013, 7, 15, 8, 15, 23.5)</code>
          → <code class="returnvalue">2013-07-15 08:15:23.5+01</code>
+        </p>
+        <p>
+         <code class="literal">make_timestamptz(2013, 7, 15, 8, 15, 23.5, 'America/New_York')</code>
+         → <code class="returnvalue">2013-07-15 13:15:23.5+01</code>
         </p></td></tr><tr><td class="func_table_entry"><p class="func_signature">
-         <a id="id-1.5.8.15.5.2.2.31.1.1.1" class="indexterm"></a>
+         <a id="id-1.5.8.15.6.2.2.32.1.1.1" class="indexterm"></a>
          <code class="function">now</code> ( )
          → <code class="returnvalue">timestamp with time zone</code>
         </p>
@@ -758,13 +790,13 @@
          Current date and time (start of current transaction);
          see &lt;xref linkend="functions-datetime-current"/&gt;
 </span>
-現在の日付と時刻（現在のトランザクションの開始時）。<a class="xref" href="functions-datetime.html#FUNCTIONS-DATETIME-CURRENT" title="9.9.4. 現在の日付/時刻">9.9.4</a>を参照。
+現在の日付と時刻（現在のトランザクションの開始時）。<a class="xref" href="functions-datetime.html#FUNCTIONS-DATETIME-CURRENT" title="9.9.5. 現在の日付/時刻">9.9.5</a>を参照。
         </p>
         <p>
          <code class="literal">now()</code>
          → <code class="returnvalue">2019-12-23 14:39:53.662522-05</code>
         </p></td></tr><tr><td class="func_table_entry"><p class="func_signature">
-         <a id="id-1.5.8.15.5.2.2.32.1.1.1" class="indexterm"></a>
+         <a id="id-1.5.8.15.6.2.2.33.1.1.1" class="indexterm"></a>
          <code class="function">statement_timestamp</code> ( )
          → <code class="returnvalue">timestamp with time zone</code>
         </p>
@@ -773,13 +805,13 @@
          Current date and time (start of current statement);
          see &lt;xref linkend="functions-datetime-current"/&gt;
 </span>
-現在の日付と時刻（現在の文の開始時）。<a class="xref" href="functions-datetime.html#FUNCTIONS-DATETIME-CURRENT" title="9.9.4. 現在の日付/時刻">9.9.4</a>を参照。
+現在の日付と時刻（現在の文の開始時）。<a class="xref" href="functions-datetime.html#FUNCTIONS-DATETIME-CURRENT" title="9.9.5. 現在の日付/時刻">9.9.5</a>を参照。
         </p>
         <p>
          <code class="literal">statement_timestamp()</code>
          → <code class="returnvalue">2019-12-23 14:39:53.662522-05</code>
         </p></td></tr><tr><td class="func_table_entry"><p class="func_signature">
-         <a id="id-1.5.8.15.5.2.2.33.1.1.1" class="indexterm"></a>
+         <a id="id-1.5.8.15.6.2.2.34.1.1.1" class="indexterm"></a>
          <code class="function">timeofday</code> ( )
          → <code class="returnvalue">text</code>
         </p>
@@ -789,13 +821,13 @@
          (like &lt;function&gt;clock_timestamp&lt;/function&gt;, but as a &lt;type&gt;text&lt;/type&gt; string);
          see &lt;xref linkend="functions-datetime-current"/&gt;
 </span>
-現在の日付と時刻（<code class="function">clock_timestamp</code>と似ているが、<code class="type">text</code>型文字列として返す）。<a class="xref" href="functions-datetime.html#FUNCTIONS-DATETIME-CURRENT" title="9.9.4. 現在の日付/時刻">9.9.4</a>を参照。
+現在の日付と時刻（<code class="function">clock_timestamp</code>と似ているが、<code class="type">text</code>型文字列として返す）。<a class="xref" href="functions-datetime.html#FUNCTIONS-DATETIME-CURRENT" title="9.9.5. 現在の日付/時刻">9.9.5</a>を参照。
         </p>
         <p>
          <code class="literal">timeofday()</code>
          → <code class="returnvalue">Mon Dec 23 14:39:53.662522 2019 EST</code>
         </p></td></tr><tr><td class="func_table_entry"><p class="func_signature">
-         <a id="id-1.5.8.15.5.2.2.34.1.1.1" class="indexterm"></a>
+         <a id="id-1.5.8.15.6.2.2.35.1.1.1" class="indexterm"></a>
          <code class="function">transaction_timestamp</code> ( )
          → <code class="returnvalue">timestamp with time zone</code>
         </p>
@@ -804,13 +836,13 @@
          Current date and time (start of current transaction);
          see &lt;xref linkend="functions-datetime-current"/&gt;
 </span>
-現在の日付と時刻（現在のトランザクションの開始時）。<a class="xref" href="functions-datetime.html#FUNCTIONS-DATETIME-CURRENT" title="9.9.4. 現在の日付/時刻">9.9.4</a>を参照。
+現在の日付と時刻（現在のトランザクションの開始時）。<a class="xref" href="functions-datetime.html#FUNCTIONS-DATETIME-CURRENT" title="9.9.5. 現在の日付/時刻">9.9.5</a>を参照。
         </p>
         <p>
          <code class="literal">transaction_timestamp()</code>
          → <code class="returnvalue">2019-12-23 14:39:53.662522-05</code>
         </p></td></tr><tr><td class="func_table_entry"><p class="func_signature">
-         <a id="id-1.5.8.15.5.2.2.35.1.1.1" class="indexterm"></a>
+         <a id="id-1.5.8.15.6.2.2.36.1.1.1" class="indexterm"></a>
          <code class="function">to_timestamp</code> ( <code class="type">double precision</code> )
          → <code class="returnvalue">timestamp with time zone</code>
         </p>
@@ -825,7 +857,7 @@ Unixエポック時間（1970-01-01 00:00:00+00からの経過秒数）をtimest
          <code class="literal">to_timestamp(1284352323)</code>
          → <code class="returnvalue">2010-09-13 04:32:03+00</code>
         </p></td></tr></tbody></table></div></div><br class="table-break" /><p>
-    <a id="id-1.5.8.15.6.1" class="indexterm"></a>
+    <a id="id-1.5.8.15.7.1" class="indexterm"></a>
 <span class="original">
     In addition to these functions, the SQL &lt;literal&gt;OVERLAPS&lt;/literal&gt; operator is
     supported:
@@ -962,7 +994,7 @@ SELECT age(timestamptz '2013-07-01 12:00:00', timestamptz '2013-03-01 12:00:00')
 &lt;lineannotation&gt;Result: &lt;/lineannotation&gt;&lt;computeroutput&gt;4 mons&lt;/computeroutput&gt;
 </span>
 <em class="lineannotation"><span class="lineannotation">結果: </span></em><code class="computeroutput">4 mons</code>
-</pre><div class="sect2" id="FUNCTIONS-DATETIME-EXTRACT"><div class="titlepage"><div><div><h3 class="title">9.9.1. <code class="function">EXTRACT</code>, <code class="function">date_part</code></h3></div></div></div><a id="id-1.5.8.15.12.2" class="indexterm"></a><a id="id-1.5.8.15.12.3" class="indexterm"></a><pre class="synopsis">
+</pre><div class="sect2" id="FUNCTIONS-DATETIME-EXTRACT"><div class="titlepage"><div><div><h3 class="title">9.9.1. <code class="function">EXTRACT</code>, <code class="function">date_part</code></h3></div></div></div><a id="id-1.5.8.15.13.2" class="indexterm"></a><a id="id-1.5.8.15.13.3" class="indexterm"></a><pre class="synopsis">
 EXTRACT(<em class="replaceable"><code>field</code></em> FROM <em class="replaceable"><code>source</code></em>)
 </pre><p>
 <span class="original">
@@ -975,7 +1007,7 @@ EXTRACT(<em class="replaceable"><code>field</code></em> FROM <em class="replacea
     well.)  &lt;replaceable&gt;field&lt;/replaceable&gt; is an identifier or
     string that selects what field to extract from the source value.
     The &lt;function&gt;extract&lt;/function&gt; function returns values of type
-    &lt;type&gt;double precision&lt;/type&gt;.
+    &lt;type&gt;numeric&lt;/type&gt;.
     The following are valid field names:
 </span>
 <code class="function">extract</code>関数は、日付/時刻の値から年や時などの部分フィールドを抽出します。
@@ -1056,9 +1088,11 @@ SELECT EXTRACT(DOY FROM TIMESTAMP '2001-02-16 20:38:40');
 </pre></dd><dt><span class="term"><code class="literal">epoch</code></span></dt><dd><p>
 <span class="original">
         For &lt;type&gt;timestamp with time zone&lt;/type&gt; values, the
-        number of seconds since 1970-01-01 00:00:00 UTC (can be negative);
+        number of seconds since 1970-01-01 00:00:00 UTC (negative for
+        timestamps before that);
         for &lt;type&gt;date&lt;/type&gt; and &lt;type&gt;timestamp&lt;/type&gt; values, the
-        number of seconds since 1970-01-01 00:00:00 local time;
+        nominal number of seconds since 1970-01-01 00:00:00,
+        without regard to timezone or daylight-savings rules;
         for &lt;type&gt;interval&lt;/type&gt; values, the total number
         of seconds in the interval
 </span>
@@ -1067,18 +1101,27 @@ SELECT EXTRACT(DOY FROM TIMESTAMP '2001-02-16 20:38:40');
 SELECT EXTRACT(EPOCH FROM TIMESTAMP WITH TIME ZONE '2001-02-16 20:38:40.12-08');
 <em class="lineannotation"><span class="lineannotation">Result: </span></em><code class="computeroutput">982384720.12</code>
 
+SELECT EXTRACT(EPOCH FROM TIMESTAMP '2001-02-16 20:38:40.12');
+<em class="lineannotation"><span class="lineannotation">Result: </span></em><code class="computeroutput">982355920.12</code>
+
 SELECT EXTRACT(EPOCH FROM INTERVAL '5 days 3 hours');
 <em class="lineannotation"><span class="lineannotation">Result: </span></em><code class="computeroutput">442800</code>
 </pre><p>
 <span class="original">
-        You can convert an epoch value back to a time stamp
+        You can convert an epoch value back to a &lt;type&gt;timestamp with time zone&lt;/type&gt;
         with &lt;function&gt;to_timestamp&lt;/function&gt;:
 </span>
 <code class="function">to_timestamp</code>で経過秒数をタイムスタンプ値に変換することができます。
        </p><pre class="screen">
 SELECT to_timestamp(982384720.12);
 <em class="lineannotation"><span class="lineannotation">Result: </span></em><code class="computeroutput">2001-02-17 04:38:40.12+00</code>
-</pre></dd><dt><span class="term"><code class="literal">hour</code></span></dt><dd><p>
+</pre><p>
+        Beware that applying <code class="function">to_timestamp</code> to an epoch
+        extracted from a <code class="type">date</code> or <code class="type">timestamp</code> value
+        could produce a misleading result: the result will effectively
+        assume that the original value had been given in UTC, which might
+        not be the case.
+       </p></dd><dt><span class="term"><code class="literal">hour</code></span></dt><dd><p>
 <span class="original">
         The hour field (0&amp;ndash;23)
 </span>
@@ -1128,7 +1171,17 @@ SELECT EXTRACT(ISOYEAR FROM DATE '2006-01-02');
         This field is not available in PostgreSQL releases prior to 8.3.
 </span>
 このフィールドは8.3より前のPostgreSQLリリースでは有効でありません。
-       </p></dd><dt><span class="term"><code class="literal">microseconds</code></span></dt><dd><p>
+       </p></dd><dt><span class="term"><code class="literal">julian</code></span></dt><dd><p>
+        The <em class="firstterm">Julian Date</em> corresponding to the
+        date or timestamp (not applicable to intervals).  Timestamps
+        that are not local midnight result in a fractional value.  See
+        <a class="xref" href="datetime-julian-dates.html" title="B.7. Julian Dates">B.7</a> for more information.
+       </p><pre class="screen">
+SELECT EXTRACT(JULIAN FROM DATE '2006-01-01');
+<em class="lineannotation"><span class="lineannotation">Result: </span></em><code class="computeroutput">2453737</code>
+SELECT EXTRACT(JULIAN FROM TIMESTAMP '2006-01-01 12:00');
+<em class="lineannotation"><span class="lineannotation">Result: </span></em><code class="computeroutput">2453737.50000000000000000000</code>
+</pre></dd><dt><span class="term"><code class="literal">microseconds</code></span></dt><dd><p>
 <span class="original">
         The seconds field, including fractional parts, multiplied by 1
         000 000;  note that this includes full seconds
@@ -1295,6 +1348,10 @@ date_part('<em class="replaceable"><code>field</code></em>', <em class="replacea
     be a string value, not a name.  The valid field names for
     &lt;function&gt;date_part&lt;/function&gt; are the same as for
     &lt;function&gt;extract&lt;/function&gt;.
+    For historical reasons, the &lt;function&gt;date_part&lt;/function&gt; function
+    returns values of type &lt;type&gt;double precision&lt;/type&gt;.  This can result in
+    a loss of precision in certain uses.  Using &lt;function&gt;extract&lt;/function&gt;
+    is recommended instead.
 </span>
 ここで<em class="replaceable"><code>field</code></em>パラメータが名前ではなく文字列値である必要があることに注意してください。
 <code class="function">date_part</code>で有効なフィールド名は<code class="function">extract</code>と同じです。
@@ -1304,7 +1361,7 @@ SELECT date_part('day', TIMESTAMP '2001-02-16 20:38:40');
 
 SELECT date_part('hour', INTERVAL '4 hours 3 minutes');
 <em class="lineannotation"><span class="lineannotation">Result: </span></em><code class="computeroutput">4</code>
-</pre></div><div class="sect2" id="FUNCTIONS-DATETIME-TRUNC"><div class="titlepage"><div><div><h3 class="title">9.9.2. <code class="function">date_trunc</code></h3></div></div></div><a id="id-1.5.8.15.13.2" class="indexterm"></a><p>
+</pre></div><div class="sect2" id="FUNCTIONS-DATETIME-TRUNC"><div class="titlepage"><div><div><h3 class="title">9.9.2. <code class="function">date_trunc</code></h3></div></div></div><a id="id-1.5.8.15.14.2" class="indexterm"></a><p>
 <span class="original">
     The function &lt;function&gt;date_trunc&lt;/function&gt; is conceptually
     similar to the &lt;function&gt;trunc&lt;/function&gt; function for numbers.
@@ -1381,7 +1438,39 @@ SELECT date_trunc('day', TIMESTAMP WITH TIME ZONE '2001-02-16 20:38:40+00', 'Aus
 SELECT date_trunc('hour', INTERVAL '3 days 02:47:33');
 <em class="lineannotation"><span class="lineannotation">Result: </span></em><code class="computeroutput">3 days 02:00:00</code>
 </pre><p>
-   </p></div><div class="sect2" id="FUNCTIONS-DATETIME-ZONECONVERT"><div class="titlepage"><div><div><h3 class="title">9.9.3. <code class="literal">AT TIME ZONE</code></h3></div></div></div><a id="id-1.5.8.15.14.2" class="indexterm"></a><a id="id-1.5.8.15.14.3" class="indexterm"></a><p>
+   </p></div><div class="sect2" id="FUNCTIONS-DATETIME-BIN"><div class="titlepage"><div><div><h3 class="title">9.9.3. <code class="function">date_bin</code></h3></div></div></div><a id="id-1.5.8.15.15.2" class="indexterm"></a><p>
+    The function <code class="function">date_bin</code> <span class="quote">「<span class="quote">bins</span>」</span> the input
+    timestamp into the specified interval (the <em class="firstterm">stride</em>)
+    aligned with a specified origin.
+   </p><p>
+</p><pre class="synopsis">
+date_bin(<em class="replaceable"><code>stride</code></em>, <em class="replaceable"><code>source</code></em>, <em class="replaceable"><code>origin</code></em>)
+</pre><p>
+    <em class="replaceable"><code>source</code></em> is a value expression of type
+    <code class="type">timestamp</code> or <code class="type">timestamp with time zone</code>.  (Values
+    of type <code class="type">date</code> are cast automatically to
+    <code class="type">timestamp</code>.)  <em class="replaceable"><code>stride</code></em> is a value
+    expression of type <code class="type">interval</code>.  The return value is likewise
+    of type <code class="type">timestamp</code> or <code class="type">timestamp with time zone</code>,
+    and it marks the beginning of the bin into which the
+    <em class="replaceable"><code>source</code></em> is placed.
+   </p><p>
+    Examples:
+</p><pre class="screen">
+SELECT date_bin('15 minutes', TIMESTAMP '2020-02-11 15:44:17', TIMESTAMP '2001-01-01');
+<em class="lineannotation"><span class="lineannotation">Result: </span></em><code class="computeroutput">2020-02-11 15:30:00</code>
+
+SELECT date_bin('15 minutes', TIMESTAMP '2020-02-11 15:44:17', TIMESTAMP '2001-01-01 00:02:30');
+<em class="lineannotation"><span class="lineannotation">Result: </span></em><code class="computeroutput">2020-02-11 15:32:30</code>
+</pre><p>
+   </p><p>
+    In the case of full units (1 minute, 1 hour, etc.), it gives the same result as
+    the analogous <code class="function">date_trunc</code> call, but the difference is
+    that <code class="function">date_bin</code> can truncate to an arbitrary interval.
+   </p><p>
+    The <em class="parameter"><code>stride</code></em> interval must be greater than zero and
+    cannot contain units of month or larger.
+   </p></div><div class="sect2" id="FUNCTIONS-DATETIME-ZONECONVERT"><div class="titlepage"><div><div><h3 class="title">9.9.4. <code class="literal">AT TIME ZONE</code></h3></div></div></div><a id="id-1.5.8.15.16.2" class="indexterm"></a><a id="id-1.5.8.15.16.3" class="indexterm"></a><p>
 <span class="original">
     The &lt;literal&gt;AT TIME ZONE&lt;/literal&gt; operator converts time
     stamp &lt;emphasis&gt;without&lt;/emphasis&gt; time zone to/from
@@ -1507,9 +1596,9 @@ SELECT TIMESTAMP '2001-02-16 20:38:40' AT TIME ZONE 'Asia/Tokyo' AT TIME ZONE 'A
     &lt;replaceable&gt;zone&lt;/replaceable&gt;&lt;/literal&gt;.
 </span>
 関数<code class="function">timezone</code>(<em class="replaceable"><code>zone</code></em>, <em class="replaceable"><code>timestamp</code></em>)は、SQL準拠の構文<code class="literal"><em class="replaceable"><code>timestamp</code></em> AT TIME ZONE <em class="replaceable"><code>zone</code></em></code>と等価です。
-   </p></div><div class="sect2" id="FUNCTIONS-DATETIME-CURRENT"><div class="titlepage"><div><div><h3 class="title">9.9.4. 現在の日付/時刻</h3></div></div></div><span class="original">
+   </p></div><div class="sect2" id="FUNCTIONS-DATETIME-CURRENT"><div class="titlepage"><div><div><h3 class="title">9.9.5. 現在の日付/時刻</h3></div></div></div><span class="original">
    &lt;title&gt;Current Date/Time&lt;/title&gt;
-</span><a id="id-1.5.8.15.15.2" class="indexterm"></a><a id="id-1.5.8.15.15.3" class="indexterm"></a><p>
+</span><a id="id-1.5.8.15.17.2" class="indexterm"></a><a id="id-1.5.8.15.17.3" class="indexterm"></a><p>
 <span class="original">
     &lt;productname&gt;PostgreSQL&lt;/productname&gt; provides a number of functions
     that return values related to the current date and time.  These
@@ -1664,9 +1753,9 @@ SELECT TIMESTAMP 'now';  -- but see tip below
 最初の2つの形式は関数呼び出しなので、デフォルト値が使用されるまで評価されません。
 ですから、これらの関数は列の挿入時間をデフォルトとする、望ましい振舞いをします。
 （<a class="xref" href="datatype-datetime.html#DATATYPE-DATETIME-SPECIAL-VALUES" title="8.5.1.4. 特別な値">8.5.1.4</a>も見てください。）
-     </p></div></div><div class="sect2" id="FUNCTIONS-DATETIME-DELAY"><div class="titlepage"><div><div><h3 class="title">9.9.5. 遅延実行</h3></div></div></div><span class="original">
+     </p></div></div><div class="sect2" id="FUNCTIONS-DATETIME-DELAY"><div class="titlepage"><div><div><h3 class="title">9.9.6. 遅延実行</h3></div></div></div><span class="original">
    &lt;title&gt;Delaying Execution&lt;/title&gt;
-</span><a id="id-1.5.8.15.16.2" class="indexterm"></a><a id="id-1.5.8.15.16.3" class="indexterm"></a><a id="id-1.5.8.15.16.4" class="indexterm"></a><a id="id-1.5.8.15.16.5" class="indexterm"></a><a id="id-1.5.8.15.16.6" class="indexterm"></a><p>
+</span><a id="id-1.5.8.15.18.2" class="indexterm"></a><a id="id-1.5.8.15.18.3" class="indexterm"></a><a id="id-1.5.8.15.18.4" class="indexterm"></a><a id="id-1.5.8.15.18.5" class="indexterm"></a><a id="id-1.5.8.15.18.6" class="indexterm"></a><p>
 <span class="original">
     The following functions are available to delay execution of the server
     process:
@@ -1720,4 +1809,4 @@ SELECT pg_sleep_until('tomorrow 03:00');
 </span>
 <code class="function">pg_sleep</code>またはその亜種を呼び出す時、セッションが必要以上のロックを保持していないことを確実にしてください。
 さもないと、他のセッションが休止中のプロセスを待機しなければならないかもしれません。そのためシステム全体の速度が低下することになるかもしれません。
-     </p></div></div></div><div xmlns="http://www.w3.org/TR/xhtml1/transitional" class="navfooter"><hr></hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="functions-formatting.html" title="9.8. データ型書式設定関数">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="functions.html" title="第9章 関数と演算子">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="functions-enum.html" title="9.10. 列挙型サポート関数">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">9.8. データ型書式設定関数 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 13.1文書">ホーム</a></td><td width="40%" align="right" valign="top"> 9.10. 列挙型サポート関数</td></tr></table></div></body></html>
+     </p></div></div></div><div xmlns="http://www.w3.org/TR/xhtml1/transitional" class="navfooter"><hr></hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="functions-formatting.html" title="9.8. データ型書式設定関数">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="functions.html" title="第9章 関数と演算子">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="functions-enum.html" title="9.10. 列挙型サポート関数">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">9.8. データ型書式設定関数 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 14.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 9.10. 列挙型サポート関数</td></tr></table></div></body></html>

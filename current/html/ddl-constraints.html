@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>5.4. 制約</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="ddl-generated-columns.html" title="5.3. 生成列" /><link rel="next" href="ddl-system-columns.html" title="5.5. システム列" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 13.1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="ddl.html" title="第5章 データ定義">第5章 データ定義</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 13.1 &#10;                      ddl-constraints.html">誤訳等の報告
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>5.4. 制約</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="ddl-generated-columns.html" title="5.3. 生成列" /><link rel="next" href="ddl-system-columns.html" title="5.5. システム列" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 14.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="ddl.html" title="第5章 データ定義">第5章 データ定義</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 14.0 &#10;                      ddl-constraints.html">誤訳等の報告
                     </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="ddl-generated-columns.html" title="5.3. 生成列">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="ddl.html" title="第5章 データ定義">上へ</a></td><td width="60%" align="center">5.4. 制約</td><td width="20%" align="right"> <a accesskey="n" href="ddl-system-columns.html" title="5.5. システム列">次へ</a></td></tr></table><hr /></div><div class="sect1" id="DDL-CONSTRAINTS"><div class="titlepage"><div><div><h2 class="title" style="clear: both">5.4. 制約</h2></div></div></div><span class="original">
   &lt;title&gt;Constraints&lt;/title&gt;
 </span><a id="id-1.5.4.6.2" class="indexterm"></a><p>
@@ -222,7 +222,7 @@ CREATE TABLE products (
      reloading data, so that the check will not be enforced during a
      dump/reload.)
 </span>
-常に一貫性の保障を維持するのではなく、行挿入の際に一回だけの行の検査が必要なら、その実装のためにカスタム<a class="link" href="triggers.html" title="第38章 トリガ">トリガ</a>が利用できます。
+常に一貫性の保障を維持するのではなく、行挿入の際に一回だけの行の検査が必要なら、その実装のためにカスタム<a class="link" href="triggers.html" title="第39章 トリガ">トリガ</a>が利用できます。
 （<span class="application">pg_dump</span>はデータの再ロード後までトリガを再インストールせず、ダンプ/再ロード中は検査が強制されないため、この方法でダンプ/再ロード問題を回避できます。）
     </p></div><div class="note"><h3 class="title">注記</h3><p>
 <span class="original">
@@ -592,6 +592,9 @@ CREATE TABLE orders (
 </span>
 列リストがないため、被参照テーブルの主キーが被参照列として使用されます。
    </p><p>
+    You can assign your own name for a foreign key constraint,
+    in the usual way.
+   </p><p>
 <span class="original">
     A foreign key can also constrain and reference a group of columns.
     As usual, it then needs to be written in table constraint form.
@@ -613,12 +616,23 @@ CREATE TABLE t1 (
     match the number and type of the referenced columns.
 </span>
 もちろん、制約される列数および型は、被参照列の数および型と一致しなければなりません。
-   </p><p>
-<span class="original">
-    You can assign your own name for a foreign key constraint,
-    in the usual way.
-</span>
-外部キー制約には、通常の方法で名前を割り当てることもできます。
+   </p><a id="id-1.5.4.6.9.11" class="indexterm"></a><p>
+    Sometimes it is useful for the <span class="quote">「<span class="quote">other table</span>」</span> of a
+    foreign key constraint to be the same table; this is called
+    a <em class="firstterm">self-referential</em> foreign key.  For
+    example, if you want rows of a table to represent nodes of a tree
+    structure, you could write
+</p><pre class="programlisting">
+CREATE TABLE tree (
+    node_id integer PRIMARY KEY,
+    parent_id integer REFERENCES tree,
+    name text,
+    ...
+);
+</pre><p>
+    A top-level node would have NULL <code class="structfield">parent_id</code>,
+    while non-NULL <code class="structfield">parent_id</code> entries would be
+    constrained to reference valid rows of the table.
    </p><p>
 <span class="original">
     A table can have more than one foreign key constraint.  This is
@@ -657,7 +671,7 @@ CREATE TABLE order_items (
     the last table.
 </span>
 最後のテーブルで、主キーと外部キーが重なっていることに注目してください。
-   </p><a id="id-1.5.4.6.9.12" class="indexterm"></a><a id="id-1.5.4.6.9.13" class="indexterm"></a><p>
+   </p><a id="id-1.5.4.6.9.14" class="indexterm"></a><a id="id-1.5.4.6.9.15" class="indexterm"></a><p>
 <span class="original">
     We know that the foreign keys disallow creation of orders that
     do not relate to any products.  But what if a product is removed
@@ -819,4 +833,4 @@ TABLE ... CONSTRAINT ... EXCLUDE</code></a>を参照して下さい。
     of the type specified in the constraint declaration.
 </span>
 排他制約を追加すると、制約宣言で指定された種類のインデックスが自動的に作られます。
-   </p></div></div><div xmlns="http://www.w3.org/TR/xhtml1/transitional" class="navfooter"><hr></hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ddl-generated-columns.html" title="5.3. 生成列">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="ddl.html" title="第5章 データ定義">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="ddl-system-columns.html" title="5.5. システム列">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">5.3. 生成列 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 13.1文書">ホーム</a></td><td width="40%" align="right" valign="top"> 5.5. システム列</td></tr></table></div></body></html>
+   </p></div></div><div xmlns="http://www.w3.org/TR/xhtml1/transitional" class="navfooter"><hr></hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ddl-generated-columns.html" title="5.3. 生成列">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="ddl.html" title="第5章 データ定義">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="ddl-system-columns.html" title="5.5. システム列">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">5.3. 生成列 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 14.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 5.5. システム列</td></tr></table></div></body></html>

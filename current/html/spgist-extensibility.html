@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>65.3. 拡張性</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="spgist-builtin-opclasses.html" title="65.2. 組み込み演算子クラス" /><link rel="next" href="spgist-implementation.html" title="65.4. 実装" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 13.1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="spgist.html" title="第65章 SP-GiSTインデックス">第65章 SP-GiSTインデックス</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 13.1 &#10;                      spgist-extensibility.html">誤訳等の報告
-                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="spgist-builtin-opclasses.html" title="65.2. 組み込み演算子クラス">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="spgist.html" title="第65章 SP-GiSTインデックス">上へ</a></td><td width="60%" align="center">65.3. 拡張性</td><td width="20%" align="right"> <a accesskey="n" href="spgist-implementation.html" title="65.4. 実装">次へ</a></td></tr></table><hr /></div><div class="sect1" id="SPGIST-EXTENSIBILITY"><div class="titlepage"><div><div><h2 class="title" style="clear: both">65.3. 拡張性</h2></div></div></div><span class="original">
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>66.3. 拡張性</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="spgist-builtin-opclasses.html" title="66.2. 組み込み演算子クラス" /><link rel="next" href="spgist-implementation.html" title="66.4. 実装" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 14.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="spgist.html" title="第66章 SP-GiSTインデックス">第66章 SP-GiSTインデックス</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 14.0 &#10;                      spgist-extensibility.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="spgist-builtin-opclasses.html" title="66.2. 組み込み演算子クラス">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="spgist.html" title="第66章 SP-GiSTインデックス">上へ</a></td><td width="60%" align="center">66.3. 拡張性</td><td width="20%" align="right"> <a accesskey="n" href="spgist-implementation.html" title="66.4. 実装">次へ</a></td></tr></table><hr /></div><div class="sect1" id="SPGIST-EXTENSIBILITY"><div class="titlepage"><div><div><h2 class="title" style="clear: both">66.3. 拡張性</h2></div></div></div><span class="original">
  &lt;title&gt;Extensibility&lt;/title&gt;
 </span><p>
 <span class="original">
@@ -15,10 +15,12 @@
 また、同時実行制御とログ出力も担当します。
  </p><p>
 <span class="original">
-  Leaf tuples of an &lt;acronym&gt;SP-GiST&lt;/acronym&gt; tree contain values of the
-  same data type as the indexed column.  Leaf tuples at the root level will
-  always contain the original indexed data value, but leaf tuples at lower
-  levels might contain only a compressed representation, such as a suffix.
+  Leaf tuples of an &lt;acronym&gt;SP-GiST&lt;/acronym&gt; tree usually contain values
+  of the same data type as the indexed column, although it is also possible
+  for them to contain lossy representations of the indexed column.
+  Leaf tuples stored at the root level will directly represent
+  the original indexed data value, but leaf tuples at lower
+  levels might contain only a partial value, such as a suffix.
   In that case the operator class support functions must be able to
   reconstruct the original value using information accumulated from the
   inner tuples that are passed through to reach the leaf level.
@@ -26,6 +28,12 @@
 <acronym class="acronym">SP-GiST</acronym>のツリーのリーフタプルは、インデックスの付けられた列と同じデータ型の値を含んでいます。
 ルートレベルにあるリーフタプルは、必ずインデックスが付けられた元のデータの値を含んでいますが、より下のレベルのリーフタプルは、接尾辞など、圧縮された表現しか含んでいないかも知れません。
 この場合、演算子クラスのサポート関数が、内部タプルをリーフレベルまでたどりながら集める情報を使って元の値を再構築できる必要があります。
+ </p><p>
+  When an <acronym class="acronym">SP-GiST</acronym> index is created with
+  <code class="literal">INCLUDE</code> columns, the values of those columns are also
+  stored in leaf tuples.  The <code class="literal">INCLUDE</code> columns are of no
+  concern to the <acronym class="acronym">SP-GiST</acronym> operator class, so they are
+  not discussed further here.
  </p><p>
 <span class="original">
   Inner tuples are more complex, since they are branching points in the
@@ -53,7 +61,7 @@
 それぞれのノードは、通常、それを記述する<em class="firstterm">ラベル</em>を持っています。
 例えば、基数木では、ノードのラベルは文字列の値の次の文字にすることができます。
 （あるいは、すべての内部タプルについて、決まったノードの集合しか扱わないのであれば、演算子クラスはノードのラベルを省略することができます。
-<a class="xref" href="spgist-implementation.html#SPGIST-NULL-LABELS" title="65.4.2. ノードラベルのないSP-GiST">65.4.2</a>を参照してください。）
+<a class="xref" href="spgist-implementation.html#SPGIST-NULL-LABELS" title="66.4.2. ノードラベルのないSP-GiST">66.4.2</a>を参照してください。）
 省略可能ですが、内部タプルはそのすべてのメンバーを記述する<em class="firstterm">接頭辞</em>の値を持つことができます。
 基数木では、これは表現される文字列に共通の接頭辞とすることができます。
 接頭辞の値は、必ずしも本当の接頭辞である必要はなく、演算子クラスが必要とする任意の値で良いです。
@@ -185,29 +193,29 @@ typedef struct spgConfigOut
 接頭辞を使わない演算子クラスでは、<code class="structfield">prefixType</code>を<code class="literal">VOIDOID</code>に設定することができます。
 同様に、ノードラベルを使わない演算子クラスでは、<code class="structfield">labelType</code>を<code class="literal">VOIDOID</code>に設定することができます。
 演算子クラスが、元々提供されていたインデックスの値を再構築できるときは、<code class="structfield">canReturnData</code>をtrueにします。
-<code class="structfield">attType</code>が可変長で、演算子クラスが接尾辞付けの繰り返しによって長い値を分割できるときにのみ、<code class="structfield">longValuesOK</code>をtrueにします(<a class="xref" href="spgist-implementation.html#SPGIST-LIMITS" title="65.4.1. SP-GiSTの制限">65.4.1</a>参照)。
+<code class="structfield">attType</code>が可変長で、演算子クラスが接尾辞付けの繰り返しによって長い値を分割できるときにのみ、<code class="structfield">longValuesOK</code>をtrueにします(<a class="xref" href="spgist-implementation.html#SPGIST-LIMITS" title="66.4.1. SP-GiSTの制限">66.4.1</a>参照)。
      </p><p>
-<span class="original">
-      &lt;structfield&gt;leafType&lt;/structfield&gt; is typically the same as
-      &lt;structfield&gt;attType&lt;/structfield&gt;.  For the reasons of backward
-      compatibility, method &lt;function&gt;config&lt;/function&gt; can
-      leave &lt;structfield&gt;leafType&lt;/structfield&gt; uninitialized; that would
-      give the same effect as setting &lt;structfield&gt;leafType&lt;/structfield&gt; equal
-      to &lt;structfield&gt;attType&lt;/structfield&gt;.  When &lt;structfield&gt;attType&lt;/structfield&gt;
-      and &lt;structfield&gt;leafType&lt;/structfield&gt; are different, then optional
-      method &lt;function&gt;compress&lt;/function&gt; must be provided.
-      Method &lt;function&gt;compress&lt;/function&gt; is responsible
-      for transformation of datums to be indexed from &lt;structfield&gt;attType&lt;/structfield&gt;
-      to &lt;structfield&gt;leafType&lt;/structfield&gt;.
-      Note: both consistent functions will get &lt;structfield&gt;scankeys&lt;/structfield&gt;
-      unchanged, without transformation using &lt;function&gt;compress&lt;/function&gt;.
-</span>
-<code class="structfield">leafType</code>は一般的には<code class="structfield">attType</code>と同じです。
-後方互換性のため、<code class="function">config</code>メソッドは<code class="structfield">leafType</code>を初期化しないままにすることができます。
-このことは<code class="structfield">leafType</code>を<code class="structfield">attType</code>と同一に設定するのと同じ効果をもたらすでしょう。
-<code class="structfield">attType</code>と<code class="structfield">leafType</code>が異なるときには、オプションメソッド<code class="function">compress</code>が提供されなければなりません。
-メソッド<code class="function">compress</code>は<code class="structfield">attType</code>から<code class="structfield">leafType</code>へのインデックス付けされたデータの変換に責任を持ちます。
-注意: 両consistent関数は、<code class="function">compress</code>を使った変換を伴わない、変更されていない<code class="structfield">scankeys</code>を取得します。
+      <code class="structfield">leafType</code> should match the index storage type
+      defined by the operator class's <code class="structfield">opckeytype</code>
+      catalog entry.
+      (Note that <code class="structfield">opckeytype</code> can be zero,
+      implying the storage type is the same as the operator class's input
+      type, which is the most common situation.)
+      For reasons of backward compatibility, the <code class="function">config</code>
+      method can set <code class="structfield">leafType</code> to some other value,
+      and that value will be used; but this is deprecated since the index
+      contents are then incorrectly identified in the catalogs.
+      Also, it's permissible to
+      leave <code class="structfield">leafType</code> uninitialized (zero);
+      that is interpreted as meaning the index storage type derived from
+      <code class="structfield">opckeytype</code>.
+     </p><p>
+      When <code class="structfield">attType</code>
+      and <code class="structfield">leafType</code> are different, the optional
+      method <code class="function">compress</code> must be provided.
+      Method <code class="function">compress</code> is responsible
+      for transformation of datums to be indexed from <code class="structfield">attType</code>
+      to <code class="structfield">leafType</code>.
      </p></dd><dt><span class="term"><code class="function">choose</code></span></dt><dd><p>
 <span class="original">
         Chooses a method for inserting a new value into an inner tuple.
@@ -370,7 +378,7 @@ typedef struct spgChooseOut
 <code class="structfield">leafDatum</code>は、<code class="function">choose</code>や<code class="function">picksplit</code>メソッドがこれを変更すると、ツリーのより低いレベルで変化することがあります。
 挿入の探索がリーフページに到達するとき、<code class="structfield">leafDatum</code>の現在値は、新しく作成されるリーフタプルに格納される値です。
 <code class="structfield">level</code>は、ルートレベルを0として、現在の内部タプルのレベルを示します。
-現在の内部タプルが複数の同等なノードを含むとして印を付けられているとき、<code class="structfield">allTheSame</code>をtrueにします(<a class="xref" href="spgist-implementation.html#SPGIST-ALL-THE-SAME" title="65.4.3. 「All-the-Same」内部タプル">65.4.3</a>参照)。
+現在の内部タプルが複数の同等なノードを含むとして印を付けられているとき、<code class="structfield">allTheSame</code>をtrueにします(<a class="xref" href="spgist-implementation.html#SPGIST-ALL-THE-SAME" title="66.4.3. 「All-the-Same」内部タプル">66.4.3</a>参照)。
 現在の内部タプルが接頭辞を含むとき、<code class="structfield">hasPrefix</code>をtrueにします。
 このとき、<code class="structfield">prefixDatum</code>がその値になります。
 <code class="structfield">nNodes</code>は内部タプルが含む子ノードの数で、<code class="structfield">nodeLabels</code>はそれらのラベル値の配列、あるいはラベルがなければNULLになります。
@@ -576,7 +584,7 @@ typedef struct spgPickSplitOut
 従って、<code class="function">picksplit</code>がすべてのリーフタプルを同じノードに置くことになった場合には、SP-GiSTのコアのコードがその決定を覆して内部タプルを生成し、その中の複数の同一のラベルが付けられたノードに、リーフタプルが無作為に割り当てられます。
 そのようなタプルは、このことが発生したことを明示するため、<code class="literal">allTheSame</code>と印がつけられます。
 <code class="function">choose</code>関数と<code class="function">inner_consistent</code>関数は、これらの内部タプルについて、適切な注意をして取り扱わなければなりません。
-詳細な情報は<a class="xref" href="spgist-implementation.html#SPGIST-ALL-THE-SAME" title="65.4.3. 「All-the-Same」内部タプル">65.4.3</a>を参照してください。
+詳細な情報は<a class="xref" href="spgist-implementation.html#SPGIST-ALL-THE-SAME" title="66.4.3. 「All-the-Same」内部タプル">66.4.3</a>を参照してください。
       </p><p>
 <span class="original">
        &lt;function&gt;picksplit&lt;/function&gt; can be applied to a single leaf tuple only
@@ -591,7 +599,7 @@ typedef struct spgPickSplitOut
 <code class="function">config</code>関数が<code class="structfield">longValuesOK</code>をtrueにセットし、1ページよりも大きな入力値を与える場合にのみ、<code class="function">picksplit</code>を1つだけのリーフタプルに適用できます。
 この場合の操作の重要な点は、接頭辞をはがして、新しい、より短いリーフデータの値を生成することです。
 この呼出は、1ページに収まる短さのリーフデータが生成されるまで繰り返されます。
-詳細な情報は<a class="xref" href="spgist-implementation.html#SPGIST-LIMITS" title="65.4.1. SP-GiSTの制限">65.4.1</a>を参照してください。
+詳細な情報は<a class="xref" href="spgist-implementation.html#SPGIST-LIMITS" title="66.4.1. SP-GiSTの制限">66.4.1</a>を参照してください。
       </p></dd><dt><span class="term"><code class="function">inner_consistent</code></span></dt><dd><p>
 <span class="original">
        Returns set of nodes (branches) to follow during tree search.
@@ -694,8 +702,7 @@ typedef struct spgInnerConsistentOut
        &lt;structfield&gt;reconstructedValue&lt;/structfield&gt; is the value reconstructed for the
        parent tuple; it is &lt;literal&gt;(Datum) 0&lt;/literal&gt; at the root level or if the
        &lt;function&gt;inner_consistent&lt;/function&gt; function did not provide a value at the
-       parent level. &lt;structfield&gt;reconstructedValue&lt;/structfield&gt; is always of
-       &lt;structname&gt;spgConfigOut&lt;/structname&gt;.&lt;structfield&gt;leafType&lt;/structfield&gt; type.
+       parent level.
        &lt;structfield&gt;traversalValue&lt;/structfield&gt; is a pointer to any traverse data
        passed down from the previous call of &lt;function&gt;inner_consistent&lt;/function&gt;
        on the parent index tuple, or NULL at the root level.
@@ -730,7 +737,7 @@ typedef struct spgInnerConsistentOut
 <code class="structfield">traversalMemoryContext</code>は出力探索値が格納されるメモリコンテキストです（以下を参照）。
 <code class="structfield">level</code>は現在の内部タプルのレベルを、ルートレベルを0として数えたものです。
 <code class="structfield">returnData</code>は、この問い合わせで再構築されたデータが必要な場合に<code class="literal">true</code>となりますが、これは<code class="function">config</code>関数が<code class="structfield">canReturnData</code>であると主張した場合にのみ、そうなります。
-現在の内部タプルが<span class="quote">「<span class="quote">all-the-same</span>」</span>と印付けされているなら、<code class="structfield">allTheSame</code>は真になります。この場合、（もしあるなら）全てのノードが同じラベルを持ち、問い合わせに全てが一致するか、全く一致しないかのいずれかになります（<a class="xref" href="spgist-implementation.html#SPGIST-ALL-THE-SAME" title="65.4.3. 「All-the-Same」内部タプル">65.4.3</a>を参照）。
+現在の内部タプルが<span class="quote">「<span class="quote">all-the-same</span>」</span>と印付けされているなら、<code class="structfield">allTheSame</code>は真になります。この場合、（もしあるなら）全てのノードが同じラベルを持ち、問い合わせに全てが一致するか、全く一致しないかのいずれかになります（<a class="xref" href="spgist-implementation.html#SPGIST-ALL-THE-SAME" title="66.4.3. 「All-the-Same」内部タプル">66.4.3</a>を参照）。
 現在の内部タプルがプレフィックスを含んでいるなら<code class="structfield">hasPrefix</code>は真になります。その場合、<code class="structfield">prefixDatum</code>がその値です。
 <code class="structfield">nNodes</code>は内部タプルに含まれる子ノードの数で、<code class="structfield">nodeLabels</code>はそれらのラベル値の配列、あるいは、ノードがラベルを持たないならNULLです。
       </p><p>
@@ -745,9 +752,14 @@ typedef struct spgInnerConsistentOut
        necessarily so, so an array is used.)
        If value reconstruction is needed, set
        &lt;structfield&gt;reconstructedValues&lt;/structfield&gt; to an array of the values
-       of &lt;structname&gt;spgConfigOut&lt;/structname&gt;.&lt;structfield&gt;leafType&lt;/structfield&gt; type
        reconstructed for each child node to be visited; otherwise, leave
        &lt;structfield&gt;reconstructedValues&lt;/structfield&gt; as NULL.
+       The reconstructed values are assumed to be of type
+       &lt;structname&gt;spgConfigOut&lt;/structname&gt;.&lt;structfield&gt;leafType&lt;/structfield&gt;.
+       (However, since the core system will do nothing with them except
+       possibly copy them, it is sufficient for them to have the
+       same &lt;literal&gt;typlen&lt;/literal&gt; and &lt;literal&gt;typbyval&lt;/literal&gt;
+       properties as &lt;structfield&gt;leafType&lt;/structfield&gt;.)
        If ordered search is performed, set &lt;structfield&gt;distances&lt;/structfield&gt;
        to an array of distance values according to &lt;structfield&gt;orderbys&lt;/structfield&gt;
        array (nodes with lowest distances will be processed first).  Leave it
@@ -867,8 +879,7 @@ typedef struct spgLeafConsistentOut
        &lt;structfield&gt;reconstructedValue&lt;/structfield&gt; is the value reconstructed for the
        parent tuple; it is &lt;literal&gt;(Datum) 0&lt;/literal&gt; at the root level or if the
        &lt;function&gt;inner_consistent&lt;/function&gt; function did not provide a value at the
-       parent level. &lt;structfield&gt;reconstructedValue&lt;/structfield&gt; is always of
-       &lt;structname&gt;spgConfigOut&lt;/structname&gt;.&lt;structfield&gt;leafType&lt;/structfield&gt; type.
+       parent level.
        &lt;structfield&gt;traversalValue&lt;/structfield&gt; is a pointer to any traverse data
        passed down from the previous call of &lt;function&gt;inner_consistent&lt;/function&gt;
        on the parent index tuple, or NULL at the root level.
@@ -898,8 +909,8 @@ typedef struct spgLeafConsistentOut
        The function must return &lt;literal&gt;true&lt;/literal&gt; if the leaf tuple matches the
        query, or &lt;literal&gt;false&lt;/literal&gt; if not.  In the &lt;literal&gt;true&lt;/literal&gt; case,
        if &lt;structfield&gt;returnData&lt;/structfield&gt; is &lt;literal&gt;true&lt;/literal&gt; then
-       &lt;structfield&gt;leafValue&lt;/structfield&gt; must be set to the value of
-       &lt;structname&gt;spgConfigIn&lt;/structname&gt;.&lt;structfield&gt;attType&lt;/structfield&gt; type
+       &lt;structfield&gt;leafValue&lt;/structfield&gt; must be set to the value (of type
+       &lt;structname&gt;spgConfigIn&lt;/structname&gt;.&lt;structfield&gt;attType&lt;/structfield&gt;)
        originally supplied to be indexed for this leaf tuple.  Also,
        &lt;structfield&gt;recheck&lt;/structfield&gt; may be set to &lt;literal&gt;true&lt;/literal&gt; if the match
        is uncertain and so the operator(s) must be re-applied to the actual
@@ -920,21 +931,25 @@ typedef struct spgLeafConsistentOut
 この場合、エクゼキュータはヒープからタプルを取得した後正確な距離を計算し、必要ならタプルを並べ替えます。
       </p></dd></dl></div><p>
 <span class="original">
-  The optional user-defined method are:
+  The optional user-defined methods are:
 </span>
 オプションのユーザ定義メソッドは以下です。
  </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="function">Datum compress(Datum in)</code></span></dt><dd><p>
 <span class="original">
-       Converts the data item into a format suitable for physical storage in
-       a leaf tuple of index page.  It accepts
+       Converts a data item into a format suitable for physical storage in
+       a leaf tuple of the index.  It accepts a value of type
        &lt;structname&gt;spgConfigIn&lt;/structname&gt;.&lt;structfield&gt;attType&lt;/structfield&gt;
-       value and returns
-       &lt;structname&gt;spgConfigOut&lt;/structname&gt;.&lt;structfield&gt;leafType&lt;/structfield&gt;
-       value.  Output value should not be toasted.
+       and returns a value of type
+       &lt;structname&gt;spgConfigOut&lt;/structname&gt;.&lt;structfield&gt;leafType&lt;/structfield&gt;.
+       The output value must not contain an out-of-line TOAST pointer.
 </span>
 インデックページのリーフタプルでデータ項目を物理ストレージに適した形式に変換します。
 <code class="structname">spgConfigIn</code>.<code class="structfield">attType</code>の値を受け付け、<code class="structname">spgConfigOut</code>.<code class="structfield">leafType</code>の値を返します。
 出力値はTOASTされていないべきです。
+      </p><p>
+       Note: the <code class="function">compress</code> method is only applied to
+       values to be stored.  The consistent methods receive query scankeys
+       unchanged, without transformation using <code class="function">compress</code>.
       </p></dd><dt><span class="term"><code class="function">options</code></span></dt><dd><p>
 <span class="original">
        Defines a set of user-visible parameters that control operator class
@@ -955,7 +970,7 @@ LANGUAGE C STRICT;
 </pre><p>
       </p><p>
 <span class="original">
-       The function is passed a pointer to a &lt;replaceable&gt;local_relopts&lt;/replaceable&gt;
+       The function is passed a pointer to a &lt;structname&gt;local_relopts&lt;/structname&gt;
        struct, which needs to be filled with a set of operator class
        specific options.  The options can be accessed from other support
        functions using the &lt;literal&gt;PG_HAS_OPCLASS_OPTIONS()&lt;/literal&gt; and
@@ -990,4 +1005,4 @@ SP-GiSTのすべてのサポートメソッドは、通常は短期間有効な�
    &lt;function&gt;PG_GET_COLLATION()&lt;/function&gt; mechanism.
 </span>
 インデックス付けされた列が照合可能なデータ型の場合、インデックスの照合は、標準的な<code class="function">PG_GET_COLLATION()</code>の仕組みを使ってすべてのサポートメソッドに渡されます。
-  </p></div><div xmlns="http://www.w3.org/TR/xhtml1/transitional" class="navfooter"><hr></hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="spgist-builtin-opclasses.html" title="65.2. 組み込み演算子クラス">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="spgist.html" title="第65章 SP-GiSTインデックス">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="spgist-implementation.html" title="65.4. 実装">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">65.2. 組み込み演算子クラス </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 13.1文書">ホーム</a></td><td width="40%" align="right" valign="top"> 65.4. 実装</td></tr></table></div></body></html>
+  </p></div><div xmlns="http://www.w3.org/TR/xhtml1/transitional" class="navfooter"><hr></hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="spgist-builtin-opclasses.html" title="66.2. 組み込み演算子クラス">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="spgist.html" title="第66章 SP-GiSTインデックス">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="spgist-implementation.html" title="66.4. 実装">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">66.2. 組み込み演算子クラス </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 14.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 66.4. 実装</td></tr></table></div></body></html>
