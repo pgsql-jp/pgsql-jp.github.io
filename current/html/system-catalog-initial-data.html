@@ -72,10 +72,10 @@
       suitable default value for it.)
 </span>
 各々のカタログ行にカンマ区切りで<em class="replaceable"><code>key</code></em><code class="literal">=&gt;</code><em class="replaceable"><code>value</code></em>ペアを書きます。
-記述可能な<em class="replaceable"><code>key</code></em>は、カタログのカラムに加えてメタデータキーである<code class="literal">oid</code>、<code class="literal">oid_symbol</code>、<code class="literal">array_type_oid</code>、<code class="literal">descr</code>です。
+記述可能な<em class="replaceable"><code>key</code></em>は、カタログの列に加えてメタデータキーである<code class="literal">oid</code>、<code class="literal">oid_symbol</code>、<code class="literal">array_type_oid</code>、<code class="literal">descr</code>です。
 （<code class="literal">oid</code>と<code class="literal">oid_symbol</code>の使い方は後述の<a class="xref" href="system-catalog-initial-data.html#SYSTEM-CATALOG-OID-ASSIGNMENT" title="71.2.2. OIDの割当">71.2.2</a>で説明されていて、一方、<code class="literal">array_type_oid</code>は<a class="xref" href="system-catalog-initial-data.html#SYSTEM-CATALOG-AUTO-ARRAY-TYPES" title="71.2.4. 配列型の自動作成">71.2.4</a>で説明されています。
 <code class="literal">descr</code>はオブジェクトの説明文字列に使用し、<code class="structname">pg_description</code>か<code class="structname">pg_shdescription</code>の適切な方に挿入されます。）
-メタデータキーは省略可能であるのに対し、カタログの<code class="literal">.h</code>ファイルがカラムのデフォルト値を指定する場合を除いてカタログの定義済みカラムはすべて提供されなければなりません。
+メタデータキーは省略可能であるのに対し、カタログの<code class="literal">.h</code>ファイルが列のデフォルト値を指定する場合を除いてカタログの定義済み列はすべて提供されなければなりません。
 （上記の例では<code class="filename">pg_database.h</code>が適切なデフォルト値を供するので<code class="structfield">datdba</code>フィールドは省略されました。）
      </p></li><li class="listitem"><p>
 <span class="original">
@@ -159,7 +159,7 @@ NULL値は<code class="literal">_null_</code>で表します。
          value, &lt;filename&gt;reformat_dat_file.pl&lt;/filename&gt; will omit it from
          the data file.  This keeps the data representation compact.
 </span>
-カタログの<code class="literal">.h</code>ファイルがカラムのデフォルト値を指定していて、データエントリが同じ値なら、<code class="filename">reformat_dat_file.pl</code>はデータファイルからデータエントリを省略します。
+カタログの<code class="literal">.h</code>ファイルが列のデフォルト値を指定していて、データエントリが同じ値なら、<code class="filename">reformat_dat_file.pl</code>はデータファイルからデータエントリを省略します。
 これでデータ表現が小さくなります。
         </p></li><li class="listitem"><p>
 <span class="original">
@@ -348,9 +348,9 @@ Cコード中でOIDの実際の数値を書くのは非常に良くないと考�
       or &lt;type&gt;Oid[]&lt;/type&gt;; in the latter two cases it implies performing a
       lookup on each element of the array.
 </span>
-<code class="literal">BKI_LOOKUP(<em class="replaceable"><code>lookuprule</code></em>)</code>をカラム定義に加えることで、特定のカタログカラムでのシンボル参照が利用可能になります。
+<code class="literal">BKI_LOOKUP(<em class="replaceable"><code>lookuprule</code></em>)</code>を列の定義に加えることで、特定のカタログ列でのシンボル参照が利用可能になります。
 ここで<em class="replaceable"><code>lookuprule</code></em>は参照されているカタログ名で、例えば<code class="literal">pg_proc</code>です。
-<code class="literal">BKI_LOOKUP</code>を、<code class="type">Oid</code>、<code class="type">regproc</code>、<code class="type">oidvector</code>、<code class="type">Oid[]</code>のカラムに加えることができます。
+<code class="literal">BKI_LOOKUP</code>を、<code class="type">Oid</code>、<code class="type">regproc</code>、<code class="type">oidvector</code>、<code class="type">Oid[]</code>の列に加えることができます。
 最後の２つにおいては、配列の個々の要素を検索することを暗に意味します。
      </p></li><li class="listitem"><p>
 <span class="original">
@@ -373,8 +373,11 @@ Cコード中でOIDの実際の数値を書くのは非常に良くないと考�
       a &lt;literal&gt;BKI_LOOKUP&lt;/literal&gt; column must be symbolic references.
       &lt;filename&gt;genbki.pl&lt;/filename&gt; will warn about unrecognized names.
 </span>
-そうしたカラムでは、InvalidOidの意味で<code class="literal">0</code>を用いる以外には、すべてのエントリでシンボル参照を使用しなければなりません。
-（カラムが<code class="type">regproc</code>と宣言されている場合は、<code class="literal">0</code>の代わりに<code class="literal">-</code>と書くことができます。)
+カタログ列の中には、エントリを有効な参照の代わりにゼロとすることが許されているものがあります。
+これが許されているなら、<code class="literal">BKI_LOOKUP</code>の代わりに<code class="literal">BKI_LOOKUP_OPT</code>を書いてください。
+そうすれば、エントリに<code class="literal">0</code>を書くことができます。
+（列が<code class="type">regproc</code>と宣言されている場合は、<code class="literal">0</code>の代わりに<code class="literal">-</code>と書くことができます。)
+この特別な場合を除いて、<code class="literal">BKI_LOOKUP</code>列内のすべてのエントリはシンボル参照でなければなりません。
 <code class="filename">genbki.pl</code>は認識できない名前には警告を出します。
      </p></li><li class="listitem"><p>
 <span class="original">
@@ -443,19 +446,25 @@ opclassesとopfamiliesの名前はアクセスメソッド内でのみユニー�
 <code class="filename">genbki.pl</code>は実行中にすべてのシンボル参照を解決し、生成したBKIファイルの中に単純な数字のOIDを設定します。
 ですから、ブートストラップバックエンドはシンボル参照にかかわる必要はありません。
    </p><p>
+<span class="original">
     It's desirable to mark OID reference columns
-    with <code class="literal">BKI_LOOKUP</code> or <code class="literal">BKI_LOOKUP_OPT</code>
+    with &lt;literal&gt;BKI_LOOKUP&lt;/literal&gt; or &lt;literal&gt;BKI_LOOKUP_OPT&lt;/literal&gt;
     even if the catalog has no initial data that requires lookup.  This
-    allows <code class="filename">genbki.pl</code> to record the foreign key
+    allows &lt;filename&gt;genbki.pl&lt;/filename&gt; to record the foreign key
     relationships that exist in the system catalogs.  That information is
     used in the regression tests to check for incorrect entries.  See also
-    the macros <code class="literal">DECLARE_FOREIGN_KEY</code>,
-    <code class="literal">DECLARE_FOREIGN_KEY_OPT</code>,
-    <code class="literal">DECLARE_ARRAY_FOREIGN_KEY</code>,
-    and <code class="literal">DECLARE_ARRAY_FOREIGN_KEY_OPT</code>, which are
+    the macros &lt;literal&gt;DECLARE_FOREIGN_KEY&lt;/literal&gt;,
+    &lt;literal&gt;DECLARE_FOREIGN_KEY_OPT&lt;/literal&gt;,
+    &lt;literal&gt;DECLARE_ARRAY_FOREIGN_KEY&lt;/literal&gt;,
+    and &lt;literal&gt;DECLARE_ARRAY_FOREIGN_KEY_OPT&lt;/literal&gt;, which are
     used to declare foreign key relationships that are too complex
-    for <code class="literal">BKI_LOOKUP</code> (typically, multi-column foreign
+    for &lt;literal&gt;BKI_LOOKUP&lt;/literal&gt; (typically, multi-column foreign
     keys).
+</span>
+カタログに検索の必要な初期データがなかったとしても、OID参照列に<code class="literal">BKI_LOOKUP</code>や<code class="literal">BKI_LOOKUP_OPT</code>の印を付けておくことが望ましいです。
+これにより、<code class="filename">genbki.pl</code>がシステムカタログ内に存在する外部キー関係を記録できるようになります。
+その情報は間違ったエントリを確認するリグレッションテストで使われます。
+マクロ<code class="literal">DECLARE_FOREIGN_KEY</code>、<code class="literal">DECLARE_FOREIGN_KEY_OPT</code>、<code class="literal">DECLARE_ARRAY_FOREIGN_KEY</code>、<code class="literal">DECLARE_ARRAY_FOREIGN_KEY_OPT</code>も参照してください。<code class="literal">BKI_LOOKUP</code>には複雑すぎる外部キー関係(典型的には、複数列の外部キー)を宣言するのに使われます
    </p></div><div class="sect2" id="SYSTEM-CATALOG-AUTO-ARRAY-TYPES"><div class="titlepage"><div><div><h3 class="title">71.2.4. 配列型の自動作成</h3></div></div></div><span class="original">
    &lt;title&gt;Automatic Creation of Array Types&lt;/title&gt;
 </span><p>
@@ -507,7 +516,7 @@ opclassesとopfamiliesの名前はアクセスメソッド内でのみユニー�
 カタログデータファイルを更新する共通の作業を実施するためのもっとも簡単な方法の提案を示します。
    </p><p><span class="original">
     &lt;title&gt;Add a new column with a default to a catalog:&lt;/title&gt;
-</span><strong>カタログにデフォルト付きの新しいカラムを追加する. </strong>
+</span><strong>カタログにデフォルト付きの新しい列を追加する. </strong>
 <span class="original">
      Add the column to the header file with
      a &lt;literal&gt;BKI_DEFAULT(&lt;replaceable&gt;value&lt;/replaceable&gt;)&lt;/literal&gt;
@@ -515,12 +524,12 @@ opclassesとopfamiliesの名前はアクセスメソッド内でのみユニー�
      in existing rows where a non-default value is needed.
 </span>
 
-<code class="literal">BKI_DEFAULT(<em class="replaceable"><code>value</code></em>)</code>注釈付きでヘッダーファイルにカラムを追加します。
+<code class="literal">BKI_DEFAULT(<em class="replaceable"><code>value</code></em>)</code>注釈付きでヘッダーファイルに列を追加します。
 非デフォルト値が必要な既存の行に対してのみフィールドを追加によるデータファイルの調整が必要です。
     </p><p><span class="original">
     &lt;title&gt;Add a default value to an existing column that doesn't have
      one:&lt;/title&gt;
-</span><strong>デフォルト値を持たない既存のカラムにデフォルト値を追加する. </strong>
+</span><strong>デフォルト値を持たない既存の列にデフォルト値を追加する. </strong>
 <span class="original">
      Add a &lt;literal&gt;BKI_DEFAULT&lt;/literal&gt; annotation to the header file,
      then run &lt;literal&gt;make reformat-dat-files&lt;/literal&gt; to remove
@@ -529,12 +538,12 @@ opclassesとopfamiliesの名前はアクセスメソッド内でのみユニー�
 <code class="literal">BKI_DEFAULT</code>注釈をヘッダーファイルに追加し、冗長になったフィールドエントリを削除するために<code class="literal">make reformat-dat-files</code>を実行します。
     </p><p><span class="original">
     &lt;title&gt;Remove a column, whether it has a default or not:&lt;/title&gt;
-</span><strong>デフォルト値の有無にかかわらず、カラムを削除する. </strong>
+</span><strong>デフォルト値の有無にかかわらず、列を削除する. </strong>
 <span class="original">
      Remove the column from the header, then run &lt;literal&gt;make
      reformat-dat-files&lt;/literal&gt; to remove now-useless field entries.
 </span>
-ヘッダーからカラムを削除し、<code class="literal">make reformat-dat-files</code>を実行して不要になったフィールドエントリを削除します。
+ヘッダーから列を削除し、<code class="literal">make reformat-dat-files</code>を実行して不要になったフィールドエントリを削除します。
     </p><p><span class="original">
     &lt;title&gt;Change or remove an existing default value:&lt;/title&gt;
 </span><strong>既存のデフォルト値を変更もしくは削除する. </strong>
@@ -568,7 +577,7 @@ opclassesとopfamiliesの名前はアクセスメソッド内でのみユニー�
         Add the new column, with a default,
         to &lt;filename&gt;pg_proc.h&lt;/filename&gt;:
 </span>
-デフォルトがある新しいカラムを<code class="filename">pg_proc.h</code>に追加します。
+デフォルトがある新しい列を<code class="filename">pg_proc.h</code>に追加します。
 </p><pre class="programlisting">
 +    /* see PROKIND_ categories below */
 +    char        prokind BKI_DEFAULT(f);
@@ -612,12 +621,12 @@ $ perl  rewrite_dat_with_prokind.pl  pg_proc.dat
         and &lt;structfield&gt;proiswindow&lt;/structfield&gt;, though they will appear
         only in rows where they have non-default values.
 </span>
-この時点で<code class="filename">pg_proc.dat</code>には<code class="structfield">prokind</code>、<code class="structfield">proisagg</code>、<code class="structfield">proiswindow</code>のすべての3つのカラムがありますが、非デフォルト値を持つ行だけに表れます。
+この時点で<code class="filename">pg_proc.dat</code>には<code class="structfield">prokind</code>、<code class="structfield">proisagg</code>、<code class="structfield">proiswindow</code>のすべての3つの列がありますが、非デフォルト値を持つ行だけに表れます。
        </p></li><li class="listitem"><p>
 <span class="original">
         Remove the old columns from &lt;filename&gt;pg_proc.h&lt;/filename&gt;:
 </span>
-<code class="filename">pg_proc.h</code>から古いカラムを削除します。
+<code class="filename">pg_proc.h</code>から古い列を削除します。
 </p><pre class="programlisting">
 -    /* is it an aggregate? */
 -    bool        proisagg BKI_DEFAULT(f);
