@@ -78,9 +78,13 @@ COPY { <em class="replaceable"><code>table_name</code></em> [ ( <em class="repla
 コマンドはサーバからの視点で指定しなければならず、また、<code class="literal">PostgreSQL</code>ユーザによって実行できなければなりません。
 <code class="literal">STDIN</code>や<code class="literal">STDOUT</code>が指定された場合、データはクライアントとサーバ間を流れます。
   </p><p>
-    Each backend running <code class="command">COPY</code> will report its progress
-    in the <code class="structname">pg_stat_progress_copy</code> view. See
-    <a class="xref" href="progress-reporting.html#COPY-PROGRESS-REPORTING" title="28.4.6. COPY Progress Reporting">28.4.6</a> for details.
+<span class="original">
+    Each backend running &lt;command&gt;COPY&lt;/command&gt; will report its progress
+    in the &lt;structname&gt;pg_stat_progress_copy&lt;/structname&gt; view. See
+    &lt;xref linkend="copy-progress-reporting"/&gt; for details.
+</span>
+<code class="command">COPY</code>を実行している各バックエンドはその進捗を<code class="structname">pg_stat_progress_copy</code>ビューで報告します。
+詳細は<a class="xref" href="progress-reporting.html#ANALYZE-PROGRESS-REPORTING" title="28.4.1. ANALYZEの進捗状況のレポート">28.4.1</a>を参照してください。
   </p></div><div class="refsect1" id="id-1.9.3.55.6"><h2>パラメータ</h2><span class="original">
   &lt;title&gt;Parameters&lt;/title&gt;
 </span><div class="variablelist"><dl class="variablelist"><dt><span class="term"><em class="replaceable"><code>table_name</code></em></span></dt><dd><p>
@@ -105,7 +109,7 @@ COPY { <em class="replaceable"><code>table_name</code></em> [ ( <em class="repla
       &lt;link linkend="sql-delete"&gt;&lt;command&gt;DELETE&lt;/command&gt;&lt;/link&gt; command whose results are to be
       copied.  Note that parentheses are required around the query.
 </span>
-<a class="xref" href="sql-select.html" title="SELECT"><span class="refentrytitle">SELECT</span></a>、<a class="xref" href="sql-values.html" title="VALUES"><span class="refentrytitle">VALUES</span></a>、<a class="xref" href="sql-insert.html" title="INSERT"><span class="refentrytitle">INSERT</span></a>、<a class="xref" href="sql-update.html" title="UPDATE"><span class="refentrytitle">UPDATE</span></a>あるいは<a class="xref" href="sql-delete.html" title="DELETE"><span class="refentrytitle">DELETE</span></a>コマンドで、その結果がコピーされます。
+<a class="link" href="sql-select.html" title="SELECT"><code class="command">SELECT</code></a>、<a class="link" href="sql-values.html" title="VALUES"><code class="command">VALUES</code></a>、<a class="link" href="sql-insert.html" title="INSERT"><code class="command">INSERT</code></a>、<a class="link" href="sql-update.html" title="UPDATE"><code class="command">UPDATE</code></a>あるいは<a class="link" href="sql-delete.html" title="DELETE"><code class="command">DELETE</code></a>コマンドで、その結果がコピーされます。
 問い合わせを括弧でくくる必要があることに注意してください。
      </p><p>
 <span class="original">
@@ -387,9 +391,9 @@ COPY <em class="replaceable"><code>count</code></em>
     dump all of the rows in an inheritance hierarchy, partitioned table,
     or view.
 </span>
-<code class="command">COPY TO</code>は通常のテーブルに対してのみ使用することができます。
-ビューに対して使用することはできません。
-しかし、<code class="literal">COPY (SELECT * FROM <em class="replaceable"><code>viewname</code></em>) TO ...</code>と記述して、ビューの現在の内容をコピーすることはできます。
+<code class="command">COPY TO</code>は通常のテーブルに対してのみ使用できます。ビューに対して使用することはできません。そして子テーブルもしくは子パーティションから行をコピーしません。
+例えば、<code class="literal">COPY <em class="replaceable"><code>table</code></em> TO</code>は<code class="literal">SELECT * FROM ONLY <em class="replaceable"><code>table</code></em></code>と同じ行をコピーします。
+継承階層やパーティションテーブル、ビューの行をすべてダンプするために、<code class="literal">COPY (SELECT * FROM <em class="replaceable"><code>table</code></em>) TO ...</code>構文が使えます。
    </p><p>
 <span class="original">
     &lt;command&gt;COPY FROM&lt;/command&gt; can be used with plain, foreign, or
@@ -442,7 +446,7 @@ COPY <em class="replaceable"><code>count</code></em>
 したがって、それらのファイルは、クライアントではなく、データベースサーバマシン上に存在するか、または、データベースサーバマシンからアクセス可能である必要があります。
 さらに、クライアントではなく、<span class="productname">PostgreSQL</span>ユーザ（サーバを実行しているユーザID）が、アクセス権限と読み書き権限を持っている必要があります。
 同様に、<code class="literal">PROGRAM</code>で指定されたコマンドは、クライアントアプリケーションではなくサーバにより直接実行されるため、<span class="productname">PostgreSQL</span>ユーザによって実行可能でなければなりません。
-ファイル名またはコマンドを指定した<code class="command">COPY</code>の実行は、データベースのスーパーユーザとデフォルトロール<code class="literal">pg_read_server_files</code>、<code class="literal">pg_write_server_files</code>、<code class="literal">pg_execute_server_program</code>の内の1つの権限を許可されたユーザのみに許可されています。このコマンドによって、サーバがアクセス権限を持つ全てのファイルの読み込み、書き込みやプログラムの実行が可能になってしまうためです。
+ファイル名またはコマンドを指定した<code class="command">COPY</code>の実行は、データベースのスーパーユーザとロール<code class="literal">pg_read_server_files</code>、<code class="literal">pg_write_server_files</code>、<code class="literal">pg_execute_server_program</code>の内の1つの権限を許可されたユーザのみに許可されています。このコマンドによって、サーバがアクセス権限を持つ全てのファイルの読み込み、書き込みやプログラムの実行が可能になってしまうためです。
    </p><p>
 <span class="original">
     Do not confuse &lt;command&gt;COPY&lt;/command&gt; with the
@@ -604,7 +608,7 @@ IDENTITY列については、<code class="command">COPY FROM</code>コマンド�
 </span>
 <code class="command">COPY FROM</code>は、バックスラッシュで始まる次のような文字の並びを識別します。
 
-   </p><div class="informaltable"><table class="informaltable" border="1"><colgroup><col /><col /></colgroup><thead><tr><th>文字の並び</th><th>表現</th></tr></thead><tbody><tr><td><code class="literal">\b</code></td><td>バックスペース（ASCII 8）</td></tr><tr><td><code class="literal">\f</code></td><td>改ページ（ASCII 12）</td></tr><tr><td><code class="literal">\n</code></td><td>改行（ASCII 10）</td></tr><tr><td><code class="literal">\r</code></td><td>復帰（ASCII 13）</td></tr><tr><td><code class="literal">\t</code></td><td>タブ（ASCII 9）</td></tr><tr><td><code class="literal">\v</code></td><td>垂直タブ（ASCII 11）</td></tr><tr><td><code class="literal">\</code><em class="replaceable"><code>数字</code></em></td><td>バックスラッシュに続き1から3個の8進数の数字をコード番号として指定すると、そのコード番号が表す文字を指定できます。</td></tr><tr><td><code class="literal">\x</code><em class="replaceable"><code>digits</code></em></td><td>バックスラッシュ、<code class="literal">x</code> という並びに続き1から2個の16進数の数字を指定すると、そのコード番号が表す文字を指定できます。</td></tr></tbody></table></div><p>
+   </p><div class="informaltable"><table class="informaltable" border="1"><colgroup><col /><col /></colgroup><thead><tr><th>文字の並び</th><th>表現</th></tr></thead><tbody><tr><td><code class="literal">\b</code></td><td>バックスペース（ASCII 8）</td></tr><tr><td><code class="literal">\f</code></td><td>改ページ（ASCII 12）</td></tr><tr><td><code class="literal">\n</code></td><td>改行（ASCII 10）</td></tr><tr><td><code class="literal">\r</code></td><td>復帰（ASCII 13）</td></tr><tr><td><code class="literal">\t</code></td><td>タブ（ASCII 9）</td></tr><tr><td><code class="literal">\v</code></td><td>垂直タブ（ASCII 11）</td></tr><tr><td><code class="literal">\</code><em class="replaceable"><code>数字</code></em></td><td>バックスラッシュに続き1から3個の8進数の数字をコード番号として指定すると、そのコード番号が表すバイトを指定できます。</td></tr><tr><td><code class="literal">\x</code><em class="replaceable"><code>数字</code></em></td><td>バックスラッシュ、<code class="literal">x</code>という並びに続き1から2個の16進数の数字を指定すると、そのコード番号が表すバイトを指定できます。</td></tr></tbody></table></div><p>
 
 <span class="original">
     Presently, &lt;command&gt;COPY TO&lt;/command&gt; will never emit an octal or
@@ -643,9 +647,13 @@ IDENTITY列については、<code class="command">COPY FROM</code>コマンド�
 また、<code class="command">COPY</code>ファイルが異なるマシンをまたがって転送される場合、破損するおそれがかなりあります
 （例えば、UnixからWindowsあるいはその逆）。
    </p><p>
+<span class="original">
      All backslash sequences are interpreted after encoding conversion.
      The bytes specified with the octal and hex-digit backslash sequences must
      form valid characters in the database encoding.
+</span>
+バックスラッシュで始まる文字の並びはすべて符号化方式変換の後で解釈されます。
+バックスラッシュの後ろに8進数や16進数を付けた形式で指定されたバイトはデータベース符号化方式において有効な文字でなければなりません。
    </p><p>
 <span class="original">
     &lt;command&gt;COPY TO&lt;/command&gt; will terminate each row with a Unix-style
@@ -1083,4 +1091,6 @@ COPY [ BINARY ] <em class="replaceable"><code>table_name</code></em>
     TO { '<em class="replaceable"><code>filename</code></em>' | STDOUT }
     [ [USING] DELIMITERS '<em class="replaceable"><code>delimiter_character</code></em>' ]
     [ WITH NULL AS '<em class="replaceable"><code>null_string</code></em>' ]
-</pre></div><div class="refsect1" id="id-1.9.3.55.12"><h2>See Also</h2><span class="simplelist"><a class="xref" href="progress-reporting.html#COPY-PROGRESS-REPORTING" title="28.4.6. COPY Progress Reporting">28.4.6</a></span></div></div><div xmlns="http://www.w3.org/TR/xhtml1/transitional" class="navfooter"><hr></hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="sql-commit-prepared.html" title="COMMIT PREPARED">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="sql-commands.html" title="SQLコマンド">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="sql-create-access-method.html" title="CREATE ACCESS METHOD">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">COMMIT PREPARED </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 14.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> CREATE ACCESS METHOD</td></tr></table></div></body></html>
+</pre></div><div class="refsect1" id="id-1.9.3.55.12"><h2>関連項目</h2><span class="original">
+  &lt;title&gt;See Also&lt;/title&gt;
+</span><span class="simplelist"><a class="xref" href="progress-reporting.html#COPY-PROGRESS-REPORTING" title="28.4.6. COPY Progress Reporting">28.4.6</a></span></div></div><div xmlns="http://www.w3.org/TR/xhtml1/transitional" class="navfooter"><hr></hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="sql-commit-prepared.html" title="COMMIT PREPARED">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="sql-commands.html" title="SQLコマンド">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="sql-create-access-method.html" title="CREATE ACCESS METHOD">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">COMMIT PREPARED </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 14.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> CREATE ACCESS METHOD</td></tr></table></div></body></html>

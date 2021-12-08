@@ -226,12 +226,16 @@ test ! -f /mnt/server/archivedir/00000001000000A900000065 &amp;&amp; cp pg_wal/0
 <span class="productname">PostgreSQL</span>は、ゼロという結果に基づいて、そのファイルのアーカイブが成功したことを想定し、そのファイルを削除したり回収するかもしれません。
 しかし、非ゼロのステータスは、<span class="productname">PostgreSQL</span>に対してファイルがアーカイブされなかったことを通知し、成功するまで定期的に再試行させます。
    </p><p>
+<span class="original">
     When the archive command is terminated by a signal (other than
-    <span class="systemitem">SIGTERM</span> that is used as part of a server
+    &lt;systemitem&gt;SIGTERM&lt;/systemitem&gt; that is used as part of a server
     shutdown) or an error by the shell with an exit status greater than
     125 (such as command not found), the archiver process aborts and gets
     restarted by the postmaster. In such cases, the failure is
-    not reported in <a class="xref" href="monitoring-stats.html#PG-STAT-ARCHIVER-VIEW" title="表28.20 pg_stat_archiverビュー">pg_stat_archiver</a>.
+    not reported in &lt;xref linkend="pg-stat-archiver-view"/&gt;.
+</span>
+アーカイブ用コマンドがシグナル（サーバのシャットダウンの一部として使用される<span class="systemitem">SIGTERM</span>以外）やシェルによる125以上の終了ステータスを持つエラー（command not foundなど）によって終了すると、アーカイバプロセスは中止され、postmasterによって再起動されます。
+このような場合、失敗は<a class="xref" href="monitoring-stats.html#PG-STAT-ARCHIVER-VIEW" title="表28.20 pg_stat_archiverビュー">pg_stat_archiver</a>では報告されません。
    </p><p>
 <span class="original">
     The archive command should generally be designed to refuse to overwrite
@@ -580,7 +584,7 @@ SELECT * FROM pg_stop_backup(false, true);
 <code class="function">pg_stop_backup</code>は3つの値を含んだ1行を返します。
 2番目の値は、バックアップのルートディレクトリ内の<code class="filename">backup_label</code>という名称のファイルを作成の上、値を書き込む必要があります。
 3番目の値は、空でない限りは<code class="filename">tablespace_map</code>という名称のファイルを作成の上、値を書き込む必要があります。
-これらのファイルは、バックアップの動作にきわめて重要であり、返り値の内容から変更なしに書き込む必要があります。
+これらのファイルはバックアップが動作するために極めて重要であり、1バイトも変更なしに書き込まれる必要があるため、バイナリモードで開かれる必要があるかもしれません。
     </p></li><li class="listitem"><p>
 <span class="original">
      Once the WAL segment files active during the backup are archived, you are
@@ -658,7 +662,7 @@ WALのアーカイブを適切に監視していない場合、バックアッ�
 </span>
 排他的バックアップの手順は、ほぼ非排他的バックアップのものと同様ですが、いくつかのキーとなる手順に違いがあります。
 このバックアップ方式は、プライマリからしか取得できず、バックアップの複数同時実行を許可しません。
-さらに、後述するようにバックアップラベルファイルを作るため、マスターサーバのクラッシュ後の自動再起動をブロックする可能性があります。
+さらに、後述するようにバックアップラベルファイルを作るため、プライマリサーバのクラッシュ後の自動再起動をブロックする可能性があります。
 一方でバックアップラベルファイルのバックアップやスタンバイからの誤った削除はよくあるミスで、これは深刻なデータ破壊をもたらすおそれがあります。
 この方式を使う必要があるのであれば、以下の手順を用いてください。
     </p><p>
@@ -748,7 +752,7 @@ SELECT pg_start_backup('label', true);
 上記のように、バックアップ中にサーバがクラッシュした場合、<code class="filename">backup_label</code>ファイルが<code class="envar">PGDATA</code>ディレクトリから手動で削除されない限り、再起動できないかもしれません。
 破損をもたらすため、バックアップをリストアするときに<code class="filename">backup_label</code>ファイルを決して削除しないことは重要である点に注意してください。
 このファイルをいつ削除するのが適切かに関する混乱は、この方式を使ったときのデータ破損のよくある原因です。
-確実に、本ファイルは既存マスタでのみ削除して、スタンバイの構築やバックアップのリストアでは決して削除しないでください。たとえ次に新マスタに昇格させるつもりのスタンバイを構築している場合であってもです。
+確実に、本ファイルは既存プライマリでのみ削除して、スタンバイの構築やバックアップのリストアでは決して削除しないでください。たとえ次に新プライマリに昇格させるつもりのスタンバイを構築している場合であってもです。
     </p></li><li class="listitem"><p>
 <span class="original">
      Again connect to the database as a user with rights to run
@@ -879,11 +883,11 @@ GNUの <span class="application">tar</span>で1.23以降のバージョンを使
     contents of those slots will likely be badly out of date by the time
     the new primary comes on line.
 </span>
-マスター上に存在するレプリケーションスロットがバックアップに含まれないようにするために、クラスタの中の<code class="filename">pg_replslot/</code>ディレクトリをバックアップから除くのもしばしば良い考えです。
-もし、スタンバイを作成するためのバックアップを続けて使用すると、スタンバイのWALファイルの保持を無制限に保留する結果になり、ホットスタンバイからのフィードバックを有効にしている場合、マスターのWALを膨張させます。
-これは、これらのレプリケーションスロットを使っているクライアントはまだ、スタンバイではなく、マスターのスロットを接続し続け、更新しているからです。
-バックアップが新しいマスターを作成するためだけに作成されたとしても、レプリケーションスロットをコピーすることは特に有益であるとは考えられません。
-このようにバックアップにレプリケーションスロットを含むことは、新しいマスターがオンラインになったときにはスロットの内容が期限切れしており、有害である可能性があります。
+プライマリ上に存在するレプリケーションスロットがバックアップに含まれないようにするために、クラスタの中の<code class="filename">pg_replslot/</code>ディレクトリをバックアップから除くのもしばしば良い考えです。
+もし、スタンバイを作成するためのバックアップを続けて使用すると、スタンバイのWALファイルの保持を無制限に保留する結果になり、ホットスタンバイからのフィードバックを有効にしている場合、プライマリのWALを膨張させます。
+これは、これらのレプリケーションスロットを使っているクライアントはまだ、スタンバイではなく、プライマリのスロットを接続し続け、更新しているからです。
+バックアップが新しいプライマリを作成するためだけに作成されたとしても、レプリケーションスロットをコピーすることは特に有益であるとは考えられません。
+このようにバックアップにレプリケーションスロットを含むことは、新しいプライマリがオンラインになったときにはスロットの内容が期限切れしており、有害である可能性があります。
    </p><p>
 <span class="original">
     The contents of the directories &lt;filename&gt;pg_dynshmem/&lt;/filename&gt;,
@@ -1276,8 +1280,8 @@ restore_command = 'cp /mnt/server/archivedir/%f %p'
     target timeline ID in &lt;xref linkend="guc-recovery-target-timeline"/&gt;. You
     cannot recover into timelines that branched off earlier than the base backup.
 </span>
-復旧処理のデフォルトは、ベースバックアップが取得された時点のタイムラインと同一のタイムラインに沿った復旧です。
-別の子タイムラインに沿って復旧させたい（つまり、復旧試行以降に生成されたある状態に戻りたい）場合は、対象のタイムラインIDを指定しなければなりません。
+復旧処理のデフォルトは、アーカイブで見つかった最新のタイムラインへの復旧です。
+ベースバックアップが取得された時点のタイムラインと同一のタイムラインや別の子タイムラインに沿って復旧させたい（つまり、復旧試行以降に生成されたある状態に戻りたい）場合は、<code class="literal">current</code>か対象のタイムラインIDを指定しなければなりません。
 ベースバックアップより前に分岐したタイムラインに沿って復旧することはできません。
    </p></div><div class="sect2" id="BACKUP-TIPS"><div class="titlepage"><div><div><h3 class="title">26.3.6. ヒントと例</h3></div></div></div><span class="original">
    &lt;title&gt;Tips and Examples&lt;/title&gt;
@@ -1461,7 +1465,7 @@ archive_command = 'local_backup_script.sh "%p" "%f"'
      undesirable.  To avoid this risk, it is best not to modify any
      template databases while taking a base backup.
 </span>
-もしもベースバックアップが行われている時、<a class="xref" href="sql-createdatabase.html" title="CREATE DATABASE"><span class="refentrytitle">CREATE DATABASE</span></a>コマンドが実行され、ベースバックアップが処理を実行している期間に<code class="command">CREATE DATABASE</code>がコピーしているtemplateデータベースが変更されると、復旧処理はこれらの変更を作成されたデータベースにも同時に伝播させることは確実です。
+もしもベースバックアップが行われている時、<a class="link" href="sql-createdatabase.html" title="CREATE DATABASE"><code class="command">CREATE DATABASE</code></a>コマンドが実行され、ベースバックアップが処理を実行している期間に<code class="command">CREATE DATABASE</code>がコピーしているtemplateデータベースが変更されると、復旧処理はこれらの変更を作成されたデータベースにも同時に伝播させることは確実です。
 もちろん、これは望まれる事ではありません。
 この危険を回避するには、ベースバックアップ期間中にはすべてのtemplateデータベースを変更しないことが一番です。
     </p></li><li class="listitem"><p>
@@ -1477,7 +1481,7 @@ archive_command = 'local_backup_script.sh "%p" "%f"'
      the best practice is to take a new base backup after creating or
      dropping tablespaces.
 </span>
-<a class="xref" href="sql-createtablespace.html" title="CREATE TABLESPACE"><span class="refentrytitle">CREATE TABLESPACE</span></a>コマンドはリテラルの絶対パス付でWALにログが記録され、したがって、同じ絶対パスでのテーブル空間作成の時に再生されます。
+<a class="link" href="sql-createtablespace.html" title="CREATE TABLESPACE"><code class="command">CREATE TABLESPACE</code></a>コマンドはリテラルの絶対パス付でWALにログが記録され、したがって、同じ絶対パスでのテーブル空間作成の時に再生されます。
 これは、もしログが異なったマシン上で再生される場合には好ましくありません。
 ログ再生がたとえ同一のマシンであっても、新規のデータディレクトリであれば危険です。
 なぜなら、再生は元のテーブル空間の内容を上書きし続けるからです。
