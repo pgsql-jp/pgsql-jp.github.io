@@ -51,8 +51,8 @@
         the &lt;acronym&gt;SQL&lt;/acronym&gt; command &lt;xref linkend="sql-show"/&gt;.
 </span>
 現在の<em class="parameter"><code>setting_name</code></em>の設定値を返します。
-そのような設定がなければ、<em class="parameter"><code>missing_ok</code></em>が渡され、それが<code class="literal">true</code>でない限り<code class="function">current_setting</code>はエラーを引き起こします。
-この関数は<acronym class="acronym">SQL</acronym>コマンドの<code class="command">SHOW</code>に関連します。
+そのような設定がなければ、<em class="parameter"><code>missing_ok</code></em>が渡され、それが<code class="literal">true</code>でない限り<code class="function">current_setting</code>はエラーを引き起こします（この場合はNULLが返ります）。
+この関数は<acronym class="acronym">SQL</acronym>コマンドの<a class="xref" href="sql-show.html" title="SHOW"><span class="refentrytitle">SHOW</span></a>に関連します。
        </p>
        <p>
         <code class="literal">current_setting('datestyle')</code>
@@ -76,9 +76,9 @@
         the SQL command &lt;xref linkend="sql-set"/&gt;.
 </span>
 <em class="parameter"><code>setting_name</code></em>パラメータに<em class="parameter"><code>new_value</code></em>を設定し、その値を返します。
-<em class="parameter"><code>is_local</code></em>が渡され、それが<code class="literal">true</code>なら新しい値は現在のトランザクションにのみ適用されます。
-現在のセッションに新しい値を適用したければ、代わりに<code class="literal">false</code>としてください。
-このコマンドはSQLコマンドの<code class="command">SET</code>に関連します。
+<em class="parameter"><code>is_local</code></em>が渡され、それが<code class="literal">true</code>なら新しい値は現在のトランザクションの間にのみ適用されます。
+現在のセッションで以降に新しい値を適用したければ、代わりに<code class="literal">false</code>としてください。
+このコマンドはSQLコマンドの<a class="xref" href="sql-set.html" title="SET"><span class="refentrytitle">SET</span></a>に関連します。
        </p>
        <p>
         <code class="literal">set_config('log_statement_stats', 'off', false)</code>
@@ -101,7 +101,7 @@
     the signal was successfully sent and &lt;literal&gt;false&lt;/literal&gt;
     if sending the signal failed.
 </span>
-これらのそれぞれの関数は成功の場合<code class="literal">true</code>（真）を返し、そうでない場合は<code class="literal">false</code>（偽）を返します。
+これらのそれぞれの関数はシグナルの送付が成功の場合<code class="literal">true</code>を返し、シグナルの送付に失敗したときには<code class="literal">false</code>を返します。
    </p><div class="table" id="FUNCTIONS-ADMIN-SIGNAL-TABLE"><p class="title"><strong>表9.86 サーバシグナル送信関数</strong></p><div class="table-contents"><span class="original">
     &lt;title&gt;Server Signaling Functions&lt;/title&gt;
 </span><table class="table" summary="サーバシグナル送信関数" border="1"><colgroup><col /></colgroup><thead><tr><th class="func_table_entry"><p class="func_signature">
@@ -137,14 +137,20 @@
         → <code class="returnvalue">boolean</code>
        </p>
        <p>
+<span class="original">
         Requests to log the memory contexts of the backend with the
         specified process ID.  These memory contexts will be logged at
-        <code class="literal">LOG</code> message level. They will appear in
+        &lt;literal&gt;LOG&lt;/literal&gt; message level. They will appear in
         the server log based on the log configuration set
-        (See <a class="xref" href="runtime-config-logging.html" title="20.8. エラー報告とログ取得">20.8</a> for more information),
+        (See &lt;xref linkend="runtime-config-logging"/&gt; for more information),
         but will not be sent to the client regardless of
-        <a class="xref" href="runtime-config-client.html#GUC-CLIENT-MIN-MESSAGES">client_min_messages</a>.
+        &lt;xref linkend="guc-client-min-messages"/&gt;.
         Only superusers can request to log the memory contexts.
+</span>
+指定プロセスIDのバックエンドのメモリコンテキストをログすることを要求します。
+メモリコンテキストは<code class="literal">LOG</code>メッセージレベルでログされます。
+ログは、ログ設定（詳細は<a class="xref" href="runtime-config-logging.html" title="20.8. エラー報告とログ取得">20.8</a>を参照）に基づきサーバログに現れますが、<a class="xref" href="runtime-config-client.html#GUC-CLIENT-MIN-MESSAGES">client_min_messages</a>に関わらずクライアントには送られません。
+スーパユーザだけがメモリコンテキストをログすることを要求できます。
        </p></td></tr><tr><td class="func_table_entry"><p class="func_signature">
         <a id="id-1.5.8.33.4.5.2.2.3.1.1.1" class="indexterm"></a>
         <code class="function">pg_reload_conf</code> ()
@@ -163,6 +169,7 @@
 </span>
 <span class="productname">PostgreSQL</span>のすべてのサーバプロセスに構成ファイルの再読み込みをさせます。
 （これは<span class="systemitem">SIGHUP</span>シグナルをpostmasterプロセスに送ることによって始まり、postmasterは続いて<span class="systemitem">SIGHUP</span>を子に送ります。）
+再ロードする前に、設定ファイルにエラーの可能性があるかどうかをチェックするために<a class="link" href="view-pg-file-settings.html" title="52.70. pg_file_settings"><code class="structname">pg_file_settings</code></a>と<a class="link" href="view-pg-hba-file-rules.html" title="52.72. pg_hba_file_rules"><code class="structname">pg_hba_file_rules</code></a>ビューを利用できます。
        </p></td></tr><tr><td class="func_table_entry"><p class="func_signature">
         <a id="id-1.5.8.33.4.5.2.2.4.1.1.1" class="indexterm"></a>
         <code class="function">pg_rotate_logfile</code> ()
@@ -194,15 +201,21 @@
 ただし、スーパーユーザのバックエンドはスーパーユーザのみが終了できます。
        </p>
        <p>
-        If <em class="parameter"><code>timeout</code></em> is not specified or zero, this
-        function returns <code class="literal">true</code> whether the process actually
+<span class="original">
+        If &lt;parameter&gt;timeout&lt;/parameter&gt; is not specified or zero, this
+        function returns &lt;literal&gt;true&lt;/literal&gt; whether the process actually
         terminates or not, indicating only that the sending of the signal was
-        successful.  If the <em class="parameter"><code>timeout</code></em> is specified (in
+        successful.  If the &lt;parameter&gt;timeout&lt;/parameter&gt; is specified (in
         milliseconds) and greater than zero, the function waits until the
         process is actually terminated or until the given time has passed. If
         the process is terminated, the function
-        returns <code class="literal">true</code>.  On timeout, a warning is emitted and
-        <code class="literal">false</code> is returned.
+        returns &lt;literal&gt;true&lt;/literal&gt;.  On timeout, a warning is emitted and
+        &lt;literal&gt;false&lt;/literal&gt; is returned.
+</span>
+<em class="parameter"><code>timeout</code></em>が与えられないか、ゼロなら、この関数はプロセスが実際に終了したかどうかに関わらず、この関数はシグナルの送付が成功したことのみを意味する<code class="literal">true</code>を返します。
+<em class="parameter"><code>timeout</code></em>が指定され、ゼロよりも大きければ、この関数はプロセスが実際に終了するか、指定時間が経過するまで待ちます。
+プロセスが終了したら、この関数は<code class="literal">true</code>を返します。
+タイムアウトの場合は、警告が出力され、<code class="literal">false</code>が返ります。
        </p></td></tr></tbody></table></div></div><br class="table-break" /><p>
 <span class="original">
     &lt;function&gt;pg_cancel_backend&lt;/function&gt; and &lt;function&gt;pg_terminate_backend&lt;/function&gt;
@@ -222,8 +235,12 @@
 使用中のバックエンドのプロセス識別子は<code class="structname">pg_stat_activity</code>ビューの<code class="structfield">pid</code>列から、もしくは、（Unixでは<span class="application">ps</span>、<span class="productname">Windows</span>では<span class="application">Task Manager</span>により）サーバ上の<code class="command">postgres</code>プロセスをリストすることで見つけられます。
 実行中のバックエンドのロールは<code class="structname">pg_stat_activity</code>の<code class="structfield">usename</code>列から確認することができます。
    </p><p>
-    <code class="function">pg_log_backend_memory_contexts</code> can be used
+<span class="original">
+    &lt;function&gt;pg_log_backend_memory_contexts&lt;/function&gt; can be used
     to log the memory contexts of a backend process. For example:
+</span>
+バックエンドプロセスのメモリコンテキストのログを取るために<code class="function">pg_log_backend_memory_contexts</code>を利用できます。
+例を示します。
 </p><pre class="programlisting">
 postgres=# SELECT pg_log_backend_memory_contexts(pg_backend_pid());
  pg_log_backend_memory_contexts 
@@ -231,7 +248,10 @@ postgres=# SELECT pg_log_backend_memory_contexts(pg_backend_pid());
  t
 (1 row)
 </pre><p>
+<span class="original">
 One message for each memory context will be logged. For example:
+</span>
+各々のメモリコンテキストについて一つのメッセージがログされます。例を示します。
 </p><pre class="screen">
 LOG:  logging memory contexts of PID 10377
 STATEMENT:  SELECT pg_log_backend_memory_contexts(pg_backend_pid());
@@ -247,10 +267,15 @@ LOG:  level: 1; TransactionAbortContext: 32768 total in 1 blocks; 32504 free (0 
 LOG:  level: 1; ErrorContext: 8192 total in 1 blocks; 7928 free (3 chunks); 264 used
 LOG:  Grand total: 1651920 bytes in 201 blocks; 622360 free (88 chunks); 1029560 used
 </pre><p>
+<span class="original">
     If there are more than 100 child contexts under the same parent, the first
     100 child contexts are logged, along with a summary of the remaining contexts.
     Note that frequent calls to this function could incur significant overhead,
     because it may generate a large number of log messages.
+</span>
+同じ親に100よりも多い子コンテキストがあると、最初の100子コンテキストがログされ、残りのコンテキストについてはサマリが付加されます。
+この関数を頻繁に呼び出すと、大きなオーバヘッドを引き起こす可能性があることに注意してください。
+大量のログメッセージが生成される可能性があるからです。
    </p></div><div class="sect2" id="FUNCTIONS-ADMIN-BACKUP"><div class="titlepage"><div><div><h3 class="title">9.27.3. バックアップ制御関数</h3></div></div></div><span class="original">
    &lt;title&gt;Backup Control Functions&lt;/title&gt;
 </span><a id="id-1.5.8.33.5.2" class="indexterm"></a><p>
@@ -583,7 +608,7 @@ falseの場合、<code class="function">pg_stop_backup</code>はバックアッ�
         functions shown in &lt;xref linkend="functions-admin-backup-table"/&gt; to
         get the replication lag.
 </span>
-2つの先行書き込みログの位置のバイト単位の差分を計算します。
+2つの先行書き込みログの位置のバイト単位の差分(<em class="parameter"><code>lsn1</code></em> - <em class="parameter"><code>lsn2</code></em>)を計算します。
 これは<code class="structname">pg_stat_replication</code>や<a class="xref" href="functions-admin.html#FUNCTIONS-ADMIN-BACKUP-TABLE" title="表9.87 バックアップ制御関数">表 9.87</a>内の関数でレプリケーションの遅延を取得するために使用することができます。
        </p></td></tr></tbody></table></div></div><br class="table-break" /><p>
 <span class="original">
@@ -761,18 +786,24 @@ postgres=# SELECT * FROM pg_walfile_name_offset(pg_stop_backup());
 <span class="original">
         Returns true if recovery pause is requested.
 </span>
-リカバリが中断中なら真を返します。
+リカバリの中断が要求された場合は真を返します。
        </p></td></tr><tr><td class="func_table_entry"><p class="func_signature">
         <a id="id-1.5.8.33.6.5.2.2.2.1.1.1" class="indexterm"></a>
         <code class="function">pg_get_wal_replay_pause_state</code> ()
         → <code class="returnvalue">text</code>
        </p>
        <p>
-        Returns recovery pause state.  The return values are <code class="literal">
-        not paused</code> if pause is not requested, <code class="literal">
-        pause requested</code> if pause is requested but recovery is
-        not yet paused, and <code class="literal">paused</code> if the recovery is
+<span class="original">
+        Returns recovery pause state.  The return values are &lt;literal&gt;
+        not paused&lt;/literal&gt; if pause is not requested, &lt;literal&gt;
+        pause requested&lt;/literal&gt; if pause is requested but recovery is
+        not yet paused, and &lt;literal&gt;paused&lt;/literal&gt; if the recovery is
         actually paused.
+</span>
+リカバリの休止状態を返します。
+休止が要求されていないければ、返り値は<code class="literal">not paused</code>です。
+休止が要求されていてリカバリがまだ休止していなければ、返り値は<code class="literal">pause requested</code>です。
+リカバリが実際に休止していれば、返り値は<code class="literal">paused</code>です。
        </p></td></tr><tr><td class="func_table_entry"><p class="func_signature">
         <a id="id-1.5.8.33.6.5.2.2.3.1.1.1" class="indexterm"></a>
         <code class="function">pg_promote</code> ( <em class="parameter"><code>wait</code></em> <code class="type">boolean</code> <code class="literal">DEFAULT</code> <code class="literal">true</code>, <em class="parameter"><code>wait_seconds</code></em> <code class="type">integer</code> <code class="literal">DEFAULT</code> <code class="literal">60</code> )
@@ -818,7 +849,10 @@ postgres=# SELECT * FROM pg_walfile_name_offset(pg_stop_backup());
         snapshot of the database, and no further query conflicts will be generated
         until recovery is resumed.
 </span>
-リカバリを中断します。
+リカバリの中断を要求します。
+要求しても、それは直ちにリカバリが中断することを意味しません。
+リカバリが実際に中断していることを保証したければ、 <code class="function">pg_get_wal_replay_pause_state()</code>が返すリカバリ中断状態をチェックする必要があります。
+<code class="function">pg_is_wal_replay_paused()</code>は要求が行われたかどうかを返すことに注意してください。
 リカバリが中断している間、データベースへの変更は適用されません。
 ホットスタンバイが動作中はすべての新しい問い合わせはデータベースの一貫した同じスナップショットを参照することになり、リカバリが再開するまでそれ以上の問い合わせの衝突は起きません。
        </p>
@@ -966,7 +1000,7 @@ postgres=# SELECT * FROM pg_walfile_name_offset(pg_stop_backup());
 </span>
 <a class="xref" href="functions-admin.html#FUNCTIONS-REPLICATION-TABLE" title="表9.91 レプリケーション管理関数">表 9.91</a>に示す関数はレプリケーション機能を制御したり、情報を取得したりするためのものです。
 基盤となっている機能の情報に関しては<a class="xref" href="warm-standby.html#STREAMING-REPLICATION" title="27.2.5. ストリーミングレプリケーション">27.2.5</a>、<a class="xref" href="warm-standby.html#STREAMING-REPLICATION-SLOTS" title="27.2.6. レプリケーションスロット">27.2.6</a>、<a class="xref" href="replication-origins.html" title="第50章 レプリケーション進捗の追跡">第50章</a>を参照してください。
-これらの関数のレプリケーションオリジンでの使用はスーパーユーザに限定されています。
+これらの関数のレプリケーションオリジンでの使用はデフォルトでスーパーユーザにのみ許可されていますが、<code class="literal">GRANT</code>コマンドを使って他のユーザに許可することもできます。
 これらの関数のレプリケーションスロットでの使用はスーパーユーザと<code class="literal">REPLICATION</code>権限を持つユーザに限定されています。
    </p><p>
 <span class="original">
@@ -1027,7 +1061,7 @@ postgres=# SELECT * FROM pg_walfile_name_offset(pg_stop_backup());
 物理スロットからのストリーミングの変更はストリーミングレプリケーションプロトコルでのみ可能です。<a class="xref" href="protocol-replication.html" title="53.4. ストリーミングレプリケーションプロトコル">53.4</a>を参照してください。
 3番目のパラメータ<em class="parameter"><code>temporary</code></em>はオプションで、trueに設定されるとそのスロットは永続的にディスクに保存されるものではなく、現在のセッションによってのみ用いられることを意図していることを指定します。
 一時的なスロットはエラーが発生したときも解放されます。
-この関数は、レプリケーションプロトコルコマンド<code class="literal">CREATE_REPLICATION_SLOT ... PHYSICAL</code>に対応するものです。
+この関数の呼び出しは、レプリケーションプロトコルコマンド<code class="literal">CREATE_REPLICATION_SLOT ... PHYSICAL</code>と同じ効果があります。
        </p></td></tr><tr><td class="func_table_entry"><p class="func_signature">
         <a id="id-1.5.8.33.8.5.2.2.2.1.1.1" class="indexterm"></a>
         <code class="function">pg_drop_replication_slot</code> ( <em class="parameter"><code>slot_name</code></em> <code class="type">name</code> )
@@ -1067,6 +1101,7 @@ postgres=# SELECT * FROM pg_walfile_name_offset(pg_stop_backup());
 出力プラグイン<em class="parameter"><code>plugin</code></em>を使って<em class="parameter"><code>slot_name</code></em>という名前の新しい論理（デコーディング）レプリケーションスロットを作ります。
 3番目のオプションパラメータ<em class="parameter"><code>temporary</code></em>をtrueに設定すると、このスロットを永続的にディスクに保存するべきではなく、現在のセッションでのみ使われることを意図します。
 また、一時スロットはエラーが起きると解放されます。
+オプションの4つ目の引数<em class="parameter"><code>two_phase</code></em>がtrueならば、準備されたトランザクションのデコードがこのスロットで可能になります。
 この関数の呼び出しはレプリケーションプロトコルコマンドの<code class="literal">CREATE_REPLICATION_SLOT ... LOGICAL</code>と同じ効果があります。
        </p></td></tr><tr><td class="func_table_entry"><p class="func_signature">
         <a id="id-1.5.8.33.8.5.2.2.4.1.1.1" class="indexterm"></a>
@@ -1383,8 +1418,8 @@ postgres=# SELECT * FROM pg_walfile_name_offset(pg_stop_backup());
     not represent an existing object is passed to one of these
     functions, &lt;literal&gt;NULL&lt;/literal&gt; is returned.
 </span>
-<a class="xref" href="functions-admin.html#FUNCTIONS-ADMIN-DBSIZE" title="表9.92 データベースオブジェクトサイズ関数">表 9.92</a>で示された関数はデータベースオブジェクトのディスク領域の使用状況を計算したり、使用結果の表示を補助します。
-これらの関数はすべてバイト単位の大きさを返します。
+<a class="xref" href="functions-admin.html#FUNCTIONS-ADMIN-DBSIZE" title="表9.92 データベースオブジェクトサイズ関数">表 9.92</a>で示された関数はデータベースオブジェクトのディスク領域の使用状況を計算したり、使用結果の表示あるいは理解を補助します。
+<code class="literal">bigint</code>の結果はバイト単位の大きさです。
 関数に存在するオブジェクト以外のOIDが渡されると<code class="literal">NULL</code>が返ります。
    </p><div class="table" id="FUNCTIONS-ADMIN-DBSIZE"><p class="title"><strong>表9.92 データベースオブジェクトサイズ関数</strong></p><div class="table-contents"><span class="original">
     &lt;title&gt;Database Object Size Functions&lt;/title&gt;
@@ -1418,9 +1453,13 @@ postgres=# SELECT * FROM pg_walfile_name_offset(pg_stop_backup());
         → <code class="returnvalue">text</code>
        </p>
        <p>
+<span class="original">
         Shows the compression algorithm that was used to compress
-        an individual variable-length value. Returns <code class="literal">NULL</code>
+        an individual variable-length value. Returns &lt;literal&gt;NULL&lt;/literal&gt;
         if the value is not compressed.
+</span>
+個々の可変長値で使われた圧縮アルゴリズムを表示します。
+値が圧縮されていなければ、<code class="literal">NULL</code>を返します。
        </p></td></tr><tr><td class="func_table_entry"><p class="func_signature">
         <a id="id-1.5.8.33.9.3.2.2.3.1.1.1" class="indexterm"></a>
         <code class="function">pg_database_size</code> ( <code class="type">name</code> )
@@ -1580,8 +1619,8 @@ postgres=# SELECT * FROM pg_walfile_name_offset(pg_stop_backup());
     for details.
 </span>
 上記の関数において、テーブルやインデックスを<code class="type">regclass</code>引数として受け取って処理するものがありますが、この引数は単に<code class="structname">pg_class</code>システムカタログにあるテーブルやインデックスのOIDです。
-ただし、<code class="type">regclass</code>データ型が自動で入力変換を行うため、ユーザが手動で該当するOIDを調べる必要はありません。リテラル定数のようにシングルクオートで囲んだテーブル名を記述するだけです。
-通常の<acronym class="acronym">SQL</acronym>名に対する処理互換のため、テーブル名をダブルクオートで囲わない限り、テーブル名として入力された文字列は小文字に変換されます。
+ただし、<code class="type">regclass</code>データ型が自動で入力変換を行うため、ユーザが手動で該当するOIDを調べる必要はありません。
+詳細は<a class="xref" href="datatype-oid.html" title="8.19. オブジェクト識別子データ型">8.19</a>を参照ください。
    </p><p>
 <span class="original">
     The functions shown in &lt;xref linkend="functions-admin-dblocation"/&gt; assist
@@ -1719,6 +1758,7 @@ postgres=# SELECT * FROM pg_walfile_name_offset(pg_stop_backup());
 （しかし、オペレーティングシステム上にもはや存在しなくなったロケールに基づく照合順序オブジェクトはこの関数では削除されません。）
 <em class="parameter"><code>schema</code></em>パラメータは通常は<code class="literal">pg_catalog</code>ですが、必ずしもそうでなければならないわけではなく、照合順序をどれか他のスキーマにインストールすることもできます。
 この関数は新しく作成された照合順序オブジェクトの数を返します。
+この関数の利用はスーパユーザにのみ限定されています。
        </p></td></tr></tbody></table></div></div><br class="table-break" /><p>
 <span class="original">
     &lt;xref linkend="functions-info-partition"/&gt; lists functions that provide

@@ -302,7 +302,9 @@ JSON入力が要求と一致する正しい構造をしていなければ、フ�
         structure is merged.
 </span>
 2つの<code class="type">jsonb</code>値を結合します。
-2つのオブジェクトを結合するとそれらのキーの和を持つオブジェクトを生成します。キーが重複している場合は2番目のオブジェクトの値が使用されます。
+2つの配列を結合するとそれらのキーの和を持つ配列を生成します。
+キーが重複している場合は2番目のオブジェクトの値が使用されます。
+それ以外の場合には非配列入力を単一の要素を持つ配列に変換し、次に2つの配列として取り扱います。
 再帰操作は行いません。トップレベルの配列あるいはオブジェクト構造だけがマージされます。
        </p>
        <p>
@@ -322,8 +324,11 @@ JSON入力が要求と一致する正しい構造をしていなければ、フ�
         → <code class="returnvalue">[{"a": "b"}, 42]</code>
        </p>
        <p>
+<span class="original">
         To append an array to another array as a single entry, wrap it
         in an additional layer of array, for example:
+</span>
+一つの要素を持つとして配列を他の配列に追加するには、例のように配列の追加のレイヤー中に含めてください。
        </p>
        <p>
         <code class="literal">'[1, 2]'::jsonb || jsonb_build_array('[3, 4]'::jsonb)</code>
@@ -956,10 +961,6 @@ JSON値を出力列のSQL型に変換する際に以下のルールが順に適�
         <code class="literal">create type myrowtype as (a int, b text[], c subrowtype);</code>
        </p>
        <p>
-        <code class="literal">create type subrowtype as (d int, e text);</code>
-        <code class="literal">create type myrowtype as (a int, b text[], c subrowtype);</code>
-       </p>
-       <p>
         <code class="literal">select * from json_populate_record(null::myrowtype,
          '{"a": 1, "b": ["2", "a b"], "c": {"d": 4, "e": "a  b c"}, "x": "foo"}')</code>
         → <code class="returnvalue"></code>
@@ -987,9 +988,6 @@ JSON値を出力列のSQL型に変換する際に以下のルールが順に適�
 </span>
 トップレベルのJSONオブジェクトを<em class="parameter"><code>base</code></em>引数である複合型を持つ行の集合に展開します。
 JSON配列の個々の要素は上の<code class="function">json[b]_populate_record</code>で説明したように処理されます。
-       </p>
-       <p>
-        <code class="literal">create type twoints as (a int, b int);</code>
        </p>
        <p>
         <code class="literal">create type twoints as (a int, b int);</code>
@@ -1028,9 +1026,6 @@ JSON配列の個々の要素は上の<code class="function">json[b]_populate_rec
 （<code class="type">record</code>を返すすべての関数では、呼び出す問い合わせは明示的に<code class="literal">AS</code>句でレコードの構造を定義しなければなりません。）
 上の<code class="function">json[b]_populate_record</code>で説明した方法で、出力レコードはJSONオブジェクトのフィールドで満たされます。
 入力レコード値がないので、一致しない列は常にNULLで満たされます。
-       </p>
-       <p>
-        <code class="literal">create type myrowtype as (a int, b text);</code>
        </p>
        <p>
         <code class="literal">create type myrowtype as (a int, b text);</code>
@@ -1770,18 +1765,28 @@ lax $.track.segments.location
 strict $.track.segments[*].location
 </pre><p>
    </p><p>
-    The <code class="literal">.**</code> accessor can lead to surprising results
+<span class="original">
+    The &lt;literal&gt;.**&lt;/literal&gt; accessor can lead to surprising results
     when using the lax mode. For instance, the following query selects every
-    <code class="literal">HR</code> value twice:
+    &lt;literal&gt;HR&lt;/literal&gt; value twice:
+</span>
+<code class="literal">.**</code>アクセサを非厳密モードで使うと驚くべき結果をもたらすことがあります。
+たとえば、次の問い合わせはすべての<code class="literal">HR</code>値を2回検索します。
 </p><pre class="programlisting">
 lax $.**.HR
 </pre><p>
-    This happens because the <code class="literal">.**</code> accessor selects both
-    the <code class="literal">segments</code> array and each of its elements, while
-    the <code class="literal">.HR</code> accessor automatically unwraps arrays when
+<span class="original">
+    This happens because the &lt;literal&gt;.**&lt;/literal&gt; accessor selects both
+    the &lt;literal&gt;segments&lt;/literal&gt; array and each of its elements, while
+    the &lt;literal&gt;.HR&lt;/literal&gt; accessor automatically unwraps arrays when
     using the lax mode. To avoid surprising results, we recommend using
-    the <code class="literal">.**</code> accessor only in the strict mode. The
-    following query selects each <code class="literal">HR</code> value just once:
+    the &lt;literal&gt;.**&lt;/literal&gt; accessor only in the strict mode. The
+    following query selects each &lt;literal&gt;HR&lt;/literal&gt; value just once:
+</span>
+これは<code class="literal">.**</code>アクセサが<code class="literal">segments</code>とその各々の要素の両方を検索するからです。
+一方、<code class="literal">.HR</code>アクセサは非厳密モードでは自動的に配列を展開します。
+予期しない結果を避けるには、<code class="literal">.**</code>アクセサを厳密モードでのみ使うことをお勧めします。
+次の問い合わせは<code class="literal">HR</code>の各値を一度だけ検索します。
 </p><pre class="programlisting">
 strict $.**.HR
 </pre><p>
@@ -2415,7 +2420,7 @@ PostgreSQLは今の所<code class="literal">LIKE_REGEX</code>演算子をサポ�
 </span>
 <code class="literal">like_regex</code>のパターン引数は<a class="xref" href="datatype-json.html#DATATYPE-JSONPATH" title="8.14.7. jsonpath型">8.14.7</a>で説明されているルールにしたがって書かれたJSONパス文字列リテラルであることに注意してください。
 これは、正規表現で使用するすべてのバックスラッシュを二重に書かなければならないことを意味します。
-たとえば、数字のみを含む文字列にマッチさせるには以下のようにします。
+たとえば、数字のみを含むroot文書の文字列値にマッチさせるには以下のようにします。
 </p><pre class="programlisting">
 $.* ? (@ like_regex "^\\d+$")
 </pre><p>

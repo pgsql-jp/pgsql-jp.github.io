@@ -55,6 +55,7 @@
 </span>
 しかしminimal WALはベースバックアップとWALログからデータを再構築するための充分な情報を持ち合わせていません。
 したがって、WALアーカイビング（<a class="xref" href="runtime-config-wal.html#GUC-ARCHIVE-MODE">archive_mode</a>）とストリーミングレプリケーションを有効にするには、<code class="literal">replica</code>以上を使用しなければなりません。
+<code class="varname">wal_level</code>を<code class="literal">minimal</code>にすると、以前取得したバックアップがアーカイブリカバリおよびスタンバイサーバに使えなくなり、データロスにつながるかもしれないことに注意してください。
        </p><p>
 <span class="original">
         In &lt;literal&gt;logical&lt;/literal&gt; level, the same information is logged as
@@ -308,7 +309,7 @@ WALのリプレイを待つので、今までの設定に比べるとこの設�
 可能なら<code class="literal">open_</code>*オプションも<code class="literal">O_DIRECT</code>を使用します。
 全てのプラットフォームでこれら全ての選択肢が使えるわけではありません。
 デフォルトは、上のリストのプラットフォームでサポートされるものの最初に列挙されているものです。
-ただしLinuxでは<code class="literal">fdatasync</code>がデフォルトです。
+ただしLinuxとFreeBSDでは<code class="literal">fdatasync</code>がデフォルトです。
 デフォルトは必ずしも理想的なものではありません。
 クラッシュに適応した構成にする、あるいはアーカイブの最適性能を導くためには、この設定あるいはシステム構成の他の部分を変更することが必要かもしれません。
 これらの側面は <a class="xref" href="wal-reliability.html" title="30.1. 信頼性">30.1</a>で解説されます。
@@ -638,8 +639,10 @@ WALライタがWALを吐き出す頻度を量で指定します。
         parameter can only be set in the &lt;filename&gt;postgresql.conf&lt;/filename&gt; file
         or on the server command line.
        </span>
-       チェックポイントの完了目標をチェックポイント間の総時間の割合として指定します。
-デフォルトは0.5です。
+チェックポイントの間の時間のうち、どの程度の割合を使うかをチェックポイントの完了目標として指定します。
+デフォルトは0.9で、可能な限りの間隔のほとんどにチェックポイントを拡散し、かなり一定のI/O負荷をもたらしますが、チェックポイントが完了するにあたってオーバヘッドをもたらします。
+チェックポイントの完了を早くするので、このパラメータを小さくするのはお勧めできません。
+これにより、チェックポイント中はI/Oの割合が大きくなり、チェックポイントの完了から次のチェックポイントまでの間はより少ないI/Oとなります。
 このパラメータは<code class="filename">postgresql.conf</code>ファイル、または、サーバのコマンドラインでのみ設定可能です。
        </p></dd><dt id="GUC-CHECKPOINT-FLUSH-AFTER"><span class="term"><code class="varname">checkpoint_flush_after</code> (<code class="type">integer</code>)
       <a id="id-1.6.7.8.4.2.3.1.3" class="indexterm"></a>
@@ -848,7 +851,7 @@ WALセグメントファイルが溢れることが原因で起きるチェッ�
 強制切り替えにより早期にクローズされたアーカイブ済みファイルは、完全に完了したファイルと同じ大きさを持つことに注意してください。
 そのため、非常に小さな<code class="varname">archive_timeout</code>を使用することは賢明ではなく、格納領域を膨張させてしまいます。
 １分程度の<code class="varname">archive_timeout</code>設定が通常は妥当です。
-もしそれより高速にデータをマスターサーバからコピーをしてしまいたいのであれば、アーカイブするよりストリーミングレプリケーションの選択を検討すべきです。
+もしそれより高速にデータをプライマリサーバからコピーをしてしまいたいのであれば、アーカイブするよりストリーミングレプリケーションの選択を検討すべきです。
 この値が単位なしで指定された場合は、秒単位であるとみなします。
 このパラメータは <code class="filename">postgresql.conf</code>ファイル、または、サーバのコマンドラインでのみで設定可能です。
        </p></dd></dl></div></div><div class="sect2" id="RUNTIME-CONFIG-WAL-ARCHIVE-RECOVERY"><div class="titlepage"><div><div><h3 class="title">20.5.4. Archive Recovery</h3></div></div></div><span class="original">

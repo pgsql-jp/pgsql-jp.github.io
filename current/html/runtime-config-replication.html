@@ -16,8 +16,8 @@
      across the cluster without problems if that is required.
 </span>
 これらの設定は組み込みの<em class="firstterm">ストリーミングレプリケーション</em>機能の動作を制御します（<a class="xref" href="warm-standby.html#STREAMING-REPLICATION" title="27.2.5. ストリーミングレプリケーション">27.2.5</a>を参照ください）。
-サーバ群のサーバはマスターかスタンバイのいずれかです。マスターはデータを送出する一方、複数のスタンバイは複製されたデータを常に受け取ります。カスケードレプリケーション（<a class="xref" href="warm-standby.html#CASCADING-REPLICATION" title="27.2.7. カスケードレプリケーション">27.2.7</a>を参照）が使用されている場合、スタンバイサーバ群は受け取り手でもあり、送り手でもあります。
-パラメータは主として送出サーバとスタンバイサーバ用ですが、いくつかのパラメータはマスターサーバのみに効力を発します。
+サーバ群のサーバはプライマリかスタンバイのいずれかです。プライマリはデータを送出する一方、複数のスタンバイは複製されたデータを常に受け取ります。カスケードレプリケーション（<a class="xref" href="warm-standby.html#CASCADING-REPLICATION" title="27.2.7. カスケードレプリケーション">27.2.7</a>を参照）が使用されている場合、スタンバイサーバ群は受け取り手でもあり、送り手でもあります。
+パラメータは主として送出サーバとスタンバイサーバ用ですが、いくつかのパラメータはプライマリサーバのみに効力を発します。
 必要とあればクラスタに渡って問題なく設定を変化させることができます。
     </p><div class="sect2" id="RUNTIME-CONFIG-REPLICATION-SENDER"><div class="titlepage"><div><div><h3 class="title">20.6.1. 送出サーバ群</h3></div></div></div><span class="original">
      &lt;title&gt;Sending Servers&lt;/title&gt;
@@ -30,7 +30,9 @@
       The role and meaning of these parameters does not change after a
       standby becomes the primary.
       </span>
-      これらのパラメータはレプリケーションデータを１つ、またはそれ以上複数のスタンバイサーバに送るいかなるサーバ上で設定することができます。マスターは常に送出サーバであるため、パラメータは常にマスター上に設定されなければなりません。これらのパラメータの役割と意味はスタンバイが後にマスターに昇格しても変わりません。
+これらのパラメータはレプリケーションデータを１つ、またはそれ以上複数のスタンバイサーバに送るすべてのサーバ上で設定することができます。
+プライマリは常に送出サーバであるため、パラメータは常にプライマリ上に設定されなければなりません。
+これらのパラメータの役割と意味はスタンバイが後にプライマリに昇格しても変わりません。
      </p><div class="variablelist"><dl class="variablelist"><dt id="GUC-MAX-WAL-SENDERS"><span class="term"><code class="varname">max_wal_senders</code> (<code class="type">integer</code>)
        <a id="id-1.6.7.9.3.3.1.1.3" class="indexterm"></a>
        </span></dt><dd><p>
@@ -61,7 +63,7 @@
          same or higher value than on the primary server. Otherwise, queries
          will not be allowed in the standby server.
 </span>
-スタンバイサーバを実行する際は、このパラメータをマスタサーバと同じか高い値にしなければなりません。
+スタンバイサーバを実行する際は、このパラメータをプライマリサーバと同じか高い値にしなければなりません。
 さもなければ、スタンバイサーバでクエリを実行できなくなります。
         </p></dd><dt id="GUC-MAX-REPLICATION-SLOTS"><span class="term"><code class="varname">max_replication_slots</code> (<code class="type">integer</code>)
        <a id="id-1.6.7.9.3.3.2.1.3" class="indexterm"></a>
@@ -83,14 +85,19 @@
 現在存在しているレプリケーションスロットの数よりも少ない値を設定すると、サーバは起動しません。
 また、レプリケーションスロットが使用できるためには、<code class="varname">wal_level</code>を<code class="literal">replica</code>以上に設定しなければなりません。
         </p><p>
+<span class="original">
          On the subscriber side, specifies how many replication origins (see
-         <a class="xref" href="replication-origins.html" title="第50章 レプリケーション進捗の追跡">第50章</a>) can be tracked simultaneously,
+         &lt;xref linkend="replication-origins"/&gt;) can be tracked simultaneously,
          effectively limiting how many logical replication subscriptions can
          be created on the server. Setting it to a lower value than the current
          number of tracked replication origins (reflected in
-         <a class="link" href="view-pg-replication-origin-status.html" title="52.80. pg_replication_origin_status">pg_replication_origin_status</a>,
-         not <a class="link" href="catalog-pg-replication-origin.html" title="52.42. pg_replication_origin">pg_replication_origin</a>)
+         &lt;link linkend="view-pg-replication-origin-status"&gt;pg_replication_origin_status&lt;/link&gt;,
+         not &lt;link linkend="catalog-pg-replication-origin"&gt;pg_replication_origin&lt;/link&gt;)
          will prevent the server from starting.
+</span>
+サブスクライバ側ではレプリケーション原点(origin)（<a class="xref" href="replication-origins.html" title="第50章 レプリケーション進捗の追跡">第50章</a>）をいくつ並行して追跡できるかを指定します。
+これは実質的に論理レプリケーションのサブスクリプションをサーバ上にいくつ作ることができるかを制限します。
+現在追跡しているレプリケーション原点の数（<a class="link" href="catalog-pg-replication-origin.html" title="52.42. pg_replication_origin">pg_replication_origin</a>ではなく、<a class="link" href="view-pg-replication-origin-status.html" title="52.80. pg_replication_origin_status">pg_replication_origin_status</a>に反映されます)よりも小さい値を設定すると、サーバが起動しなくなります。
         </p></dd><dt id="GUC-WAL-KEEP-SIZE"><span class="term"><code class="varname">wal_keep_size</code> (<code class="type">integer</code>)
        <a id="id-1.6.7.9.3.3.3.1.3" class="indexterm"></a>
        </span></dt><dd><p>
@@ -191,7 +198,9 @@
 トランザクションのコミットタイムを記録します。
 このパラメータは、<code class="filename">postgresql.conf</code>ファイル、もしくはサーバコマンドラインでのみ設定可能です。
 デフォルトは<code class="literal">off</code>です。
-       </p></dd></dl></div></div><div class="sect2" id="RUNTIME-CONFIG-REPLICATION-PRIMARY"><div class="titlepage"><div><div><h3 class="title">20.6.2. Primary Server</h3></div></div></div><p>
+       </p></dd></dl></div></div><div class="sect2" id="RUNTIME-CONFIG-REPLICATION-PRIMARY"><div class="titlepage"><div><div><h3 class="title">20.6.2. プライマリサーバ</h3></div></div></div><span class="original">
+     &lt;title&gt;Primary Server&lt;/title&gt;
+</span><p>
       <span class="original">
       These parameters can be set on the primary server that is
       to send replication data to one or more standby servers.
@@ -203,9 +212,9 @@
       although you may wish to set them there in preparation for the
       possibility of a standby becoming the primary.
       </span>
-      これらのパラメータはレプリケーションデータを１つ、またはそれ以上複数のスタンバイサーバに送るマスター/プライマリサーバ上で設定することができます。
-      これらパラメータに加え、<a class="xref" href="runtime-config-wal.html#GUC-WAL-LEVEL">wal_level</a>はマスターサーバ上で適切に設定される必要があり、オプションとしてWALアーカイブを有効にしてもかまいません（<a class="xref" href="runtime-config-wal.html#RUNTIME-CONFIG-WAL-ARCHIVING" title="20.5.3. アーカイビング">20.5.3</a>を参照してください）。
-      スタンバイサーバがマスターサーバになるかもしれない状況に備え、それらのパラメータをスタンバイサーバで設定したいと考えたとしても、スタンバイサーバ上でのパラメータの値は意味をなしません。
+これらのパラメータはレプリケーションデータを１つ、またはそれ以上複数のスタンバイサーバに送るプライマリサーバ上で設定することができます。
+これらパラメータに加え、<a class="xref" href="runtime-config-wal.html#GUC-WAL-LEVEL">wal_level</a>はプライマリサーバ上で適切に設定される必要があり、オプションとしてWALアーカイブを有効にしてもかまいません（<a class="xref" href="runtime-config-wal.html#RUNTIME-CONFIG-WAL-ARCHIVING" title="20.5.3. アーカイビング">20.5.3</a>を参照してください）。
+スタンバイサーバがプライマリサーバになるかもしれない状況に備え、それらのパラメータをスタンバイサーバで設定したいと考えたとしても、スタンバイサーバ上でのパラメータの値は意味をなしません。
      </p><div class="variablelist"><dl class="variablelist"><dt id="GUC-SYNCHRONOUS-STANDBY-NAMES"><span class="term"><code class="varname">synchronous_standby_names</code> (<code class="type">string</code>)
       <a id="id-1.6.7.9.4.3.1.1.3" class="indexterm"></a>
       </span></dt><dd><p>
@@ -422,8 +431,8 @@ ANY <em class="replaceable"><code>num_sync</code></em> ( <em class="replaceable"
       to receive replication data.  Their values on the primary server
       are irrelevant.
       </span>
-      これらの設定はレプリケーションデータを受け取るスタンバイサーバの動作を管理します。
-      マスターサーバ上のこれらの値は無意味です。
+これらの設定はレプリケーションデータを受け取る<a class="link" href="warm-standby.html#STANDBY-SERVER-OPERATION" title="27.2.2. スタンバイサーバの動作">スタンバイサーバ</a>の動作を管理します。
+プライマリサーバ上のこれらの値は無意味です。
      </p><div class="variablelist"><dl class="variablelist"><dt id="GUC-PRIMARY-CONNINFO"><span class="term"><code class="varname">primary_conninfo</code> (<code class="type">string</code>)
         <a id="id-1.6.7.9.5.3.1.1.3" class="indexterm"></a>
         </span></dt><dd><p>
@@ -636,11 +645,12 @@ WAL受信プロセスが実行中にこのパラメータが変更されると�
 送信された進捗情報は<a class="link" href="monitoring-stats.html#MONITORING-PG-STAT-REPLICATION-VIEW" title="28.2.4. pg_stat_replication"><code class="structname">pg_stat_replication</code></a>ビューにより確認することが可能です。
 スタンバイサーバは書き込みがされた直近の先行書き込みログ位置、ディスクにフラッシュされた直近のログ位置、およびリカバリ適用された直近のログ位置を報告します。
 このパラメータの値がそれぞれの報告間における最大の時間間隔です。
-書き込み、またはフラッシュ位置が変更される毎、あるいは最低でもこのパラメータで設定された頻度で更新情報が送信されます。
+書き込み、またはフラッシュ位置が変更される毎、あるいはこのパラメータがゼロ以外なら、最低でもこのパラメータで設定された頻度で更新情報が送信されます。
+他にもこのパラメータを無視して更新情報が送信される場合があります。
+たとえば、既存のWALの処理が完了するか、<code class="varname">synchronous_commit</code>が<code class="literal">remote_apply</code>に設定されている場合です。
 従って、適用位置は真の位置よりも少し後ろにずれることがあります。
 この値が単位なしで指定された場合は、秒単位であるとみなします。
 デフォルトの値は10秒です。
-このパラメータをゼロに設定すると、ステータスの更新を完全に無効化します。
 このパラメータは、<code class="filename">postgresql.conf</code>ファイル、もしくはサーバコマンドラインでのみ設定可能です。
       </p></dd><dt id="GUC-HOT-STANDBY-FEEDBACK"><span class="term"><code class="varname">hot_standby_feedback</code> (<code class="type">boolean</code>)
       <a id="id-1.6.7.9.5.3.9.1.3" class="indexterm"></a>
@@ -758,7 +768,7 @@ WALの生成頻度が少ないシステムでは、この値を大きくする�
 デフォルトでは、スタンバイサーバは可能な限り早くプライマリからWALレコードをリストアします。
 時間遅れのデータのコピーを持つことで、データ損失エラーを修正する機会を提供するのは有用かもしれません。
 このパラメータを使う事で、決まった時間だけリカバリを遅らせることができます。
-例えば、パラメータに<code class="literal">5min</code>と指定した場合、各トランザクションについて、スタンバイのシステム時刻が、マスターから報告されたコミット時刻より5分以上経過している場合のみ、スタンバイサーバはコミットを再生します。
+例えば、パラメータに<code class="literal">5min</code>と指定した場合、各トランザクションについて、スタンバイのシステム時刻が、プライマリから報告されたコミット時刻より5分以上経過している場合のみ、スタンバイサーバはコミットを再生します。
 単位を指定しない場合、ミリ秒として扱われます。
 デフォルトは0で、遅延を与えません。
        </p><p>
@@ -775,9 +785,9 @@ WALの生成頻度が少ないシステムでは、この値を大きくする�
         than typical time deviations between servers.
 </span>
 サーバ間のレプリケーション遅延はパラメータの値を上回る可能性があり、その場合には遅延は追加されません。
-遅延は、マスタサーバで書かれたWALのタイムスタンプと、スタンバイサーバの現在時刻を使って計算されていることに注意してください。
+遅延は、プライマリサーバで書かれたWALのタイムスタンプと、スタンバイサーバの現在時刻を使って計算されていることに注意してください。
 ネットワークの遅延やカスケーディングレプリケーション構成によるデータ転送の遅延は、実際の待ち時間を大幅に減らすかもしれません。
-もし、マスタサーバとスタンバイサーバのシステムクロックが同期されていない場合、期待値よりも早くレコードのリカバリを始めるかもしれません。
+もし、プライマリサーバとスタンバイサーバのシステムクロックが同期されていない場合、期待値よりも早くレコードのリカバリを始めるかもしれません。
 しかし、このパラメータの有用な設定値は典型的なサーバ間の時間のずれよりもずっと大きいので、それらは大きな問題ではありません。
        </p><p>
 <span class="original">
@@ -807,7 +817,7 @@ WALの生成頻度が少ないシステムでは、この値を大きくする�
         which could lead to bloat on the primary; use both together with care.
 </span>
 このパラメータはストリーミングレプリケーション配信で使われることを目的としていますが、パラメータが指定されていると、クラッシュリカバリを除くすべてのケースで使用されます。
-この機能を使うことによって<code class="varname">hot_standby_feedback</code>が遅延され、マスタサーバの肥大化に繋がる可能性があります。両方同時に使う場合には注意して使ってください。
+この機能を使うことによって<code class="varname">hot_standby_feedback</code>が遅延され、プライマリサーバの肥大化に繋がる可能性があります。両方同時に使う場合には注意して使ってください。
 
         </p><div class="warning"><h3 class="title">警告</h3><p>
 <span class="original">
@@ -861,6 +871,7 @@ WALの生成頻度が少ないシステムでは、この値を大きくする�
         start.
 </span>
 デフォルト値は4です。
+このパラメータはサーバ起動時にのみ設定可能です。
        </p></dd><dt id="GUC-MAX-SYNC-WORKERS-PER-SUBSCRIPTION"><span class="term"><code class="varname">max_sync_workers_per_subscription</code> (<code class="type">integer</code>)
       <a id="id-1.6.7.9.6.4.2.1.3" class="indexterm"></a>
       </span></dt><dd><p>
@@ -889,4 +900,5 @@ WALの生成頻度が少ないシステムでは、この値を大きくする�
         line.
 </span>
 デフォルト値は2です。
+このパラメータは、<code class="filename">postgresql.conf</code>ファイル、もしくはサーバコマンドラインでのみ設定可能です。
        </p></dd></dl></div></div></div><div xmlns="http://www.w3.org/TR/xhtml1/transitional" class="navfooter"><hr></hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="runtime-config-wal.html" title="20.5. ログ先行書き込み（WAL）">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="runtime-config.html" title="第20章 サーバの設定">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="runtime-config-query.html" title="20.7. 問い合わせ計画">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">20.5. ログ先行書き込み（WAL） </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 14.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 20.7. 問い合わせ計画</td></tr></table></div></body></html>

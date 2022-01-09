@@ -11,9 +11,8 @@
      &lt;filename&gt;postgresql.conf&lt;/filename&gt; file.  Note that many of these
      parameters require special source compilation flags to work at all.
      </span>
-     以下のパラメータは、<span class="productname">PostgreSQL</span>のソースコードに対する作業用のものです。
-中には深刻な損傷を負ったデータベースの復旧に役立つものもあります。
-実運用のデータベースでこれらを設定する理由はないはずです。
+以下のパラメータは、開発者のテスト用であり、決して実運用のデータベースに使わないでください。
+しかし、中には深刻な損傷を負ったデータベースの復旧に役立つものもあります。
 したがって、これらはサンプルの<code class="filename">postgresql.conf</code>からは除外されています。
 これらのパラメータの多くは、それを動作させるために特殊なソースコンパイルを必要としていることに注意してください。
     </p><div class="variablelist"><dl class="variablelist"><dt id="GUC-ALLOW-SYSTEM-TABLE-MODS"><span class="term"><code class="varname">allow_system_table_mods</code> (<code class="type">boolean</code>)
@@ -57,60 +56,90 @@
        </p></dd><dt id="GUC-DEBUG-DISCARD-CACHES"><span class="term"><code class="varname">debug_discard_caches</code> (<code class="type">integer</code>)
       <a id="id-1.6.7.20.3.3.1.3" class="indexterm"></a>
       </span></dt><dd><p>
-        When set to <code class="literal">1</code>, each system catalog cache entry is
+<span class="original">
+        When set to &lt;literal&gt;1&lt;/literal&gt;, each system catalog cache entry is
         invalidated at the first possible opportunity, whether or not
         anything that would render it invalid really occurred.  Caching of
         system catalogs is effectively disabled as a result, so the server
         will run extremely slowly.  Higher values run the cache invalidation
         recursively, which is even slower and only useful for testing
-        the caching logic itself.  The default value of <code class="literal">0</code>
+        the caching logic itself.  The default value of &lt;literal&gt;0&lt;/literal&gt;
         selects normal catalog caching behavior.
+</span>
+<code class="literal">1</code>なら、可能な最初の機会にシステムカタログのキャッシュ項目が破棄されます。
+すべてのキャッシュ項目を無効にするすべてのことが実際に起きます。
+結果としてシステムカタログのキャッシュが無効になり、サーバは極めて低速に動作します。
+1より大きければ、再帰的にキャッシュを削除します。
+これは更に遅くなり、キャッシュのロジック自体をテストするときにだけ役に立ちます。
+デフォルト値の<code class="literal">0</code>で正常なカタログキャッシュは通常の動作になります。
        </p><p>
+<span class="original">
         This parameter can be very helpful when trying to trigger
         hard-to-reproduce bugs involving concurrent catalog changes, but it
         is otherwise rarely needed.  See the source code files
-        <code class="filename">inval.c</code> and
-        <code class="filename">pg_config_manual.h</code> for details.
+        &lt;filename&gt;inval.c&lt;/filename&gt; and
+        &lt;filename&gt;pg_config_manual.h&lt;/filename&gt; for details.
+</span>
+このパラメータは並行的なカタログの変更を伴う再現しにくいバグを引き起こす際にとても役に立ちますが、それ以外にはめったに必要になりません。
+詳細は<code class="filename">inval.c</code>と<code class="filename">pg_config_manual.h</code>のソースコードファイルを見てください。
        </p><p>
+<span class="original">
         This parameter is supported when
-        <code class="symbol">DISCARD_CACHES_ENABLED</code> was defined at compile time
+        &lt;symbol&gt;DISCARD_CACHES_ENABLED&lt;/symbol&gt; was defined at compile time
         (which happens automatically when using the
-        <span class="application">configure</span> option
-        <code class="option">--enable-cassert</code>).  In production builds, its value
-        will always be <code class="literal">0</code> and attempts to set it to another
+        &lt;application&gt;configure&lt;/application&gt; option
+        &lt;option&gt;&amp;#045;-enable-cassert&lt;/option&gt;).  In production builds, its value
+        will always be &lt;literal&gt;0&lt;/literal&gt; and attempts to set it to another
         value will raise an error.
+</span>
+このパラメータはコンパイル時に<code class="symbol">DISCARD_CACHES_ENABLED</code>が定義されたとき（これは<span class="application">configure</span>オプションの<code class="option">--enable-cassert</code>が使われたときに自動的に起こります）にサポートされます。
+実運用のビルドでは<code class="literal">0</code>となり、それ以外の値に設定しようとするとエラーが起こります。
        </p></dd><dt id="GUC-FORCE-PARALLEL-MODE"><span class="term"><code class="varname">force_parallel_mode</code> (<code class="type">enum</code>)
       <a id="id-1.6.7.20.3.4.1.3" class="indexterm"></a>
       </span></dt><dd><p>
+<span class="original">
         Allows the use of parallel queries for testing purposes even in cases
         where no performance benefit is expected.
-        The allowed values of <code class="varname">force_parallel_mode</code> are
-        <code class="literal">off</code> (use parallel mode only when it is expected to improve
-        performance), <code class="literal">on</code> (force parallel query for all queries
-        for which it is thought to be safe), and <code class="literal">regress</code> (like
-        <code class="literal">on</code>, but with additional behavior changes as explained
+        The allowed values of &lt;varname&gt;force_parallel_mode&lt;/varname&gt; are
+        &lt;literal&gt;off&lt;/literal&gt; (use parallel mode only when it is expected to improve
+        performance), &lt;literal&gt;on&lt;/literal&gt; (force parallel query for all queries
+        for which it is thought to be safe), and &lt;literal&gt;regress&lt;/literal&gt; (like
+        &lt;literal&gt;on&lt;/literal&gt;, but with additional behavior changes as explained
         below).
+</span>
+性能改善が期待できなくても、テスト目的のためにパラレルクエリを利用できるようにします。
+<code class="varname">force_parallel_mode</code>に設定できる値は、<code class="literal">off</code>（性能改善が期待できるときにだけパラレルクエリを使用する）、<code class="literal">on</code>（安全なクエリに対しては常にパラレルクエリを強制する）、<code class="literal">regress</code>（<code class="literal">on</code>と同様だが、下記のような振る舞いの変更を伴う）です。
        </p><p>
-        More specifically, setting this value to <code class="literal">on</code> will add
-        a <code class="literal">Gather</code> node to the top of any query plan for which this
+<span class="original">
+        More specifically, setting this value to &lt;literal&gt;on&lt;/literal&gt; will add
+        a &lt;literal&gt;Gather&lt;/literal&gt; node to the top of any query plan for which this
         appears to be safe, so that the query runs inside of a parallel worker.
         Even when a parallel worker is not available or cannot be used,
         operations such as starting a subtransaction that would be prohibited
         in a parallel query context will be prohibited unless the planner
         believes that this will cause the query to fail.  If failures or
         unexpected results occur when this option is set, some functions used
-        by the query may need to be marked <code class="literal">PARALLEL UNSAFE</code>
-        (or, possibly, <code class="literal">PARALLEL RESTRICTED</code>).
+        by the query may need to be marked &lt;literal&gt;PARALLEL UNSAFE&lt;/literal&gt;
+        (or, possibly, &lt;literal&gt;PARALLEL RESTRICTED&lt;/literal&gt;).
+</span>
+正確に言えば、この値を<code class="literal">on</code>にすると、安全と見なされるすべての問い合わせ計画の上に<code class="literal">Gather</code>ノードを追加し、クエリをパラレルワーカー上で実行するようにします。
+プランナがこれによってクエリが失敗すると思わない限り、パラレルワーカーが利用できない、あるいは使用できないような場合でも、たとえばサブトランザクションの開始のように、パラレルクエリコンテキストでは許可されない操作は不許可となります。
+このオプションを設定することによって、エラーとなったり、あるいは期待していなかった結果がもたらされる場合には、クエリで使用されている関数は<code class="literal">PARALLEL UNSAFE</code>（もしくは、<code class="literal">PARALLEL RESTRICTED</code>）と印を付ける必要があるかもしません。
        </p><p>
-        Setting this value to <code class="literal">regress</code> has all of the same effects
-        as setting it to <code class="literal">on</code> plus some additional effects that are
+<span class="original">
+        Setting this value to &lt;literal&gt;regress&lt;/literal&gt; has all of the same effects
+        as setting it to &lt;literal&gt;on&lt;/literal&gt; plus some additional effects that are
         intended to facilitate automated regression testing.  Normally,
         messages from a parallel worker include a context line indicating that,
-        but a setting of <code class="literal">regress</code> suppresses this line so that the
+        but a setting of &lt;literal&gt;regress&lt;/literal&gt; suppresses this line so that the
         output is the same as in non-parallel execution.  Also,
-        the <code class="literal">Gather</code> nodes added to plans by this setting are hidden
-        in <code class="literal">EXPLAIN</code> output so that the output matches what
-        would be obtained if this setting were turned <code class="literal">off</code>.
+        the &lt;literal&gt;Gather&lt;/literal&gt; nodes added to plans by this setting are hidden
+        in &lt;literal&gt;EXPLAIN&lt;/literal&gt; output so that the output matches what
+        would be obtained if this setting were turned &lt;literal&gt;off&lt;/literal&gt;.
+</span>
+この設定値を<code class="literal">regress</code>とすると、<code class="literal">on</code>とするのに加え、自動リグレッションテストを助けるための付加的な効果が現れます。
+通常パラレルワーカーからのメッセージは、そのことを表すコンテキスト行を表示しますが、<code class="literal">regress</code>と設定すると、非パラレル実行と同じ出力になるように、これを抑止します。
+また、プランに追加された<code class="literal">Gather</code>ノードは、<code class="literal">EXPLAIN</code>出力から隠され、<code class="literal">off</code>に設定したときと同じ出力が得られるようにします。
        </p></dd><dt id="GUC-IGNORE-SYSTEM-INDEXES"><span class="term"><code class="varname">ignore_system_indexes</code> (<code class="type">boolean</code>)
       <a id="id-1.6.7.20.3.5.1.3" class="indexterm"></a>
       </span></dt><dd><p>
@@ -523,7 +552,7 @@ JITコンパイルが有効な時に式がJITコンパイルされるかどう�
         This parameter can only be set at server start.
 </span>
 LLVMに要求された機能がある場合は、JITが生成した関数を<span class="productname">perf</span>でプロファイルすることができるデータを出力します。
-これにより<code class="filename">$HOME/.debug/jit/</code>にファイルが書き出されます。
+これにより<code class="filename">~/.debug/jit/</code>にファイルが書き出されます。
 ユーザは自分の責任で必要なときに後始末を行わなければなりません。
 デフォルト設定は<code class="literal">off</code>です。
        </p></dd><dt id="GUC-JIT-TUPLE-DEFORMING"><span class="term"><code class="varname">jit_tuple_deforming</code> (<code class="type">boolean</code>)
@@ -540,11 +569,17 @@ JITコンパイルが有効な時にタプルデフォーミングがJITコン�
        </p></dd><dt id="GUC-REMOVE-TEMP-FILES-AFTER-CRASH"><span class="term"><code class="varname">remove_temp_files_after_crash</code> (<code class="type">boolean</code>)
       <a id="id-1.6.7.20.3.28.1.3" class="indexterm"></a>
       </span></dt><dd><p>
-        When set to <code class="literal">on</code>, which is the default,
-        <span class="productname">PostgreSQL</span> will automatically remove
+<span class="original">
+        When set to &lt;literal&gt;on&lt;/literal&gt;, which is the default,
+        &lt;productname&gt;PostgreSQL&lt;/productname&gt; will automatically remove
         temporary files after a backend crash. If disabled, the files will be
         retained and may be used for debugging, for example. Repeated crashes
         may however result in accumulation of useless files. This parameter
-        can only be set in the <code class="filename">postgresql.conf</code> file or on
+        can only be set in the &lt;filename&gt;postgresql.conf&lt;/filename&gt; file or on
         the server command line.
+</span>
+デフォルトである<code class="literal">on</code>に設定すると、<span class="productname">PostgreSQL</span>はバックエンドがクラッシュした後に自動的に一時ファイルを削除します。
+無効にすると、ファイルは保存され、たとえばデバッグ目的で使用できます。
+しかしクラッシュを繰り返すと不要なファイルが溜まっていくかもしれません。
+このパラメータは<code class="filename">postgresql.conf</code>ファイル内、または、サーバのコマンドラインでのみ設定可能です。
        </p></dd></dl></div></div><div xmlns="http://www.w3.org/TR/xhtml1/transitional" class="navfooter"><hr></hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="runtime-config-custom.html" title="20.16. 独自のオプション">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="runtime-config.html" title="第20章 サーバの設定">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="runtime-config-short.html" title="20.18. 短いオプション">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">20.16. 独自のオプション </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 14.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 20.18. 短いオプション</td></tr></table></div></body></html>

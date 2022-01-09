@@ -345,11 +345,14 @@ SQL標準によれば、<code class="literal">ESCAPE</code>は（デフォルト
     to standard SQL syntax:
 </span>
 3つのパラメータを持つ<code class="function">substring</code>関数を使用して、SQL正規表現パターンに一致する部分文字列を取り出すことができます。
-SQL99の構文にしたがって、この関数は次のように書くことができます。
+標準SQLの構文にしたがって、この関数は次のように書くことができます。
 </p><pre class="synopsis">
 substring(<em class="replaceable"><code>string</code></em> similar <em class="replaceable"><code>pattern</code></em> escape <em class="replaceable"><code>escape-character</code></em>)
 </pre><p>
+<span class="original">
     or using the now obsolete SQL:1999 syntax:
+</span>
+あるいは今では廃れたSQL:1999の構文を使って次のように書くことができます。
 </p><pre class="synopsis">
 substring(<em class="replaceable"><code>string</code></em> from <em class="replaceable"><code>pattern</code></em> for <em class="replaceable"><code>escape-character</code></em>)
 </pre><p>
@@ -554,7 +557,7 @@ substring('foobar' similar '#"o_b#"%' escape '#')    <em class="lineannotation">
      described below.
 </span>
 2つのパラメータを持つ<code class="function">substring</code>関数、<code class="function">substring(<em class="replaceable"><code>string</code></em> from <em class="replaceable"><code>pattern</code></em>)</code>を使用して、POSIX正規表現パターンにマッチする部分文字列を取り出すことができます。
-この関数は、マッチするものがない場合にはNULLを返し、ある場合はパターンにマッチしたテキストの一部を返します。
+この関数は、マッチするものがない場合にはNULLを返し、ある場合はパターンに最初にマッチしたテキストの一部を返します。
 しかし、丸括弧を持つパターンの場合、最初の丸括弧内部分正規表現（左丸括弧が最初に来るもの）にマッチするテキストの一部が返されます。
 この例外を起こさずにパターン中に丸括弧を使用したいのであれば、常に正規表現全体を丸括弧で囲むことができます。
 パターン内の抽出対象の部分文字列より前に丸括弧が必要な場合、後述の捕捉されない丸括弧を参照してください。
@@ -1134,7 +1137,7 @@ REはバックスラッシュ<code class="literal">\</code>を終端とするこ
 与えられた非ASCII文字がこれらの文字クラスに属すると考えられるかどうかは、正規表現関数または演算子（<a class="xref" href="collation.html" title="24.2. 照合順序サポート">24.2</a>参照）で使用される<em class="firstterm">照合順</em>、あるいはデフォルトとしてはデータベースの<code class="envar">LC_CTYPE</code>ロケール（<a class="xref" href="locale.html" title="24.1. ロケールのサポート">24.1</a>)の設定によります。
 非ASCII文字の分類は、たとえ似たような名前のロケールであってもプラットフォームによって異なることがありえます。
 （ただし<code class="literal">C</code>ロケールでは、すべての非ASCII文字はこれらのクラスのどれにも所属しないものとされます。）
-これらの標準クラスに加え、<span class="productname">PostgreSQL</span>では7-bit ASCII集合を正確に含む<code class="literal">ascii</code>文字クラスが定義されています。
+これらの標準クラスに加え、<span class="productname">PostgreSQL</span>では<code class="literal">alnum</code>と同様だがアンダースコア(<code class="literal">_</code>)文字を加えた<code class="literal">word</code>文字クラス、そして7-bit ASCII集合を正確に含む<code class="literal">ascii</code>文字クラスが定義されています。
    </p><p>
 <span class="original">
     There are two special cases of bracket expressions:  the bracket
@@ -1153,7 +1156,7 @@ REはバックスラッシュ<code class="literal">\</code>を終端とするこ
 </span>
 ブラケット式には2つの特殊な場合があります。<code class="literal">[[:&lt;:]]</code>と<code class="literal">[[:&gt;:]]</code>というブラケット式は、先頭と終端の単語がそれぞれ空文字であることにマッチする制約です。
 単語は、単語文字が前後に付かない単語文字の並びとして定義されます。
-単語文字とは（上述の<acronym class="acronym">POSIX</acronym>文字クラスで定義されているように）1つの<code class="literal">alnum</code>文字またはアンダースコアです。
+単語文字とは<code class="literal">word</code>文字クラスに所属するすべての文字、すなわちすべての文字、数字、アンダースコアです。
 これは、<acronym class="acronym">POSIX</acronym> 1003.2との互換性はありますが、そこでは定義されていない式です。ですので、他システムへ移植予定のソフトウェアでの使用には注意が必要です。
 通常後述の制約エスケープの方がよく使われます。これはもはや標準ではありませんが、入力しやすいものです。
    </p></div><div class="sect3" id="POSIX-ESCAPE-SEQUENCES"><div class="titlepage"><div><div><h4 class="title">9.7.3.3. 正規表現エスケープ</h4></div></div></div><span class="original">
@@ -1220,6 +1223,8 @@ EREにはエスケープはありません。ブラケット式の外側では�
   例えば、<code class="literal">([bc])\1</code>は<code class="literal">bb</code>もしくは<code class="literal">cc</code>にマッチしますが、<code class="literal">bc</code>や<code class="literal">cb</code>にはマッチしません。REでは副式全体は後方参照の前になければなりません。
 副式は開括弧の順番で番号付けされます。
 取り込まない括弧は副式を定義しません。
+後方参照は参照される副式にマッチした文字列のみを考慮し、そこに含まれる制約は考慮しません。
+たとえば、<code class="literal">(^\d)\1</code>は<code class="literal">22</code>にマッチします。
    </p><div class="table" id="POSIX-CHARACTER-ENTRY-ESCAPES-TABLE"><p class="title"><strong>表9.20 正規表現文字エントリエスケープ</strong></p><div class="table-contents"><span class="original">
     &lt;title&gt;Regular Expression Character-Entry Escapes&lt;/title&gt;
 </span><table class="table" summary="正規表現文字エントリエスケープ" border="1"><colgroup><col /><col /></colgroup><thead><tr><th>エスケープ</th><th>説明</th></tr></thead><tbody><tr><td> <code class="literal">\a</code> </td><td>C言語と同じ警報（ベル）文字</td></tr><tr><td> <code class="literal">\b</code> </td><td>C言語と同じバックスペース</td></tr><tr><td> <code class="literal">\B</code> </td><td> バックスラッシュの必要な二重化回数を減らすためのバックスラッシュ（<code class="literal">\</code>）の同義語</td></tr><tr><td> <code class="literal">\c</code><em class="replaceable"><code>X</code></em> </td><td>（ここで<em class="replaceable"><code>X</code></em>は任意の文字で）その下位5ビットが<em class="replaceable"><code>X</code></em>と同一、その他のビットが0となる文字 </td></tr><tr><td> <code class="literal">\e</code> </td><td>照合順名が<code class="literal">ESC</code>となる文字、それに失敗したら、<code class="literal">033</code>という8進数値を持つ文字。</td></tr><tr><td> <code class="literal">\f</code> </td><td>C言語と同じ改ページ</td></tr><tr><td> <code class="literal">\n</code> </td><td>C言語と同じ改行</td></tr><tr><td> <code class="literal">\r</code> </td><td>C言語と同じ復帰</td></tr><tr><td> <code class="literal">\t</code> </td><td>C言語と同じ水平タブ</td></tr><tr><td> <code class="literal">\u</code><em class="replaceable"><code>wxyz</code></em> </td><td>（ここで<em class="replaceable"><code>wxyz</code></em>は正確に4桁の16進数で）その16進数での値が<code class="literal">0x</code><em class="replaceable"><code>wxyz</code></em>という文字
@@ -1258,18 +1263,16 @@ ASCIIの範囲(0-127)外の値を指定した数字のエントリエスケー�
 例えば、<code class="literal">\135</code>はASCIIの<code class="literal">]</code>となり、<code class="literal">\135</code>はブラケット式の終端にはなりません。
    </p><div class="table" id="POSIX-CLASS-SHORTHAND-ESCAPES-TABLE"><p class="title"><strong>表9.21 正規表現クラス省略エスケープ</strong></p><div class="table-contents"><span class="original">
     &lt;title&gt;Regular Expression Class-Shorthand Escapes&lt;/title&gt;
-</span><table class="table" summary="正規表現クラス省略エスケープ" border="1"><colgroup><col /><col /></colgroup><thead><tr><th>エスケープ</th><th>説明</th></tr></thead><tbody><tr><td> <code class="literal">\d</code> </td><td> matches any digit, like
-        <code class="literal">[[:digit:]]</code> </td></tr><tr><td> <code class="literal">\s</code> </td><td> matches any whitespace character, like
-        <code class="literal">[[:space:]]</code> </td></tr><tr><td> <code class="literal">\w</code> </td><td> matches any word character, like
-        <code class="literal">[[:word:]]</code> </td></tr><tr><td> <code class="literal">\D</code> </td><td> matches any non-digit, like
-        <code class="literal">[^[:digit:]]</code> </td></tr><tr><td> <code class="literal">\S</code> </td><td> matches any non-whitespace character, like
-        <code class="literal">[^[:space:]]</code> </td></tr><tr><td> <code class="literal">\W</code> </td><td> matches any non-word character, like
-        <code class="literal">[^[:word:]]</code> </td></tr></tbody></table></div></div><br class="table-break" /><p>
+</span><table class="table" summary="正規表現クラス省略エスケープ" border="1"><colgroup><col /><col /></colgroup><thead><tr><th>エスケープ</th><th>説明</th></tr></thead><tbody><tr><td> <code class="literal">\d</code> </td><td><code class="literal">[[:digit:]]</code>のようなすべての数字にマッチします。</td></tr><tr><td> <code class="literal">\s</code> </td><td><code class="literal">[[:space:]]</code>のようなすべての空白文字にマッチします。</td></tr><tr><td> <code class="literal">\w</code> </td><td><code class="literal">[[:word:]]</code>のようなすべての単語文字にマッチします。</td></tr><tr><td> <code class="literal">\D</code> </td><td><code class="literal">[^[:digit:]]</code>のようなすべての非数字にマッチします。</td></tr><tr><td> <code class="literal">\S</code> </td><td><code class="literal">[^[:space:]]</code>のようなすべての非空白文字にマッチします。</td></tr><tr><td> <code class="literal">\W</code> </td><td><code class="literal">[^[:word:]]</code>のようなすべての非単語文字にマッチします。</td></tr></tbody></table></div></div><br class="table-break" /><p>
+<span class="original">
     The class-shorthand escapes also work within bracket expressions,
     although the definitions shown above are not quite syntactically
     valid in that context.
-    For example, <code class="literal">[a-c\d]</code> is equivalent to
-    <code class="literal">[a-c[:digit:]]</code>.
+    For example, &lt;literal&gt;[a-c\d]&lt;/literal&gt; is equivalent to
+    &lt;literal&gt;[a-c[:digit:]]&lt;/literal&gt;.
+</span>
+クラス省略エスケープはブラケット式の中でも使えますが、上に示した定義はそのコンテキストでは構文的に正しいとは言えません。
+たとえば<code class="literal">[a-c\d]</code>は<code class="literal">[a-c[:digit:]]</code>と同様です。
    </p><div class="table" id="POSIX-CONSTRAINT-ESCAPES-TABLE"><p class="title"><strong>表9.22 正規表現制約エスケープ</strong></p><div class="table-contents"><span class="original">
     &lt;title&gt;Regular Expression Constraint Escapes&lt;/title&gt;
 </span><table class="table" summary="正規表現制約エスケープ" border="1"><colgroup><col /><col /></colgroup><thead><tr><th>エスケープ</th><th>説明</th></tr></thead><tbody><tr><td> <code class="literal">\A</code> </td><td>文字列の先頭にのみマッチします（<code class="literal">^</code>との違いについては<a class="xref" href="functions-matching.html#POSIX-MATCHING-RULES" title="9.7.3.5. 正規表現マッチ規則">9.7.3.5</a>を参照してください）。</td></tr><tr><td> <code class="literal">\m</code> </td><td> 単語の先頭にのみマッチします。 </td></tr><tr><td> <code class="literal">\M</code> </td><td> 単語の末尾にのみマッチします。 </td></tr><tr><td> <code class="literal">\y</code> </td><td> 単語の先頭もしくは末尾にのみマッチします。</td></tr><tr><td> <code class="literal">\Y</code> </td><td>単語の先頭もしくは末尾以外の場所にのみマッチします。</td></tr><tr><td> <code class="literal">\Z</code> </td><td>文字列の末尾にのみマッチします（<code class="literal">$</code>との違いについては<a class="xref" href="functions-matching.html#POSIX-MATCHING-RULES" title="9.7.3.5. 正規表現マッチ規則">9.7.3.5</a>を参照してください）。</td></tr></tbody></table></div></div><br class="table-break" /><p>
@@ -1640,8 +1643,11 @@ REの全体に渡る欲張りさをその要素の欲張りさと別に制御す
     Write &lt;literal&gt;[^[:digit:]]&lt;/literal&gt;
     or &lt;literal&gt;[^[:word:]]&lt;/literal&gt; to get the old behavior.)
 </span>
-改行を区別するマッチが指定されると、<code class="literal">.</code>と<code class="literal">^</code>を使用するブラケット式は（REが明示的に調整されていたとしてもマッチが改行をまたがらないようにするために）改行文字にマッチしなくなります。また、<code class="literal">^</code>と<code class="literal">$</code>はそれぞれ改行直後と直前の空文字列にマッチし、さらに、それぞれ文字列の先頭と末尾にマッチします。
+改行を区別するマッチが指定されると、<code class="literal">.</code>と<code class="literal">^</code>を使用するブラケット式は（REが明示的に改行を含まない限りマッチが行をまたがらないようにするために）改行文字にマッチしなくなります。また、<code class="literal">^</code>と<code class="literal">$</code>はそれぞれ改行直後と直前の空文字列にマッチし、さらに、それぞれ文字列の先頭と末尾にマッチします。
 しかし、AREエスケープの<code class="literal">\A</code>と<code class="literal">\Z</code>は、継続して、文字列の先頭と末尾<span class="emphasis"><em>のみ</em></span>にマッチします。
+また、文字クラス短縮形<code class="literal">\D</code>と<code class="literal">\W</code>このモードが何であれ改行にマッチします。
+（<span class="productname">PostgreSQL</span> 14より前では、改行敏感モードのときはこれらは改行にマッチしませんでした。
+古い挙動で動かすには<code class="literal">[^[:digit:]]</code>あるいは<code class="literal">[^[:word:]]</code>と書いてください。）
    </p><p>
 <span class="original">
     If partial newline-sensitive matching is specified,

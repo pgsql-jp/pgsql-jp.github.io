@@ -12,7 +12,7 @@
    composite types with &lt;command&gt;CREATE TYPE AS&lt;/command&gt;.
 </span>
 <code class="structname">pg_type</code>カタログはデータ型の情報を保存します。
-基本型と列挙型（スカラ型）は<a class="xref" href="sql-createtype.html" title="CREATE TYPE"><span class="refentrytitle">CREATE TYPE</span></a>で作成され、ドメインは<a class="xref" href="sql-createdomain.html" title="CREATE DOMAIN"><span class="refentrytitle">CREATE DOMAIN</span></a>で作成されます。
+基本型と列挙型（スカラ型）は<a class="link" href="sql-createtype.html" title="CREATE TYPE"><code class="command">CREATE TYPE</code></a>で作成され、ドメインは<a class="link" href="sql-createdomain.html" title="CREATE DOMAIN"><code class="command">CREATE DOMAIN</code></a>で作成されます。
 複合型がテーブルの行構成を表すためデータベースの個々のテーブルに対して自動的に作成されます。
 複合型を<code class="command">CREATE TYPE AS</code>で作成することもできます。
   </p><div class="table" id="id-1.10.4.64.4"><p class="title"><strong>表52.62 <code class="structname">pg_type</code>の列</strong></p><div class="table-contents"><span class="original">
@@ -110,7 +110,7 @@
        See also &lt;structfield&gt;typrelid&lt;/structfield&gt; and
        &lt;structfield&gt;typbasetype&lt;/structfield&gt;.
 </span>
-<code class="structfield">typtype</code>では、<code class="literal">b</code>は基本型、<code class="literal">c</code>は複合型（例えばテーブルの行の型）、<code class="literal">d</code>は派生型（ドメインなど）、<code class="literal">e</code>は列挙型、<code class="literal">p</code>は疑似型、<code class="literal">r</code>は範囲型です。
+<code class="structfield">typtype</code>では、<code class="literal">b</code>は基本型、<code class="literal">c</code>は複合型（例えばテーブルの行の型）、<code class="literal">d</code>は派生型（ドメインなど）、<code class="literal">e</code>は列挙型、<code class="literal">p</code>は疑似型、<code class="literal">r</code>は範囲型、<code class="literal">m</code>は多重範囲型です。
 <code class="structfield">typrelid</code>および<code class="structfield">typbasetype</code>も参照してください。
       </p></td></tr><tr><td class="catalog_table_entry"><p class="column_definition">
        <code class="structfield">typcategory</code> <code class="type">char</code>
@@ -171,20 +171,25 @@
        &lt;link linkend="catalog-pg-attribute"&gt;&lt;structname&gt;pg_attribute&lt;/structname&gt;&lt;/link&gt; entries to link to.)
        Zero for non-composite types.
 </span>
-もしこれが複合型（<code class="structname">typtype</code>を参照）であれば、この列は関連するテーブルを定義する<code class="structfield">pg_class</code>項目を指します。
-（独立の複合型の場合、<code class="structname">pg_class</code>項目は実際にはテーブルを表しませんが、いずれにしても型の<code class="structname">pg_attribute</code>項目をリンクするために必要です。）
+もしこれが複合型（<code class="structname">typtype</code>を参照）であれば、この列は関連するテーブルを定義する<a class="link" href="catalog-pg-class.html" title="52.11. pg_class"><code class="structname">pg_class</code></a>項目を指します。
+（独立の複合型の場合、<a class="link" href="catalog-pg-class.html" title="52.11. pg_class"><code class="structname">pg_class</code></a>項目は実際にはテーブルを表しませんが、いずれにしても型の<a class="link" href="catalog-pg-attribute.html" title="52.7. pg_attribute"><code class="structname">pg_attribute</code></a>項目をリンクするために必要です。）
 複合型でない場合はゼロです。
       </p></td></tr><tr><td class="catalog_table_entry"><p class="column_definition">
        <code class="structfield">typsubscript</code> <code class="type">regproc</code>
        (references <a class="link" href="catalog-pg-proc.html" title="52.38. pg_proc"><code class="structname">pg_proc</code></a>.<code class="structfield">oid</code>)
       </p>
       <p>
+<span class="original">
        Subscripting handler function's OID, or zero if this type doesn't
-       support subscripting.  Types that are <span class="quote">「<span class="quote">true</span>」</span> array
-       types have <code class="structfield">typsubscript</code>
-       = <code class="function">array_subscript_handler</code>, but other types may
+       support subscripting.  Types that are &lt;quote&gt;true&lt;/quote&gt; array
+       types have &lt;structfield&gt;typsubscript&lt;/structfield&gt;
+       = &lt;function&gt;array_subscript_handler&lt;/function&gt;, but other types may
        have other handler functions to implement specialized subscripting
        behavior.
+</span>
+添字ハンドラ関数のOID、あるいはこの型が添え字付けをサポートしていなければゼロ。
+<span class="quote">「<span class="quote">本当の</span>」</span>配列型では、<code class="structfield">typsubscript</code> = <code class="function">array_subscript_handler</code>となります。
+しかし、他の型では特別な添え字付けの振る舞いを実装するハンドラ関数を持つかもしれません。
       </p></td></tr><tr><td class="catalog_table_entry"><p class="column_definition">
        <code class="structfield">typelem</code> <code class="type">oid</code>
        (references <a class="link" href="catalog-pg-type.html" title="52.62. pg_type"><code class="structname">pg_type</code></a>.<code class="structfield">oid</code>)
@@ -203,11 +208,11 @@
        this type; so DDL changes on the element type might be restricted
        by the presence of this type.
 </span>
-<code class="structfield">typelem</code>がゼロでない場合、これは<code class="structname">pg_type</code>の別の列を特定します。
-現在の型は、<code class="structfield">typelem</code>型の値を生成する配列のように、配列要素を持てるようになります。
-<span class="quote">「<span class="quote">本当の</span>」</span>の配列型は可変長（<code class="structfield">typlen</code> = -1）ですが、例えば<code class="type">name</code>と<code class="type">point</code>のように、いくつかの固定長（<code class="structfield">typlen</code> &gt; 0）型は同時に非ゼロの<code class="structfield">typelem</code>を持つことができます。
-もし固定長型が<code class="structfield">typelem</code>を持つ場合、その内部表現は他のデータを持たない<code class="structfield">typelem</code>データ型の数個の値でなければなりません。
-可変長配列型には配列サブルーチンで定義されたヘッダを持ちます。
+<code class="structfield">typelem</code>がゼロでない場合、これは添字付けによって生成された型を定義する<code class="structname">pg_type</code>の別の列を特定します。
+<code class="structfield">typsubscript</code>がゼロなら、これはゼロとなるはずです。
+しかし、添字付けの結果型を決定するためにハンドラが<code class="structfield">typelem</code>を必要としてなければ、<code class="structfield">typsubscript</code>がゼロでなくても、ゼロとなることがあります。
+<code class="structfield">typelem</code>依存性は、この型の要素型を物理的に含むことを暗示すると考えられることに注意してください。
+ですからこの要素型に対するDDL変更は、この型に存在に制限されるかもしれません。
       </p></td></tr><tr><td class="catalog_table_entry"><p class="column_definition">
        <code class="structfield">typarray</code> <code class="type">oid</code>
        (references <a class="link" href="catalog-pg-type.html" title="52.62. pg_type"><code class="structname">pg_type</code></a>.<code class="structfield">oid</code>)
@@ -283,7 +288,7 @@
        Custom &lt;xref linkend="sql-analyze"/&gt; function,
        or zero to use the standard function
 </span>
-独自の<code class="command">ANALYZE</code>関数。標準関数を使用する場合はゼロ
+独自の<a class="xref" href="sql-analyze.html" title="ANALYZE"><span class="refentrytitle">ANALYZE</span></a>関数。標準関数を使用する場合はゼロ
       </p></td></tr><tr><td class="catalog_table_entry"><p class="column_definition">
        <code class="structfield">typalign</code> <code class="type">char</code>
       </p>
