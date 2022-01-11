@@ -200,8 +200,8 @@ CREATE [ UNIQUE ] INDEX [ CONCURRENTLY ] [ [ IF NOT EXISTS ] <em class="replacea
         which correspond to heap tuples, but are not included in upper-level
         index entries used for tree navigation.
 </span>
-今のところ本機能はB-treeとGiSTインデックスアクセスメソッドに対応しています。
-B-treeとGiSTインデックスでは<code class="literal">INCLUDE</code>句にリストされた列の値は、ヒープタプルに対応するリーフタプルに含まれますが、ツリーを辿るのに使われる上位レベルのインデックスエントリには含まれません。
+今のところ本機能はB-tree、GiST、SP-GiSTインデックスアクセスメソッドに対応しています。
+これらのインデックスでは<code class="literal">INCLUDE</code>句にリストされた列の値は、ヒープタプルに対応するリーフタプルに含まれますが、ツリーを辿るのに使われる上位レベルのインデックスエントリには含まれません。
        </p></dd><dt><span class="term"><em class="replaceable"><code>name</code></em></span></dt><dd><p>
 <span class="original">
         The name of the index to be created.  No schema name can be included
@@ -348,41 +348,50 @@ B-tree、ハッシュ、GiSTおよびSP-GiSTといったインデックスはす
 </span>
 インデックス用のフィルファクタは割合（パーセント）で、インデックスメソッドがインデックスページをまとめ上げる時にどの程度ページを使用するかを決定するものです。
 B-treeでは、リーフページは初期インデックス構築時と右側（新しい最大キー値を追加する方向）にインデックスを拡張する時にこの割合分までページを使用します。
-その後ページすべてが完全に使用されると分割され、インデックスの効果が徐々に劣化します。
+その後ページすべてが完全に使用されると分割され、ディスク上のインデックスの構造が断片化していきます。
 B-treeのデフォルトのフィルファクタは90ですが、10から100までの任意の整数値を設定することができます。
-テーブルが静的な場合、100が最善でインデックスの物理サイズを最小化できます。
-更新が非常に多い場合は、ページ分割の頻度を少なくするために、より小さなフィルファクタを設定する方が良いです。
-この他のインデックスメソッドでは、フィルファクタを異なる意味で使用しますが、おおよそは同じです。
-メソッドによってフィルファクタのデフォルト値は異なります。
      </p><p>
+<span class="original">
       B-tree indexes on tables where many inserts and/or updates are
       anticipated can benefit from lower fillfactor settings at
-      <code class="command">CREATE INDEX</code> time (following bulk loading into the
-      table).  Values in the range of 50 - 90 can usefully <span class="quote">「<span class="quote">smooth
-       out</span>」</span> the <span class="emphasis"><em>rate</em></span> of page splits during the
+      &lt;command&gt;CREATE INDEX&lt;/command&gt; time (following bulk loading into the
+      table).  Values in the range of 50 - 90 can usefully &lt;quote&gt;smooth
+       out&lt;/quote&gt; the &lt;emphasis&gt;rate&lt;/emphasis&gt; of page splits during the
       early life of the B-tree index (lowering fillfactor like this may even
       lower the absolute number of page splits, though this effect is highly
       workload dependent).  The B-tree bottom-up index deletion technique
-      described in <a class="xref" href="btree-implementation.html#BTREE-DELETION" title="64.4.2. Bottom-up Index Deletion">64.4.2</a> is dependent on having
-      some <span class="quote">「<span class="quote">extra</span>」</span> space on pages to store <span class="quote">「<span class="quote">extra</span>」</span>
+      described in &lt;xref linkend="btree-deletion"/&gt; is dependent on having
+      some &lt;quote&gt;extra&lt;/quote&gt; space on pages to store &lt;quote&gt;extra&lt;/quote&gt;
       tuple versions, and so can be affected by fillfactor (though the effect
       is usually not significant).
+</span>
+多くの挿入や更新が予想されるテーブルのB-treeインデックスでは、(テーブルへの一括ロードに続く)<code class="command">CREATE INDEX</code>の時にフィルファクタを低い値に設定することで恩恵に与れるかもしれません。
+50から90の範囲の値は、B-treeインデックスの初期の段階でのページ分割の<span class="emphasis"><em>割合</em></span>を<span class="quote">「<span class="quote">ならす</span>」</span>のに有用かもしれません。(このようにフィルファクタを下げることはページ分割の絶対数を下げるかもしれません。もっとも、この効果はデータベースの処理内容に大きく依存します。)
+<a class="xref" href="btree-implementation.html#BTREE-DELETION" title="64.4.2. Bottom-up Index Deletion">64.4.2</a>に書かれたB-treeボトムアップインデックス削除技法は<span class="quote">「<span class="quote">余分な</span>」</span>タプルのバージョンを保存するのにページの<span class="quote">「<span class="quote">余分な</span>」</span>空きに依存しますので、(その効果は通常、重要なものではありませんが)フィルファクタの影響を受けるかもしれません。
      </p><p>
+<span class="original">
       In other specific cases it might be useful to increase fillfactor to
-      100 at <code class="command">CREATE INDEX</code> time as a way of maximizing
+      100 at &lt;command&gt;CREATE INDEX&lt;/command&gt; time as a way of maximizing
       space utilization.  You should only consider this when you are
       completely sure that the table is static (i.e. that it will never be
       affected by either inserts or updates).  A fillfactor setting of 100
-      otherwise risks <span class="emphasis"><em>harming</em></span> performance: even a few
+      otherwise risks &lt;emphasis&gt;harming&lt;/emphasis&gt; performance: even a few
       updates or inserts will cause a sudden flood of page splits.
+</span>
+その他の特別な場合には、空間利用効率を最大にする1つの方法として<code class="command">CREATE INDEX</code>の時にフィルファクタを100に増やすのが有用かもしれません。
+テーブルが静的である(すなわち、挿入や更新により影響を受けない)と完全に確信できる場合にのみ、これを検討すべきです。
+そうでなければ、フィルファクタを100に設定することは性能に<span class="emphasis"><em>悪影響を与える</em></span>危険があります。更新や挿入がたとえ少数であっても、大量のページ分割が突然発生することになるでしょう。
      </p><p>
+<span class="original">
       The other index methods use fillfactor in different but roughly
       analogous ways; the default fillfactor varies between methods.
+</span>
+他のインデックスメソッドでは、フィルファクタを異なる意味で使用しますが、おおよそは同じです。メソッドによってフィルファクタのデフォルト値は異なります。
      </p></dd></dl></div><p>
 <span class="original">
     B-tree indexes additionally accept this parameter:
 </span>
-B-treeインデックスは以下パラメータも受け付けます。
+B-treeインデックスはさらに以下のパラメータを受け付けます。
    </p><div class="variablelist"><dl class="variablelist"><dt id="INDEX-RELOPTION-DEDUPLICATE-ITEMS"><span class="term"><code class="literal">deduplicate_items</code> (<code class="type">boolean</code>)
      <a id="id-1.9.3.69.6.3.5.1.1.3" class="indexterm"></a>
     </span></dt><dd><p>
@@ -426,11 +435,11 @@ GiSTインデックスではさらに以下のパラメータを受け付けま�
      Note that if sorted build is possible, it will be used instead of
      buffered build unless &lt;literal&gt;buffering=ON&lt;/literal&gt; is specified.
 </span>
-<a class="xref" href="gist-implementation.html#GIST-BUFFERING-BUILD" title="65.4.1. GiST Index Build Methods">65.4.1</a>で説明するバッファリング構築技術をインデックスを構築する時に使用するかどうかを決定します。
-<code class="literal">OFF</code>で無効に、<code class="literal">ON</code>で有効になります。
-また<code class="literal">AUTO</code>と指定すると、最初は無効ですが、
-インデックスサイズが<a class="xref" href="runtime-config-query.html#GUC-EFFECTIVE-CACHE-SIZE">effective_cache_size</a>に達した後はその場で有効になります。
+<a class="xref" href="gist-implementation.html#GIST-BUFFERING-BUILD" title="65.4.1. GiST Index Build Methods">65.4.1</a>で説明するバッファ化構築技術をインデックスを構築する時に使用するかどうかを決定します。
+バッファ処理は<code class="literal">OFF</code>で無効に、<code class="literal">ON</code>で有効になります。
+また<code class="literal">AUTO</code>と指定すると、最初は無効ですが、インデックスサイズが<a class="xref" href="runtime-config-query.html#GUC-EFFECTIVE-CACHE-SIZE">effective_cache_size</a>に達した後はその場で有効になります。
 デフォルトは<code class="literal">AUTO</code>です。
+ソートしての構築が可能であれば、<code class="literal">buffering=ON</code>が指定されていない限りバッファ化構築の代わりに使われることに注意してください。
     </p></dd></dl></div><p>
 <span class="original">
     GIN indexes accept different parameters:
@@ -552,7 +561,7 @@ GINインデックスでは以下の異なるパラメータを受け付けま�
 </span>
 同時実行インデックス構築では実際には、1つのトランザクションでシステムカタログに登録され、さらに2つのトランザクションで２つのテーブルスキャンが起こります。
 各テーブルスキャンの前に、インデックス構築はテーブルを修正した実行中のトランザクションが終了するのを待たなければなりません。
-2回目のスキャンの後、インデックス構築は2回目のスキャンより前のスナップショット（<a class="xref" href="mvcc.html" title="第13章 同時実行制御">第13章</a>参照）を持つすべてのトランザクションが終了するのを待たなければなりません。
+2回目のスキャンの後、インデックス構築は2回目のスキャンより前のスナップショット（<a class="xref" href="mvcc.html" title="第13章 同時実行制御">第13章</a>参照）を持つすべてのトランザクションが終了するのを待たなければなりません。関係するインデックスが部分インデックスであったり、単純な列参照でない列を持っているのなら、ここでのトランザクションは他のテーブルでの同時実行インデックス構築の任意の段階で使われているトランザクションを含みます。
 その後でようやく、インデックスは利用可能であると印が付けられ、<code class="command">CREATE INDEX</code>コマンドが終了します。
 しかし、それでもインデックスは問い合わせに対して即座に利用可能であるとは限りません。
 最悪の場合、インデックス構築開始前のトランザクションが存在する間は利用できません。
@@ -656,8 +665,10 @@ Indexes:
    &lt;productname&gt;PostgreSQL&lt;/productname&gt;.)  Only B-tree currently
    supports unique indexes.
 </span>
-現在は、B-tree、GiST、GIN、BRINインデックスメソッドのみが、複数列に対するインデックスをサポートしています。
-指定できる列は、デフォルトでは32個までです（この制限は<span class="productname">PostgreSQL</span>のコンパイル時に変更できます）。
+現在は、B-tree、GiST、GIN、BRINインデックスメソッドのみが、複数キー列に対するインデックスをサポートしています。
+複数キー列があるかどうかはインデックスに<code class="literal">INCLUDE</code>列を追加できるかどうかとは独立です。
+インデックスは<code class="literal">INCLUDE</code>列を含めて32列まで持てます。
+（この制限は<span class="productname">PostgreSQL</span>のコンパイル時に変更できます。）
 現在、B-treeのみが一意性インデックスをサポートしています。
   </p><p>
 <span class="original">
@@ -736,12 +747,18 @@ Indexes:
 <code class="literal">NULLS</code>オプションは、インデックスに基づいた問い合わせにおいてソート処理を省略するために<span class="quote">「<span class="quote">NULLのソート順を低くする</span>」</span>動作をサポートする必要がある場合に有用です。
 デフォルトの動作は<span class="quote">「<span class="quote">NULLのソート順を高くする</span>」</span>です。
   </p><p>
+<span class="original">
    The system regularly collects statistics on all of a table's
    columns.  Newly-created non-expression indexes can immediately
    use these statistics to determine an index's usefulness.
-   For new expression indexes, it is necessary to run <a class="link" href="sql-analyze.html" title="ANALYZE"><code class="command">ANALYZE</code></a> or wait for
-   the <a class="link" href="routine-vacuuming.html#AUTOVACUUM" title="25.1.6. 自動バキュームデーモン">autovacuum daemon</a> to analyze
+   For new expression indexes, it is necessary to run &lt;link
+   linkend="sql-analyze"&gt;&lt;command&gt;ANALYZE&lt;/command&gt;&lt;/link&gt; or wait for
+   the &lt;link linkend="autovacuum"&gt;autovacuum daemon&lt;/link&gt; to analyze
    the table to generate statistics for these indexes.
+</span>
+システムは定期的にテーブルの列すべての統計情報を集めています。
+新しく作られた、式でないインデックスは、インデックスの有用性を決定するのにその統計情報をすぐに使うことができます。
+新しい式インデックスに対しては、そのインデックスのための統計情報を生成するために、<a class="link" href="sql-analyze.html" title="ANALYZE"><code class="command">ANALYZE</code></a>を実行するか、<a class="link" href="routine-vacuuming.html#AUTOVACUUM" title="25.1.6. 自動バキュームデーモン">autovacuumデーモン</a>がそのテーブルを解析するのを待つことが必要です。
   </p><p>
 <span class="original">
    For most index methods, the speed of creating an index is
@@ -803,7 +820,7 @@ Indexes:
    TABLE&lt;/command&gt; will disable parallel index builds on the table in
    all cases.
 </span>
-<a class="xref" href="sql-altertable.html" title="ALTER TABLE"><span class="refentrytitle">ALTER TABLE</span></a>を通して<code class="literal">parallel_workers</code>の値を設定することで、テーブルに対して<code class="command">CREATE INDEX</code>でどれだけのワーカプロセス数が要求されるかを、直接に調整できます。
+<a class="link" href="sql-altertable.html" title="ALTER TABLE"><code class="command">ALTER TABLE</code></a>を通して<code class="literal">parallel_workers</code>の値を設定することで、テーブルに対して<code class="command">CREATE INDEX</code>でどれだけのワーカプロセス数が要求されるかを、直接に調整できます。
 これはコストモデルを完全に無視して、<code class="varname">maintenance_work_mem</code>がパラレルワーカの要求数に影響を与えることを回避します。
 <code class="command">ALTER TABLE</code>を通して<code class="literal">parallel_workers</code>を0に設定することは、そのテーブルに対するパラレルインデックス作成を全ての場合に無効化します。
   </p><div class="tip"><h3 class="title">ヒント</h3><p>
@@ -829,13 +846,17 @@ Indexes:
    Use &lt;link linkend="sql-dropindex"&gt;&lt;command&gt;DROP INDEX&lt;/command&gt;&lt;/link&gt;
    to remove an index.
 </span>
-インデックスを削除するには、<a class="xref" href="sql-dropindex.html" title="DROP INDEX"><span class="refentrytitle">DROP INDEX</span></a>を使用してください。
+インデックスを削除するには、<a class="link" href="sql-dropindex.html" title="DROP INDEX"><code class="command">DROP INDEX</code></a>を使用してください。
   </p><p>
-   Like any long-running transaction, <code class="command">CREATE INDEX</code> on a
+<span class="original">
+   Like any long-running transaction, &lt;command&gt;CREATE INDEX&lt;/command&gt; on a
    table can affect which tuples can be removed by concurrent
-   <code class="command">VACUUM</code> on any other table.
-   Excepted from this are operations with the <code class="literal">CONCURRENTLY</code>
+   &lt;command&gt;VACUUM&lt;/command&gt; on any other table.
+   Excepted from this are operations with the &lt;literal&gt;CONCURRENTLY&lt;/literal&gt;
    option for indexes that are not partial and do not index any expressions.
+</span>
+他の時間のかかるトランザクションと同じく、あるテーブルに対する<code class="command">CREATE INDEX</code>は、その他のテーブルに対する同時実行中の<code class="command">VACUUM</code>によりどのタプルが削除できるかに影響します。
+この例外は、部分インデックスでなくて式をインデックス化しないインデックスに対する<code class="literal">CONCURRENTLY</code>オプション付きの操作です。
   </p><p>
 <span class="original">
    Prior releases of &lt;productname&gt;PostgreSQL&lt;/productname&gt; also had an
@@ -849,9 +870,13 @@ Indexes:
 GiSTメソッドに比べて大きな利点がありませんでしたので、このメソッドは削除されました。
 古いデータベースからGiSTへの変換を簡単にするため、<code class="literal">USING rtree</code>が指定された場合、<code class="command">CREATE INDEX</code>は<code class="literal">USING gist</code>と解釈します。
   </p><p>
-    Each backend running <code class="command">CREATE INDEX</code> will report its
-    progress in the <code class="structname">pg_stat_progress_create_index</code>
-    view. See <a class="xref" href="progress-reporting.html#CREATE-INDEX-PROGRESS-REPORTING" title="28.4.2. CREATE INDEXの進捗状況のレポート">28.4.2</a> for details.
+<span class="original">
+    Each backend running &lt;command&gt;CREATE INDEX&lt;/command&gt; will report its
+    progress in the &lt;structname&gt;pg_stat_progress_create_index&lt;/structname&gt;
+    view. See &lt;xref linkend="create-index-progress-reporting"/&gt; for details.
+</span>
+<code class="command">CREATE INDEX</code>を実行している各バックエンドはその進捗を<code class="structname">pg_stat_progress_create_index</code>ビューで報告します。
+詳細は<a class="xref" href="progress-reporting.html#CREATE-INDEX-PROGRESS-REPORTING" title="28.4.2. CREATE INDEXの進捗状況のレポート">28.4.2</a>を参照してください。
   </p></div><div class="refsect1" id="id-1.9.3.69.8"><h2>例</h2><span class="original">
   &lt;title&gt;Examples&lt;/title&gt;
 </span><p>
