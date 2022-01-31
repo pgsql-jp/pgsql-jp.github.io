@@ -43,7 +43,7 @@
 </span>
 ハードウェア共有機能の改善の一つとしてファイルシステムのレプリケーションをあげることができます。
 それは、あるファイルシステムに対して行われたすべての変更を他のコンピュータに存在するファイルシステムにミラーリングします。
-制約はただ一つであり、スタンバイサーバがファイルシステムの一貫したコピーを自身の領域に持つようにミラーリングしなければなりません。具体的には、スタンバイサーバへの書き込みがマスタサーバへの書き込みと同じ順序でおこなわれなければなりません。
+制約はただ一つであり、スタンバイサーバがファイルシステムの一貫したコピーを自身の領域に持つようにミラーリングしなければなりません。具体的には、スタンバイサーバへの書き込みがプライマリサーバへの書き込みと同じ順序でおこなわれなければなりません。
 Linuxにおける<span class="productname">DRBD</span>は、ファイルシステムレプリケーションで広く受けいれられている手法です。
     </p><span class="original">
 原文におけるコメントアウト
@@ -64,7 +64,7 @@ protocol to make nodes agree on a serializable transactional order.
      asynchronous and can only be done for the entire database server.
 </span>
 ウォームスタンバイおよびホットスタンバイサーバは、ログ先行書き込み（<acronym class="acronym">WAL</acronym>）のレコードを解読して最新の状態を保持できます。
-プライマリサーバが故障したとき、スタンバイサーバがプライマリサーバのほぼすべてのデータを保存して、速やかに新しい主データベースを稼動できます。
+プライマリサーバが故障したとき、スタンバイサーバがプライマリサーバのほぼすべてのデータを保存して、速やかに新しいプライマリデータベースサーバを作成できます。
 本解法は同期、非同期で行うことができ、データベース全体だけを範囲として処理できます。
     </p><p>
 <span class="original">
@@ -90,11 +90,12 @@ protocol to make nodes agree on a serializable transactional order.
 </span>
 論理レプリケーションにより、データベースサーバが他のサーバに、データ更新のストリームを送ることができます。
 <span class="productname">PostgreSQL</span>の論理レプリケーションは、WALから論理的なデータ更新のストリームを構築します。
-論理レプリケーションでは、個々のテーブルの変更を複製することができます。
-論理レプリケーションにおいては、特定のサーバをマスターあるいはレプリカに割り当てる必要なしに、複数の方向にデータを流すことができます。
+論理レプリケーションでは、テーブル単位でデータ変更をレプリケーションすることができます。
+さらに自分の変更をパブリッシュしているサーバは同時に他のサーバから変更をサブスクライブできるので、複数の方向にデータを流すことができます。
 論理レプリケーションの更なる情報については、<a class="xref" href="logical-replication.html" title="第31章 論理レプリケーション">第31章</a>をご覧ください。
-ロジカルデコーディングインタフェース(<a class="xref" href="logicaldecoding.html" title="第49章 ロジカルデコーディング">第49章</a>)を使って、サードパーティー拡張は同様の機能を提供できます。
-    </p></dd><dt><span class="term">トリガベースのマスタ・スタンバイレプリケーション</span></dt><dd><p>
+なお、ロジカルデコーディングインタフェース(<a class="xref" href="logicaldecoding.html" title="第49章 ロジカルデコーディング">第49章</a>)を使って、サードパーティー拡張は同様の機能を提供できます。
+    </p></dd><dt><span class="term">トリガベースのプライマリ・スタンバイレプリケーション</span></dt><dd><p>
+<span class="original">
      A trigger-based replication setup typically funnels data modification
      queries to a designated primary server. Operating on a per-table basis,
      the primary server sends data changes (typically) asynchronously to the
@@ -102,6 +103,11 @@ protocol to make nodes agree on a serializable transactional order.
      running, and may allow some local data changes or write activity.  This
      form of replication is often used for offloading large analytical or data
      warehouse queries.
+</span>
+トリガベースのレプリケーションの構成では、通常はデータを変更する問い合わせを指定されたプライマリサーバに送り込みます。
+テーブル単位で処理を行い、プライマリサーバはデータの変更を（典型的には）非同期でスタンバイサーバに送信します。
+スタンバイサーバは、プライマリが処理中に問い合わせに応答し、ローカルでのデータ変更あるいは書き込み処理を行うことができます。
+この形式のレプリケーションは、大量のデータ分析の負荷軽減や、データウェアハウスの問い合わせにしばしば利用されます。
     </p><p>
 <span class="original">
      &lt;productname&gt;Slony-I&lt;/productname&gt; is an example of this type of
@@ -141,12 +147,10 @@ SQLに基づいたレプリケーションのミドルウェアでは、プロ�
      are examples of this type of replication.
 </span>
 問い合わせを修正しないで送付した場合、<code class="function">random()</code>関数による乱数値と<code class="function">CURRENT_TIMESTAMP</code>関数による現在時刻およびシーケンス値が、サーバごとに異なることがあります。
-その理由は、各サーバが独立して稼動しているため、および、SQL問い合わせの送付では実際に更新した行の識別値を取得できないためです。
-これが許容できない場合は、ミドルウェアかアプリケーションにおいて1つのサーバにこのような問い合わせを送付し、その結果を書き込み問い合わせで使用しなければなりません。
-その他の選択肢は従来のマスタとスタンバイによるレプリケーションのオプションを使用するものです。
-すなわち、データ更新の問い合わせをマスタサーバだけに送付し、ミドルウェアによるレプリケーションを使わずにマスタとスタンバイによるレプリケーションを介してスタンバイサーバに伝達します。
+その理由は、各サーバが独立して稼動しているため、および、実際のデータ変更ではなくSQL問い合わせが送信されるからです。
+これが許容できない場合は、ミドルウェアかアプリケーションで単一のソースからそのような値を確定し、その結果を書き込み問い合わせで使用しなければなりません。
 トランザクションをコミットするか中断するかについても、全サーバが同一となるよう注意しなければなりません。
-これには2相コミット（<a class="xref" href="sql-prepare-transaction.html" title="PREPARE TRANSACTION"><span class="refentrytitle">PREPARE TRANSACTION</span></a> および <a class="xref" href="sql-commit-prepared.html" title="COMMIT PREPARED"><span class="refentrytitle">COMMIT PREPARED</span></a>）を使用することになるでしょう。
+これには2相コミット（<a class="xref" href="sql-prepare-transaction.html" title="PREPARE TRANSACTION"><span class="refentrytitle">PREPARE TRANSACTION</span></a>および<a class="xref" href="sql-commit-prepared.html" title="COMMIT PREPARED"><span class="refentrytitle">COMMIT PREPARED</span></a>）を使用することになるでしょう。
 <span class="productname">Pgpool-II</span>と<span class="productname">Continuent Tungsten</span>がこのレプリケーションの一例です。
     </p></dd><dt><span class="term">非同期マルチマスタレプリケーション</span></dt><dd><p>
 <span class="original">
@@ -185,7 +189,7 @@ Bucardoはこの種のレプリケーションの一例です。
 読み取り要求はどのサーバにも送付できます。
 通信による負荷を減らすには、共有ディスクが実装されます。
 同期マルチマスタレプリケーションは、主に読み取り作業負荷の低減に最適ですが、全てのサーバが書き込み要求を受理できることも大きな利点です。
-その利点とは、マスタとスタンバイ間で作業負荷を分けなくてよいこと、および更新データが1つのサーバから他のサーバに送付されるため、出力が確定しない<code class="function">random()</code>関数などによる問題が起こらないことです。
+その利点とは、プライマリとスタンバイ間で作業負荷を分けなくてよいこと、および更新データが1つのサーバから他のサーバに送付されるため、出力が確定しない<code class="function">random()</code>関数などによる問題が起こらないことです。
     </p><p>
 <span class="original">
      &lt;productname&gt;PostgreSQL&lt;/productname&gt; does not offer this type of replication,
@@ -204,7 +208,7 @@ Bucardoはこの種のレプリケーションの一例です。
 <a class="xref" href="different-replication-solutions.html#HIGH-AVAILABILITY-MATRIX" title="表27.1 高可用性、負荷分散およびレプリケーションの特徴">表 27.1</a>は上述した種々の解法の機能を要約したものです。
  </p><div class="table" id="HIGH-AVAILABILITY-MATRIX"><p class="title"><strong>表27.1 高可用性、負荷分散およびレプリケーションの特徴</strong></p><div class="table-contents"><span class="original">
   &lt;title&gt;High Availability, Load Balancing, and Replication Feature Matrix&lt;/title&gt;
-</span><table class="table" summary="高可用性、負荷分散およびレプリケーションの特徴" border="1"><colgroup><col class="col1" /><col class="col2" /><col class="col3" /><col class="col4" /><col class="col5" /><col class="col6" /><col class="col7" /><col class="col8" /><col class="col9" /></colgroup><thead><tr><th>特徴</th><th>共有ディスク</th><th>ファイルシステムのレプリケーション</th><th>先行書き込みログシッピング</th><th>論理レプリケーション</th><th>トリガに基づいたレプリケーション</th><th>SQLに基づいたレプリケーションのミドルウェア</th><th>非同期マルチマスタレプリケーション</th><th>同期マルチマスタレプリケーション</th></tr></thead><tbody><tr><td>一般的な例</td><td align="center">NAS</td><td align="center">DRBD</td><td align="center">組み込みストリーミングレプリケーション</td><td align="center">組み込み論理レプリケーション、pglogical</td><td align="center">Londiste、Slony</td><td align="center">pgpool-II</td><td align="center">Bucardo</td><td align="center"> </td></tr><tr><td>通信方法</td><td align="center">共有ディスク</td><td align="center">ディスクブロック</td><td align="center">WAL</td><td align="center">ロジカルデコーディング</td><td align="center">テーブル行</td><td align="center">SQL</td><td align="center">テーブル行</td><td align="center">テーブル行および行ロック</td></tr><tr><td>特別なハードウェアが不要</td><td align="center"> </td><td align="center">○</td><td align="center">○</td><td align="center">○</td><td align="center">○</td><td align="center">○</td><td align="center">○</td><td align="center">○</td></tr><tr><td>複数のマスタサーバが可能</td><td align="center"> </td><td align="center"> </td><td align="center"> </td><td align="center">○</td><td align="center"> </td><td align="center">○</td><td align="center">○</td><td align="center">○</td></tr><tr><td>マスタサーバにオーバヘッドがない</td><td align="center">○</td><td align="center"> </td><td align="center">○</td><td align="center">○</td><td align="center"> </td><td align="center">○</td><td align="center"> </td><td align="center"> </td></tr><tr><td>複数のスレーブサーバを待たない</td><td align="center">○</td><td align="center"> </td><td align="center">同期が無効の場合</td><td align="center">同期が無効の場合</td><td align="center">○</td><td align="center"> </td><td align="center">○</td><td align="center"> </td></tr><tr><td>マスタの故障によるデータ損失がない</td><td align="center">○</td><td align="center">○</td><td align="center">同期が有効の場合</td><td align="center">同期が有効の場合</td><td align="center"> </td><td align="center">○</td><td align="center"> </td><td align="center">○</td></tr><tr><td>レプリカは読み取り専用問い合わせを受理可能</td><td align="center"> </td><td align="center"> </td><td align="center">ホットスタンバイ使用時</td><td align="center">○</td><td align="center">○</td><td align="center">○</td><td align="center">○</td><td align="center">○</td></tr><tr><td>テーブルごとの粒度</td><td align="center"> </td><td align="center"> </td><td align="center"> </td><td align="center">○</td><td align="center">○</td><td align="center"> </td><td align="center">○</td><td align="center">○</td></tr><tr><td>コンフリクトの回避が不要</td><td align="center">○</td><td align="center">○</td><td align="center">○</td><td align="center"> </td><td align="center">○</td><td align="center"> </td><td align="center"> </td><td align="center">○</td></tr></tbody></table></div></div><br class="table-break" /><p>
+</span><table class="table" summary="高可用性、負荷分散およびレプリケーションの特徴" border="1"><colgroup><col class="col1" /><col class="col2" /><col class="col3" /><col class="col4" /><col class="col5" /><col class="col6" /><col class="col7" /><col class="col8" /><col class="col9" /></colgroup><thead><tr><th>特徴</th><th>共有ディスク</th><th>ファイルシステムのレプリケーション</th><th>先行書き込みログシッピング</th><th>論理レプリケーション</th><th>トリガに基づいたレプリケーション</th><th>SQLに基づいたレプリケーションのミドルウェア</th><th>非同期マルチマスタレプリケーション</th><th>同期マルチマスタレプリケーション</th></tr></thead><tbody><tr><td>一般的な例</td><td align="center">NAS</td><td align="center">DRBD</td><td align="center">組み込みストリーミングレプリケーション</td><td align="center">組み込み論理レプリケーション、pglogical</td><td align="center">Londiste、Slony</td><td align="center">pgpool-II</td><td align="center">Bucardo</td><td align="center"> </td></tr><tr><td>通信方法</td><td align="center">共有ディスク</td><td align="center">ディスクブロック</td><td align="center">WAL</td><td align="center">ロジカルデコーディング</td><td align="center">テーブル行</td><td align="center">SQL</td><td align="center">テーブル行</td><td align="center">テーブル行および行ロック</td></tr><tr><td>特別なハードウェアが不要</td><td align="center"> </td><td align="center">○</td><td align="center">○</td><td align="center">○</td><td align="center">○</td><td align="center">○</td><td align="center">○</td><td align="center">○</td></tr><tr><td>複数のプライマリサーバが可能</td><td align="center"> </td><td align="center"> </td><td align="center"> </td><td align="center">○</td><td align="center"> </td><td align="center">○</td><td align="center">○</td><td align="center">○</td></tr><tr><td>プライマリサーバにオーバヘッドがない</td><td align="center">○</td><td align="center"> </td><td align="center">○</td><td align="center">○</td><td align="center"> </td><td align="center">○</td><td align="center"> </td><td align="center"> </td></tr><tr><td>複数のスレーブサーバを待たない</td><td align="center">○</td><td align="center"> </td><td align="center">同期が無効の場合</td><td align="center">同期が無効の場合</td><td align="center">○</td><td align="center"> </td><td align="center">○</td><td align="center"> </td></tr><tr><td>プライマリの故障によるデータ損失がない</td><td align="center">○</td><td align="center">○</td><td align="center">同期が有効の場合</td><td align="center">同期が有効の場合</td><td align="center"> </td><td align="center">○</td><td align="center"> </td><td align="center">○</td></tr><tr><td>レプリカは読み取り専用問い合わせを受理可能</td><td align="center"> </td><td align="center"> </td><td align="center">ホットスタンバイ使用時</td><td align="center">○</td><td align="center">○</td><td align="center">○</td><td align="center">○</td><td align="center">○</td></tr><tr><td>テーブルごとの粒度</td><td align="center"> </td><td align="center"> </td><td align="center"> </td><td align="center">○</td><td align="center">○</td><td align="center"> </td><td align="center">○</td><td align="center">○</td></tr><tr><td>コンフリクトの回避が不要</td><td align="center">○</td><td align="center">○</td><td align="center">○</td><td align="center"> </td><td align="center">○</td><td align="center"> </td><td align="center"> </td><td align="center">○</td></tr></tbody></table></div></div><br class="table-break" /><p>
 <span class="original">
   There are a few solutions that do not fit into the above categories:
 </span>
@@ -223,7 +227,7 @@ Bucardoはこの種のレプリケーションの一例です。
 各部分に書き込むことができるのは、1つのサーバだけです。
 例えば、データをロンドンとパリの営業所用に分割でき、サーバをロンドンとパリのどちらにも設置できた状態を考えます。
 問い合わせにロンドンとパリのデータが混在した場合、アプリケーションは両方のサーバに問い合わせることができます。
-または、マスタスタンバイレプリケーションを使用して、他の営業所のデータを読み取り専用コピーとして保持できます。
+または、プライマリスタンバイレプリケーションを使用して、他の営業所のデータを読み取り専用コピーとして保持できます。
     </p></dd><dt><span class="term">複数サーバによる問い合わせの並列実行</span></dt><dd><p>
 <span class="original">
      Many of the above solutions allow multiple servers to handle multiple

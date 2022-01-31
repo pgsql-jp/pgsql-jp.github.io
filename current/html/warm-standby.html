@@ -136,11 +136,14 @@ WALファイル(16MB)は隣り合うシステム、同じサイトの別シス�
    </p></div><div class="sect2" id="STANDBY-SERVER-OPERATION"><div class="titlepage"><div><div><h3 class="title">27.2.2. スタンバイサーバの動作</h3></div></div></div><span class="original">
    &lt;title&gt;Standby Server Operation&lt;/title&gt;
 </span><p>
+<span class="original">
     A server enters standby mode if a
-    <span id="FILE-STANDBY-SIGNAL"></span>
-    <code class="filename">standby.signal</code>
-    <a id="id-1.6.14.16.14.2.3" class="indexterm"></a>
+    &lt;anchor id="file-standby-signal" xreflabel="standby.signal"/&gt;
+    &lt;filename&gt;standby.signal&lt;/filename&gt;
+    &lt;indexterm&gt;&lt;primary&gt;&lt;filename&gt;standby.signal&lt;/filename&gt;&lt;/primary&gt;&lt;/indexterm&gt;
     file exists in the data directory when the server is started.
+</span>
+サーバが起動した時にデータディレクトリに<span id="FILE-STANDBY-SIGNAL"></span><code class="filename">standby.signal</code><a id="id-1.6.14.16.14.2.3" class="indexterm"></a>が存在すると、サーバはスタンバイモードに入ります。
    </p><p>
 <span class="original">
     In standby mode, the server continuously applies WAL received from the
@@ -153,10 +156,10 @@ WALファイル(16MB)は隣り合うシステム、同じサイトの別シス�
     primary before the restart, but you can also manually copy files to
     &lt;filename&gt;pg_wal&lt;/filename&gt; at any time to have them replayed.
 </span>
-スタンバイモードでは、サーバは継続的にマスタサーバから受け取ったWALを適用します。
-スタンバイサーバはWALアーカイブ(<a class="xref" href="runtime-config-wal.html#GUC-RESTORE-COMMAND">restore_command</a>参照)から、または直接TCP接続(ストリーミングレプリケーション)を介してマスタサーバから、WALを読み取ることができます。
+スタンバイモードでは、サーバは継続的にプライマリサーバから受け取ったWALを適用します。
+スタンバイサーバはWALアーカイブ(<a class="xref" href="runtime-config-wal.html#GUC-RESTORE-COMMAND">restore_command</a>参照)から、または直接TCP接続(ストリーミングレプリケーション)を介してプライマリサーバから、WALを読み取ることができます。
 またスタンバイサーバはスタンバイクラスタの<code class="filename">pg_wal</code>ディレクトリにあるすべてのWALをリストアしようと試みます。
-これはよくサーバの再起動後、スタンバイが再起動前にマスタから流れ込んだWALを再生する時に発生します。
+これはよくサーバの再起動後、スタンバイが再起動前にプライマリから流れ込んだWALを再生する時に発生します。
 しかしまたファイルを再生する任意の時点で、手作業で<code class="filename">pg_wal</code>にコピーすることもできます。
    </p><p>
 <span class="original">
@@ -189,8 +192,8 @@ WALファイル(16MB)は隣り合うシステム、同じサイトの別シス�
 </span>
 <code class="command">pg_ctl promote</code>が実行された時、<code class="function">pg_promote()</code>が呼び出された時、またはトリガファイル(<code class="varname">promote_trigger_file</code>)が存在する時、スタンバイモードは終了し、サーバは通常の動作に切り替わります。
 フェイルオーバーの前に、アーカイブまたは<code class="filename">pg_wal</code>内の即座に利用可能なWALをすべてリストアします。
-しかし、マスタへの接続を行おうとはしません。
-   </p></div><div class="sect2" id="PREPARING-PRIMARY-FOR-STANDBY"><div class="titlepage"><div><div><h3 class="title">27.2.3. スタンバイサーバのためのマスタの準備</h3></div></div></div><span class="original">
+しかし、プライマリへの接続を行おうとはしません。
+   </p></div><div class="sect2" id="PREPARING-PRIMARY-FOR-STANDBY"><div class="titlepage"><div><div><h3 class="title">27.2.3. スタンバイサーバのためのプライマリの準備</h3></div></div></div><span class="original">
    &lt;title&gt;Preparing the Primary for Standby Servers&lt;/title&gt;
 </span><p>
 <span class="original">
@@ -202,8 +205,8 @@ WALファイル(16MB)は隣り合うシステム、同じサイトの別シス�
     the primary server.
 </span>
 <a class="xref" href="continuous-archiving.html" title="26.3. 継続的アーカイブとポイントインタイムリカバリ（PITR）">26.3</a>で説明したように、スタンバイからアクセス可能なアーカイブディレクトリに対してプライマリで継続的なアーカイブを設定してください。
-このアーカイブ場所はマスタが停止した時であってもスタンバイからアクセス可能でなければなりません。
-つまり、マスタサーバ上ではなく、スタンバイサーバ自身上に存在するか、または他の高信頼性サーバ上に存在しなければなりません。
+このアーカイブ場所はプライマリが停止した時であってもスタンバイからアクセス可能でなければなりません。
+つまり、プライマリサーバ上ではなく、スタンバイサーバ自身上に存在するか、または他の高信頼性サーバ上に存在しなければなりません。
    </p><p>
 <span class="original">
     If you want to use streaming replication, set up authentication on the
@@ -241,13 +244,16 @@ WALファイル(16MB)は隣り合うシステム、同じサイトの別シス�
     that occurs at failover to another standby.
 </span>
 スタンバイサーバを設定するためには、プライマリサーバから取得したベースバックアップをリストアしてください(<a class="xref" href="continuous-archiving.html#BACKUP-PITR-RECOVERY" title="26.3.4. 継続的アーカイブによるバックアップを使用した復旧">26.3.4</a>参照)。
-スタンバイのクラスタデータディレクトリ内に<code class="filename">standby.signal</code>ファイルを作成し、<code class="varname">standby_mode</code>を有効にしてください。
+スタンバイのクラスタデータディレクトリ内に<a class="link" href="warm-standby.html#FILE-STANDBY-SIGNAL"><code class="filename">standby.signal</code></a><a id="id-1.6.14.16.16.2.3" class="indexterm"></a>ファイルを作成してください。
 WALアーカイブからファイルをコピーする簡単なコマンドを<a class="xref" href="runtime-config-wal.html#GUC-RESTORE-COMMAND">restore_command</a>に設定してください。
 高可用性のために複数のスタンバイサーバを持たせようとしている場合、<code class="varname">recovery_target_timeline</code>を<code class="literal">latest</code>に設定し（デフォルト）、スタンバイサーバが他のスタンバイにフェイルオーバーする時に発生するタイムラインの変更に従うようにします。
    </p><div class="note"><h3 class="title">注記</h3><p>
-     <a class="xref" href="runtime-config-wal.html#GUC-RESTORE-COMMAND">restore_command</a> should return immediately
+<span class="original">
+     &lt;xref linkend="guc-restore-command"/&gt; should return immediately
      if the file does not exist; the server will retry the command again if
      necessary.
+</span>
+そのファイルが存在しなければ<a class="xref" href="runtime-config-wal.html#GUC-RESTORE-COMMAND">restore_command</a>は直ちに終了すべきです。サーバは必要ならばそのコマンドをリトライします。
     </p></div><p>
 <span class="original">
      If you want to use streaming replication, fill in
@@ -483,7 +489,7 @@ primary_conninfo = 'host=192.168.1.50 port=5432 user=foo password=foopass'
      network delay, or that the standby is under heavy load.
 </span>
 <a class="link" href="monitoring-stats.html#MONITORING-PG-STAT-REPLICATION-VIEW" title="28.2.4. pg_stat_replication"><code class="structname">pg_stat_replication</code></a>ビューを介してWAL送信処理プロセスのリストを入手することができます。
-<code class="function">pg_current_wal_lsn</code>とビューの<code class="literal">sent_lsn</code>フィールドとの違いが大きい場合、マスタサーバが高負荷状態であることを示している可能性があります。
+<code class="function">pg_current_wal_lsn</code>とビューの<code class="literal">sent_lsn</code>フィールドとの違いが大きい場合、プライマリサーバが高負荷状態であることを示している可能性があります。
 一方でスタンバイサーバ上の<code class="literal">sent_lsn</code>と<code class="function">pg_last_wal_receive_lsn</code>の値の差異は、ネットワーク遅延、またはスタンバイが高負荷状態であることを示す可能性があります。
     </p><p>
 <span class="original">
@@ -507,7 +513,7 @@ primary_conninfo = 'host=192.168.1.50 port=5432 user=foo password=foopass'
     standby is disconnected.
 </span>
 レプリケーションスロットは、以下のことを保証する自動的な方法を提供します。
-全てのスタンバイがWALセグメントを受け取るまでは、マスターがWALセグメントを削除しないこと、また、スタンバイが接続していない際にも、<a class="link" href="hot-standby.html#HOT-STANDBY-CONFLICT" title="27.4.2. 問い合わせコンフリクトの処理">リカバリの競合</a>が発生する可能性がある行をマスターが削除しないこと、です。
+全てのスタンバイがWALセグメントを受け取るまでは、プライマリがWALセグメントを削除しないこと、また、スタンバイが接続していない際にも、<a class="link" href="hot-standby.html#HOT-STANDBY-CONFLICT" title="27.4.2. 問い合わせコンフリクトの処理">リカバリの競合</a>が発生する可能性がある行をプライマリが削除しないこと、です。
    </p><p>
 <span class="original">
     In lieu of using replication slots, it is possible to prevent the removal
@@ -525,7 +531,7 @@ primary_conninfo = 'host=192.168.1.50 port=5432 user=foo password=foopass'
 レプリケーションスロットを使う代わりに、<a class="xref" href="runtime-config-replication.html#GUC-WAL-KEEP-SIZE">wal_keep_size</a>を使う、あるいは<a class="xref" href="runtime-config-wal.html#GUC-ARCHIVE-COMMAND">archive_command</a>を使用してセグメントをアーカイブに保存することによっても、古いWALセグメントの削除を防ぐことができます。
 しかし、これらの方法はしばしば要求される以上のWALセグメントを残すことになってしまうのに対し、レプリケーションスロットは必要と判断されたセグメントのみを残します。
 一方で、レプリケーションスロットは<code class="literal">pg_wal</code>のための領域を埋め尽くす大量のWALセグメントを残してしまうかも知れません。
-これらの方法のメリットの一つは<code class="literal">pg_wal</code>が要求する領域を制限できることです。現時点でレプリケーションスロットを使って同じことをする方法はありません。
+<a class="xref" href="runtime-config-replication.html#GUC-MAX-SLOT-WAL-KEEP-SIZE">max_slot_wal_keep_size</a>はレプリケーションスロットによって残されるWALファイルの大きさを制限します。
    </p><p>
 <span class="original">
     Similarly, &lt;xref linkend="guc-hot-standby-feedback"/&gt;
@@ -599,7 +605,7 @@ primary_slot_name = 'node_a_slot'
     and also to minimize inter-site bandwidth overheads.
 </span>
 カスケードレプリケーションは、リレーのような振る舞い、つまり、スタンバイサーバから他のスタンバイにレプリケーション接続し、WALレコードを送信することができます。
-マスターサーバへ直接の接続を減らしたり、サイト相互の帯域オーバヘッドを最小化するために使用することができます。
+プライマリサーバへ直接の接続を減らしたり、サイト相互の帯域オーバヘッドを最小化するために使用することができます。
    </p><p>
 <span class="original">
     A standby acting as both a receiver and a sender is known as a cascading
@@ -610,8 +616,8 @@ primary_slot_name = 'node_a_slot'
     one upstream server which eventually links to a single primary server.
 </span>
 カスケードスタンバイとして知られているとおり、スタンバイは受け取り手としても送り手としても振る舞うことができます。
-よりマスターサーバに近いスタンバイサーバは上流サーバと呼ばれるのに対し、より遠いスタンバイサーバは下流サーバと呼ばれます。
-カスケードレプリケーションには下流サーバの数に制限は設定されていません。しかし、どのスタンバイサーバも最終的には1つのマスター/プライマリサーバに繋がる1つの上流サーバに接続します。
+よりプライマリサーバに近いスタンバイサーバは上流サーバと呼ばれるのに対し、より遠いスタンバイサーバは下流サーバと呼ばれます。
+カスケードレプリケーションには下流サーバの数に制限は設定されていません。しかし、どのスタンバイサーバも最終的には1つのプライマリサーバに繋がる1つの上流サーバに接続します。
    </p><p>
 <span class="original">
     A cascading standby sends not only WAL records received from the
@@ -619,7 +625,7 @@ primary_slot_name = 'node_a_slot'
     connection in some upstream connection is terminated, streaming replication
     continues downstream for as long as new WAL records are available.
 </span>
-カスケードスタンバイはマスターから受け取ったWALレコードだけでなく、アーカイブからリストアしたWALレコードも送信します。
+カスケードスタンバイはプライマリから受け取ったWALレコードだけでなく、アーカイブからリストアしたWALレコードも送信します。
 このため、レプリケーション接続が上流サーバで切断しても、ストリーミングレプリケーションは下流サーバへ新しいWAL
 レコードがある限り継続します。
    </p><p>
@@ -640,7 +646,7 @@ primary_slot_name = 'node_a_slot'
     servers will continue to stream from the new primary if
     &lt;varname&gt;recovery_target_timeline&lt;/varname&gt; is set to &lt;literal&gt;'latest'&lt;/literal&gt; (the default).
 </span>
-上流スタンバイサーバが昇格し、新しいマスターサーバになった場合、<code class="varname">recovery_target_timeline</code>が<code class="literal">'latest'</code>に設定されていれば、下流サーバは新マスターサーバからのストリーミングレプリケーションを継続します（デフォルトです）。
+上流スタンバイサーバが昇格し、新しいプライマリサーバになった場合、<code class="varname">recovery_target_timeline</code>が<code class="literal">'latest'</code>に設定されていれば、下流サーバは新プライマリからのストリーミングレプリケーションを継続します（デフォルトです）。
    </p><p>
 <span class="original">
     To use cascading replication, set up the cascading standby so that it can
@@ -777,9 +783,9 @@ primary_slot_name = 'node_a_slot'
 <code class="varname">synchronous_commit</code>が<code class="literal">remote_apply</code>に設定されている場合には、コミットレコードが再生され、そのトランザクションが可視化されたときに応答メッセージを返します。
 スタンバイが、プライマリ上の<code class="varname">synchronous_standby_names</code>にしたがって、同期スタンバイとして選ばれた時は、コミットレコードの受領の確認のために待機しているトランザクションをいつ解放すべきかを決めるために、他の同期スタンバイとともにそれらスタンバイからの応答メッセージが考慮されます。
 これらのパラメータにより、管理者はどのスタンバイサーバを同期スタンバイとすべきかを指定することができます。
-同期レプリケーションの設定は主にマスタでなされることに注意してください。
-指名されたスタンバイは直接マスターサーバに接続される必要があります。
-つまり、カスケードレプリケーションを使用している下流スタンバイサーバについて、マスターサーバは何も知りません。
+同期レプリケーションの設定は主にプライマリでなされることに注意してください。
+指名されたスタンバイは直接プライマリサーバに接続される必要があります。
+つまり、カスケードレプリケーションを使用している下流スタンバイサーバについて、プライマリサーバは何も知りません。
    </p><p>
 <span class="original">
     Setting &lt;varname&gt;synchronous_commit&lt;/varname&gt; to &lt;literal&gt;remote_write&lt;/literal&gt; will

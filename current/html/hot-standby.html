@@ -263,7 +263,8 @@
     can be used to monitor the progress of recovery, or to allow you to
     write complex programs that restore the database to particular states.
 </span>
-ユーザは<code class="command">SHOW transaction_read_only</code>を発行することで、そのセッションが読み取り専用かどうかを調べることができます。
+ユーザは<code class="command">SHOW in_hot_standby</code>を発行することで、そのセッションが読み取り専用かどうかを調べることができます。
+（サーババージョンが14より前では<code class="varname">in_hot_standby</code>パラメータは存在しませんでした。古いバージョンでの可能な代替方法は、<code class="command">SHOW transaction_read_only</code>です。）
 さらに、ユーザがスタンバイサーバに関する情報にアクセスできる関数群(<a class="xref" href="functions-admin.html#FUNCTIONS-RECOVERY-INFO-TABLE" title="表9.88 リカバリ情報関数">表 9.88</a>)があります。
 これらによりデータベースの現状認識を行うプログラムを作成することができます。
 これらを使用して、リカバリの進行状況を監視するために使用したり、データベースを特定の状態にリストアする複雑なプログラムを作成したりすることができます。
@@ -452,8 +453,8 @@ WALに記録された操作はすでにプライマリで発生したもので�
 </span>
 スタンバイ側の問い合わせとWAL再生の間でもっともよくあるコンフリクト理由は<span class="quote">「<span class="quote">早すぎる消去</span>」</span>です。
 通常<span class="productname">PostgreSQL</span>はMVCC規則にしたがって正確なデータの可視性を確実にするために、古い行バージョンを参照するトランザクションが存在しない場合それらを消去することが許されています。
-しかし、この規則はマスタ上で実行するトランザクションのみに適用させることができます。
-したがって、スタンバイ上のトランザクションでまだ可視である行バージョンを、マスタ上の消去処理が削除してしまう可能性があります。
+しかし、この規則はプライマリ上で実行するトランザクションのみに適用させることができます。
+したがって、スタンバイ上のトランザクションでまだ可視である行バージョンを、プライマリ上の消去処理が削除してしまう可能性があります。
    </p><p>
 <span class="original">
     Experienced users should note that both row version cleanup and row version
@@ -527,9 +528,13 @@ WALに記録された操作はすでにプライマリで発生したもので�
 問い合わせキャンセルの個数とその原因はスタンバイサーバ上の<code class="structname">pg_stat_database_conflicts</code>システムビューを用いて参照することができます。
 また<code class="structname">pg_stat_database</code>システムビューには要約された情報が含まれます。
    </p><p>
+<span class="original">
     Users can control whether a log message is produced when WAL replay is waiting
-    longer than <code class="varname">deadlock_timeout</code> for conflicts. This
-    is controlled by the <a class="xref" href="runtime-config-logging.html#GUC-LOG-RECOVERY-CONFLICT-WAITS">log_recovery_conflict_waits</a> parameter.
+    longer than &lt;varname&gt;deadlock_timeout&lt;/varname&gt; for conflicts. This
+    is controlled by the &lt;xref linkend="guc-log-recovery-conflict-waits"/&gt; parameter.
+</span>
+コンフリクトのためにWAL再生が<code class="varname">deadlock_timeout</code>より長くかかる場合にログメッセージを出力するかどうかをユーザは制御できます。
+<a class="xref" href="runtime-config-logging.html#GUC-LOG-RECOVERY-CONFLICT-WAITS">log_recovery_conflict_waits</a>パラメータで制御します。
    </p></div><div class="sect2" id="HOT-STANDBY-ADMIN"><div class="titlepage"><div><div><h3 class="title">27.4.3. 管理者のための概説</h3></div></div></div><span class="original">
    &lt;title&gt;Administrator's Overview&lt;/title&gt;
 </span><p>
@@ -546,7 +551,7 @@ WALに記録された操作はすでにプライマリで発生したもので�
     To confirm the server has come up, either loop trying to connect from
     the application, or look for these messages in the server logs:
 </span>
-<code class="filename">postgresql.conf</code>において<code class="varname">hot_standby</code>が<code class="literal">on</code>で（これはデフォルトです）、かつ<code class="filename">standby.signal</code>が存在すれば、サーバはホットスタンバイモードで稼動します。
+<code class="filename">postgresql.conf</code>において<code class="varname">hot_standby</code>が<code class="literal">on</code>で（これはデフォルトです）、かつ<a class="link" href="warm-standby.html#FILE-STANDBY-SIGNAL"><code class="filename">standby.signal</code></a><a id="id-1.6.14.18.7.2.5" class="indexterm"></a>が存在すれば、サーバはホットスタンバイモードで稼動します。
 しかし、サーバはまず問い合わせが実行できる程度の一貫性を持つ状態を提供するために十分なリカバリを完了させなければなりませんので、ホットスタンバイでの接続が有効になるまでに多少の時間がかかるかもしれません。
 サーバの準備ができたことを確認するために、アプリケーションで接続試行を繰り返すか、サーバログに以下のメッセージがあるかどうかを確認します。
 
@@ -603,13 +608,10 @@ LOG:  database system is ready to accept read-only connections
     transactions, then recovery could not continue until the standby's
     configuration is changed.  The parameters affected are:
 </span>
-プライマリサーバにおける設定値を変更した場合、スタンバイサーバにおいて数個のパラメータの再設定が必要です。
-スタンバイサーバにおける設定値は、プライマリサーバにおける設定値以上でなければなりません。
-ですから、これらの値を増やしたいなら、プライマリで設定を変更する前に、まずスタンバイで設定変更するべきです。
-逆にこれらの値を減らしたいなら、スタンバイで設定を変更する前に、まずプライマリで設定変更するべきです。
-これらのパラメータが所定値未満の設定の場合、スタンバイは起動を取りやめます。
-所定値以上の設定により、スタンバイサーバは再起動してリカバリが再び開始されます。
-このパラメータは以下です。
+いくつかのパラメータの設定により、トランザクションID、ロック、準備されたトランザクションを追跡するための共有メモリのサイズが決まります。
+リカバリ中に共有メモリを使い尽くすことがないことを確実にするために、スタンバイサーバにおける設定値は、プライマリサーバにおける設定値以上でなければなりません。
+たとえばプライマリが準備されたトランザクションを実行していてスタンバイが準備されたトランザクションを追跡するための共有メモリを獲得していなければ、スタンバイは設定が変更されるまではリカバリを続けることができません。
+影響があるパラメータは以下です。
 
       </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>
          <code class="varname">max_connections</code>
@@ -623,6 +625,7 @@ LOG:  database system is ready to accept read-only connections
          <code class="varname">max_worker_processes</code>
         </p></li></ul></div><p>
 
+<span class="original">
     The easiest way to ensure this does not become a problem is to have these
     parameters set on the standbys to values equal to or greater than on the
     primary.  Therefore, if you want to increase these values, you should do
@@ -634,11 +637,22 @@ LOG:  database system is ready to accept read-only connections
     standbys that follow it.  Therefore, to avoid this becoming a problem
     during a switchover or failover, it is recommended to keep these settings
     the same on all standby servers.
+</span>
+これが問題にならないようにする確実な方法は、スタンバイにおけるこれらのパラメータの値をプライマリでの値以上にすることです。
+ですから、これらの値を増やしたいなら、プライマリで設定を変更する前に、まずスタンバイで設定変更するべきです。
+逆にこれらの値を減らしたいなら、スタンバイで設定を変更する前に、まずプライマリで設定変更するべきです。
+スタンバイが昇格したときは、それが追従するスタンバイにとって必要なパラメータ設定の新しい基準になるということを覚えておいてください。
+ですから、スイッチオーバやフェイルオーバ中にこれが問題にならないようにするために、これらの設定値をすべてのスタンバイで同じにしておくことをお勧めします。
    </p><p>
+<span class="original">
     The WAL tracks changes to these parameters on the
     primary.  If a hot standby processes WAL that indicates that the current
     value on the primary is higher than its own value, it will log a warning
     and pause recovery, for example:
+</span>
+プライマリでWALはこれらのパラメータの変更を追跡します。
+ホットスタンバイが現在のプライマリの値がスタンバイの値よりも大きいことを示すWALを処理すると、警告をログし、リカバリを中断します。
+例を示します。
 </p><pre class="screen">
 WARNING:  hot standby is not possible because of insufficient parameter settings
 DETAIL:  max_connections = 80 is a lower setting than on the primary server, where its value was 100.
@@ -646,11 +660,15 @@ LOG:  recovery has paused
 DETAIL:  If recovery is unpaused, the server will shut down.
 HINT:  You can then restart the server after making the necessary configuration changes.
 </pre><p>
+<span class="original">
     At that point, the settings on the standby need to be updated and the
     instance restarted before recovery can continue.  If the standby is not a
     hot standby, then when it encounters the incompatible parameter change, it
     will shut down immediately without pausing, since there is then no value
     in keeping it up.
+</span>
+この時点で、スタンバイの設定を変更し、リカバリを継続するためにインスタンスを再起動する必要があります。
+スタンバイがホットスタンバイでない場合は、整合性のないパラメータの変更があると、休止することなく直ちにシャットダウンします。起動し続ける意味がないからです。
    </p><p>
 <span class="original">
     It is important that the administrator select appropriate settings for
@@ -972,8 +990,8 @@ WALの再実行はトリガに基づいたものではありません。
      being intentionally taken down, coordinating to make sure the standby
      becomes the new primary smoothly is also standard procedure.
 </span>
-スタンバイ問い合わせ用の有効な起動ポイントは、マスタにおけるチェックポイント毎に生成されます。
-マスタが停止状態にある時にスタンバイが停止した場合、プライマリが起動し、さらに起動ポイントをWALログに生成するまで再度ホットスタンバイになることができないことがあります。
+スタンバイ問い合わせ用の有効な起動ポイントは、プライマリにおけるチェックポイント毎に生成されます。
+プライマリが停止状態にある時にスタンバイが停止した場合、プライマリが起動し、さらに起動ポイントをWALログに生成するまで再度ホットスタンバイになることができないことがあります。
 この状況は、通常考えられる状態では問題ではありません。
 一般的に、プライマリが停止し利用できなくなった場合、それはスタンバイに対して新しいプライマリに切り替わることを要求するような深刻な失敗が原因であることが多いはずです。
 また、プライマリを意図的に停止させるような状況では、それに伴いスタンバイが新しいプライマリになめらかに切り替わることも普通の手順です。
