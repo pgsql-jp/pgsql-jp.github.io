@@ -90,7 +90,7 @@ VACUUM [ FULL ] [ FREEZE ] [ VERBOSE ] [ ANALYZE ] [ <em class="replaceable"><co
 この機能は、<em class="firstterm">並列バキューム</em>として知られています。
 この機能を無効にするには、<code class="literal">PARALLEL</code>オプションでパラレルワーカーの数をゼロに指定します。
 <code class="command">VACUUM FULL</code>では、テーブルの内容全体を新しいディスクファイルに領域を余すことなく書き換えるため、オペレーティングシステムに未使用の領域を返すことができます。
-この形式では、実行速度がかなり低速になります。また、処理中のテーブルに対する排他的ロックが必要になります。
+この形式では、実行速度がかなり低速になります。また、処理中のテーブルに対する<code class="literal">ACCESS EXCLUSIVE</code>ロックが必要になります。
   </p><p>
 <span class="original">
    When the option list is surrounded by parentheses, the options can be
@@ -185,42 +185,62 @@ VACUUM [ FULL ] [ FREEZE ] [ VERBOSE ] [ ANALYZE ] [ <em class="replaceable"><co
 さらに加えて、<code class="command">VACUUM ANALYZE</code>は、パーティションやテーブル継承の子、ある種類の外部テーブルからサンプル行を取得する時にブロックするかもしれません。
 また、<code class="command">VACUUM</code>は通常、指定されたパーティションテーブルの全パーティションを処理しますが、このオプションが指定されると、パーティションテーブルに衝突するロックがある場合<code class="command">VACUUM</code>は全パーティションを飛ばすようになります。
      </p></dd><dt><span class="term"><code class="literal">INDEX_CLEANUP</code></span></dt><dd><p>
-      Normally, <code class="command">VACUUM</code> will skip index vacuuming
+<span class="original">
+      Normally, &lt;command&gt;VACUUM&lt;/command&gt; will skip index vacuuming
       when there are very few dead tuples in the table.  The cost of
       processing all of the table's indexes is expected to greatly
       exceed the benefit of removing dead index tuples when this
       happens.  This option can be used to force
-      <code class="command">VACUUM</code> to process indexes when there are more
-      than zero dead tuples.  The default is <code class="literal">AUTO</code>,
-      which allows <code class="command">VACUUM</code> to skip index vacuuming
-      when appropriate.  If <code class="literal">INDEX_CLEANUP</code> is set to
-      <code class="literal">ON</code>, <code class="command">VACUUM</code> will
+      &lt;command&gt;VACUUM&lt;/command&gt; to process indexes when there are more
+      than zero dead tuples.  The default is &lt;literal&gt;AUTO&lt;/literal&gt;,
+      which allows &lt;command&gt;VACUUM&lt;/command&gt; to skip index vacuuming
+      when appropriate.  If &lt;literal&gt;INDEX_CLEANUP&lt;/literal&gt; is set to
+      &lt;literal&gt;ON&lt;/literal&gt;, &lt;command&gt;VACUUM&lt;/command&gt; will
       conservatively remove all dead tuples from indexes.  This may be
       useful for backwards compatibility with earlier releases of
-      <span class="productname">PostgreSQL</span> where this was the
+      &lt;productname&gt;PostgreSQL&lt;/productname&gt; where this was the
       standard behavior.
+</span>
+通常、<code class="command">VACUUM</code>は、テーブル内に無効なタプルがほとんどない場合インデックスのバキュームをスキップします。
+テーブルのインデックスをすべて処理するコストは、無効なインデックスタプルを削除した場合にそれにより得られる利益を大きく上回ると考えられます。
+このオプションは、無効なタプルが1つ以上ある場合に<code class="command">VACUUM</code>にインデックスを強制的に処理させるのに使えます。
+デフォルトは<code class="literal">AUTO</code>で、適切な場合<code class="command">VACUUM</code>はインデックスのバキュームをスキップします。
+<code class="literal">INDEX_CLEANUP</code>が<code class="literal">ON</code>に設定されていれば、<code class="command">VACUUM</code>は保守的にインデックスから無効なタプルをすべて削除します。
+この動作が標準だった<span class="productname">PostgreSQL</span>の以前のリリースとの後方互換性のためには、これは有用かもしれません。
      </p><p>
-      <code class="literal">INDEX_CLEANUP</code> can also be set to
-      <code class="literal">OFF</code> to force <code class="command">VACUUM</code> to
-      <span class="emphasis"><em>always</em></span> skip index vacuuming, even when
+<span class="original">
+      &lt;literal&gt;INDEX_CLEANUP&lt;/literal&gt; can also be set to
+      &lt;literal&gt;OFF&lt;/literal&gt; to force &lt;command&gt;VACUUM&lt;/command&gt; to
+      &lt;emphasis&gt;always&lt;/emphasis&gt; skip index vacuuming, even when
       there are many dead tuples in the table.  This may be useful
-      when it is necessary to make <code class="command">VACUUM</code> run as
+      when it is necessary to make &lt;command&gt;VACUUM&lt;/command&gt; run as
       quickly as possible to avoid imminent transaction ID wraparound
-      (see <a class="xref" href="routine-vacuuming.html#VACUUM-FOR-WRAPAROUND" title="25.1.5. トランザクションIDの周回エラーの防止">25.1.5</a>).  However, the
-      wraparound failsafe mechanism controlled by <a class="xref" href="runtime-config-client.html#GUC-VACUUM-FAILSAFE-AGE">vacuum_failsafe_age</a>  will generally trigger
+      (see &lt;xref linkend="vacuum-for-wraparound"/&gt;).  However, the
+      wraparound failsafe mechanism controlled by &lt;xref
+       linkend="guc-vacuum-failsafe-age"/&gt;  will generally trigger
       automatically to avoid transaction ID wraparound failure, and
       should be preferred.  If index cleanup is not performed
       regularly, performance may suffer, because as the table is
       modified indexes will accumulate dead tuples and the table
       itself will accumulate dead line pointers that cannot be removed
       until index cleanup is completed.
+</span>
+<code class="literal">INDEX_CLEANUP</code>を<code class="literal">OFF</code>に設定して、<code class="command">VACUUM</code>に<span class="emphasis"><em>必ず</em></span>インデックスのバキュームをスキップするよう強制することもできます。テーブルに多くの無効なタプルがある場合でさえも同様です。
+切迫したトランザクションIDの周回を避けるため<code class="command">VACUUM</code>をできる限り速く実行することが必要な場合には、これは有用かもしれません(<a class="xref" href="routine-vacuuming.html#VACUUM-FOR-WRAPAROUND" title="25.1.5. トランザクションIDの周回エラーの防止">25.1.5</a>を参照してください)。
+しかしながら、たいていは<a class="xref" href="runtime-config-client.html#GUC-VACUUM-FAILSAFE-AGE">vacuum_failsafe_age</a>により制御される周回安全機構がトランザクションIDの周回の失敗を避けるために自動的に発動しますし、そちらの方が好ましいです。
+インデックスクリーンアップが定期的に実行されていなければ、テーブルが修正されるに従い、インデックスは無効なタプルを蓄積し、テーブル自身もインデックスクリーンアップが完了するまで削除できない無効な行ポインタを蓄積していきますので、性能は悪化するでしょう。
      </p><p>
+<span class="original">
       This option has no effect for tables that have no index and is
-      ignored if the <code class="literal">FULL</code> option is used.  It also
+      ignored if the &lt;literal&gt;FULL&lt;/literal&gt; option is used.  It also
       has no effect on the transaction ID wraparound failsafe
       mechanism.  When triggered it will skip index vacuuming, even
-      when <code class="literal">INDEX_CLEANUP</code> is set to
-      <code class="literal">ON</code>.
+      when &lt;literal&gt;INDEX_CLEANUP&lt;/literal&gt; is set to
+      &lt;literal&gt;ON&lt;/literal&gt;.
+</span>
+このオプションはテーブルにインデックスがない場合には効果がありませんし、<code class="literal">FULL</code>オプションが使われている場合には無視されます。
+トランザクションID周回安全機構にも影響はありません。
+発動した場合には、<code class="literal">INDEX_CLEANUP</code>が<code class="literal">ON</code>に設定されていたとしても、インデックスのバキュームをスキップします。
      </p></dd><dt><span class="term"><code class="literal">PROCESS_TOAST</code></span></dt><dd><p>
 <span class="original">
       Specifies that &lt;command&gt;VACUUM&lt;/command&gt; should attempt to process the
@@ -230,11 +250,10 @@ VACUUM [ FULL ] [ FREEZE ] [ VERBOSE ] [ ANALYZE ] [ <em class="replaceable"><co
       vacuum the main relation. This option is required when the
       &lt;literal&gt;FULL&lt;/literal&gt; option is used.
 </span>
-<code class="command">VACUUM</code>に、無効なタプルを指しているインデックスのエントリーの削除を試みるよう指定します。
-これは普通は望まれる振舞いであり、バキュームされるテーブルに対して<code class="literal">vacuum_index_cleanup</code>オプションが偽に設定されていない限りデフォルトです。
-このオプションを偽に設定するのは、バキュームの実行をできる限り速くする必要がある場合には有用かもしれません。例えば、切迫したトランザクションIDの周回を避ける場合です(<a class="xref" href="routine-vacuuming.html#VACUUM-FOR-WRAPAROUND" title="25.1.5. トランザクションIDの周回エラーの防止">25.1.5</a>を参照してください)。
-しかしながら、インデックスの掃除を定期的に行なわない場合、テーブルが修正されるに従い、インデックスは無効なタプルを蓄積し、テーブル自身もインデックスの掃除が完了するまで削除できない無効な行ポインタを蓄積していきますので、パフォーマンスは悪くなるでしょう。
-このオプションはインデックスを持たないテーブルには影響せず、<code class="literal">FULL</code>オプションが使われていれば無視されます。
+各リレーションに対応する<code class="literal">TOAST</code>テーブルが存在するのなら、<code class="command">VACUUM</code>がその処理を試みるよう指定します。
+これは普通は望まれる振舞いであり、デフォルトです。
+このオプションを偽に設定するのは、主リレーションをバキュームすることだけが必要な場合には有用かもしれません。
+<code class="literal">FULL</code>オプションを使うときにはこのオプションが必要です。
      </p></dd><dt><span class="term"><code class="literal">TRUNCATE</code></span></dt><dd><p>
 <span class="original">
       Specifies that &lt;command&gt;VACUUM&lt;/command&gt; should attempt to
@@ -414,13 +433,18 @@ VACUUM [ FULL ] [ FREEZE ] [ VERBOSE ] [ ANALYZE ] [ <em class="replaceable"><co
 <span class="productname">PostgreSQL</span>には、バキューム保守作業を自動化する<span class="quote">「<span class="quote">autovacuum</span>」</span>機能があります。
 自動バキューム処理および手作業によるバキューム処理に関する詳細については、<a class="xref" href="routine-vacuuming.html" title="25.1. 定常的なバキューム作業">25.1</a>を参照してください。
    </p><p>
-    Each backend running <code class="command">VACUUM</code> without the
-    <code class="literal">FULL</code> option will report its progress in the
-    <code class="structname">pg_stat_progress_vacuum</code> view. Backends running
-    <code class="command">VACUUM FULL</code> will instead report their progress in the
-    <code class="structname">pg_stat_progress_cluster</code> view. See
-    <a class="xref" href="progress-reporting.html#VACUUM-PROGRESS-REPORTING" title="28.4.3. VACUUMの進捗状況のレポート">28.4.3</a> and
-    <a class="xref" href="progress-reporting.html#CLUSTER-PROGRESS-REPORTING" title="28.4.4. CLUSTERの進捗状況のレポート">28.4.4</a> for details.
+<span class="original">
+    Each backend running &lt;command&gt;VACUUM&lt;/command&gt; without the
+    &lt;literal&gt;FULL&lt;/literal&gt; option will report its progress in the
+    &lt;structname&gt;pg_stat_progress_vacuum&lt;/structname&gt; view. Backends running
+    &lt;command&gt;VACUUM FULL&lt;/command&gt; will instead report their progress in the
+    &lt;structname&gt;pg_stat_progress_cluster&lt;/structname&gt; view. See
+    &lt;xref linkend="vacuum-progress-reporting"/&gt; and
+    &lt;xref linkend="cluster-progress-reporting"/&gt; for details.
+</span>
+<code class="command">VACUUM</code>を<code class="literal">FULL</code>オプションなしで実行している各バックエンドはその進捗を<code class="structname">pg_stat_progress_vacuum</code>ビューで報告します。
+<code class="command">VACUUM FULL</code>を実行しているバックエンドはその代わりにその進捗を<code class="structname">pg_stat_progress_cluster</code>ビューで報告します。
+詳細は<a class="xref" href="progress-reporting.html#VACUUM-PROGRESS-REPORTING" title="28.4.3. VACUUMの進捗状況のレポート">28.4.3</a>と<a class="xref" href="progress-reporting.html#CLUSTER-PROGRESS-REPORTING" title="28.4.4. CLUSTERの進捗状況のレポート">28.4.4</a>を参照してください。
    </p></div><div class="refsect1" id="id-1.9.3.183.9"><h2>例</h2><span class="original">
   &lt;title&gt;Examples&lt;/title&gt;
 </span><p>
