@@ -17,7 +17,7 @@ last-updated: 2022-02-12 04:24:39 JST
 
 | HTML （オンライン）           | PDF                                           | EPUB                                         | man | 更新日     |
 |:---------------------------|:---------------------------------------------:|:--------------------------------------------:|:---:|:----------:|
-| [13.1](jpug-doc/13.1/html/) | [PDF](jpug-doc/13.1/postgresql-13.1-A4.pdf) | [EPUB](jpug-doc/13.1/postgresql-13.1.epub) | [man.tar.gz](jpug-doc/13.1/man.tar.gz) | 2021-09-23 |
+| [13.1](jpug-doc/13.1/html/) | [PDF](jpug-doc/13.1/postgresql-13.1-A4.pdf) | [EPUB](jpug-doc/13.1/postgresql-13.1.epub) | [man.tar.gz](jpug-doc/13.1/man.tar.gz) | 2022-02-13 |
 
 ### PostgreSQL 12
 
