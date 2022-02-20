@@ -17,12 +17,11 @@
     used, the data sent along the database connection will be encrypted;
     otherwise, it will not.
 </span>
-<span class="productname">GSSAPI</span>は、RFC 2743で定義されている安全な認証のための業界標準のプロトコルです。
-
-<span class="productname">PostgreSQL</span>は、<span class="productname">GSSAPI</span>をサポートしています。このGSSAPIは、暗号化された認証済みレイヤとして使用するか、認証のみに使用します。
+<span class="productname">GSSAPI</span>は、<a class="ulink" href="https://tools.ietf.org/html/rfc2743" target="_top">RFC 2743</a>で定義されている安全な認証のための業界標準のプロトコルです。
+<span class="productname">PostgreSQL</span>は、<span class="productname">GSSAPI</span>を認証、通信の暗号化、あるいはその両方のためにサポートしています。
 <span class="productname">GSSAPI</span>は、GSSAPIをサポートするシステムに自動認証(シングルサインオン)を提供します。
 認証自体は安全です。
-<span class="productname">GSSAPI</span>暗号化（詳細は<code class="literal">hostgssenc</code>を参照してください）、または<acronym class="acronym">SSL</acronym>暗号化を使用すると、データベース接続に沿って送信されるデータは暗号化されますが、それ以外の場合は暗号化されません。
+<span class="productname">GSSAPI</span>暗号化、または<acronym class="acronym">SSL</acronym>暗号化を使用すると、データベース接続に沿って送信されるデータは暗号化されますが、それ以外の場合は暗号化されません。
    </p><p>
 <span class="original">
     GSSAPI support has to be enabled when &lt;productname&gt;PostgreSQL&lt;/productname&gt; is built;
@@ -42,9 +41,15 @@ GSSAPIサポートは、<span class="productname">PostgreSQL</span>を構築す�
     the keytab file, the server will accept any one of them.
     The server's realm name is the preferred realm specified in the Kerberos
     configuration file(s) accessible to the server.
-   &lt;/para&gt;
-
-   &lt;para&gt;
+</span>
+<span class="productname">GSSAPI</span>が<span class="productname">Kerberos</span>を使用しているとき、<span class="productname">GSSAPI</span>は、<code class="literal"><em class="replaceable"><code>servicename</code></em>/<em class="replaceable"><code>hostname</code></em>@<em class="replaceable"><code>realm</code></em></code>という書式の標準のサービスプリンシパル名を使用します。
+[訳注：プリンシパルとは大雑把に2つのものを指します。1つはサービスを受けるクライアントで、もう1つはサービスを提供するサーバアプリケーションです。どちらも、認証に関してはKerberosのKDCから見るとクライアントになります]
+特定のインストールによって使用されるプリンシパル名は<span class="productname">PostgreSQL</span>サーバでは決してエンコードされません。
+そうではなくて、サーバが自身の識別を決定するために読み込む<em class="firstterm">keytab</em>ファイルで指定されます。
+そのkeytabファイルに複数のプリンシパルが列挙されている場合は、サーバはそのうちのどれか一つを受け付けます。
+サーバのrealm名は、サーバがアクセスできるKerberos設定ファイルで指定されたものが優先的に採用されます。
+   </p><p>
+<span class="original">
     When connecting, the client must know the principal name of the server
     it intends to connect to.  The &lt;replaceable&gt;servicename&lt;/replaceable&gt;
     part of the principal is ordinarily &lt;literal&gt;postgres&lt;/literal&gt;,
@@ -54,9 +59,13 @@ GSSAPIサポートは、<span class="productname">PostgreSQL</span>を構築す�
     host name that &lt;application&gt;libpq&lt;/application&gt; is told to connect to.
     The realm name is the preferred realm specified in the Kerberos
     configuration file(s) accessible to the client.
-   &lt;/para&gt;
-
-   &lt;para&gt;
+</span>
+接続する際には、クライアントは接続しようとしているサーバのプリンシパル名を知っておかなければなりません。
+プリンシパルの<em class="replaceable"><code>servicename</code></em>部は通常<code class="literal">postgres</code>ですが、<span class="application">libpq</span>の<a class="xref" href="libpq-connect.html#LIBPQ-CONNECT-KRBSRVNAME">krbsrvname</a>接続パラメータで選択できます。
+<em class="replaceable"><code>hostname</code></em>部は<span class="application">libpq</span>が接続要求されている完全修飾ホスト名です。
+realm名はクライアントがアクセスできるKerberos設定ファイルで指定されているrealmです。
+   </p><p>
+<span class="original">
     The client will also have a principal name for its own identity
     (and it must have a valid ticket for this principal).  To
     use &lt;productname&gt;GSSAPI&lt;/productname&gt; for authentication, the client
@@ -68,7 +77,9 @@ GSSAPIサポートは、<span class="productname">PostgreSQL</span>を構築す�
     Alternatively, you can use the full &lt;literal&gt;username@realm&lt;/literal&gt; principal as
     the role name in &lt;productname&gt;PostgreSQL&lt;/productname&gt; without any mapping.
 </span>
-クライアントのプリンシパルは<code class="filename">pg_ident.conf</code>で異なる<span class="productname">PostgreSQL</span>のデータベースユーザ名にマップできます。
+クライアントは、自身の識別目的でプリンシパル名も持ちます（このプリンシパルの有効なチケットも持っていなければなりません）。
+認証に<span class="productname">GSSAPI</span>を使うためには、クライアントプリンシパルは<span class="productname">PostgreSQL</span>データベースユーザ名に紐付いていなければなりません。
+<code class="filename">pg_ident.conf</code>設定ファイルを使ってプリンシパルをユーザ名にマップできます。
 例えば、<code class="literal">pgusername@realm</code>を単なる<code class="literal">pgusername</code>にマップできます。
 もう1つの方法として、プリンシパル名全体<code class="literal">username@realm</code>を<span class="productname">PostgreSQL</span>のロール名としてマッピングなしに使うこともできます。
    </p><p>
@@ -86,19 +97,26 @@ GSSAPIサポートは、<span class="productname">PostgreSQL</span>を構築す�
     less capable approach compared to specifying an explicit mapping in
     &lt;filename&gt;pg_ident.conf&lt;/filename&gt;.
 </span>
-<span class="productname">PostgreSQL</span>はプリンシパルからrealmを外すパラメータもサポートしています。
+<span class="productname">PostgreSQL</span>はまたプリンシパルから単にrealmを外すことにより、クライアントプリンシパルをユーザ名にマップする方法をサポートしています。
 この方法は後方互換のためにサポートされているものであり、異なるrealmから来た同じユーザ名の異なるユーザを区別することができませんので、使用しないことを強く薦めます。
 この方法を有効にするには<code class="literal">include_realm</code>を0に設定してください。
 単純な単一realmの設定では、(プリンシパルのrealmが<code class="literal">krb_realm</code>パラメータ内のものと正確に一致するか確認する)<code class="literal">krb_realm</code>パラメータと組み合わせることが安全です。
 しかし、これは<code class="filename">pg_ident.conf</code>で明示的なマッピングを指定するのに比べてあまり適切でない選択でしょう。
    </p><p>
-    The location of the server's keytab file is specified by the <a class="xref" href="runtime-config-connection.html#GUC-KRB-SERVER-KEYFILE">krb_server_keyfile</a> configuration parameter.
+<span class="original">
+    The location of the server's keytab file is specified by the &lt;xref
+    linkend="guc-krb-server-keyfile"/&gt; configuration parameter.
     For security reasons, it is recommended to use a separate keytab
-    just for the <span class="productname">PostgreSQL</span> server rather
+    just for the &lt;productname&gt;PostgreSQL&lt;/productname&gt; server rather
     than allowing the server to read the system keytab file.
     Make sure that your server keytab file is readable (and preferably
-    only readable, not writable) by the <span class="productname">PostgreSQL</span>
-    server account.  (See also <a class="xref" href="postgres-user.html" title="19.1. PostgreSQLユーザアカウント">19.1</a>.)
+    only readable, not writable) by the &lt;productname&gt;PostgreSQL&lt;/productname&gt;
+    server account.  (See also &lt;xref linkend="postgres-user"/&gt;.)
+</span>
+サーバのkeytabファイルの場所は<a class="xref" href="runtime-config-connection.html#GUC-KRB-SERVER-KEYFILE">krb_server_keyfile</a>設定パラメータで指定されます。
+セキュリティ上の理由から、サーバがシステムkeytabファイルの読み込むことを許可するよりも、<span class="productname">PostgreSQL</span>サーバ用に別のkeytabファイルを使うことをお薦めします。
+サーバ鍵ファイルが<span class="productname">PostgreSQL</span>サーバアカウントによって読み込み可能（そしてできれば読み込み専用で書き込み不可）であることを確認してください。
+（<a class="xref" href="postgres-user.html" title="19.1. PostgreSQLユーザアカウント">19.1</a>を参照してください。）
    </p><p>
 <span class="original">
     The keytab file is generated using the Kerberos software; see the
@@ -106,15 +124,18 @@ GSSAPIサポートは、<span class="productname">PostgreSQL</span>を構築す�
     doing this using the &lt;application&gt;kadmin&lt;/application&gt; tool of
     MIT-compatible Kerberos 5 implementations:
 </span>
-keytabファイルはKerberosのソフトウェアによって作成されます。詳細はKerberosのドキュメントを参照してください。
-MIT互換のKerberos5実装の例を以下に示します。
+keytabファイルはKerberosのソフトウェアを使って作成されます。詳細はKerberosのドキュメントを参照してください。
+MIT互換のKerberos5実装の<span class="application">kadmin</span>ツールを使って行う例を以下に示します。
 </p><pre class="screen">
 <code class="prompt">kadmin% </code><strong class="userinput"><code>addprinc -randkey postgres/server.my.domain.org</code></strong>
 <code class="prompt">kadmin% </code><strong class="userinput"><code>ktadd -k krb5.keytab postgres/server.my.domain.org</code></strong>
 </pre><p>
    </p><p>
+<span class="original">
     The following authentication options are supported for
-    the <span class="productname">GSSAPI</span> authentication method:
+    the &lt;productname&gt;GSSAPI&lt;/productname&gt; authentication method:
+</span>
+次の認証オプションは<span class="productname">GSSAPI</span>のためにサポートされています。
     </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="literal">include_realm</code></span></dt><dd><p>
 <span class="original">
         If set to 0, the realm name from the authenticated user principal is
@@ -143,7 +164,7 @@ MIT互換のKerberos5実装の例を以下に示します。
         &lt;literal&gt;username&lt;/literal&gt; (or &lt;literal&gt;username/hostbased&lt;/literal&gt;)
         is what is seen as the system user name when mapping.
 </span>
-システムとデータベースの間のマッピングを許可します。
+クライアントプリンシパルからデータベースユーザ名へのマッピングを許可します。
 詳細は<a class="xref" href="auth-username-maps.html" title="21.2. ユーザ名マップ">21.2</a>を参照してください。
 GSSAPI/Kerberosプリンシパル<code class="literal">username@EXAMPLE.COM</code>(もしくは、あまり一般的ではありませんが<code class="literal">username/hostbased@EXAMPLE.COM</code>)に対しては、もし<code class="literal">include_realm</code>が0に設定されていない限り、マッピングに使われるユーザ名は<code class="literal">username@EXAMPLE.COM</code>(もしくは<code class="literal">username/hostbased@EXAMPLE.COM</code>)です。
 0に設定されている場合には、<code class="literal">username</code>(もしくは<code class="literal">username/hostbased</code>)がマッピング時のシステムユーザ名です。
@@ -159,10 +180,15 @@ realmをユーザプリンシパル名に一致するように設定します。
 もしこれが設定されていない場合は、どのようなrealmのユーザも接続可能で、ユーザ名マッピングが設定されていれば、どれでも影響を受けます。
        </p></dd></dl></div><p>
    </p><p>
+<span class="original">
     In addition to these settings, which can be different for
-    different <code class="filename">pg_hba.conf</code> entries, there is the
-    server-wide <a class="xref" href="runtime-config-connection.html#GUC-KRB-CASEINS-USERS">krb_caseins_users</a> configuration
+    different &lt;filename&gt;pg_hba.conf&lt;/filename&gt; entries, there is the
+    server-wide &lt;xref linkend="guc-krb-caseins-users"/&gt; configuration
     parameter.  If that is set to true, client principals are matched to
-    user map entries case-insensitively.  <code class="literal">krb_realm</code>, if
+    user map entries case-insensitively.  &lt;literal&gt;krb_realm&lt;/literal&gt;, if
     set, is also matched case-insensitively.
+</span>
+<code class="filename">pg_hba.conf</code>のエントリによって異なるこれらの設定に加え、サーバ全体の<a class="xref" href="runtime-config-connection.html#GUC-KRB-CASEINS-USERS">krb_caseins_users</a>設定パラメータがあります。
+これが真に設定されていれば、クライアントプリンシパルは大文字小文字を区別せずにユーザマップを照合します。
+<code class="literal">krb_realm</code>が設定されている場合も、大文字小文字を区別せずに照合します。
    </p></div><div xmlns="http://www.w3.org/TR/xhtml1/transitional" class="navfooter"><hr></hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="auth-password.html" title="21.5. パスワード認証">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="client-authentication.html" title="第21章 クライアント認証">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="sspi-auth.html" title="21.7. SSPI認証">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">21.5. パスワード認証 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 14.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 21.7. SSPI認証</td></tr></table></div></body></html>

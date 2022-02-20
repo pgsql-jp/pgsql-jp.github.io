@@ -36,10 +36,11 @@
 </span>
 <code class="filename">pg_hba.conf</code>ファイルの一般的な書式は、1行につき1つのレコードというレコードの集合です。
 空行はコメント用の<code class="literal">#</code>文字以降の文字と同じく無視されます。
-レコードは行をまたいで続けることはできません。
+行の最後をバックスラッシュで終えることによりレコードを次の行に継続することができます。（行の最後を除き、バックスラッシュは特別扱いされません。）
 レコードはスペースもしくはタブ、もしくはその両方で区切られた、複数のフィールドで構成されています。
 フィールドには、フィールド値が二重引用符付きの場合空白文字を含むことができます。
 データベース、ユーザもしくはアドレスフィールド内のキーワード(例：<code class="literal">all</code>または<code class="literal">replication</code>)の一つを引用するとその特別な意味が失われ、その名称のデータベース、ユーザもしくはホストと一致するようになります。
+引用テキストあるいはコメントもバックスラッシュで行を継続することができます。
   </p><p>
 <span class="original">
    Each record specifies a connection type, a client IP address range
@@ -190,7 +191,9 @@ hostnogssenc  <em class="replaceable"><code>database</code></em>  <em class="rep
 （以前は<code class="literal">samegroup</code>と書いていましたが、<code class="literal">samerole</code>と記述してください）
 スーパーユーザは、直接的であれ間接的であれ、明示的にsameroleのメンバでない限りsameroleのメンバとはみなされません。
 また、スーパーユーザであるからといって<code class="literal">samerole</code>のメンバとはみなされません。
-<code class="literal">replication</code>という値は、もし物理レプリケーション接続が要求された場合（レプリケーション接続は特定のデータベースを指定しないことに注意して下さい）にレコードが一致することを指定します。
+<code class="literal">replication</code>という値は、もし物理レプリケーション接続が要求された場合にレコードが一致することを指定します。
+しかし、論理レプリケーションによる接続には一致しません。
+物理レプリケーション接続は特定のデータベースを指定しないのに対し、論理レプリケーション接続は特定のデータベースを指定することに注意して下さい。
 それ以外の場合には、特定の<span class="productname">PostgreSQL</span>データベースの名前になります。
 データベースの名前はカンマで区切ることで複数指定できます。
 データベース名を含む別のファイルを、そのファイル名の前に<code class="literal">@</code>を付けることで指定できます。
@@ -572,26 +575,38 @@ SSLクライアント証明書を使用して認証します。
 どちらのオプションも、クライアントに有効な（信頼された）SSL証明書の提出を要求し、<code class="literal">verify full</code>は、証明書の<code class="literal">cn</code>（Common Name）がユーザー名または適用可能なマッピングと一致することをさらに強制します。
 この動作は<code class="literal">cert</code>認証方式（詳細は<a class="xref" href="auth-cert.html" title="21.12. 証明書認証">21.12</a>を参照してください）に似ていますが、クライアント証明書の検証を<code class="literal">hostssl</code>エントリをサポートする任意の認証方式と組み合わせることができます。
       </p><p>
+<span class="original">
        On any record using client certificate authentication (i.e. one
-       using the <code class="literal">cert</code> authentication method or one
-       using the <code class="literal">clientcert</code> option), you can specify
+       using the &lt;literal&gt;cert&lt;/literal&gt; authentication method or one
+       using the &lt;literal&gt;clientcert&lt;/literal&gt; option), you can specify
        which part of the client certificate credentials to match using
-       the <code class="literal">clientname</code> option. This option can have one
-       of two values. If you specify <code class="literal">clientname=CN</code>, which
+       the &lt;literal&gt;clientname&lt;/literal&gt; option. This option can have one
+       of two values. If you specify &lt;literal&gt;clientname=CN&lt;/literal&gt;, which
        is the default, the username is matched against the certificate's
-       <code class="literal">Common Name (CN)</code>. If instead you specify
-       <code class="literal">clientname=DN</code> the username is matched against the
-       entire <code class="literal">Distinguished Name (DN)</code> of the certificate.
+       &lt;literal&gt;Common Name (CN)&lt;/literal&gt;. If instead you specify
+       &lt;literal&gt;clientname=DN&lt;/literal&gt; the username is matched against the
+       entire &lt;literal&gt;Distinguished Name (DN)&lt;/literal&gt; of the certificate.
        This option is probably best used in conjunction with a username map.
-       The comparison is done with the <code class="literal">DN</code> in
-       <a class="ulink" href="https://tools.ietf.org/html/rfc2253" target="_top">RFC 2253</a>
-       format. To see the <code class="literal">DN</code> of a client certificate
+       The comparison is done with the &lt;literal&gt;DN&lt;/literal&gt; in
+       &lt;ulink url="https://tools.ietf.org/html/rfc2253"&gt;RFC 2253&lt;/ulink&gt;
+       format. To see the &lt;literal&gt;DN&lt;/literal&gt; of a client certificate
        in this format, do
+</span>
+クライアント証明書認証を使用するすべてのレコード（つまり、<code class="literal">cert</code>認証方式あるいは<code class="literal">clientcert</code>オプションを使用している）では、<code class="literal">clientname</code>オプションを使ってクライアント証明書資格情報のどの部分を照合するかを指定することができます。
+このオプションは2つの値のうち1つを持つことができます。
+デフォルトである<code class="literal">clientname=CN</code>を指定すると、ユーザ名は証明書の<code class="literal">Common Name (CN)</code>と照合されます。
+その代わりに<code class="literal">clientname=DN</code>を指定すると、ユーザ名は証明書の<code class="literal">Distinguished Name (DN)</code>全体と照合されます。
+このオプションはおそらくユーザ名マップとともに使うのが最善です。
+<a class="ulink" href="https://tools.ietf.org/html/rfc2253" target="_top">RFC 2253</a>の<code class="literal">DN</code>と比較されます。
+この形式のクライアント証明書の<code class="literal">DN</code>を参照するには以下のようにしてください。
 </p><pre class="programlisting">
 openssl x509 -in myclient.crt -noout --subject -nameopt RFC2253 | sed "s/^subject=//"
 </pre><p>
+<span class="original">
         Care needs to be taken when using this option, especially when using
-        regular expression matching against the <code class="literal">DN</code>.
+        regular expression matching against the &lt;literal&gt;DN&lt;/literal&gt;.
+</span>
+このオプションを使って<code class="literal">DN</code>に対して正規表現を使って比較を行う際にはとりわけ注意が必要です。
       </p></dd></dl></div><p>
   </p><p>
 <span class="original">

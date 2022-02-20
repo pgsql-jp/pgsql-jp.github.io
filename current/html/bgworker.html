@@ -152,7 +152,7 @@ typedef struct BackgroundWorker
    or &lt;literal&gt;BGW_NEVER_RESTART&lt;/literal&gt;, indicating not to restart the
    process in case of a crash.
 </span>
-<code class="structfield">bgw_restart_time</code>は、プロセスがクラッシュした場合に<code class="command">postgres</code>がそのプロセスを再起動するために待つ必要のある間隔を秒単位で指定します。
+<code class="structfield">bgw_restart_time</code>は、万が一プロセスがクラッシュした場合に<code class="command">postgres</code>がそのプロセスを再起動するために待つ必要のある間隔を秒単位で指定します。
 これは任意の正の値、またはクラッシュしても再起動させない場合に<code class="literal">BGW_NEVER_RESTART</code>を指定します。
   </p><p>
 <span class="original">
@@ -357,8 +357,10 @@ postmasterがバックグラウンドワーカを開始しようと試みたか�
    notifications with the &lt;command&gt;LISTEN&lt;/command&gt; command, as there is no
    infrastructure for a worker to consume such notifications.
 </span>
-バックグラウンドワーカは、サーバプログラミングインタフェース(<acronym class="acronym">SPI</acronym>)経由で<code class="command">NOTIFY</code>コマンドにより非同期に通知を送る場合、囲んでいるトランザクションをコミットした後、通知を配信することができるように明示的に<code class="function">ProcessCompletedNotifies</code>を呼ぶ必要があります。
-バックグラウンドワーカは、<acronym class="acronym">SPI</acronym>を通じて<code class="command">LISTEN</code>による非同期通知の受信を登録した場合、ワーカがこれらの通知をログに記録しますが、ワーカが傍受し、それらの通知に応答するためのプログラム的な方法はありません。
+バックグラウンドワーカは、<acronym class="acronym">SPI</acronym>経由で<code class="command">NOTIFY</code>コマンドを使用して、あるいは<code class="function">Async_Notify()</code>で直接、非同期通知メッセージを送ることができます。
+そのような通知はトランザクションのコミット時に送信されます。
+バックグラウンドワーカは、<code class="command">LISTEN</code>コマンドによる非同期通知メッセージの受信登録をすべきではありません。
+ワーカがそのような通知を消費する基盤が存在しないからです。
   </p><p>
 <span class="original">
    The &lt;filename&gt;src/test/modules/worker_spi&lt;/filename&gt; module
