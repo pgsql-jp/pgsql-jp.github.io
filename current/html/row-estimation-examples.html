@@ -96,7 +96,7 @@ EXPLAIN SELECT * FROM tenk1 WHERE unique1 &lt; 1000;
 プランナは<code class="literal">WHERE</code>句の条件を検査し、<code class="structname">pg_operator</code>内の<code class="literal">&lt;</code>演算子用の選択度関数を検索します。
 これは<code class="structfield">oprrest</code>列に保持されます。
 今回の例ではこの項は<code class="function">scalarltsel</code>です。
-<code class="function">scalarltsel</code>関数は、<code class="structname">pg_statistic</code>から<code class="structfield">unique1</code>の度数分布を取り出します。
+<code class="function">scalarltsel</code>関数は、<code class="structname">pg_statistic</code>から<code class="structfield">unique1</code>のヒストグラムを取り出します。
 手作業で問い合わせる場合は、より単純な<code class="structname">pg_stats</code>ビューを検索した方が簡単です。
 
 </p><pre class="programlisting">
@@ -117,9 +117,9 @@ WHERE tablename='tenk1' AND attname='unique1';
    the second bucket (993&amp;ndash;1997).  Assuming a linear distribution of
    values inside each bucket, we can calculate the selectivity as:
 </span>
-次に、<span class="quote">「<span class="quote">&lt; 1000</span>」</span>で占められる度数分布率を取り出します。
+次に、<span class="quote">「<span class="quote">&lt; 1000</span>」</span>で占められるヒストグラムの割合を取り出します。
 これが選択度(selectivity)です。
-この度数分布は、範囲を等頻度のバケット(bucket)に分割します。
+このヒストグラムは、範囲を等頻度のバケット(bucket)に分割します。
 ですので、行わなければならないことは、値が入るバケットを見つけ、その<span class="emphasis"><em>部分</em></span>と、その前にあるバケット<span class="emphasis"><em>全体</em></span>を数えることだけです。
 1000という値は明らかに2番目のバケット(993–1997)にあります。
 従って、値が各バケットの中で線形に分布していると仮定すると、選択度を以下のように計算することができます。
@@ -173,7 +173,7 @@ EXPLAIN SELECT * FROM tenk1 WHERE stringu1 = 'CRAAAA';
    that will be useful later:
 </span>
 ここでも、プランナは<code class="literal">WHERE</code>句の条件を検査し、<code class="literal">=</code>用の選択度関数、この場合は<code class="function">eqsel</code>を検索します。
-等価性の推定では、度数分布は役に立ちません。
+等価性の推定では、ヒストグラムは役に立ちません。
 代わりに、選択度の決定には<em class="firstterm">頻出値</em>（<acronym class="acronym">MCV</acronym>）のリストが使用されます。
 MCVを見てみましょう。
 後で有用になる列がいくつかあります。
@@ -292,12 +292,12 @@ rows = 10000 * 0.0014559
 前述の<code class="literal">unique1 &lt; 1000</code>を使用した例は<code class="function">scalarltsel</code>が本当は何を行うかについて、単純化しすぎたものでした。
 ここまでで、MCVを使用した例を見てきましたので、多少詳細に補てんすることができます。
 <code class="structfield">unique1</code>は一意な列であるため、MCVが存在しません（ある値が他の値と同じとなることがないことは明確です）ので、例は計算自体は正確なものでした。
-一意ではない列では、通常度数分布とMCVリストの両方が存在します。
-そして、<span class="emphasis"><em>度数分布は、MCVで表される列母集団の位置を含みません。</em></span>
+一意ではない列では、通常ヒストグラムとMCVリストの両方が存在します。
+そして、<span class="emphasis"><em>ヒストグラムは、MCVで表される列母集団の位置を含みません。</em></span>
 より正確な推定を行うことができるため、この方法を行います。
 この状況では、<code class="function">scalarltsel</code>は直接条件（例えば<span class="quote">「<span class="quote">&lt; 1000</span>」</span>）をMCVリストの各値に適用し、条件を満たすMCVの頻度を足し合わせます。
 これがMCVのテーブル部分における正確な推定選択度です。
-その後度数分布が上と同様に使われ、MCV以外のテーブル部分における選択度を推定します。
+その後ヒストグラムが上記と同様に使われ、MCV以外のテーブル部分における選択度を推定します。
 そしてこの2つの値を組み合わせて、全体の選択度を推定します。
 例えば、以下を検討します。
 
@@ -314,7 +314,7 @@ EXPLAIN SELECT * FROM tenk1 WHERE stringu1 &lt; 'IAAAAA';
    We already saw the MCV information for &lt;structfield&gt;stringu1&lt;/structfield&gt;,
    and here is its histogram:
 </span>
-すでに<code class="structfield">stringu1</code>のMCV情報は確認していますので、ここでは度数分布を見てみます。
+すでに<code class="structfield">stringu1</code>のMCV情報は確認していますので、ここではヒストグラムを見てみます。
 
 </p><pre class="programlisting">
 SELECT histogram_bounds FROM pg_stats
@@ -351,10 +351,10 @@ selectivity = sum(relevant mvfs)
    that is less than &lt;literal&gt;IAAAAA&lt;/literal&gt;.  We then combine the estimates
    for the MCV and non-MCV populations:
 </span>
-MCFの総和はまた、MCVで表される母集団の合計割合が0.03033333であり、したがって度数分布で表される割合が0.96966667であることがわかります。
+MCFの総和はまた、MCVで表される母集団の合計割合が0.03033333であり、したがってヒストグラムで表される割合が0.96966667であることがわかります。
 （この場合もNULLは存在しません。もし存在する場合はここで除外しなければなりません。）
 <code class="literal">IAAAAA</code>という値は3番目のバケットの終端近辺になることを確認することができます。
-異なる文字の頻度について多少安っぽい仮定を使用すると、プランナは<code class="literal">IAAAAA</code>より小さい母集団の度数分布の部分の推定値は0.298387になります。
+異なる文字の頻度について多少安っぽい仮定を使用すると、プランナは<code class="literal">IAAAAA</code>より小さいヒストグラムの母集団の部分の推定値は0.298387になります。
 そしてMCVと非MCV母集団についての推定値を組み合わせます。
 
 </p><pre class="programlisting">
@@ -458,7 +458,7 @@ WHERE t1.unique1 &lt; 50 AND t1.unique2 = t2.unique2;
 </span>
 <code class="structname">tenk1</code> <span class="quote">「<span class="quote">unique1 &lt; 50</span>」</span>に関する制限が、ネステッドループ結合の前に評価されます。
 これは、前の範囲に関する例と同様に扱われます。
-しかし、今回の値50は<code class="structfield">unique1</code>度数分布の最初のバケットにありますので、以下のようになります。
+しかし、今回の値50は<code class="structfield">unique1</code>ヒストグラムの最初のバケットにありますので、以下のようになります。
 
 </p><pre class="programlisting">
 selectivity = (0 + (50 - bucket[1].min)/(bucket[1].max - bucket[1].min))/num_buckets
