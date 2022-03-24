@@ -88,7 +88,7 @@ The commands accepted in replication mode are:
        consistent with the primary.
 </span>
 現在のタイムラインIDです。
-同様にスタンバイがマスタと一貫性を持つことを検査するために使用されます。
+同様にスタンバイがプライマリと一貫性を持つことを検査するために使用されます。
       </p></dd><dt><span class="term">
        <code class="literal">xlogpos</code> (<code class="type">text</code>)
       </span></dt><dd><p>
@@ -134,6 +134,7 @@ The commands accepted in replication mode are:
 </span>
 <em class="replaceable"><code>tli</code></em>のタイムラインのため、サーバにタイムライン履歴ファイルの送付を要求します。
 サーバは2列単一行の結果セットを返します。
+フィールドには<code class="type">text</code>の印が付けられていますが、実際には符号化変換なしの生のバイトが返ります。
      </p><p>
       </p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
        <code class="literal">filename</code> (<code class="type">text</code>)
@@ -286,7 +287,7 @@ The commands accepted in replication mode are:
       mode entirely.
 </span>
 最新ではなくて、サーバの過去のタイムラインをクライアントが要求した場合、サーバは要求された開始時点から他のタイムラインに切り替えるまでの、全てのWALストリームを送付します。
-クライアントが旧タイムラインの終点のストリームを要求した場合、サーバはCOPYモードに入らずにCommandCompleteをすぐに応答します。
+クライアントが旧タイムラインの終点のストリームを要求した場合、サーバはCOPYモード全体をスキップします。
      </p><p>
 <span class="original">
       After streaming all the WAL on a timeline that is not the latest one,
@@ -752,7 +753,7 @@ CopyBothResponse内部のメッセージは、2つのCommandCompleteメッセー
       ordinary result sets, followed by one or more CopyOutResponse
       results.
 </span>
-バックアップを開始する時、サーバはまず２つの通常の結果セットを送信し、続けて１つ以上のCopyResponse結果を送信します。
+バックアップを開始する時、サーバはまず２つの通常の結果セットを送信し、続けて１つ以上のCopyOutResponse結果を送信します。
      </p><p>
 <span class="original">
       The first ordinary result set contains the starting position of the
@@ -792,8 +793,8 @@ CopyBothResponse内部のメッセージは、2つのCommandCompleteメッセー
 要求されていない場合はNULLです。
          </p></dd></dl></div><p>
      </p><p>
-      After the second regular result set, one or more CopyOutResponse results
 <span class="original">
+      After the second regular result set, one or more CopyOutResponse results
       will be sent, one for the main data directory and one for each additional tablespace other
       than &lt;literal&gt;pg_default&lt;/literal&gt; and &lt;literal&gt;pg_global&lt;/literal&gt;. The data in
       the CopyOutResponse results will be a tar format (following the
@@ -806,11 +807,11 @@ CopyBothResponse内部のメッセージは、2つのCommandCompleteメッセー
       sent, containing the WAL end position of the backup, in the same format as
       the start position.
 </span>
-２番目の通常の結果セットの後、１つ以上のCopyResponse結果が送信されます。
+２番目の通常の結果セットの後、１つ以上のCopyOutResponse結果が送信されます。
 主データディレクトリ用に1つ、<code class="literal">pg_default</code>、<code class="literal">pg_global</code>以外の追加のテーブル空間ごとに1つ送信されます。
-CopyResponse結果内のデータは、テーブル空間の内容のtar形式（POSIX 1003.1-2008標準で規定された<span class="quote">「<span class="quote">ustar交換形式</span>」</span>に従う）ダンプです。
+CopyOutResponse結果内のデータは、テーブル空間の内容のtar形式（POSIX 1003.1-2008標準で規定された<span class="quote">「<span class="quote">ustar交換形式</span>」</span>に従う）ダンプです。
 ただし標準で規定された最後の２つのゼロブロックは省略されています。
-このtarデータが終わった後、バックアップマニフェストが要求された場合、現在のベースバックアップのマニフェストデータを含む別のCopyResponse結果が送信されます。
+このtarデータが終わった後、バックアップマニフェストが要求された場合、現在のベースバックアップのマニフェストデータを含む別のCopyOutResponse結果が送信されます。
 いずれの場合も、バックアップのWAL終了位置を含む最終の通常の結果セットが、開始位置と同じ形式で送信されます。
      </p><p>
 <span class="original">

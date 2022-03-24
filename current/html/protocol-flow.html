@@ -1234,11 +1234,12 @@ ParameterStatusメッセージは、任意のパラメータの実際の値が�
     parameters that it does not understand or care about.
 </span>
 現時点では、ParameterStatusを生成するパラメータ群は固定されています。
-それらは<code class="varname">server_version</code>、<code class="varname">server_encoding</code>、<code class="varname">client_encoding</code>、<code class="varname">application_name</code>、<code class="varname">is_superuser</code>、<code class="varname">session_authorization</code>、<code class="varname">DateStyle</code>、<code class="varname">IntervalStyle</code>、<code class="varname">TimeZone</code>、<code class="varname">integer_datetimes</code>、および<code class="varname">standard_conforming_strings</code>です。
+それらは<code class="varname">server_version</code>、<code class="varname">server_encoding</code>、<code class="varname">client_encoding</code>、<code class="varname">application_name</code>、<code class="varname">default_transaction_read_only</code>、<code class="varname">in_hot_standby</code>、<code class="varname">is_superuser</code>、<code class="varname">session_authorization</code>、<code class="varname">DateStyle</code>、<code class="varname">IntervalStyle</code>、<code class="varname">TimeZone</code>、<code class="varname">integer_datetimes</code>、および<code class="varname">standard_conforming_strings</code>です。
 （8.0より前までのリリースでは、<code class="varname">server_encoding</code>、<code class="varname">TimeZone</code>および<code class="varname">integer_datetimes</code>は送信されませんでした。
 8.1より前までのリリースでは、<code class="varname">standard_conforming_strings</code>は送信されませんでした。
 8.4より前のリリースでは、<code class="varname">IntervalStyle</code>は送信されませんでした。
-9.0より前のリリースでは、<code class="varname">application_name</code>は送信されませんでした。）
+9.0より前のリリースでは、<code class="varname">application_name</code>は送信されませんでした。
+14より前のリリースでは、<code class="varname">default_transaction_read_only</code>と<code class="varname">in_hot_standby</code>は送信されませんでした。）
 <code class="varname">server_version</code>、<code class="varname">server_encoding</code>および<code class="varname">integer_datetimes</code>は仮想的なパラメータであり、起動後に変更することができないことに注意してください。
 これは今後変更される、あるいは設定変更可能になる可能性があります。
 したがって、フロントエンドは未知または注目していないParameterStatusを単に無視すべきです。
@@ -1439,6 +1440,7 @@ CancelRequestメッセージは、接続開始段階でフロントエンドに�
 これが成功した場合、続いて通常のStartupMessageの送信を行います。
 この場合、StartupMessageおよびその後のデータは<acronym class="acronym">SSL</acronym>により暗号化されます。
 <code class="literal">N</code>の後に、通常のStartupMessageを送信することで暗号化なしで進みます。
+（他に、<acronym class="acronym">SSL</acronym>の代わりに<acronym class="acronym">GSSAPI</acronym>暗号化の利用を試行するために、<code class="literal">N</code>応答の後にGSSENCRequestメッセージを送信することが認められています。）
    </p><p>
 <span class="original">
     The frontend should also be prepared to handle an ErrorMessage
@@ -1512,15 +1514,10 @@ CancelRequestメッセージは、接続開始段階でフロントエンドに�
 <acronym class="acronym">GSSAPI</acronym>暗号化接続を開始するには、フロントエンドは最初にStartupMessageではなく、GSSENCRequestメッセージを送ります。
 次にサーバは、それぞれ<acronym class="acronym">GSSAPI</acronym>暗号化を希望する、しないを意味する<code class="literal">G</code>または<code class="literal">N</code>を含む1バイトを送信します。
 このレスポンスに満足できなければ、この時点でフロントエンドは接続を打ち切って構いません。
-<code class="literal">G</code>の受信後継続するには、RFC2744あるいは同様の文書で議論されているGSSAPI Cバインディングを使い、ループの中で<code class="function">gss_init_sec_context()</code>を呼び出して<acronym class="acronym">GSSAPI</acronym>を初期化し、結果をサーバに送信し、空の入力を受け取ることから始めて、サーバが出力を返さなくなるまでサーバからの出力を受け取ります。
+<code class="literal">G</code>の受信後継続するには、<a class="ulink" href="https://tools.ietf.org/html/rfc2744" target="_top">RFC 2744</a>あるいは同様の文書で議論されているGSSAPI Cバインディングを使い、ループの中で<code class="function">gss_init_sec_context()</code>を呼び出して<acronym class="acronym">GSSAPI</acronym>を初期化し、結果をサーバに送信し、空の入力を受け取ることから始めて、サーバが出力を返さなくなるまでサーバからの出力を受け取ります。
 <code class="function">gss_init_sec_context()</code>の結果をサーバに送る際には、ネットワークバイトオーダーで4バイトの整数にメッセージ長を先頭に付与します。
-これに成功したら、<code class="function">gss_wrap()</code>を使って通常のStartupMessageと後続のすべてのメッセージを暗号化します。
-実際に暗号化した送信データの前に、<code class="function">gss_wrap()</code>の結果をネットワークバイトオーダーで4バイトの整数にしたものを付与します。
-サーバは16kB未満のクライアントからの暗号化パケットだけを受け付けることに注意してください。
-クライアントは<code class="function">gss_wrap_size_limit()</code>を使って暗号化前のメッセージの大きさがこの制限に収まるかどうかを確認し、それより大きなメッセージは複数の<code class="function">gss_wrap()</code>呼び出しに分解すべきです。
-典型的なセグメントは暗号化前で8kBのデータで、暗号化後のパケットは8kBより少し大きくなりますが、最大長の16kB以内には問題なく収まります。
-サーバは16kBよりも大きな暗号化パケットをクライアントに送らないものと期待することができます。
 <code class="literal">N</code>の後継続するには、通常のStartupMessageを送信し、暗号化せずに続けてください。
+（他に、<acronym class="acronym">GSSAPI</acronym>の代わりに<acronym class="acronym">SSL</acronym>暗号化の使用を試行するために、<code class="literal">N</code>応答の後にSSLRequestメッセージを送信することが認められています。）
    </p><p>
 <span class="original">
     The frontend should also be prepared to handle an ErrorMessage
@@ -1534,7 +1531,6 @@ CancelRequestメッセージは、接続開始段階でフロントエンドに�
 また、フロントエンドはサーバからのGSSENCRequestへのErrorMessage応答に備えるべきです。
 これはサーバが<span class="productname">PostgreSQL</span>への<acronym class="acronym">GSSAPI</acronym>暗号化サポートを追加する以前だったときにのみ発生します。
 この場合は接続を切断しなければなりませんが、フロントエンドは新しい接続を開いて<acronym class="acronym">GSSAPI</acronym>暗号化を要求せずに進めることを選択するかもしれません。
-上述の長さ制限により、ErrorMessageがサーバからの適切な長さを持つ正しい応答と混同されることはありません。
    </p><p>
 <span class="original">
     An initial GSSENCRequest can also be used in a connection that is being
@@ -1542,19 +1538,27 @@ CancelRequestメッセージは、接続開始段階でフロントエンドに�
 </span>
 最初のGSSENCRequestは、CancelRequestメッセージを送信するために開いている接続でも利用できます。
    </p><p>
-    Once <acronym class="acronym">GSSAPI</acronym> encryption has been successfully
-    established, use <code class="function">gss_wrap()</code> to
+<span class="original">
+    Once &lt;acronym&gt;GSSAPI&lt;/acronym&gt; encryption has been successfully
+    established, use &lt;function&gt;gss_wrap()&lt;/function&gt; to
     encrypt the usual StartupMessage and all subsequent data, prepending the
-    length of the result from <code class="function">gss_wrap()</code> as a four byte
+    length of the result from &lt;function&gt;gss_wrap()&lt;/function&gt; as a four byte
     integer in network byte order to the actual encrypted payload.  Note that
     the server will only accept encrypted packets from the client which are less
-    than 16kB; <code class="function">gss_wrap_size_limit()</code> should be used by the
+    than 16kB; &lt;function&gt;gss_wrap_size_limit()&lt;/function&gt; should be used by the
     client to determine the size of the unencrypted message which will fit
     within this limit and larger messages should be broken up into multiple
-    <code class="function">gss_wrap()</code> calls.  Typical segments are 8kB of
+    &lt;function&gt;gss_wrap()&lt;/function&gt; calls.  Typical segments are 8kB of
     unencrypted data, resulting in encrypted packets of slightly larger than 8kB
     but well within the 16kB maximum.  The server can be expected to not send
     encrypted packets of larger than 16kB to the client.
+</span>
+<acronym class="acronym">GSSAPI</acronym>暗号化の確立に成功したら、<code class="function">gss_wrap()</code>を使って通常のStartupMessageと後続のすべてのメッセージを暗号化します。
+実際に暗号化した送信データの前に、<code class="function">gss_wrap()</code>の結果をネットワークバイトオーダーで4バイトの整数にしたものを付与します。
+サーバは16kB未満のクライアントからの暗号化パケットだけを受け付けることに注意してください。
+クライアントは<code class="function">gss_wrap_size_limit()</code>を使って暗号化前のメッセージの大きさがこの制限に収まるかどうかを確認し、それより大きなメッセージは複数の<code class="function">gss_wrap()</code>呼び出しに分解すべきです。
+典型的なセグメントは暗号化前で8kBのデータで、暗号化後のパケットは8kBより少し大きくなりますが、最大長の16kB以内には問題なく収まります。
+サーバは16kBよりも大きな暗号化パケットをクライアントに送らないものと期待することができます。
    </p><p>
 <span class="original">
     While the protocol itself does not provide a way for the server to
