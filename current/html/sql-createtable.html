@@ -185,7 +185,7 @@ WITH ( MODULUS <em class="replaceable"><code>numeric_literal</code></em>, REMAIN
 </span>
 このパラメータが指定された場合、テーブルは一時テーブルとして作成されます。
 一時テーブルは、そのセッションの終わり、場合によっては、現在のトランザクションの終わり（後述の<code class="literal">ON COMMIT</code>を参照）に自動的に削除されます。
-一時テーブルが存在する場合、同じ名前を持つ既存の永続テーブルは、スキーマ修飾名で参照されていない限り、現在のセッションでは非可視になります。
+デフォルトのsearch_pathは一時スキーマを最初に含んでいますので、同じ名前を持つ既存の永続テーブルは、スキーマ修飾名で参照されていない限り、一時テーブルが存在する間は非可視になります。
 一時テーブルに作られるインデックスも、全て自動的に一時的なものとなります。
      </p><p>
 <span class="original">
@@ -289,23 +289,31 @@ WITH ( MODULUS <em class="replaceable"><code>numeric_literal</code></em>, REMAIN
 <code class="literal">COLLATE</code>句は列（照合順の設定が可能なデータ型でなければなりません）に照合順を割り当てます。
 指定がなければ、列のデータ型のデフォルトの照合順が使用されます。
      </p></dd><dt><span class="term"><code class="literal">COMPRESSION <em class="replaceable"><code>compression_method</code></em></code></span></dt><dd><p>
-      The <code class="literal">COMPRESSION</code> clause sets the compression method
+<span class="original">
+      The &lt;literal&gt;COMPRESSION&lt;/literal&gt; clause sets the compression method
       for the column.  Compression is supported only for variable-width data
       types, and is used only when the column's storage mode
-      is <code class="literal">main</code> or <code class="literal">extended</code>.
-      (See <a class="xref" href="sql-altertable.html" title="ALTER TABLE"><span class="refentrytitle">ALTER TABLE</span></a> for information on
+      is &lt;literal&gt;main&lt;/literal&gt; or &lt;literal&gt;extended&lt;/literal&gt;.
+      (See &lt;xref linkend="sql-altertable"/&gt; for information on
       column storage modes.) Setting this property for a partitioned table
       has no direct effect, because such tables have no storage of their own,
       but the configured value will be inherited by newly-created partitions.
-      The supported compression methods are <code class="literal">pglz</code> and
-      <code class="literal">lz4</code>.  (<code class="literal">lz4</code> is available only if
-      <code class="option">--with-lz4</code> was used when building
-      <span class="productname">PostgreSQL</span>.)  In addition,
-      <em class="replaceable"><code>compression_method</code></em>
-      can be <code class="literal">default</code> to explicitly specify the default
+      The supported compression methods are &lt;literal&gt;pglz&lt;/literal&gt; and
+      &lt;literal&gt;lz4&lt;/literal&gt;.  (&lt;literal&gt;lz4&lt;/literal&gt; is available only if
+      &lt;option&gt;&amp;#45;-with-lz4&lt;/option&gt; was used when building
+      &lt;productname&gt;PostgreSQL&lt;/productname&gt;.)  In addition,
+      &lt;replaceable class="parameter"&gt;compression_method&lt;/replaceable&gt;
+      can be &lt;literal&gt;default&lt;/literal&gt; to explicitly specify the default
       behavior, which is to consult the
-      <a class="xref" href="runtime-config-client.html#GUC-DEFAULT-TOAST-COMPRESSION">default_toast_compression</a> setting at the time of
+      &lt;xref linkend="guc-default-toast-compression"/&gt; setting at the time of
       data insertion to determine the method to use.
+</span>
+<code class="literal">COMPRESSION</code>句は列の圧縮法を設定します。圧縮は可変幅データ型に対してのみサポートされていて、列の保管モードが<code class="literal">main</code>または<code class="literal">extended</code>の場合にのみ使われます。
+(列の保管モードについての情報は<a class="xref" href="sql-altertable.html" title="ALTER TABLE"><span class="refentrytitle">ALTER TABLE</span></a>を参照してください。)
+パーティションテーブルには自身のストレージがありませんので、パーティションテーブルに対してこの属性を設定しても直接の影響はありませんが、設定値は新しく作成されるパーティションに継承されます。
+サポートされている圧縮法は<code class="literal">pglz</code>と<code class="literal">lz4</code>です。
+(<code class="literal">lz4</code>は、<span class="productname">PostgreSQL</span>構築時に<code class="option">--with-lz4</code>が使われた場合にのみ利用可能です。)
+さらに<em class="replaceable"><code>compression_method</code></em>は、明示的にデフォルトの動作を指定するために<code class="literal">default</code>とすることもできます。その場合、利用する圧縮法を決定するためにデータ挿入時に<a class="xref" href="runtime-config-client.html#GUC-DEFAULT-TOAST-COMPRESSION">default_toast_compression</a>設定を調べます。
      </p></dd><dt><span class="term"><code class="literal">INHERITS ( <em class="replaceable"><code>parent_table</code></em> [, ... ] )</code></span></dt><dd><p>
 <span class="original">
       The optional &lt;literal&gt;INHERITS&lt;/literal&gt; clause specifies a list of
@@ -702,9 +710,13 @@ TRUNCATEのように通常はテーブルとそれを継承するすべての子
 コピーされた列、制約、および、インデックスに対するコメントがコピーされます。
 デフォルトの振る舞いではコメントは除外されて、新しいテーブルのコピーされた列と制約にはコメントがありません。
          </p></dd><dt><span class="term"><code class="literal">INCLUDING COMPRESSION</code></span></dt><dd><p>
+<span class="original">
           Compression method of the columns will be copied.  The default
           behavior is to exclude compression methods, resulting in columns
           having the default compression method.
+</span>
+列の圧縮法をコピーします。
+デフォルトの振る舞いでは圧縮法は除外されて、列にはデフォルトの圧縮法が設定されます。
          </p></dd><dt><span class="term"><code class="literal">INCLUDING CONSTRAINTS</code></span></dt><dd><p>
 <span class="original">
           &lt;literal&gt;CHECK&lt;/literal&gt; constraints will be copied.  No distinction
@@ -921,7 +933,8 @@ TRUEまたはUNKNOWNと評価される式は成功します。
       Such a column is implicitly &lt;literal&gt;NOT NULL&lt;/literal&gt;.
 </span>
 この句は列を<em class="firstterm">IDENTITY列</em>として作成します。
-それには暗示的なシーケンスが紐付けられ、新しい行のその列には紐付けられたシーケンスから取られた値が自動的に入ります。
+それには暗黙のシーケンスが紐付けられ、新しい行のその列には紐付けられたシーケンスから取られた値が自動的に入ります。
+そのような列は暗黙的に<code class="literal">NOT NULL</code>です。
      </p><p>
 <span class="original">
       The clauses &lt;literal&gt;ALWAYS&lt;/literal&gt; and &lt;literal&gt;BY DEFAULT&lt;/literal&gt;
@@ -979,6 +992,7 @@ TRUEまたはUNKNOWNと評価される式は成功します。
 </span>
 <code class="literal">UNIQUE</code>制約は、テーブルの1つまたは複数の列からなるグループが、一意な値のみを持つことができることを指定します。
 一意性テーブル制約の動作は一意性列制約と同じですが、さらに複数列にまたがる機能を持ちます。
+それゆえ、制約は2つの行はその列の少なくとも1つが異なることを強制します。
      </p><p>
 <span class="original">
       For the purpose of a unique constraint, null values are not
@@ -992,8 +1006,8 @@ TRUEまたはUNKNOWNと評価される式は成功します。
       primary key constraint defined for the table.  (Otherwise, redundant
       unique constraints will be discarded.)
 </span>
-それぞれの一意性テーブル制約には、そのテーブルの他の一意性制約もしくは主キー制約によって指定された列の集合とは、異なる名前の列の集合を指定しなければなりません
-（同じ名前を指定すると、同じ制約が2回現れるだけになります）。
+それぞれの一意性制約には、そのテーブルの他の一意性制約もしくは主キー制約によって指定された列の集合とは、異なる列の集合を指定しなければなりません。
+（そうでなければ、余分な一意性制約は捨てられます。）
      </p><p>
 <span class="original">
       When establishing a unique constraint for a multi-level partition
@@ -1003,8 +1017,11 @@ TRUEまたはUNKNOWNと評価される式は成功します。
 </span>
 複数レベルのパーティション階層に一意性制約を設定するとき、対象パーティションテーブル、および全ての子孫のパーティションテーブルの、パーティションキー内の全ての列が制約定義に含まれなくてはなりません。
      </p><p>
+<span class="original">
       Adding a unique constraint will automatically create a unique btree
       index on the column or group of columns used in the constraint.
+</span>
+一意性制約を加えると、制約で使われている列や列のグループに一意性btreeインデックスが自動的に作られます。
      </p><p>
 <span class="original">
       The optional &lt;literal&gt;INCLUDE&lt;/literal&gt; clause adds to that index
@@ -1016,11 +1033,10 @@ TRUEまたはUNKNOWNと評価される式は成功します。
       (e.g., &lt;literal&gt;DROP COLUMN&lt;/literal&gt;) can cause cascaded constraint and
       index deletion.
 </span>
-一意性制約を加えると、制約で使われている列や列のグループに一意性btreeインデックスが自動的に作られます。
-省略可能な<code class="literal">INCLUDE</code>句はインデックスに一意性を強要されない列を1つまたは複数、追加します。
+省略可能な<code class="literal">INCLUDE</code>句はインデックスに単に<span class="quote">「<span class="quote">ペイロード</span>」</span>である列を1つまたは複数、追加します。一意性はその列には強要されず、その列に基づいてインデックスが検索されることはありません。
+しかしながら、インデックスオンリースキャンでは取り出すことができます。
 含めた（INCLUDEした）列に制約は強制されませんが、依存はしていることに注意してください。
 このため、これらの列に対する一部の操作（例えば<code class="literal">DROP COLUMN</code>）は制約の連鎖とインデックスの削除をひき起こすことがあります。
-
      </p></dd><dt><span class="term"><code class="literal">PRIMARY KEY</code> （列制約）<br /></span><span class="term"><code class="literal">PRIMARY KEY ( <em class="replaceable"><code>column_name</code></em> [, ... ] )</code>
 <span class="original">
     &lt;optional&gt; &lt;literal&gt;INCLUDE ( &lt;replaceable class="parameter"&gt;column_name&lt;/replaceable&gt; [, ...])&lt;/literal&gt; &lt;/optional&gt; (table constraint)&lt;/term&gt;
@@ -1052,16 +1068,23 @@ TRUEまたはUNKNOWNと評価される式は成功します。
       about the design of the schema, since a primary key implies that other
       tables can rely on this set of columns as a unique identifier for rows.
 </span>
-<code class="literal">PRIMARY KEY</code>は<code class="literal">UNIQUE</code>と<code class="literal">NOT NULL</code>の組み合わせと同じデータ制約を課しますが、列の集合を主キーと指定することは、スキーマの設計についてのメタデータを提供することにもなります。
+<code class="literal">PRIMARY KEY</code>は<code class="literal">UNIQUE</code>と<code class="literal">NOT NULL</code>の組み合わせと同じデータ制約を課します。
+ですが、列の集合を主キーと指定することは、スキーマの設計についてのメタデータを提供することにもなります。
 なぜなら、主キーであることは、行を一意に特定するものとして、他のテーブルがその列の集合を当てにして良い、ということを意味するからです。
      </p><p>
-      When placed on a partitioned table, <code class="literal">PRIMARY KEY</code>
+<span class="original">
+      When placed on a partitioned table, &lt;literal&gt;PRIMARY KEY&lt;/literal&gt;
       constraints share the restrictions previously described
-      for <code class="literal">UNIQUE</code> constraints.
+      for &lt;literal&gt;UNIQUE&lt;/literal&gt; constraints.
+</span>
+パーティションテーブルに設定すると、<code class="literal">PRIMARY KEY</code>制約は、以前述べた制限を<code class="literal">UNIQUE</code>制約と共有します。
      </p><p>
-      Adding a <code class="literal">PRIMARY KEY</code> constraint will automatically
+<span class="original">
+      Adding a &lt;literal&gt;PRIMARY KEY&lt;/literal&gt; constraint will automatically
       create a unique btree index on the column or group of columns used in the
       constraint.
+</span>
+<code class="literal">PRIMARY KEY</code>制約を追加すると、制約で使用する列や列のグループに一意性のbtreeインデックスが自動的に作られます。
      </p><p>
 <span class="original">
       The optional &lt;literal&gt;INCLUDE&lt;/literal&gt; clause adds to that index
@@ -1073,10 +1096,10 @@ TRUEまたはUNKNOWNと評価される式は成功します。
       (e.g., &lt;literal&gt;DROP COLUMN&lt;/literal&gt;) can cause cascaded constraint and
       index deletion.
 </span>
-<code class="literal">PRIMARY KEY</code>制約を追加すると、制約で使用する列や列のグループに一意性のbtreeインデックスが自動的に作られます。
-省略可能な<code class="literal">INCLUDE</code>句はインデックスの非キー部分に含める列のリストを指定できます。
+省略可能な<code class="literal">INCLUDE</code>句はインデックスに単に<span class="quote">「<span class="quote">ペイロード</span>」</span>である列を1つまたは複数、追加します。一意性はその列には強要されず、その列に基づいてインデックスが検索されることはありません。
+しかしながら、インデックスオンリースキャンでは取り出すことができます。
 含めた列に一意性は強制されませんが、制約はこれらに依存はしています。
-このため、これらの含められた列に対する一部の操作（例えば<code class="literal">DROP COLUMN</code>）は制約の連鎖とインデックスの削除をひき起こすことがあります。
+このため、これらの列に対する一部の操作（例えば<code class="literal">DROP COLUMN</code>）は制約の連鎖とインデックスの削除をひき起こすことがあります。
      </p></dd><dt id="SQL-CREATETABLE-EXCLUDE"><span class="term"><code class="literal">EXCLUDE [ USING <em class="replaceable"><code>index_method</code></em> ] ( <em class="replaceable"><code>exclude_element</code></em> WITH <em class="replaceable"><code>operator</code></em> [, ... ] ) <em class="replaceable"><code>index_parameters</code></em> [ WHERE ( <em class="replaceable"><code>predicate</code></em> ) ]</code></span></dt><dd><p>
 <span class="original">
       The &lt;literal&gt;EXCLUDE&lt;/literal&gt; clause defines an exclusion
@@ -1286,7 +1309,7 @@ predicateの前後に括弧が必要であることに注意して下さい。
 </span>
 制約を遅延させることが可能かどうかを制御します。
 遅延不可の制約は各コマンドの後すぐに検査されます。
-遅延可能な制約の検査は、（<a class="xref" href="sql-set-constraints.html" title="SET CONSTRAINTS"><span class="refentrytitle">SET CONSTRAINTS</span></a>コマンドを使用して）トランザクションの終了時まで遅延させることができます。
+遅延可能な制約の検査は、（<a class="link" href="sql-set-constraints.html" title="SET CONSTRAINTS"><code class="command">SET CONSTRAINTS</code></a>コマンドを使用して）トランザクションの終了時まで遅延させることができます。
 <code class="literal">NOT DEFERRABLE</code>がデフォルトです。
 現在、<code class="literal">UNIQUE</code>、<code class="literal">PRIMARY KEY</code>、<code class="literal">EXCLUDE</code>、<code class="literal">REFERENCES</code>（外部キー）制約のみがこの句を受け付けることができます。
 <code class="literal">NOT NULL</code>および <code class="literal">CHECK</code>制約は遅延させることができません。
@@ -1305,7 +1328,7 @@ predicateの前後に括弧が必要であることに注意して下さい。
 制約が<code class="literal">INITIALLY IMMEDIATE</code>の場合、各文の実行後に検査されます。
 これがデフォルトです。
 制約が<code class="literal">INITIALLY DEFERRED</code>の場合、トランザクションの終了時にのみ検査されます。
-制約検査の時期は<a class="xref" href="sql-set-constraints.html" title="SET CONSTRAINTS"><span class="refentrytitle">SET CONSTRAINTS</span></a>コマンドを使用して変更することができます。
+制約検査の時期は<a class="link" href="sql-set-constraints.html" title="SET CONSTRAINTS"><code class="command">SET CONSTRAINTS</code></a>コマンドを使用して変更することができます。
      </p></dd><dt id="SQL-CREATETABLE-METHOD"><span class="term"><code class="literal">USING <em class="replaceable"><code>method</code></em></code></span></dt><dd><p>
 <span class="original">
       This optional clause specifies the table access method to use to store
@@ -1364,7 +1387,7 @@ predicateの前後に括弧が必要であることに注意して下さい。
           is not cascaded to its partitions.
 </span>
 一時テーブル内の全ての行は、各トランザクションブロックの終わりで削除されます。
-実質的には、コミットの度に自動的に<a class="xref" href="sql-truncate.html" title="TRUNCATE"><span class="refentrytitle">TRUNCATE</span></a>が実行されます。
+実質的には、コミットの度に自動的に<a class="link" href="sql-truncate.html" title="TRUNCATE"><code class="command">TRUNCATE</code></a>が実行されます。
 パーティションテーブルに使われた場合、そのパーティションに連鎖適用はされません。
          </p></dd><dt><span class="term"><code class="literal">DROP</code></span></dt><dd><p>
 <span class="original">
@@ -1520,19 +1543,28 @@ falseの場合、トランザクションIDの周回問題を回避するため�
      </p></dd><dt id="RELOPTION-VACUUM-INDEX-CLEANUP"><span class="term"><code class="literal">vacuum_index_cleanup</code>, <code class="literal">toast.vacuum_index_cleanup</code> (<code class="type">enum</code>)
     <a id="id-1.9.3.85.6.3.4.5.1.4" class="indexterm"></a>
     </span></dt><dd><p>
-      Forces or disables index cleanup when <code class="command">VACUUM</code>
+<span class="original">
+      Forces or disables index cleanup when &lt;command&gt;VACUUM&lt;/command&gt;
       is run on this table.  The default value is
-      <code class="literal">AUTO</code>.  With <code class="literal">OFF</code>, index
-      cleanup is disabled, with <code class="literal">ON</code> it is enabled,
-      and with <code class="literal">AUTO</code> a decision is made dynamically,
-      each time <code class="command">VACUUM</code> runs.  The dynamic behavior
-      allows <code class="command">VACUUM</code> to avoid needlessly scanning
+      &lt;literal&gt;AUTO&lt;/literal&gt;.  With &lt;literal&gt;OFF&lt;/literal&gt;, index
+      cleanup is disabled, with &lt;literal&gt;ON&lt;/literal&gt; it is enabled,
+      and with &lt;literal&gt;AUTO&lt;/literal&gt; a decision is made dynamically,
+      each time &lt;command&gt;VACUUM&lt;/command&gt; runs.  The dynamic behavior
+      allows &lt;command&gt;VACUUM&lt;/command&gt; to avoid needlessly scanning
       indexes to remove very few dead tuples.  Forcibly disabling all
-      index cleanup can speed up <code class="command">VACUUM</code> very
+      index cleanup can speed up &lt;command&gt;VACUUM&lt;/command&gt; very
       significantly, but may also lead to severely bloated indexes if
       table modifications are frequent.  The
-      <code class="literal">INDEX_CLEANUP</code> parameter of <a class="link" href="sql-vacuum.html" title="VACUUM"><code class="command">VACUUM</code></a>, if
+      &lt;literal&gt;INDEX_CLEANUP&lt;/literal&gt; parameter of &lt;link
+       linkend="sql-vacuum"&gt;&lt;command&gt;VACUUM&lt;/command&gt;&lt;/link&gt;, if
       specified, overrides the value of this option.
+</span>
+このテーブルに<code class="command">VACUUM</code>が実行されたときのインデックスのクリーンアップを強制または無効にします。
+デフォルト値は<code class="literal">AUTO</code>です。
+<code class="literal">OFF</code>でインデックスのクリーンアップは無効になり、<code class="literal">ON</code>で有効に、<code class="literal">AUTO</code>でその時々の<code class="command">VACUUM</code>実行時に決定が動的に行なわれるようになります。
+動的な動作により、ほとんどない無効タプル削除するために必要もないのにインデックスをスキャンしてしまうことを<code class="command">VACUUM</code>が避けられるようになります。
+インデックスのクリーンアップを強制的にすべて無効にすることで、<code class="command">VACUUM</code>を大幅に高速化できますが、テーブルの変更が頻繁である場合には深刻なインデックスの肥大化も生じさせるかもしれません。
+<a class="link" href="sql-vacuum.html" title="VACUUM"><code class="command">VACUUM</code></a>の<code class="literal">INDEX_CLEANUP</code>パラメータは、指定されていたなら本オプションを上書きします。
      </p></dd><dt id="RELOPTION-VACUUM-TRUNCATE"><span class="term"><code class="literal">vacuum_truncate</code>, <code class="literal">toast.vacuum_truncate</code> (<code class="type">boolean</code>)
     <a id="id-1.9.3.85.6.3.4.6.1.4" class="indexterm"></a>
     </span></dt><dd><p>
@@ -1551,7 +1583,7 @@ falseの場合、トランザクションIDの周回問題を回避するため�
 デフォルト値は<code class="literal">true</code>です。
 <code class="literal">true</code>の場合、<code class="command">VACUUM</code>と自動バキュームは切り捨てを行い切り捨てられたページのディスク領域はオペレーティングシステムに返されます。
 切り捨てにはテーブルに<code class="literal">ACCESS EXCLUSIVE</code>ロックが必要であることに注意してください。
-<a class="xref" href="sql-vacuum.html" title="VACUUM"><span class="refentrytitle">VACUUM</span></a>の<code class="literal">TRUNCATE</code>パラメータは、指定されていたなら本オプションを上書きします。
+<a class="link" href="sql-vacuum.html" title="VACUUM"><code class="command">VACUUM</code></a>の<code class="literal">TRUNCATE</code>パラメータは、指定されていたなら本オプションを上書きします。
      </p></dd><dt id="RELOPTION-AUTOVACUUM-VACUUM-THRESHOLD"><span class="term"><code class="literal">autovacuum_vacuum_threshold</code>, <code class="literal">toast.autovacuum_vacuum_threshold</code> (<code class="type">integer</code>)
     <a id="id-1.9.3.85.6.3.4.7.1.4" class="indexterm"></a>
     </span></dt><dd><p>

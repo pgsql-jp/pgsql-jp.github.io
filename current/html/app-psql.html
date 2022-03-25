@@ -682,7 +682,7 @@ testdb=&gt;
     &lt;link linkend="sql-listen"&gt;&lt;command&gt;LISTEN&lt;/command&gt;&lt;/link&gt; and
     &lt;link linkend="sql-notify"&gt;&lt;command&gt;NOTIFY&lt;/command&gt;&lt;/link&gt;.
 </span>
-また、コマンドが実行される度に、<span class="application">psql</span>は<a class="xref" href="sql-listen.html" title="LISTEN"><span class="refentrytitle">LISTEN</span></a>と<a class="xref" href="sql-notify.html" title="NOTIFY"><span class="refentrytitle">NOTIFY</span></a>によって生成された非同期通知イベントを検査します。
+また、コマンドが実行される度に、<span class="application">psql</span>は<a class="link" href="sql-listen.html" title="LISTEN"><code class="command">LISTEN</code></a>と<a class="link" href="sql-notify.html" title="NOTIFY"><code class="command">NOTIFY</code></a>によって生成された非同期通知イベントを検査します。
     </p><p>
 <span class="original">
     While C-style block comments are passed to the server for
@@ -854,12 +854,15 @@ Cの形式のブロックコメントは、サーバに送信され、サーバ�
 接続のパラメータは、位置の構文(1つ以上のデータベース名、ユーザ、ホスト、ポート)、あるいは<em class="replaceable"><code>conninfo</code></em>接続文字列で指定できます。後者の詳細は<a class="xref" href="libpq-connect.html#LIBPQ-CONNSTRING" title="34.1.1. 接続文字列">34.1.1</a>で説明します。
 引数が与えられなければ、新しい接続は以前と同じパラメータを使って作られます。
         </p><p>
+<span class="original">
         Specifying any
-        of <em class="replaceable"><code>dbname</code></em>,
-        <em class="replaceable"><code>username</code></em>,
-        <em class="replaceable"><code>host</code></em> or
-        <em class="replaceable"><code>port</code></em>
-        as <code class="literal">-</code> is equivalent to omitting that parameter.
+        of &lt;replaceable class="parameter"&gt;dbname&lt;/replaceable&gt;,
+        &lt;replaceable class="parameter"&gt;username&lt;/replaceable&gt;,
+        &lt;replaceable class="parameter"&gt;host&lt;/replaceable&gt; or
+        &lt;replaceable class="parameter"&gt;port&lt;/replaceable&gt;
+        as &lt;literal&gt;-&lt;/literal&gt; is equivalent to omitting that parameter.
+</span>
+<em class="replaceable"><code>dbname</code></em>、<em class="replaceable"><code>username</code></em>、<em class="replaceable"><code>host</code></em>、<em class="replaceable"><code>port</code></em>のいずれについても<code class="literal">-</code>を指定するのは、パラメータを省略するのと同じになります。
         </p><p>
 <span class="original">
         The new connection can re-use connection parameters from the previous
@@ -886,6 +889,7 @@ Cの形式のブロックコメントは、サーバに送信され、サーバ�
 第一引数で<code class="literal">-reuse-previous=on</code>あるいは<code class="literal">-reuse-previous=off</code>を渡すことで、このデフォルトと異なる動作をさせることができます。
 パラメータが再利用される場合、文字列として明示的に指定されなかったパラメータは既存の接続のパラメータから取得されます。
 例外は、<em class="replaceable"><code>host</code></em>設定が位置の構文を使った以前の値から変更された場合に、既存の接続のパラメータにある<em class="replaceable"><code>hostaddr</code></em>設定が削除されることです。
+また、既存の接続で使われたパスワードは、ユーザ、ホスト、ポート設定が変更されていない場合にのみ再利用されます。
 コマンドで特定のパラメータを指定せず、かつ再利用もしない場合は、<span class="application">libpq</span>のデフォルトが使用されます。
         </p><p>
 <span class="original">
@@ -913,8 +917,11 @@ Cの形式のブロックコメントは、サーバに送信され、サーバ�
 </span>
 新規接続に成功した場合、以前の接続は閉じられます。
 接続の試行が（ユーザ名の間違いやアクセス拒否などの理由で）失敗した場合、<span class="application">psql</span>が対話式モードである場合、それまでの接続が保持されます。
-非対話式スクリプトを実行している場合は、処理はエラーとなり、即座に停止します。
+非対話式スクリプトを実行している場合は、古い接続は閉じられエラーが報告されます。
+これはスクリプトを終了させるかもしれませんし、させないかもしれません。終了させない場合、別の<code class="literal">\connect</code>コマンドが実行に成功するまで、データベースにアクセスするコマンドはすべて失敗します。
 この実装の違いは、対話モードでは入力ミスに対するユーザの利便性を考慮し、非対話モードではスクリプトによって間違ったデータベースを操作することを防ぐための安全策を考慮した結果決められました。
+<code class="literal">\connect</code>コマンドがパラメータの再利用を試す場合には、再利用する値は必ず最後に接続に成功したものであり、その後で試して失敗したものではないことに注意してください。
+しかしながら、非対話モードで<code class="literal">\connect</code>が失敗した場合には、スクリプトは失敗した<code class="literal">\connect</code>から再利用する値を得ようとしますので、パラメータを後で再利用できません。
         </p><p>
 <span class="original">
         Examples:
@@ -981,7 +988,7 @@ Cの形式のブロックコメントは、サーバに送信され、サーバ�
         privileges are required.
 </span>
 フロントエンド（クライアント）コピーを行います。
-これは<a class="xref" href="sql-copy.html" title="COPY"><span class="refentrytitle">COPY</span></a> <acronym class="acronym">SQL</acronym>コマンドを実行する操作ですが、サーバで指定ファイルに対する読み込みまたは書き込みを行うのではなく、<span class="application">psql</span>がファイルの読み書きや、サーバとローカルファイルシステム間のデータ送信を行います。
+これは<a class="link" href="sql-copy.html" title="COPY"><code class="command">COPY</code></a> <acronym class="acronym">SQL</acronym>コマンドを実行する操作ですが、サーバで指定ファイルに対する読み込みまたは書き込みを行うのではなく、<span class="application">psql</span>がファイルの読み書きや、サーバとローカルファイルシステム間のデータ送信を行います。
 この場合、ファイルへのアクセス権限はサーバではなくローカルユーザのものを使用するので、SQLのスーパーユーザ権限は必要ありません。
         </p><p>
 <span class="original">
@@ -1026,8 +1033,8 @@ Cの形式のブロックコメントは、サーバに送信され、サーバ�
         and neither variable interpolation nor backquote expansion are
         performed in the arguments.
 </span>
-このコマンドの構文は<acronym class="acronym">SQL</acronym>の<a class="xref" href="sql-copy.html" title="COPY"><span class="refentrytitle">COPY</span></a>コマンドに似ています。
-データの入力元と出力先以外のすべてのオプションは<a class="xref" href="sql-copy.html" title="COPY"><span class="refentrytitle">COPY</span></a>と同じです。
+このコマンドの構文は<acronym class="acronym">SQL</acronym>の<a class="link" href="sql-copy.html" title="COPY"><code class="command">COPY</code></a>コマンドに似ています。
+データの入力元と出力先以外のすべてのオプションは<code class="command">COPY</code>と同じです。
 このため<code class="command">\copy</code>メタコマンドには特別な解析規則が適用されていることに注意してください。
 他のほとんどのメタコマンドとは異なり、行の残り部分の全体は常に<code class="command">\copy</code>の引数として解釈され、引数内の変数の置換や逆引用符の展開は行われません。
         </p><div class="tip"><h3 class="title">ヒント</h3><p>
@@ -1181,7 +1188,7 @@ Cの形式のブロックコメントは、サーバに送信され、サーバ�
         if the relation has an access method.
 </span>
 <code class="literal">\d+</code>というコマンド形式も同一ですが、より多くの情報を表示します。
-こちらでは、テーブルの列に関連付けられたコメントやテーブルにOIDが存在するかどうか、リレーションがビューの場合はビューの定義、デフォルトと異なる<a class="link" href="sql-altertable.html#SQL-ALTERTABLE-REPLICA-IDENTITY">replica identity</a>の設定も表示されます。
+こちらでは、テーブルの列に関連付けられたコメントやテーブルにOIDが存在するかどうか、リレーションがビューの場合はビューの定義、デフォルトと異なる<a class="link" href="sql-altertable.html#SQL-ALTERTABLE-REPLICA-IDENTITY">replica identity</a>の設定、リレーションにアクセスメソッドがあるなら<a class="link" href="sql-create-access-method.html" title="CREATE ACCESS METHOD">アクセスメソッド</a>名も表示されます。
         </p><p>
 <span class="original">
         By default, only user-created objects are shown;  supply a
@@ -1385,7 +1392,7 @@ Cの形式のブロックコメントは、サーバに送信され、サーバ�
         linkend="sql-comment"&gt;&lt;command&gt;COMMENT&lt;/command&gt;&lt;/link&gt;
         &lt;acronym&gt;SQL&lt;/acronym&gt; command.
 </span>
-オブジェクトの説明は<a class="xref" href="sql-comment.html" title="COMMENT"><span class="refentrytitle">COMMENT</span></a> <acronym class="acronym">SQL</acronym>コマンドを使用して作成することができます。
+オブジェクトの説明は<a class="link" href="sql-comment.html" title="COMMENT"><code class="command">COMMENT</code></a> <acronym class="acronym">SQL</acronym>コマンドを使用して作成することができます。
        </p></dd><dt><span class="term"><code class="literal">\dD[S+] [ <a class="link" href="app-psql.html#APP-PSQL-PATTERNS" title="パターン"><em class="replaceable"><code>pattern</code></em></a> ]</code></span></dt><dd><p>
 <span class="original">
         Lists domains. If &lt;replaceable
@@ -1421,7 +1428,7 @@ Cの形式のブロックコメントは、サーバに送信され、サーバ�
         privileges.  The meaning of the privilege display is explained in
         &lt;xref linkend="ddl-priv"/&gt;.
 </span>
-<a class="xref" href="sql-alterdefaultprivileges.html" title="ALTER DEFAULT PRIVILEGES"><span class="refentrytitle">ALTER DEFAULT PRIVILEGES</span></a>コマンドを使用して、デフォルトのアクセス権限を設定します。
+<a class="link" href="sql-alterdefaultprivileges.html" title="ALTER DEFAULT PRIVILEGES"><code class="command">ALTER DEFAULT PRIVILEGES</code></a>コマンドを使用して、デフォルトのアクセス権限を設定します。
 権限表示の意味は<a class="xref" href="ddl-priv.html" title="5.7. 権限">5.7</a>で説明します。
         </p></dd><dt><span class="term"><code class="literal">\dE[S+] [ <a class="link" href="app-psql.html#APP-PSQL-PATTERNS" title="パターン"><em class="replaceable"><code>pattern</code></em></a> ]</code><br /></span><span class="term"><code class="literal">\di[S+] [ <a class="link" href="app-psql.html#APP-PSQL-PATTERNS" title="パターン"><em class="replaceable"><code>pattern</code></em></a> ]</code><br /></span><span class="term"><code class="literal">\dm[S+] [ <a class="link" href="app-psql.html#APP-PSQL-PATTERNS" title="パターン"><em class="replaceable"><code>pattern</code></em></a> ]</code><br /></span><span class="term"><code class="literal">\ds[S+] [ <a class="link" href="app-psql.html#APP-PSQL-PATTERNS" title="パターン"><em class="replaceable"><code>pattern</code></em></a> ]</code><br /></span><span class="term"><code class="literal">\dt[S+] [ <a class="link" href="app-psql.html#APP-PSQL-PATTERNS" title="パターン"><em class="replaceable"><code>pattern</code></em></a> ]</code><br /></span><span class="term"><code class="literal">\dv[S+] [ <a class="link" href="app-psql.html#APP-PSQL-PATTERNS" title="パターン"><em class="replaceable"><code>pattern</code></em></a> ]</code></span></dt><dd><p>
 <span class="original">
@@ -1536,6 +1543,9 @@ Cの形式のブロックコメントは、サーバに送信され、サーバ�
 関数とその結果のデータ型、引数のデータ型、および、<span class="quote">「<span class="quote">agg</span>」</span> (集約)、<span class="quote">「<span class="quote">normal</span>」</span>、<span class="quote">「<span class="quote">procedure</span>」</span>、<span class="quote">「<span class="quote">trigger</span>」</span>、<span class="quote">「<span class="quote">window</span>」</span>で分類される関数の種類の一覧を表示します。
 特定種類の関数のみを表示させるには、対応する文字<code class="literal">a</code>、<code class="literal">n</code>、<code class="literal">p</code>、<code class="literal">t</code>、<code class="literal">w</code>をコマンドに付けて下さい。
 <em class="replaceable"><code>pattern</code></em>が指定されている場合は、そのパターンに名前がマッチする関数のみが表示されます。
+追加の引数は、型名のパターンで、関数の第1、第2などの引数の型名にマッチします。
+(マッチする関数は指定したものよりも多くの引数を取るかもしれません。
+それを防ぐには、<em class="replaceable"><code>arg_pattern</code></em>の最後にダッシュ<code class="literal">-</code>を書いてください。)
 デフォルトではユーザが作成したオブジェクトのみが表示されます。
 システムオブジェクトを含めるためには、パターンまたは<code class="literal">S</code>修飾子を付与してください。
 <code class="literal">\df+</code>構文が使われた場合、各関数の、揮発性、並列処理での安全性、所有者、セキュリティ分類、アクセス権限、言語、ソースコードや説明を含む付加的情報も表示されます。
@@ -1665,6 +1675,9 @@ Cの形式のブロックコメントは、サーバに送信され、サーバ�
 </span>
 演算子と、その演算項目と結果の型を一覧表示します。
 <em class="replaceable"><code>pattern</code></em>を指定すると、パターンに名前がマッチする演算子のみが表示されます。
+<em class="replaceable"><code>arg_pattern</code></em>を1つ指定すると、パターンに右辺の引数の型名がマッチする前置演算子のみが表示されます。
+<em class="replaceable"><code>arg_pattern</code></em>を2つ指定すると、パターンに引数の型名がマッチする二項演算子のみが表示されます。
+(あるいは、単項演算子の使われない引数に対して<code class="literal">-</code>と書いてください。)
 デフォルトではユーザが作成したオブジェクトのみが表示されます。
 システムオブジェクトを含めるためには、パターンまたは<code class="literal">S</code>修飾子を付与してください。
 コマンド名に<code class="literal">+</code>を付加すると、各演算子についての追加情報が表示されますが、現在はその元になっている関数の名前だけです。
@@ -1707,7 +1720,7 @@ Cの形式のブロックコメントは、サーバに送信され、サーバ�
         privilege display is explained in
         &lt;xref linkend="ddl-priv"/&gt;.
 </span>
-アクセス権限の設定には<a class="xref" href="sql-grant.html" title="GRANT"><span class="refentrytitle">GRANT</span></a>コマンドと<a class="xref" href="sql-revoke.html" title="REVOKE"><span class="refentrytitle">REVOKE</span></a>コマンドが使われます。
+アクセス権限の設定には<a class="link" href="sql-grant.html" title="GRANT"><code class="command">GRANT</code></a>コマンドと<a class="link" href="sql-revoke.html" title="REVOKE"><code class="command">REVOKE</code></a>コマンドが使われます。
 権限の表示に関する意味は<a class="xref" href="ddl-priv.html" title="5.7. 権限">5.7</a>で説明します。
         </p></dd><dt><span class="term"><code class="literal">\dP[itn+] [ <a class="link" href="app-psql.html#APP-PSQL-PATTERNS" title="パターン"><em class="replaceable"><code>pattern</code></em></a> ]</code></span></dt><dd><p>
 <span class="original">
@@ -1764,7 +1777,7 @@ Cの形式のブロックコメントは、サーバに送信され、サーバ�
         commands are used to define per-role and per-database configuration
         settings.
 </span>
-ロール単位およびデータベース単位の設定を定義するには<a class="xref" href="sql-alterrole.html" title="ALTER ROLE"><span class="refentrytitle">ALTER ROLE</span></a>および<a class="xref" href="sql-alterdatabase.html" title="ALTER DATABASE"><span class="refentrytitle">ALTER DATABASE</span></a>コマンドを使用します。
+ロール単位およびデータベース単位の設定を定義するには<a class="link" href="sql-alterrole.html" title="ALTER ROLE"><code class="command">ALTER ROLE</code></a>および<a class="link" href="sql-alterdatabase.html" title="ALTER DATABASE"><code class="command">ALTER DATABASE</code></a>コマンドを使用します。
         </p></dd><dt><span class="term"><code class="literal">\dRp[+] [ <a class="link" href="app-psql.html#APP-PSQL-PATTERNS" title="パターン"><em class="replaceable"><code>pattern</code></em></a> ]</code></span></dt><dd><p>
 <span class="original">
         Lists replication publications.
@@ -1840,18 +1853,27 @@ Cの形式のブロックコメントは、サーバに送信され、サーバ�
 <em class="replaceable"><code>pattern</code></em>を指定すると、パターンにマッチする名前の拡張のみを表示します。
 <code class="literal">\dx+</code>形式が使用された場合、マッチする拡張それぞれについて拡張に属するすべてのオブジェクトが表示されます。
         </p></dd><dt><span class="term"><code class="literal">\dX [ <a class="link" href="app-psql.html#APP-PSQL-PATTERNS" title="パターン"><em class="replaceable"><code>pattern</code></em></a> ]</code></span></dt><dd><p>
+<span class="original">
         Lists extended statistics.
-        If <em class="replaceable"><code>pattern</code></em>
+        If &lt;replaceable class="parameter"&gt;pattern&lt;/replaceable&gt;
         is specified, only those extended statistics whose names match the
         pattern are listed.
+</span>
+拡張統計情報を一覧表示します。
+<em class="replaceable"><code>pattern</code></em>が指定されている場合は、そのパターンに名前がマッチする拡張統計情報のみが表示されます。
         </p><p>
+<span class="original">
         The status of each kind of extended statistics is shown in a column
         named after its statistic kind (e.g. Ndistinct).
         "defined" means that it was requested when creating the statistics,
         and NULL means it wasn't requested.
-        You can use pg_stats_ext if you'd like to know whether <a class="link" href="sql-analyze.html" title="ANALYZE">
-        <code class="command">ANALYZE</code></a> was run and statistics are available to the
+        You can use pg_stats_ext if you'd like to know whether &lt;link linkend="sql-analyze"&gt;
+        &lt;command&gt;ANALYZE&lt;/command&gt;&lt;/link&gt; was run and statistics are available to the
         planner.
+</span>
+拡張統計情報の各種の状態は、その統計の種類(例えば、Ndistinct)にちなんだ名前の列に表示されます。
+"defined"はその統計情報の作成が要求されたことを意味し、NULLは要求されていないことを意味します。
+<a class="link" href="sql-analyze.html" title="ANALYZE"><code class="command">ANALYZE</code></a>が実行され、統計情報がプランナで利用可能であるかどうかを知るには、pg_stats_extが使えます。
         </p></dd><dt><span class="term"><code class="literal">\dy[+] [ <a class="link" href="app-psql.html#APP-PSQL-PATTERNS" title="パターン"><em class="replaceable"><code>pattern</code></em></a> ]</code></span></dt><dd><p>
 <span class="original">
         Lists event triggers.
@@ -1892,7 +1914,8 @@ Cの形式のブロックコメントは、サーバに送信され、サーバ�
         redisplayed.  Type semicolon or &lt;literal&gt;\g&lt;/literal&gt; to send it,
         or &lt;literal&gt;\r&lt;/literal&gt; to cancel it by clearing the query buffer.
 </span>
-次に、問い合わせバッファの新しい内容が、<span class="application">psql</span>の通常の規則に従い、全体を1行として再解析されます。
+ファイルや以前の問い合わせを編集していて、ファイルを変更せずにエディタを終了した場合には、問い合わせバッファはクリアされます。
+そうでなければ、問い合わせバッファの新しい内容が、<span class="application">psql</span>の通常の規則に従い、全体を1行として再解析されます。
 完全な問い合わせはすべて即座に実行されます。
 つまり、問い合わせバッファにセミコロンが含まれるか、セミコロンで終わっている場合、そこまでの部分すべてが実行され、問い合わせバッファから削除されます。
 問い合わせバッファ内に残ったものはすべて再表示されます。
@@ -1965,7 +1988,8 @@ Tue Oct 26 21:40:57 CEST 1999
 </span>
 このコマンドは指定された関数やプロシージャの定義を<code class="command">CREATE OR REPLACE FUNCTION</code>や<code class="command">CREATE OR REPLACE PROCEDURE</code>コマンド構文で取り出し、編集します。
 編集は<code class="literal">\edit</code>と同様の方法で行われます。
-エディタ終了後、更新されたコマンドはセミコロンを付けていれば即座に実行されます。
+保存しないでエディタを終了すると、その文は捨てられます。
+保存してエディタを終了すると、更新されたコマンドはセミコロンを付けていれば即座に実行されます。
 そうでなければ再表示されます。送信するにはセミコロンあるいは<code class="literal">\g</code>を、キャンセルするには<code class="literal">\r</code>を入力してください。
         </p><p>
 <span class="original">
@@ -2033,7 +2057,8 @@ Tue Oct 26 21:40:57 CEST 1999
 </span>
 このコマンドは、指定したビューの定義を<code class="command">CREATE OR REPLACE VIEW</code>コマンドの形式で取得して、編集します。
 編集は<code class="literal">\edit</code>の場合と同じ方法で行われます。
-エディタ終了後、更新されたコマンドはセミコロンを付けていれば即座に実行されます。
+保存しないでエディタを終了すると、その文は捨てられます。
+保存してエディタを終了すると、更新されたコマンドはセミコロンを付けていれば即座に実行されます。
 そうでなければ再表示されます。送信するにはセミコロンあるいは<code class="literal">\g</code>を、キャンセルするには<code class="literal">\r</code>を入力してください。
         </p><p>
 <span class="original">
@@ -3119,7 +3144,7 @@ null値の代わりに表示する文字列を設定します。
         This command is unrelated to the &lt;acronym&gt;SQL&lt;/acronym&gt;
         command &lt;link linkend="sql-set"&gt;&lt;command&gt;SET&lt;/command&gt;&lt;/link&gt;.
 </span>
-このコマンドは<acronym class="acronym">SQL</acronym>の<a class="xref" href="sql-set.html" title="SET"><span class="refentrytitle">SET</span></a>コマンドとは関係ありません。
+このコマンドは<acronym class="acronym">SQL</acronym>の<a class="link" href="sql-set.html" title="SET"><code class="command">SET</code></a>コマンドとは関係ありません。
         </p></div></dd><dt><span class="term"><code class="literal">\setenv <em class="replaceable"><code>name</code></em> [ <em class="replaceable"><code>value</code></em> ]</code></span></dt><dd><p>
 <span class="original">
         Sets the environment variable &lt;replaceable
@@ -3764,9 +3789,13 @@ SQLキーワードを補完する時に大文字小文字のどちらを使用�
 この変数が<code class="literal">true</code>に設定されていれば、テーブルのアクセスメソッドの詳細は表示されません。
 これは主にリグレッションテストで有用です。
         </p></dd><dt><span class="term"><code class="varname">HIDE_TOAST_COMPRESSION</code></span></dt><dd><p>
-         If this variable is set to <code class="literal">true</code>, column
+<span class="original">
+         If this variable is set to &lt;literal&gt;true&lt;/literal&gt;, column
          compression method details are not displayed. This is mainly
          useful for regression tests.
+</span>
+この変数が<code class="literal">true</code>に設定されていれば、列の圧縮法の詳細は表示されません。
+これは主にリグレッションテストで有用です。
         </p></dd><dt><span class="term"><code class="varname">HISTCONTROL</code></span></dt><dd><p>
 <span class="original">
          If this variable is set to &lt;literal&gt;ignorespace&lt;/literal&gt;,
@@ -4763,9 +4792,12 @@ first  | 4
 second | four
 </pre><p>
   </p><p>
-   Here is an example of using the <code class="command">\df</code> command to
-   find only functions with names matching <code class="literal">int*pl</code>
-   and whose second argument is of type <code class="type">bigint</code>:
+<span class="original">
+   Here is an example of using the &lt;command&gt;\df&lt;/command&gt; command to
+   find only functions with names matching &lt;literal&gt;int*pl&lt;/literal&gt;
+   and whose second argument is of type &lt;type&gt;bigint&lt;/type&gt;:
+</span>
+これは、<code class="command">\df</code>コマンドを使って、名前が<code class="literal">int*pl</code>にマッチし、2番目の引数の型が<code class="type">bigint</code>である関数のみを見つける例です。
 </p><pre class="programlisting">
 testdb=&gt; <strong class="userinput"><code>\df int*pl * bigint</code></strong>
                           List of functions
