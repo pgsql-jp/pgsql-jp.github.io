@@ -674,7 +674,7 @@ default:\
     system to run out of virtual memory.
 </span>
 Linuxでのデフォルトの仮想メモリの動作は<span class="productname">PostgreSQL</span>には最適ではありません。
-カーネルがメモリオーバーコミットを実装する方法のため、カーネルは、<span class="productname">PostgreSQL</span>や他のプロセスのメモリ要求がシステムの仮想メモリを枯渇させた場合、<span class="productname">PostgreSQL</span> postmaster （マスタサーバプロセス）を終了させる可能性があります。
+カーネルがメモリオーバーコミットを実装する方法のため、カーネルは、<span class="productname">PostgreSQL</span>や他のプロセスのメモリ要求がシステムの仮想メモリを枯渇させた場合、<span class="productname">PostgreSQL</span> postmaster （スーパバイザーサーバプロセス）を終了させる可能性があります。
    </p><p>
 <span class="original">
     If this happens, you will see a kernel message that looks like
@@ -815,8 +815,8 @@ export PG_OOM_ADJUST_VALUE=0
 </span>
 <span class="productname">PostgreSQL</span>のように、メモリの大きな連続チャンクを使用するとき、特に<a class="xref" href="runtime-config-resource.html#GUC-SHARED-BUFFERS">shared_buffers</a>の値が大きい場合に、huge pagesを使用するとオーバーヘッドが減少します。
 <span class="productname">PostgreSQL</span>でこの機能を有効にするには、<code class="varname">CONFIG_HUGETLBFS=y</code>および<code class="varname">CONFIG_HUGETLB_PAGE=y</code>としたカーネルが必要です。
-またカーネル設定<code class="varname">vm.nr_hugepages</code>を調整する必要もあるでしょう。
-必要なhuge pages数を見積もるには、huge pagesを有効にせずに<span class="productname">PostgreSQL</span>を起動し、<code class="filename">/proc</code>ファイルシステムを使用してpostmasterの無名共有セグメントサイズとシステムのhuge pageサイズの値をチェックします。
+また、要求される十分な量だけhuge pagesを提供するようにオペレーティングシステムを調整する必要があるでしょう。
+必要なhuge pages数を見積もるには、huge pagesを有効にせずに<span class="productname">PostgreSQL</span>を起動し、<code class="filename">/proc</code>と<code class="filename">/sys</code>ファイルシステムを使用してpostmasterの無名共有セグメントサイズとシステムのhuge pageサイズの値をチェックします。
 これは以下のような感じになるでしょう。
 </p><pre class="programlisting">
 $ <strong class="userinput"><code>head -1 $PGDATA/postmaster.pid</code></strong>
@@ -829,26 +829,40 @@ $ <strong class="userinput"><code>ls /sys/kernel/mm/hugepages</code></strong>
 hugepages-1048576kB  hugepages-2048kB
 </pre><p>
 
+<span class="original">
      In this example the default is 2MB, but you can also explicitly request
-     either 2MB or 1GB with <a class="xref" href="runtime-config-resource.html#GUC-HUGE-PAGE-SIZE">huge_page_size</a>.
+     either 2MB or 1GB with &lt;xref linkend="guc-huge-page-size"/&gt;.
 
-     Assuming <code class="literal">2MB</code> huge pages,
-     <code class="literal">6490428</code> / <code class="literal">2048</code> gives approximately
-     <code class="literal">3169.154</code>, so in this example we need at
-     least <code class="literal">3170</code> huge pages.  A larger setting would be
+     Assuming &lt;literal&gt;2MB&lt;/literal&gt; huge pages,
+     &lt;literal&gt;6490428&lt;/literal&gt; / &lt;literal&gt;2048&lt;/literal&gt; gives approximately
+     &lt;literal&gt;3169.154&lt;/literal&gt;, so in this example we need at
+     least &lt;literal&gt;3170&lt;/literal&gt; huge pages.  A larger setting would be
      appropriate if other programs on the machine also need huge pages.
      We can set this with:
+</span>
+この例ではデフォルトは2MBです。しかし、<a class="xref" href="runtime-config-resource.html#GUC-HUGE-PAGE-SIZE">huge_page_size</a>で明示的に2MBあるいは1GBを要求することができます。
+
+<code class="literal">2MB</code>のhuge pagesを想定すると、<code class="literal">6490428</code> / <code class="literal">2048</code>はおおよそ<code class="literal">3169.154</code>となり、この例では少なくとも<code class="literal">3170</code>のhuge pagesが必要となります。
+このマシンで他のプログラムもhuge pagesを必要とする場合には、より大きな値を設定するのが適切です。
+以下のようにして設定できます。
 </p><pre class="programlisting">
 # <strong class="userinput"><code>sysctl -w vm.nr_hugepages=3170</code></strong>
 </pre><p>
-     Don't forget to add this setting to <code class="filename">/etc/sysctl.conf</code>
+<span class="original">
+     Don't forget to add this setting to &lt;filename&gt;/etc/sysctl.conf&lt;/filename&gt;
      so that it is reapplied after reboots.  For non-default huge page sizes,
      we can instead use:
+</span>
+再起動後にこの設定が行われるように、<code class="filename">/etc/sysctl.conf</code>にこの設定を追加するのを忘れないようにしましょう。
+非標準のhuge pageサイズなら、代わりに以下のようにできます。
 </p><pre class="programlisting">
 # <strong class="userinput"><code>echo 3170 &gt; /sys/kernel/mm/hugepages/hugepages-2048kB/nr_hugepages</code></strong>
 </pre><p>
+<span class="original">
     It is also possible to provide these settings at boot time using
-    kernel parameters such as <code class="literal">hugepagesz=2M hugepages=3170</code>.
+    kernel parameters such as &lt;literal&gt;hugepagesz=2M hugepages=3170&lt;/literal&gt;.
+</span>
+<code class="literal">hugepagesz=2M hugepages=3170</code>のようにして、起動時にカーネルパラメータとしてこれらの設定を与えることもできます。
    </p><p>
 <span class="original">
     Sometimes the kernel is not able to allocate the desired number of huge
@@ -857,9 +871,9 @@ hugepages-1048576kB  hugepages-2048kB
     the machine's memory should be available to convert into huge pages.)
     To verify the huge page allocation situation for a given size, use:
 </span>
-時には、カーネルは求められた数のhuge pagesを割り当てることができないことがあるので、そのコマンドを繰り返すか、再起動する必要があるかもしれません。
+時には、断片化のためにカーネルは求められた数のhuge pagesを直ちには割り当てることができないことがあるので、そのコマンドを繰り返すか、再起動する必要があるかもしれません。
 （再起動の直後は、マシンのメモリの大部分はhuge pagesへの変更が可能なはずです。）
-huge pagesの割り当ての状況を確認するには、次のようにします。
+指定サイズに対するhuge pagesの割り当ての状況を確認するには、次のようにします。
 </p><pre class="programlisting">
 $ <strong class="userinput"><code>cat /sys/kernel/mm/hugepages/hugepages-2048kB/nr_hugepages</code></strong>
 </pre><p>
@@ -882,7 +896,7 @@ $ <strong class="userinput"><code>cat /sys/kernel/mm/hugepages/hugepages-2048kB/
     Note that with this setting &lt;productname&gt;PostgreSQL&lt;/productname&gt; will fail to
     start if not enough huge pages are available.
 </span>
-<span class="productname">PostgreSQL</span>のhuge pagesのデフォルトの動作は、可能な場合はhuge pagesを使用し、失敗した場合は通常のページを使用します。
+<span class="productname">PostgreSQL</span>のhuge pagesのデフォルトの動作は、可能な場合はシステムのデフォルトサイズのhuge pagesを使用し、失敗した場合は通常のページを使用します。
 <code class="filename">postgresql.conf</code>で<a class="xref" href="runtime-config-resource.html#GUC-HUGE-PAGES">huge_pages</a>を<code class="literal">on</code>に設定することで、huge pagesの使用を強制することができます。
 この設定の場合、十分なhuge pagesが確保できなければ、<span class="productname">PostgreSQL</span>の起動に失敗することに注意してください。
    </p><p>
