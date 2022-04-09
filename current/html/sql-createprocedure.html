@@ -71,8 +71,11 @@ CREATE [ OR REPLACE ] PROCEDURE
 </span>
 プロシージャを作るには、引数型に対して<code class="literal">USAGE</code>権限を持っていなければなりません。
   </p><p>
-   Refer to <a class="xref" href="xproc.html" title="38.4. ユーザ定義プロシージャ">38.4</a> for further information on writing
+<span class="original">
+   Refer to &lt;xref linkend="xproc"/&gt; for further information on writing
    procedures.
+</span>
+プロシージャを書くことに関する更なる情報は<a class="xref" href="xproc.html" title="38.4. ユーザ定義プロシージャ">38.4</a>を参照してください。
   </p></div><div class="refsect1" id="id-1.9.3.76.6"><h2>パラメータ</h2><span class="original">
   &lt;title&gt;Parameters&lt;/title&gt;
 </span><div class="variablelist"><dl class="variablelist"><dt><span class="term"><em class="replaceable"><code>name</code></em></span></dt><dd><p>
@@ -86,9 +89,8 @@ CREATE [ OR REPLACE ] PROCEDURE
        &lt;literal&gt;INOUT&lt;/literal&gt;, or &lt;literal&gt;VARIADIC&lt;/literal&gt;.  If omitted,
        the default is &lt;literal&gt;IN&lt;/literal&gt;.
 </span>
-引数モードで、<code class="literal">IN</code>、<code class="literal">INOUT</code>、あるいは、<code class="literal">VARIADIC</code>のいずれかです。
+引数モードで、<code class="literal">IN</code>、<code class="literal">OUT</code>、<code class="literal">INOUT</code>、あるいは、<code class="literal">VARIADIC</code>のいずれかです。
 省略した場合のデフォルトは<code class="literal">IN</code>です。
-（<code class="literal">OUT</code>引数は今のところプロシージャに対してサポートされません。<code class="literal">INOUT</code>を代わりに使ってください。）
       </p></dd><dt><span class="term"><em class="replaceable"><code>argname</code></em></span></dt><dd><p>
 <span class="original">
        The name of an argument.
@@ -145,6 +147,7 @@ CREATE [ OR REPLACE ] PROCEDURE
 </span>
 プロシージャを実装している言語の名前です。
 このパラメータには、<code class="literal">sql</code>、<code class="literal">c</code>、<code class="literal">internal</code>、もしくはユーザ定義手続き言語（例：<code class="literal">plpgsql</code>）の名前を指定可能です。
+<em class="replaceable"><code>sql_body</code></em>が指定されていれば、デフォルトは<code class="literal">sql</code>です。
 名前を単一引用符で囲むのは廃止予定で、大文字小文字の一致が必要になります。
       </p></dd><dt><span class="term"><code class="literal">TRANSFORM { FOR TYPE <em class="replaceable"><code>type_name</code></em> } [, ... ] }</code></span></dt><dd><p>
 <span class="original">
@@ -262,7 +265,7 @@ CREATE [ OR REPLACE ] PROCEDURE
        to be the same as the name of the SQL procedure being defined.
 </span>
 この構文の<code class="literal">AS</code>句は、動的にロードされるC言語プロシージャにおいて、C言語のソースコード中のプロシージャ名がSQLプロシージャの名前と同じでない場合に使われます。
-<em class="replaceable"><code>obj_file</code></em>という文字列はコンパイルされたCプロシージャを含む共有ライブラリファイルの名前で、<a class="xref" href="sql-load.html" title="LOAD"><span class="refentrytitle">LOAD</span></a>コマンドの場合と同じように解釈されます。
+<em class="replaceable"><code>obj_file</code></em>という文字列はコンパイルされたCプロシージャを含む共有ライブラリファイルの名前で、<a class="link" href="sql-load.html" title="LOAD"><code class="command">LOAD</code></a>コマンドの場合と同じように解釈されます。
 文字列<em class="replaceable"><code>link_symbol</code></em>はそのプロシージャのリンクシンボル、つまり、C言語ソースコード中のプロシージャの名前です。
 リンクシンボルが省略された場合、定義されるSQLプロシージャの名前と同じものであるとみなされます。
       </p><p>
@@ -275,8 +278,12 @@ CREATE [ OR REPLACE ] PROCEDURE
 同じオブジェクトファイルを参照する<code class="command">CREATE PROCEDURE</code>呼び出しが繰り返される場合、ファイルがセッションにつき一度だけロードされます。
 （おそらく開発中に）ファイルのアンロードと再ロードを行うには、新たなセッションを開始してください。
       </p></dd><dt><span class="term"><em class="replaceable"><code>sql_body</code></em></span></dt><dd><p>
-       The body of a <code class="literal">LANGUAGE SQL</code> procedure.  This should
+<span class="original">
+       The body of a &lt;literal&gt;LANGUAGE SQL&lt;/literal&gt; procedure.  This should
        be a block
+</span>
+<code class="literal">LANGUAGE SQL</code>プロシージャの本体です。
+これは以下のようなブロックでなければなりません。
 </p><pre class="programlisting">
 BEGIN ATOMIC
   <em class="replaceable"><code>statement</code></em>;
@@ -286,18 +293,26 @@ BEGIN ATOMIC
 END
 </pre><p>
       </p><p>
+<span class="original">
        This is similar to writing the text of the procedure body as a string
-       constant (see <em class="replaceable"><code>definition</code></em> above), but there
-       are some differences: This form only works for <code class="literal">LANGUAGE
-       SQL</code>, the string constant form works for all languages.  This
+       constant (see &lt;replaceable&gt;definition&lt;/replaceable&gt; above), but there
+       are some differences: This form only works for &lt;literal&gt;LANGUAGE
+       SQL&lt;/literal&gt;, the string constant form works for all languages.  This
        form is parsed at procedure definition time, the string constant form is
        parsed at execution time; therefore this form cannot support
        polymorphic argument types and other constructs that are not resolvable
        at procedure definition time.  This form tracks dependencies between the
-       procedure and objects used in the procedure body, so <code class="literal">DROP
-       ... CASCADE</code> will work correctly, whereas the form using
+       procedure and objects used in the procedure body, so &lt;literal&gt;DROP
+       ... CASCADE&lt;/literal&gt; will work correctly, whereas the form using
        string literals may leave dangling procedures.  Finally, this form is
        more compatible with the SQL standard and other SQL implementations.
+</span>
+これは文字列定数としてプロシージャ本体を書くのと似ていますが(上記の<em class="replaceable"><code>definition</code></em>を参照してください)、いくつか違いがあります。
+この形式は<code class="literal">LANGUAGE SQL</code>に対してのみ機能し、文字列定数の形式はすべての言語に対して機能します。
+この形式はプロシージャ定義時に解析され、文字列定数の形式は実行時に解析されます。
+そのため、この形式は多様引数型やプロシージャ定義時に解決できないその他の構文をサポートできません。
+この形式はプロシージャとプロシージャ本体の中で使われているオブジェクトの間の依存関係を追跡しますので、<code class="literal">DROP ... CASCADE</code>は正しく動作しますが、一方、文字列定数を使う形式は宙に浮いたプロシージャを放置するかもしれません。
+最後に、この形式は標準SQLや他のSQL実装とより互換性があります。
       </p></dd></dl></div></div><div class="refsect1" id="SQL-CREATEPROCEDURE-NOTES"><h2>注釈</h2><span class="original">
   &lt;title&gt;Notes&lt;/title&gt;
 </span><p>
@@ -322,7 +337,10 @@ INSERT INTO tbl VALUES (a);
 INSERT INTO tbl VALUES (b);
 $$;
 </pre><p>
+<span class="original">
    or
+</span>
+または
 </p><pre class="programlisting">
 CREATE PROCEDURE insert_data(a integer, b integer)
 LANGUAGE SQL
@@ -343,8 +361,8 @@ CALL insert_data(1, 2);
    used in a compatible way but has many extensions.  For details see also
    &lt;xref linkend="sql-createfunction"/&gt;.
 </span>
-<code class="command">CREATE PROCEDURE</code>コマンドはSQL標準で定義されています。
-<span class="productname">PostgreSQL</span>のものは似ていますが、完全な互換ではありません。
+<code class="command">CREATE PROCEDURE</code>コマンドは標準SQLで定義されています。
+<span class="productname">PostgreSQL</span>の実装は互換性のある方法で使うことはできますが、多くの拡張があります。
 詳しくは<a class="xref" href="sql-createfunction.html" title="CREATE FUNCTION"><span class="refentrytitle">CREATE FUNCTION</span></a>も参照してください。
   </p></div><div class="refsect1" id="id-1.9.3.76.10"><h2>関連項目</h2><span class="original">
   &lt;title&gt;See Also&lt;/title&gt;
