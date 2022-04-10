@@ -106,8 +106,11 @@ CREATE [ OR REPLACE ] FUNCTION
 </span>
 関数を作成するためには、引数の型および戻り値の型に対する<code class="literal">USAGE</code>権限を持たなければなりません。
   </p><p>
-   Refer to <a class="xref" href="xfunc.html" title="38.3. ユーザ定義関数">38.3</a> for further information on writing
+<span class="original">
+   Refer to &lt;xref linkend="xfunc"/&gt; for further information on writing
    functions.
+</span>
+さらに詳しい関数の作成方法については<a class="xref" href="xfunc.html" title="38.3. ユーザ定義関数">38.3</a>を参照してください。
   </p></div><div class="refsect1" id="id-1.9.3.67.6"><h2>パラメータ</h2><span class="original">
   &lt;title&gt;Parameters&lt;/title&gt;
 </span><div class="variablelist"><dl class="variablelist"><dt><span class="term"><em class="replaceable"><code>name</code></em></span></dt><dd><p>
@@ -254,6 +257,7 @@ CREATE [ OR REPLACE ] FUNCTION
 </span>
 関数を実装している言語の名前です。
 このパラメータには、<code class="literal">sql</code>、<code class="literal">c</code>、<code class="literal">internal</code>、もしくはユーザ定義手続き言語(例：<code class="literal">plpgsql</code>)の名前を指定可能です。
+<em class="replaceable"><code>sql_body</code></em>が指定されていれば、デフォルトは<code class="literal">sql</code>です。
 名前を単一引用符で囲むのは廃止予定で、大文字小文字の一致が必要になります。
       </p></dd><dt><span class="term"><code class="literal">TRANSFORM { FOR TYPE <em class="replaceable"><code>type_name</code></em> } [, ... ] }</code></span></dt><dd><p>
 <span class="original">
@@ -546,7 +550,7 @@ C言語の関数は、ラベルが間違っていると、理論的には全く�
        part of the C names).
 </span>
 この構文の<code class="literal">AS</code>句は、動的にロードされるC言語関数において、C言語のソースコード中の関数名がSQL関数の名前と同じでない場合に使われます。
-<em class="replaceable"><code>obj_file</code></em>という文字列はコンパイルされたC関数を含む共有ライブラリファイルの名前で、<a class="xref" href="sql-load.html" title="LOAD"><span class="refentrytitle">LOAD</span></a>コマンドの場合と同じように解釈されます。
+<em class="replaceable"><code>obj_file</code></em>という文字列はコンパイルされたC関数を含む共有ライブラリファイルの名前で、<a class="link" href="sql-load.html" title="LOAD"><code class="command">LOAD</code></a>コマンドの場合と同じように解釈されます。
 文字列<em class="replaceable"><code>link_symbol</code></em>はその関数のリンクシンボル、つまり、C言語ソースコード中の関数の名前です。
 リンクシンボルが省略された場合、定義されるSQL関数の名前と同じものであるとみなされます。
 全ての関数について、C言語における名前は、重複してはいけません。したがって、オーバーロードするC言語関数には、異なるC言語の名前を与える必要があります(例えば、C言語における名前の一部に引数の型を使用してください)。
@@ -560,12 +564,19 @@ C言語の関数は、ラベルが間違っていると、理論的には全く�
 同一オブジェクトファイルを参照する、<code class="command">CREATE FUNCTION</code>呼び出しが繰り返された場合、そのファイルはセッション毎に一度だけロードされます。
 （おそらく開発段階で）ファイルをアンロードし再ロードするには、新しいセッションを開始してください。
       </p></dd><dt><span class="term"><em class="replaceable"><code>sql_body</code></em></span></dt><dd><p>
-       The body of a <code class="literal">LANGUAGE SQL</code> function.  This can
+<span class="original">
+       The body of a &lt;literal&gt;LANGUAGE SQL&lt;/literal&gt; function.  This can
        either be a single statement
+</span>
+<code class="literal">LANGUAGE SQL</code>関数の本体です。
+これは以下のような単一の文
 </p><pre class="programlisting">
 RETURN <em class="replaceable"><code>expression</code></em>
 </pre><p>
+<span class="original">
        or a block
+</span>
+またはブロックです。
 </p><pre class="programlisting">
 BEGIN ATOMIC
   <em class="replaceable"><code>statement</code></em>;
@@ -575,18 +586,26 @@ BEGIN ATOMIC
 END
 </pre><p>
       </p><p>
+<span class="original">
        This is similar to writing the text of the function body as a string
-       constant (see <em class="replaceable"><code>definition</code></em> above), but there
-       are some differences: This form only works for <code class="literal">LANGUAGE
-       SQL</code>, the string constant form works for all languages.  This
+       constant (see &lt;replaceable&gt;definition&lt;/replaceable&gt; above), but there
+       are some differences: This form only works for &lt;literal&gt;LANGUAGE
+       SQL&lt;/literal&gt;, the string constant form works for all languages.  This
        form is parsed at function definition time, the string constant form is
        parsed at execution time; therefore this form cannot support
        polymorphic argument types and other constructs that are not resolvable
        at function definition time.  This form tracks dependencies between the
-       function and objects used in the function body, so <code class="literal">DROP
-       ... CASCADE</code> will work correctly, whereas the form using
+       function and objects used in the function body, so &lt;literal&gt;DROP
+       ... CASCADE&lt;/literal&gt; will work correctly, whereas the form using
        string literals may leave dangling functions.  Finally, this form is
        more compatible with the SQL standard and other SQL implementations.
+</span>
+これは文字列定数として関数本体を書くのと似ていますが(上記の<em class="replaceable"><code>definition</code></em>を参照してください)、いくつか違いがあります。
+この形式は<code class="literal">LANGUAGE SQL</code>に対してのみ機能し、文字列定数の形式はすべての言語に対して機能します。
+この形式はプロシージャ定義時に解析され、文字列定数の形式は実行時に解析されます。
+そのため、この形式は多様引数型や関数定義時に解決できないその他の構文をサポートできません。
+この形式は関数と関数本体の中で使われているオブジェクトの間の依存関係を追跡しますので、<code class="literal">DROP ... CASCADE</code>は正しく動作しますが、一方、文字列定数を使う形式は宙に浮いた関数を放置するかもしれません。
+最後に、この形式は標準SQLや他のSQL実装とより互換性があります。
       </p></dd></dl></div></div><div class="refsect1" id="SQL-CREATEFUNCTION-OVERLOADING"><h2>オーバーロード</h2><span class="original">
   &lt;title&gt;Overloading&lt;/title&gt;
 </span><p>
@@ -676,7 +695,10 @@ CREATE FUNCTION foo(int, int default 42) ...
    </p></div><div class="refsect1" id="SQL-CREATEFUNCTION-EXAMPLES"><h2>例</h2><span class="original">
   &lt;title&gt;Examples&lt;/title&gt;
 </span><p>
+<span class="original">
    Add two integers using an SQL function:
+</span>
+SQL関数を使って2つの整数を足す。
 </p><pre class="programlisting">
 CREATE FUNCTION add(integer, integer) RETURNS integer
     AS 'select $1 + $2;'
@@ -684,8 +706,11 @@ CREATE FUNCTION add(integer, integer) RETURNS integer
     IMMUTABLE
     RETURNS NULL ON NULL INPUT;
 </pre><p>
+<span class="original">
    The same function written in a more SQL-conforming style, using argument
    names and an unquoted body:
+</span>
+引数名と引用されていない本体を使って、よりSQLに準拠した形で書かれた同じ関数。
 </p><pre class="programlisting">
 CREATE FUNCTION add(a integer, b integer) RETURNS integer
     LANGUAGE SQL
@@ -852,13 +877,19 @@ COMMIT;
    in &lt;productname&gt;PostgreSQL&lt;/productname&gt;.
 </span>
 <code class="command">CREATE FUNCTION</code>コマンドは標準SQLで定義されています。
-<span class="productname">PostgreSQL</span>における<code class="command">CREATE FUNCTION</code>も類似の機能を持ちますが、完全な互換性はありません。
-属性には移植性がありません。また、使用可能な言語も異なります。
+<span class="productname">PostgreSQL</span>の実装は互換性のある方法で使うことはできますが、多くの拡張があります。
+逆に、標準SQLには<span class="productname">PostgreSQL</span>では実装されていない多くの省略可能な機能が定義されています。
   </p><p>
+<span class="original">
    The following are important compatibility issues:
+</span>
+以下が重要な互換性の問題です。
 
    </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>
-      <code class="literal">OR REPLACE</code> is a PostgreSQL extension.
+<span class="original">
+      &lt;literal&gt;OR REPLACE&lt;/literal&gt; is a PostgreSQL extension.
+</span>
+<code class="literal">OR REPLACE</code>はPostgreSQLの拡張です。
      </p></li><li class="listitem"><p>
 <span class="original">
       For compatibility with some other database systems, &lt;replaceable
@@ -877,22 +908,38 @@ COMMIT;
 パラメータのデフォルトに関しては、標準SQLでは<code class="literal">DEFAULT</code>キーワードの構文のみを規定します。
 <code class="literal">=</code>を持つ構文はT-SQLおよびFirebirdで使用されています。
      </p></li><li class="listitem"><p>
-      The <code class="literal">SETOF</code> modifier is a PostgreSQL extension.
+<span class="original">
+      The &lt;literal&gt;SETOF&lt;/literal&gt; modifier is a PostgreSQL extension.
+</span>
+<code class="literal">SETOF</code>修飾子はPostgreSQLの拡張です。
      </p></li><li class="listitem"><p>
-      Only <code class="literal">SQL</code> is standardized as a language.
+<span class="original">
+      Only &lt;literal&gt;SQL&lt;/literal&gt; is standardized as a language.
+</span>
+<code class="literal">SQL</code>のみが言語として標準化されています。
      </p></li><li class="listitem"><p>
-      All other attributes except <code class="literal">CALLED ON NULL INPUT</code> and
-      <code class="literal">RETURNS NULL ON NULL INPUT</code> are not standardized.
+<span class="original">
+      All other attributes except &lt;literal&gt;CALLED ON NULL INPUT&lt;/literal&gt; and
+      &lt;literal&gt;RETURNS NULL ON NULL INPUT&lt;/literal&gt; are not standardized.
+</span>
+<code class="literal">CALLED ON NULL INPUT</code>と<code class="literal">RETURNS NULL ON NULL INPUT</code>以外の属性はすべて標準化されていません。
      </p></li><li class="listitem"><p>
-      For the body of <code class="literal">LANGUAGE SQL</code> functions, the SQL
-      standard only specifies the <em class="replaceable"><code>sql_body</code></em> form.
+<span class="original">
+      For the body of &lt;literal&gt;LANGUAGE SQL&lt;/literal&gt; functions, the SQL
+      standard only specifies the &lt;replaceable&gt;sql_body&lt;/replaceable&gt; form.
+</span>
+<code class="literal">LANGUAGE SQL</code>関数の本体に対して、標準SQLは<em class="replaceable"><code>sql_body</code></em>形式のみを定義しています。
      </p></li></ul></div><p>
   </p><p>
-   Simple <code class="literal">LANGUAGE SQL</code> functions can be written in a way
+<span class="original">
+   Simple &lt;literal&gt;LANGUAGE SQL&lt;/literal&gt; functions can be written in a way
    that is both standard-conforming and portable to other implementations.
    More complex functions using advanced features, optimization attributes, or
    other languages will necessarily be specific to PostgreSQL in a significant
    way.
+</span>
+単純な<code class="literal">LANGUAGE SQL</code>関数は、標準に準拠して、なおかつ他の実装に移植性のある方法で書くことができます。
+高度な機能、最適化属性、他の言語を使ったより複雑な関数は、必ず重要なところでPostgreSQLに固有のものになるでしょう。
   </p></div><div class="refsect1" id="id-1.9.3.67.12"><h2>関連項目</h2><span class="original">
   &lt;title&gt;See Also&lt;/title&gt;
 </span><span class="simplelist"><a class="xref" href="sql-alterfunction.html" title="ALTER FUNCTION"><span class="refentrytitle">ALTER FUNCTION</span></a>, <a class="xref" href="sql-dropfunction.html" title="DROP FUNCTION"><span class="refentrytitle">DROP FUNCTION</span></a>, <a class="xref" href="sql-grant.html" title="GRANT"><span class="refentrytitle">GRANT</span></a>, <a class="xref" href="sql-load.html" title="LOAD"><span class="refentrytitle">LOAD</span></a>, <a class="xref" href="sql-revoke.html" title="REVOKE"><span class="refentrytitle">REVOKE</span></a></span></div></div><div xmlns="http://www.w3.org/TR/xhtml1/transitional" class="navfooter"><hr></hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="sql-createforeigntable.html" title="CREATE FOREIGN TABLE">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="sql-commands.html" title="SQLコマンド">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="sql-creategroup.html" title="CREATE GROUP">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">CREATE FOREIGN TABLE </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 14.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> CREATE GROUP</td></tr></table></div></body></html>
