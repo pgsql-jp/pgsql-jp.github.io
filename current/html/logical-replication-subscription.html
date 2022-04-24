@@ -38,7 +38,7 @@
    synchronization.
 </span>
 各々のサブスクリプションは、一つのレプリケーションスロット（<a class="xref" href="warm-standby.html#STREAMING-REPLICATION-SLOTS" title="27.2.6. レプリケーションスロット">27.2.6</a>を参照）を通じて更新が通知されます。
-既存のテーブルデータを初期同期するために、追加で一時的なレプリケーションスロットが必要になることもあります。
+既存のテーブルデータを初期同期するために、追加でレプリケーションスロットが必要になることもあります。それらはデータ同期の終了時に削除されます。
   </p><p>
 <span class="original">
    A logical replication subscription can be a standby for synchronous
@@ -67,7 +67,7 @@
    &lt;link linkend="sql-altersubscription"&gt;&lt;command&gt;ALTER SUBSCRIPTION&lt;/command&gt;&lt;/link&gt; command and removed using
    &lt;link linkend="sql-dropsubscription"&gt;&lt;command&gt;DROP SUBSCRIPTION&lt;/command&gt;&lt;/link&gt;.
 </span>
-サブスクリプションは<a class="xref" href="sql-createsubscription.html" title="CREATE SUBSCRIPTION"><span class="refentrytitle">CREATE SUBSCRIPTION</span></a>で追加し、<a class="xref" href="sql-altersubscription.html" title="ALTER SUBSCRIPTION"><span class="refentrytitle">ALTER SUBSCRIPTION</span></a>を使って、いつでも停止、再開でき、そして<a class="xref" href="sql-dropsubscription.html" title="DROP SUBSCRIPTION"><span class="refentrytitle">DROP SUBSCRIPTION</span></a>で削除できます。
+サブスクリプションは<a class="link" href="sql-createsubscription.html" title="CREATE SUBSCRIPTION"><code class="command">CREATE SUBSCRIPTION</code></a>で追加し、<a class="link" href="sql-altersubscription.html" title="ALTER SUBSCRIPTION"><code class="command">ALTER SUBSCRIPTION</code></a>を使って、いつでも停止、再開でき、そして<a class="link" href="sql-dropsubscription.html" title="DROP SUBSCRIPTION"><code class="command">DROP SUBSCRIPTION</code></a>で削除できます。
   </p><p>
 <span class="original">
    When a subscription is dropped and recreated, the synchronization
@@ -114,22 +114,34 @@
   </p><div class="sect2" id="LOGICAL-REPLICATION-SUBSCRIPTION-SLOT"><div class="titlepage"><div><div><h3 class="title">31.2.1. レプリケーションスロットの管理</h3></div></div></div><span class="original">
    &lt;title&gt;Replication Slot Management&lt;/title&gt;
 </span><p>
+<span class="original">
     As mentioned earlier, each (active) subscription receives changes from a
     replication slot on the remote (publishing) side.
+</span>
+前述のように、各々の（有効な）サブスクリプションは、リモート（パブリッシュしている）側のレプリケーションスロットに対する変更を受信します。
    </p><p>
+<span class="original">
     Additional table synchronization slots are normally transient, created
     internally to perform initial table synchronization and dropped
     automatically when they are no longer needed. These table synchronization
-    slots have generated names: <span class="quote">「<span class="quote"><code class="literal">pg_%u_sync_%u_%llu</code></span>」</span>
-    (parameters: Subscription <em class="parameter"><code>oid</code></em>,
-    Table <em class="parameter"><code>relid</code></em>, system identifier <em class="parameter"><code>sysid</code></em>)
+    slots have generated names: &lt;quote&gt;&lt;literal&gt;pg_%u_sync_%u_%llu&lt;/literal&gt;&lt;/quote&gt;
+    (parameters: Subscription &lt;parameter&gt;oid&lt;/parameter&gt;,
+    Table &lt;parameter&gt;relid&lt;/parameter&gt;, system identifier &lt;parameter&gt;sysid&lt;/parameter&gt;)
+</span>
+追加的なテーブル同期スロットは通常一時的なもので、初期テーブル同期を実行するために内部的に作成され、不要になった時に自動的に削除されます。
+これらのテーブル同期スロットには<span class="quote">「<span class="quote"><code class="literal">pg_%u_sync_%u_%llu</code></span>」</span>（パラメータは、サブスクリプション<em class="parameter"><code>oid</code></em>、テーブル<em class="parameter"><code>relid</code></em>、システム識別子<em class="parameter"><code>sysid</code></em>）という名前が生成されます。
    </p><p>
+<span class="original">
     Normally, the remote replication slot is created automatically when the
-    subscription is created using <code class="command">CREATE SUBSCRIPTION</code> and it
+    subscription is created using &lt;command&gt;CREATE SUBSCRIPTION&lt;/command&gt; and it
     is dropped automatically when the subscription is dropped using
-    <code class="command">DROP SUBSCRIPTION</code>.  In some situations, however, it can
+    &lt;command&gt;DROP SUBSCRIPTION&lt;/command&gt;.  In some situations, however, it can
     be useful or necessary to manipulate the subscription and the underlying
     replication slot separately.  Here are some scenarios:
+</span>
+通常、リモートのレプリケーションスロットは<code class="command">CREATE SUBSCRIPTION</code>でサブスクリプションが作成されるときに自動的に作成され、サブスクリプションが<code class="command">DROP SUBSCRIPTION</code>で削除されるときに自動的に削除されます。
+しかしながら、状況によっては、サブスクリプションとその下にあるレプリケーションスロットを別々に操作することが有用であったり必要であったりします。
+以下にいくつかシナリオを示します。
     </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>
 <span class="original">
        When creating a subscription, the replication slot already exists.  In
@@ -180,7 +192,7 @@
 サブスクリプションを削除する際に、リモートホストに接続できません。
 この場合、サブスクリプションを削除する前に、<code class="command">ALTER SUBSCRIPTION</code>でそのスロットを切り離しを試みます。
 リモートデータベースインスタンスが存在しない場合は、これ以上の操作は必要ありません。
-しかし、単にリモートデータベースに接続できない状態ならば、レプリケーションスロットを手動で削除する必要があります。
+しかし、単にリモートデータベースに接続できない状態ならば、レプリケーションスロット（および、未だ残っている全てのテーブル同期スロット）を手動で削除する必要があります。
 そうでなければ、WALが保存され続け、いずれディスクを埋め尽くすかもしれません。
 そのような状態は注意深く調査する必要があります。
       </p></li></ul></div><p>
