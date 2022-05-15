@@ -30,13 +30,13 @@
    &lt;acronym&gt;WAL&lt;/acronym&gt; archiving is being done, the log segments must be
    archived before being recycled or removed.)
 </span>
-<em class="firstterm">チェックポイント</em><a id="id-1.6.17.7.3.2" class="indexterm"></a>は、一連のトランザクションにおいて、そのチェックポイント以前に書かれた全ての情報によりヒープとインデックスファイルがすでに更新されていることを保証する場所です。
-チェックポイントの時刻において、全てのダーティページデータはディスクにフラッシュされ、特殊なチェックポイントレコードがログファイルに書き込まれます。
-(変更されたレコードは以前に<acronym class="acronym">WAL</acronym>フラッシュされています。)
-クラッシュした時、クラッシュからの復旧処理は最後のチェックポイントレコードを見つけ、ログの中でどのレコード（これはredoレコードと呼ばれています）から復旧処理がREDOログ操作を開始すべきかを決定します。
-このチェックポイント以前になされたデータの変更は、すでにディスク上にあることが保証されています。
-従って、チェックポイント後、redoレコード内のそのチェックポイント以前のログセグメントは不要となり、再利用または削除することができます
-（<acronym class="acronym">WAL</acronym>アーカイブが行われる場合、このログセグメントは削除もしくは再利用される前に保存されなければなりません）。
+<em class="firstterm">チェックポイント</em><a id="id-1.6.17.7.3.2" class="indexterm"></a>は、一連のトランザクションにおいて、そのチェックポイント以前に書かれた全ての情報によりヒープとインデックスファイルがすでに更新されていることを保証する時点です。
+チェックポイント時に、全てのダーティページデータはディスクにフラッシュされ、特殊なチェックポイントレコードがログファイルに書き込まれます。
+(変更されたレコードは以前に<acronym class="acronym">WAL</acronym>ファイルにフラッシュされています。)
+クラッシュした時、クラッシュリカバリ処理は最新のチェックポイントレコードを見つけ、ログの中でどのレコード(これはredoレコードと呼ばれています)からREDOログ操作を開始すべきかを決定します。
+このチェックポイント以前になされたデータファイルの変更は、すでにディスク上にあることが保証されています。
+従って、チェックポイント後、redoレコード内のそのチェックポイント以前のログセグメントは不要となり、再利用または削除することができます。
+(<acronym class="acronym">WAL</acronym>アーカイブが行われる場合、このログセグメントは削除もしくは再利用される前に保存されなければなりません。)
   </p><p>
 <span class="original">
    The checkpoint requirement of flushing all dirty data pages to disk
@@ -45,7 +45,7 @@
    before the next checkpoint is due to start; this minimizes performance
    degradation during checkpoints.
 </span>
-チェックポイント処理は、全てのダーティデータページをディスクへ書き出すため、大きなI/O負荷を発生させます。
+チェックポイント処理は、全てのダーティデータページをディスクへフラッシュするため、大きなI/O負荷を発生させます。
 チェックポイント処理においては、I/Oはチェックポイント開始時に始まり、次のチェックポイントが開始する前に完了するように調節されます。
 これは、チェックポイント処理中の性能劣化を極力抑える効果があります。
   </p><p>
@@ -69,7 +69,7 @@
 <a class="xref" href="runtime-config-wal.html#GUC-CHECKPOINT-TIMEOUT">checkpoint_timeout</a>秒が経過するか、または<a class="xref" href="runtime-config-wal.html#GUC-MAX-WAL-SIZE">max_wal_size</a>に達するか、どちらかの条件が最初に満たされるとチェックポイントが開始されます。
 デフォルトの設定では、それぞれ5分と1GBとなっています。
 前回のチェックポイント以降書き出すWALがない場合、<code class="varname">checkpoint_timeout</code>が経過したとしても新しいチェックポイントが飛ばされます。
-(WALアーカイブ処理を使用しており、かつ、データ損失の可能性を限定するためにファイルのアーカイブ頻度に対する下限を設定したい場合、チェックポイント関連のパラメータよりも、<a class="xref" href="runtime-config-wal.html#GUC-ARCHIVE-TIMEOUT">archive_timeout</a>パラメータを調節するべきです。)
+(WALアーカイブ処理を使用しており、かつ、データ損失の可能性を限定するためにファイルのアーカイブ頻度の下限を設定したい場合、チェックポイント関連のパラメータよりも、<a class="xref" href="runtime-config-wal.html#GUC-ARCHIVE-TIMEOUT">archive_timeout</a>パラメータを調節するべきです。)
 また、<code class="command">CHECKPOINT</code> SQLコマンドで強制的にチェックポイントを作成することもできます。
   </p><p>
 <span class="original">
@@ -151,15 +151,16 @@
    completed on time, which would result in performance loss due to
    unexpected variation in the number of WAL segments needed.
 </span>
-ページ書き出しの集中による入出力システムの溢れを防ぐために、チェックポイント期間のダーティバッファの書き出しは一定の期間に分散されます。
-この期間は<a class="xref" href="runtime-config-wal.html#GUC-CHECKPOINT-COMPLETION-TARGET">checkpoint_completion_target</a>により制御され、チェックポイント間隔の割合として指定されます。
+ページ書き出しの集中によるI/Oシステムの溢れを防ぐために、チェックポイント期間のダーティバッファの書き出しは一定の期間に分散されます。
+この期間は<a class="xref" href="runtime-config-wal.html#GUC-CHECKPOINT-COMPLETION-TARGET">checkpoint_completion_target</a>により制御され、<code class="varname">checkpoint_timeout</code>によって設定されるチェックポイント間隔の割合として指定されます。
 I/Oの割合は、チェックポイントの起動時から<code class="varname">checkpoint_timeout</code>秒が経過した時、あるいは<code class="varname">max_wal_size</code>を超えた時、このどちらかが発生するとすぐに、チェックポイントが完了するように調整されます。
-デフォルトの0.5という値では、<span class="productname">PostgreSQL</span>は、次のチェックポイントが始まるまでのおよそ半分の時間で各チェックポイントが完了するものと想定できることになります。
-通常の操作においてほぼ最大のI/Oスループットに近いようなシステムでは、チェックポイントにおけるI/O負荷を減らすために<code class="varname">checkpoint_completion_target</code>を増やすことを勧めます。
-この欠点は、延長されたチェックポイントがリカバリ時に影響をあたえることです。
+デフォルトの0.9という値では、<span class="productname">PostgreSQL</span>は次のチェックポイントが始まる少し前に、前回のチェックポイント期間の約90%程度の時間で各チェックポイントが完了するものと想定できることになります。
+これにより、チェックポイントのI/O負荷がチェックポイント期間を通して一定になるように、I/Oが可能な限り分散されます。
+この欠点は、延長されたチェックポイントがリカバリ時間に影響をあたえることです。
 リカバリ時に使用できるように、より多くのWALセグメントを保持する必要があるためです。
-<code class="varname">checkpoint_completion_target</code>を最大の1.0に設定することもできますが、より低く抑えること（おそらく最大で0.9）が最善です。
-チェックポイントには、ダーティバッファを書き出す以外の活動も含まれているからです。
+リカバリに必要な時間を気にするユーザは、<code class="varname">checkpoint_timeout</code>を減らして、チェックポイントをより頻繁に発生しながらも、チェックポイント間隔全体にI/Oを分散させることを望むかもしれません。
+または、<code class="varname">checkpoint_completion_target</code>を減らすこともできますが、この場合、チェックポイント中のI/Oが多い時間帯と、チェックポイント完了後から次に予定されているチェックポイントの前までのI/Oの少ない時間帯が発生しますので、推奨されません。
+<code class="varname">checkpoint_completion_target</code>を最大の1.0に設定することもできますが、チェックポイントにはダーティバッファを書き出す以外の活動も含まれているため、通常はデフォルトの0.9以下に設定することをお勧めします。
 1.0という設定は、ある時点でチェックポイントが完了しなくなるという結果に陥ります。
 これは必要なWALセグメント数が想定以上に変動することになり、性能の劣化が発生することになります。
   </p><p>
@@ -243,8 +244,8 @@ WALが生成されるペースにWALのアーカイブ処理が追いつかな�
    (&lt;varname&gt;max_wal_size&lt;/varname&gt; is never a hard limit anyway, so you should
    always leave plenty of headroom to avoid running out of disk space.)
 </span>
-アーカイブからのリカバリもしくはスタンバイモードにおいて、サーバでは定期的に通常運用でのチェックポイント処理と似た<em class="firstterm">リスタートポイント</em><a id="id-1.6.17.7.12.2" class="indexterm"></a>処理を行います。これは、すでに再生されたWALを再度読み込む必要がないよう、ディスクに現在の状態を強制的に書き込み、<code class="filename">pg_control</code>ファイルを更新します。また<code class="filename">pg_wal</code>ディレクトリの中の古いログセグメントを再利用できるようにします。
-リスタートポイント処理はチェックポイントレコードに対してしか実施されないので、マスタ側のチェックポイント処理よりも発生頻度が多いということはありません。
+アーカイブリカバリもしくはスタンバイモードにおいて、サーバでは定期的に通常運用でのチェックポイント処理と似た<em class="firstterm">リスタートポイント</em><a id="id-1.6.17.7.12.2" class="indexterm"></a>処理を行います。これは、すでに再生されたWALを再度読み込む必要がないよう、ディスクに現在の状態を強制的に書き込み、<code class="filename">pg_control</code>ファイルを更新します。また<code class="filename">pg_wal</code>ディレクトリの中の古いログセグメントを再利用できるようにします。
+リスタートポイント処理はチェックポイントレコードに対してしか実施されないので、プライマリ側のチェックポイント処理よりも発生頻度が多いということはありません。
 リスタートポイントは、最後のリスタートポイントより少なくとも<code class="varname">checkpoint_timeout</code>秒が経過しているか、あるいは<code class="varname">max_wal_size</code>を超えそうな場合に起動されます。
 しかし、リスタートポイントが実施できるための制約事項により、リカバリの際には1回のチェックポイント分のWALを上限に、<code class="varname">max_wal_size</code>を超えてしまいがちです。
 (どのみち<code class="varname">max_wal_size</code>はハードリミットではないので、ディスクスペースを使い尽くしてしまわないように、常に十分な余裕を持っておくべきです)
@@ -402,30 +403,40 @@ WALログが高遅延の回転ディスクに格納されているときは、<c
 （このパラメータをサポートするように<span class="productname">PostgreSQL</span>をコンパイルする必要があります）。
 将来このオプションはより一般的な機構に置き換わる可能性があります。
   </p><p>
+<span class="original">
    There are two internal functions to write WAL data to disk:
-   <code class="function">XLogWrite</code> and <code class="function">issue_xlog_fsync</code>.
-   When <a class="xref" href="runtime-config-statistics.html#GUC-TRACK-WAL-IO-TIMING">track_wal_io_timing</a> is enabled, the total
-   amounts of time <code class="function">XLogWrite</code> writes and
-   <code class="function">issue_xlog_fsync</code> syncs WAL data to disk are counted as
-   <code class="literal">wal_write_time</code> and <code class="literal">wal_sync_time</code> in
-   <a class="xref" href="monitoring-stats.html#PG-STAT-WAL-VIEW" title="表28.22 pg_stat_wal View">pg_stat_wal</a>, respectively.
-   <code class="function">XLogWrite</code> is normally called by
-   <code class="function">XLogInsertRecord</code> (when there is no space for the new
-   record in WAL buffers), <code class="function">XLogFlush</code> and the WAL writer,
-   to write WAL buffers to disk and call <code class="function">issue_xlog_fsync</code>.
-   <code class="function">issue_xlog_fsync</code> is normally called by
-   <code class="function">XLogWrite</code> to sync WAL files to disk.
-   If <code class="varname">wal_sync_method</code> is either
-   <code class="literal">open_datasync</code> or <code class="literal">open_sync</code>,
-   a write operation in <code class="function">XLogWrite</code> guarantees to sync written
-   WAL data to disk and <code class="function">issue_xlog_fsync</code> does nothing.
-   If <code class="varname">wal_sync_method</code> is either <code class="literal">fdatasync</code>,
-   <code class="literal">fsync</code>, or <code class="literal">fsync_writethrough</code>,
+   &lt;function&gt;XLogWrite&lt;/function&gt; and &lt;function&gt;issue_xlog_fsync&lt;/function&gt;.
+   When &lt;xref linkend="guc-track-wal-io-timing"/&gt; is enabled, the total
+   amounts of time &lt;function&gt;XLogWrite&lt;/function&gt; writes and
+   &lt;function&gt;issue_xlog_fsync&lt;/function&gt; syncs WAL data to disk are counted as
+   &lt;literal&gt;wal_write_time&lt;/literal&gt; and &lt;literal&gt;wal_sync_time&lt;/literal&gt; in
+   &lt;xref linkend="pg-stat-wal-view"/&gt;, respectively.
+   &lt;function&gt;XLogWrite&lt;/function&gt; is normally called by
+   &lt;function&gt;XLogInsertRecord&lt;/function&gt; (when there is no space for the new
+   record in WAL buffers), &lt;function&gt;XLogFlush&lt;/function&gt; and the WAL writer,
+   to write WAL buffers to disk and call &lt;function&gt;issue_xlog_fsync&lt;/function&gt;.
+   &lt;function&gt;issue_xlog_fsync&lt;/function&gt; is normally called by
+   &lt;function&gt;XLogWrite&lt;/function&gt; to sync WAL files to disk.
+   If &lt;varname&gt;wal_sync_method&lt;/varname&gt; is either
+   &lt;literal&gt;open_datasync&lt;/literal&gt; or &lt;literal&gt;open_sync&lt;/literal&gt;,
+   a write operation in &lt;function&gt;XLogWrite&lt;/function&gt; guarantees to sync written
+   WAL data to disk and &lt;function&gt;issue_xlog_fsync&lt;/function&gt; does nothing.
+   If &lt;varname&gt;wal_sync_method&lt;/varname&gt; is either &lt;literal&gt;fdatasync&lt;/literal&gt;,
+   &lt;literal&gt;fsync&lt;/literal&gt;, or &lt;literal&gt;fsync_writethrough&lt;/literal&gt;,
    the write operation moves WAL buffers to kernel cache and
-   <code class="function">issue_xlog_fsync</code> syncs them to disk. Regardless
-   of the setting of <code class="varname">track_wal_io_timing</code>, the number
-   of times <code class="function">XLogWrite</code> writes and
-   <code class="function">issue_xlog_fsync</code> syncs WAL data to disk are also
-   counted as <code class="literal">wal_write</code> and <code class="literal">wal_sync</code>
-   in <code class="structname">pg_stat_wal</code>, respectively.
+   &lt;function&gt;issue_xlog_fsync&lt;/function&gt; syncs them to disk. Regardless
+   of the setting of &lt;varname&gt;track_wal_io_timing&lt;/varname&gt;, the number
+   of times &lt;function&gt;XLogWrite&lt;/function&gt; writes and
+   &lt;function&gt;issue_xlog_fsync&lt;/function&gt; syncs WAL data to disk are also
+   counted as &lt;literal&gt;wal_write&lt;/literal&gt; and &lt;literal&gt;wal_sync&lt;/literal&gt;
+   in &lt;structname&gt;pg_stat_wal&lt;/structname&gt;, respectively.
+</span>
+WALデータをディスクに書き込むための2つの内部関数があります。
+<code class="function">XLogWrite</code>と<code class="function">issue_xlog_fsync</code>です。
+<a class="xref" href="runtime-config-statistics.html#GUC-TRACK-WAL-IO-TIMING">track_wal_io_timing</a>が有効な場合、<code class="function">XLogWrite</code>がWALデータをディスクに書き込み、<code class="function">issue_xlog_fsync</code>がWALデータをディスクに同期する合計時間は、それぞれ<a class="xref" href="monitoring-stats.html#PG-STAT-WAL-VIEW" title="表28.22 pg_stat_wal View">pg_stat_wal</a>の<code class="literal">wal_write_time</code>および<code class="literal">wal_sync_time</code>として数えられます。
+<code class="function">XLogWrite</code>は、WALバッファをディスクに書き込んで<code class="function">issue_xlog_fsync</code>を呼び出すために、通常は<code class="function">XLogInsertRecord</code>（WALバッファに新しいレコード用の領域がない場合）、<code class="function">XLogFlush</code>、WALライタによって呼び出されます。
+<code class="function">issue_xlog_fsync</code>は通常、WALファイルをディスクに同期するために<code class="function">XLogWrite</code>によって呼び出されます。
+<code class="varname">wal_sync_method</code>が<code class="literal">open_datasync</code>または<code class="literal">open_sync</code>の場合、<code class="function">XLogWrite</code>での書き込み操作はディスクに書き込まれたWALデータの同期を保証し、<code class="function">issue_xlog_fsync</code>は何も行いません。
+<code class="varname">wal_sync_method</code>が<code class="literal">fdatasync</code>、<code class="literal">fsync</code>、または<code class="literal">fsync_writethrough</code>のいずれかの場合、書き込み操作はWALバッファをカーネルキャッシュに移動し、<code class="function">issue_xlog_fsync</code>はそれらをディスクに同期します。
+<code class="varname">track_wal_io_timing</code>の設定に関係なく、<code class="function">XLogWrite</code>の書き込み回数と<code class="function">issue_xlog_fsync</code>のディスクへのWALデータの同期回数もそれぞれ<code class="structname">pg_stat_wal</code>の<code class="literal">wal_write</code>と<code class="literal">wal_sync</code>としてカウントされます。
   </p></div><div xmlns="http://www.w3.org/TR/xhtml1/transitional" class="navfooter"><hr></hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="wal-async-commit.html" title="30.4. 非同期コミット">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="wal.html" title="第30章 信頼性とログ先行書き込み">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="wal-internals.html" title="30.6. WALの内部">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">30.4. 非同期コミット </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 14.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 30.6. WALの内部</td></tr></table></div></body></html>
