@@ -99,6 +99,7 @@
 これは演算子クラスに順序付けスキャン（最近傍検索）をサポートさせたい場合に必要です。
 オプションの9番目のメソッド<code class="function">fetch</code>は、<code class="function">compress</code>メソッドが省略されている場合を除き、演算子クラスがインデックスオンリースキャンをサポートしたい場合に必要になります。
 オプションの10番目のメソッド<code class="function">options</code>は、演算子クラスがユーザに固有のパラメータを提供する場合に必要です。
+<code class="function">sortsupport</code>メソッドも省略可能であり、<acronym class="acronym">GiST</acronym>インデックスの構築を高速にするのに使われます。
  </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="function">consistent</code></span></dt><dd><p>
 <span class="original">
        Given an index entry &lt;literal&gt;p&lt;/literal&gt; and a query value &lt;literal&gt;q&lt;/literal&gt;,
@@ -894,7 +895,7 @@ LANGUAGE C STRICT;
        functions using the &lt;literal&gt;PG_HAS_OPCLASS_OPTIONS()&lt;/literal&gt; and
        &lt;literal&gt;PG_GET_OPCLASS_OPTIONS()&lt;/literal&gt; macros.
 </span>
-関数には<em class="replaceable"><code>local_relopts</code></em>構造体へのポインタが渡されますが、構造体を演算子クラスに固有のオプションの集合で満たすことが必要です。
+関数には<code class="structname">local_relopts</code>構造体へのポインタが渡されますが、構造体を演算子クラスに固有のオプションの集合で満たすことが必要です。
 オプションはマクロ<code class="literal">PG_HAS_OPCLASS_OPTIONS()</code>と<code class="literal">PG_GET_OPCLASS_OPTIONS()</code>を使って他のサポート関数からアクセスできます。
       </p><p>
 <span class="original">
@@ -1054,19 +1055,31 @@ my_compress(PG_FUNCTION_ARGS)
 例えば、キーの署名の長さが指定されるかもしれません。
 例については<code class="literal">gtsvector_options()</code>を参照してください。
       </p></dd><dt><span class="term"><code class="function">sortsupport</code></span></dt><dd><p>
+<span class="original">
        Returns a comparator function to sort data in a way that preserves
-       locality. It is used by <code class="command">CREATE INDEX</code> and
-       <code class="command">REINDEX</code> commands. The quality of the created index
+       locality. It is used by &lt;command&gt;CREATE INDEX&lt;/command&gt; and
+       &lt;command&gt;REINDEX&lt;/command&gt; commands. The quality of the created index
        depends on how well the sort order determined by the comparator function
        preserves locality of the inputs.
+</span>
+ある程度局所性を保つ方法でデータをソートする比較関数を返します。
+<code class="command">CREATE INDEX</code>と<code class="command">REINDEX</code>コマンドで使われます。
+作成されるインデックスの質は、比較関数により決定された順序が入力の局所性をどれだけよく保っているかに依存します。
       </p><p>
-       The <code class="function">sortsupport</code> method is optional. If it is not
-       provided, <code class="command">CREATE INDEX</code> builds the index by inserting
-       each tuple to the tree using the <code class="function">penalty</code> and
-       <code class="function">picksplit</code> functions, which is much slower.
+<span class="original">
+       The &lt;function&gt;sortsupport&lt;/function&gt; method is optional. If it is not
+       provided, &lt;command&gt;CREATE INDEX&lt;/command&gt; builds the index by inserting
+       each tuple to the tree using the &lt;function&gt;penalty&lt;/function&gt; and
+       &lt;function&gt;picksplit&lt;/function&gt; functions, which is much slower.
+</span>
+<code class="function">sortsupport</code>メソッドは省略可能です。
+提供されなければ、<code class="command">CREATE INDEX</code>は各タプルを<code class="function">penalty</code>関数と<code class="function">picksplit</code>関数を使ってツリーに挿入することでインデックスを構築します。これはずっと遅いです。
       </p><p>
-       The <acronym class="acronym">SQL</acronym> declaration of the function must look like
+<span class="original">
+       The &lt;acronym&gt;SQL&lt;/acronym&gt; declaration of the function must look like
        this:
+</span>
+この関数の<acronym class="acronym">SQL</acronym>宣言は以下のようになります。
 
 </p><pre class="programlisting">
 CREATE OR REPLACE FUNCTION my_sortsupport(internal)
@@ -1075,16 +1088,26 @@ AS 'MODULE_PATHNAME'
 LANGUAGE C STRICT;
 </pre><p>
 
-       The argument is a pointer to a <code class="structname">SortSupport</code>
+<span class="original">
+       The argument is a pointer to a &lt;structname&gt;SortSupport&lt;/structname&gt;
        struct. At a minimum, the function must fill in its comparator field.
        The comparator takes three arguments: two Datums to compare, and
-       a pointer to the <code class="structname">SortSupport</code> struct. The
+       a pointer to the &lt;structname&gt;SortSupport&lt;/structname&gt; struct. The
        Datums are the two indexed values in the format that they are stored
        in the index; that is, in the format returned by the
-       <code class="function">compress</code> method. The full API is defined in
-       <code class="filename">src/include/utils/sortsupport.h</code>.
+       &lt;function&gt;compress&lt;/function&gt; method. The full API is defined in
+       &lt;filename&gt;src/include/utils/sortsupport.h&lt;/filename&gt;.
+</span>
+引数は<code class="structname">SortSupport</code>構造体へのポインタです。
+最低でも、関数は構造体のcomparatorフィールドを埋めなければなりません。
+比較関数は引数を3つ取ります。比較するDatumを2つと<code class="structname">SortSupport</code>構造体へのポインタです。
+Datumはインデックス付けされる値2つで、インデックスに格納される形式です。すなわち、<code class="function">compress</code>メソッドにより返される形式です。
+完全なAPIは<code class="filename">src/include/utils/sortsupport.h</code>で定義されています。
        </p><p>
+<span class="original">
         The matching code in the C module could then follow this skeleton:
+</span>
+そして、Cモジュール内の対応するコードは以下のような骨格に従うことになります。
 
 </p><pre class="programlisting">
 PG_FUNCTION_INFO_V1(my_sortsupport);
@@ -1092,7 +1115,10 @@ PG_FUNCTION_INFO_V1(my_sortsupport);
 static int
 my_fastcmp(Datum x, Datum y, SortSupport ssup)
 {
+<span class="original">
   /* establish order between x and y by computing some sorting value z */
+</span>
+  /* ソートのための値zを計算することでxとyの間に順序を確立する */
 
   int z1 = ComputeSpatialCode(x);
   int z2 = ComputeSpatialCode(y);
