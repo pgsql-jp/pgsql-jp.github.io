@@ -81,8 +81,12 @@ SELECT clean_emp();
 (1 row)
 </pre><p>
     </p><p>
+<span class="original">
      You can also write this as a procedure, thus avoiding the issue of the
      return type.  For example:
+</span>
+これをプロシージャとして書くこともできるので、返り値の型の問題を避けることができます。
+例を示します。
 </p><pre class="screen">
 CREATE PROCEDURE clean_emp() AS '
     DELETE FROM emp
@@ -91,11 +95,16 @@ CREATE PROCEDURE clean_emp() AS '
 
 CALL clean_emp();
 </pre><p>
+<span class="original">
      In simple cases like this, the difference between a function returning
-     <code class="type">void</code> and a procedure is mostly stylistic.  However,
+     &lt;type&gt;void&lt;/type&gt; and a procedure is mostly stylistic.  However,
      procedures offer additional functionality such as transaction control
      that is not available in functions.  Also, procedures are SQL standard
-     whereas returning <code class="type">void</code> is a PostgreSQL extension.
+     whereas returning &lt;type&gt;void&lt;/type&gt; is a PostgreSQL extension.
+</span>
+このような単純な例では、<code class="type">void</code>を返す関数とプロシージャの違いはほとんど様式的なものです。
+しかし、プロシージャは関数では不可能なトランザクションの制御のような追加機能を提供します。
+また、<code class="type">void</code>を返す関数がPostgreSQLの拡張であるのに対し、プロシージャはSQL標準です。
     </p><div class="note"><h3 class="title">注記</h3><p>
 <span class="original">
       The entire body of an SQL function is parsed before any of it is
@@ -727,19 +736,31 @@ DROP FUNCTION sum_n_product (x int, y int, OUT sum int, OUT product int);
 DROP FUNCTION sum_n_product (int, int);
 </pre><p>
     </p><p>
-     Parameters can be marked as <code class="literal">IN</code> (the default),
-     <code class="literal">OUT</code>, <code class="literal">INOUT</code>, or <code class="literal">VARIADIC</code>.
-     An <code class="literal">INOUT</code>
+<span class="original">
+     Parameters can be marked as &lt;literal&gt;IN&lt;/literal&gt; (the default),
+     &lt;literal&gt;OUT&lt;/literal&gt;, &lt;literal&gt;INOUT&lt;/literal&gt;, or &lt;literal&gt;VARIADIC&lt;/literal&gt;.
+     An &lt;literal&gt;INOUT&lt;/literal&gt;
      parameter serves as both an input parameter (part of the calling
      argument list) and an output parameter (part of the result record type).
-     <code class="literal">VARIADIC</code> parameters are input parameters, but are treated
+     &lt;literal&gt;VARIADIC&lt;/literal&gt; parameters are input parameters, but are treated
      specially as described below.
-    </p></div><div class="sect2" id="XFUNC-OUTPUT-PARAMETERS-PROC"><div class="titlepage"><div><div><h3 class="title">38.5.5. <acronym class="acronym">SQL</acronym> Procedures with Output Parameters</h3></div></div></div><a id="id-1.8.3.8.14.2" class="indexterm"></a><p>
+</span>
+パラメータには、<code class="literal">IN</code>（デフォルト）、<code class="literal">OUT</code>、<code class="literal">INOUT</code>、または<code class="literal">VARIADIC</code>という印を付与できます。
+<code class="literal">INOUT</code>パラメータは、入力パラメータ（呼び出し引数リストの一部）と出力パラメータ（結果のレコード型の一部）の両方を提供します。
+<code class="literal">VARIADIC</code>パラメータは入力パラメータですが、下で説明するように特別に扱われます。
+    </p></div><div class="sect2" id="XFUNC-OUTPUT-PARAMETERS-PROC"><div class="titlepage"><div><div><h3 class="title">38.5.5. 出力パラメータを持つ<acronym class="acronym">SQL</acronym>プロシージャ</h3></div></div></div><span class="original">
+    &lt;title&gt;&lt;acronym&gt;SQL&lt;/acronym&gt; Procedures with Output Parameters&lt;/title&gt;
+</span><a id="id-1.8.3.8.14.2" class="indexterm"></a><a id="id-1.8.3.8.14.3" class="indexterm"></a><p>
+<span class="original">
      Output parameters are also supported in procedures, but they work a bit
-     differently from functions.  In <code class="command">CALL</code> commands,
+     differently from functions.  In &lt;command&gt;CALL&lt;/command&gt; commands,
      output parameters must be included in the argument list.
      For example, the bank account debiting routine from earlier could be
      written like this:
+</span>
+プロシージャでも出力パラメータがサポートされていますが、関数とは少し違った動作になります。
+<code class="command">CALL</code>コマンドでは、出力パラメータは引数リストに含まれていなければなりません。
+たとえば、先程の銀行口座からの引き落としのルーチンはこのように書くことができます。
 </p><pre class="programlisting">
 CREATE PROCEDURE tp1 (accountno integer, debit numeric, OUT new_balance numeric) AS $$
     UPDATE bank
@@ -748,19 +769,32 @@ CREATE PROCEDURE tp1 (accountno integer, debit numeric, OUT new_balance numeric)
     RETURNING balance;
 $$ LANGUAGE SQL;
 </pre><p>
-     To call this procedure, an argument matching the <code class="literal">OUT</code>
+<span class="original">
+     To call this procedure, an argument matching the &lt;literal&gt;OUT&lt;/literal&gt;
      parameter must be included.  It's customary to write
-     <code class="literal">NULL</code>:
+     &lt;literal&gt;NULL&lt;/literal&gt;:
+</span>
+このプロシージャを呼び出すには、<code class="literal">OUT</code>に対応する引数を含めなければなりません。
+習慣として<code class="literal">NULL</code>を書きます。
 </p><pre class="programlisting">
 CALL tp1(17, 100.0, NULL);
 </pre><p>
+<span class="original">
      If you write something else, it must be an expression that is implicitly
      coercible to the declared type of the parameter, just as for input
      parameters.  Note however that such an expression will not be evaluated.
+</span>
+これ以外を書くなら、入力パラメータ同様、そのパラメータの宣言型に暗黙的に矯正できる式でなければなりません。
+しかし、そのような式は評価されないことに注意してください。
     </p><p>
-     When calling a procedure from <span class="application">PL/pgSQL</span>,
-     instead of writing <code class="literal">NULL</code> you must write a variable
-     that will receive the procedure's output.  See <a class="xref" href="plpgsql-control-structures.html#PLPGSQL-STATEMENTS-CALLING-PROCEDURE" title="43.6.3. プロシージャを呼び出す">43.6.3</a> for details.
+<span class="original">
+     When calling a procedure from &lt;application&gt;PL/pgSQL&lt;/application&gt;,
+     instead of writing &lt;literal&gt;NULL&lt;/literal&gt; you must write a variable
+     that will receive the procedure's output.  See &lt;xref
+     linkend="plpgsql-statements-calling-procedure"/&gt; for details.
+</span>
+<span class="application">PL/pgSQL</span>からプロシージャを呼び出す際には<code class="literal">NULL</code>と書く代わりにプロシージャの出力を受け取る変数を書かなければなりません。
+詳細は<a class="xref" href="plpgsql-control-structures.html#PLPGSQL-STATEMENTS-CALLING-PROCEDURE" title="43.6.3. プロシージャを呼び出す">43.6.3</a>をご覧ください。
     </p></div><div class="sect2" id="XFUNC-SQL-VARIADIC-FUNCTIONS"><div class="titlepage"><div><div><h3 class="title">38.5.6. 可変長引数を取る<acronym class="acronym">SQL</acronym>関数</h3></div></div></div><span class="original">
     &lt;title&gt;&lt;acronym&gt;SQL&lt;/acronym&gt; Functions with Variable Numbers of Arguments&lt;/title&gt;
 </span><a id="id-1.8.3.8.15.2" class="indexterm"></a><a id="id-1.8.3.8.15.3" class="indexterm"></a><p>
