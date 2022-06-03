@@ -25,15 +25,19 @@
   reconstruct the original value using information accumulated from the
   inner tuples that are passed through to reach the leaf level.
 </span>
-<acronym class="acronym">SP-GiST</acronym>のツリーのリーフタプルは、インデックスの付けられた列と同じデータ型の値を含んでいます。
-ルートレベルにあるリーフタプルは、必ずインデックスが付けられた元のデータの値を含んでいますが、より下のレベルのリーフタプルは、接尾辞など、圧縮された表現しか含んでいないかも知れません。
+<acronym class="acronym">SP-GiST</acronym>のツリーのリーフタプルは、インデックスの付けられた列の損失のある表現を含むこともできますが、通常はインデックスの付けられた列と同じデータ型の値を含んでいます。
+ルートレベルに格納されたリーフタプルは、インデックスが付けられた元のデータの値を直接表現していますが、より下のレベルのリーフタプルは、接尾辞など、部分的な値しか含んでいないかも知れません。
 この場合、演算子クラスのサポート関数が、内部タプルをリーフレベルまでたどりながら集める情報を使って元の値を再構築できる必要があります。
  </p><p>
-  When an <acronym class="acronym">SP-GiST</acronym> index is created with
-  <code class="literal">INCLUDE</code> columns, the values of those columns are also
-  stored in leaf tuples.  The <code class="literal">INCLUDE</code> columns are of no
-  concern to the <acronym class="acronym">SP-GiST</acronym> operator class, so they are
+<span class="original">
+  When an &lt;acronym&gt;SP-GiST&lt;/acronym&gt; index is created with
+  &lt;literal&gt;INCLUDE&lt;/literal&gt; columns, the values of those columns are also
+  stored in leaf tuples.  The &lt;literal&gt;INCLUDE&lt;/literal&gt; columns are of no
+  concern to the &lt;acronym&gt;SP-GiST&lt;/acronym&gt; operator class, so they are
   not discussed further here.
+</span>
+<acronym class="acronym">SP-GiST</acronym>インデックスが<code class="literal">INCLUDE</code>列を付けて作成された場合には、その列の値もリーフタプルに格納されます。
+<code class="literal">INCLUDE</code>列は<acronym class="acronym">SP-GiST</acronym>演算子クラスとは関係ありませんので、ここではこれ以上議論しません。
  </p><p>
 <span class="original">
   Inner tuples are more complex, since they are branching points in the
@@ -195,27 +199,37 @@ typedef struct spgConfigOut
 演算子クラスが、元々提供されていたインデックスの値を再構築できるときは、<code class="structfield">canReturnData</code>をtrueにします。
 <code class="structfield">attType</code>が可変長で、演算子クラスが接尾辞付けの繰り返しによって長い値を分割できるときにのみ、<code class="structfield">longValuesOK</code>をtrueにします(<a class="xref" href="spgist-implementation.html#SPGIST-LIMITS" title="66.4.1. SP-GiSTの制限">66.4.1</a>参照)。
      </p><p>
-      <code class="structfield">leafType</code> should match the index storage type
-      defined by the operator class's <code class="structfield">opckeytype</code>
+<span class="original">
+      &lt;structfield&gt;leafType&lt;/structfield&gt; should match the index storage type
+      defined by the operator class's &lt;structfield&gt;opckeytype&lt;/structfield&gt;
       catalog entry.
-      (Note that <code class="structfield">opckeytype</code> can be zero,
+      (Note that &lt;structfield&gt;opckeytype&lt;/structfield&gt; can be zero,
       implying the storage type is the same as the operator class's input
       type, which is the most common situation.)
-      For reasons of backward compatibility, the <code class="function">config</code>
-      method can set <code class="structfield">leafType</code> to some other value,
+      For reasons of backward compatibility, the &lt;function&gt;config&lt;/function&gt;
+      method can set &lt;structfield&gt;leafType&lt;/structfield&gt; to some other value,
       and that value will be used; but this is deprecated since the index
       contents are then incorrectly identified in the catalogs.
       Also, it's permissible to
-      leave <code class="structfield">leafType</code> uninitialized (zero);
+      leave &lt;structfield&gt;leafType&lt;/structfield&gt; uninitialized (zero);
       that is interpreted as meaning the index storage type derived from
-      <code class="structfield">opckeytype</code>.
+      &lt;structfield&gt;opckeytype&lt;/structfield&gt;.
+</span>
+<code class="structfield">leafType</code>は、演算子クラスの<code class="structfield">opckeytype</code>カタログエントリにより定義されたインデックス格納型と一致しなければなりません。
+(<code class="structfield">opckeytype</code>は0の場合もあり得て、それは格納型が演算子クラスの入力型と同じであることを意味しています。これが最も一般的な状況であることに注意してください。)
+後方互換性のため、<code class="function">config</code>メソッドは<code class="structfield">leafType</code>を他の値に設定して、その値を使うことができます。ですが、インデックスの内容がカタログでは誤って特定されますので、これは非推奨です。
+また、<code class="structfield">leafType</code>を初期化しないまま(0)にできます。これは<code class="structfield">opckeytype</code>から導かれたインデックス格納型を意味すると解釈されます。
      </p><p>
-      When <code class="structfield">attType</code>
-      and <code class="structfield">leafType</code> are different, the optional
-      method <code class="function">compress</code> must be provided.
-      Method <code class="function">compress</code> is responsible
-      for transformation of datums to be indexed from <code class="structfield">attType</code>
-      to <code class="structfield">leafType</code>.
+<span class="original">
+      When &lt;structfield&gt;attType&lt;/structfield&gt;
+      and &lt;structfield&gt;leafType&lt;/structfield&gt; are different, the optional
+      method &lt;function&gt;compress&lt;/function&gt; must be provided.
+      Method &lt;function&gt;compress&lt;/function&gt; is responsible
+      for transformation of datums to be indexed from &lt;structfield&gt;attType&lt;/structfield&gt;
+      to &lt;structfield&gt;leafType&lt;/structfield&gt;.
+</span>
+<code class="structfield">attType</code>と<code class="structfield">leafType</code>が異なる場合には、オプションのメソッド<code class="function">compress</code>を提供しなければなりません。
+メソッド<code class="function">compress</code>は、インデックス付けされるデータを<code class="structfield">attType</code>から<code class="structfield">leafType</code>に変換する責任があります。
      </p></dd><dt><span class="term"><code class="function">choose</code></span></dt><dd><p>
 <span class="original">
         Chooses a method for inserting a new value into an inner tuple.
@@ -732,7 +746,6 @@ typedef struct spgInnerConsistentOut
 とりわけ、比較値がNULLかどうかを確認するために<code class="structfield">sk_flags</code>を検査する必要はありません。なぜならSP-GiSTのコアのコードがそのような条件を除外するからです。
 配列<code class="structfield">orderbys</code>は長さが<code class="structfield">norderbys</code>で、(もしあれば)順序付け演算子を同じように記述します。
 <code class="structfield">reconstructedValue</code>は親タプルのために再構築された値で、ルートレベルの場合、あるいは親レベルの<code class="function">inner_consistent</code>関数が値を返さなかった場合は<code class="literal">(Datum) 0</code>となります。
-<code class="structfield">reconstructedValue</code>は常に<code class="structname">spgConfigOut</code>.<code class="structfield">leafType</code>型です。
 <code class="structfield">traversalValue</code>は親インデックスのタプルの<code class="function">inner_consistent</code>の前の呼び出しから渡された探索データへのポインタで、ルートレベルならNULLです。
 <code class="structfield">traversalMemoryContext</code>は出力探索値が格納されるメモリコンテキストです（以下を参照）。
 <code class="structfield">level</code>は現在の内部タプルのレベルを、ルートレベルを0として数えたものです。
@@ -783,7 +796,9 @@ typedef struct spgInnerConsistentOut
 <code class="structfield">nNodes</code>は探索で訪れる必要のある子ノードの数にセットされなければなりません。また、<code class="structfield">nodeNumbers</code>はそれらの番号の配列にセットされなければなりません。
 演算子クラスがレベルを監視しているときは、それぞれのノードへと下って訪れるときに必要なレベルの増分の配列を<code class="structfield">levelAdds</code>にセットします。
 (この増分はすべてのノードについて同じになることも多いですが、必ずしもそうなるとは限らないので配列が使われます。)
-値の再構築が必要なときには、訪れるそれぞれの子ノードについて再構築された<code class="structname">spgConfigOut</code>.<code class="structfield">leafType</code>型の値の配列を<code class="structfield">reconstructedValues</code>にセットします。再構築が必要でなければ、<code class="structfield">reconstructedValues</code>をNULLのままにします。
+値の再構築が必要なときには、訪れるそれぞれの子ノードについて再構築された値の配列を<code class="structfield">reconstructedValues</code>にセットします。再構築が必要でなければ、<code class="structfield">reconstructedValues</code>をNULLのままにします。
+再構築された値は<code class="structname">spgConfigOut</code>.<code class="structfield">leafType</code>型と仮定されます。
+(しかしながら、コアシステムはそれらに対してコピー以外のことをしませんので、<code class="structfield">leafType</code>と同じ<code class="literal">typlen</code>と<code class="literal">typbyval</code>属性を持っていれば十分です。)
 順序付け検索を実行するなら、<code class="structfield">orderbys</code>配列に従って<code class="structfield">distances</code>に距離の値の配列を設定します(距離の最も近いノードが最初に処理されます)。
 そうでなければNULLのままにします。
 追加の外部情報（<span class="quote">「<span class="quote">探索値</span>」</span>）をツリー探索の下位レベルに渡したい場合は、<code class="structfield">traversalValues</code>を適切な探索値、訪れるそれぞれの子ノードについて1つの配列にセットします。
@@ -899,7 +914,6 @@ typedef struct spgLeafConsistentOut
 なお、比較値がNULLかどうかを確認するために<code class="structfield">sk_flags</code>を検査する必要はありません。なぜならSP-GiSTのコアのコードがそのような条件を除外するからです。
 配列<code class="structfield">orderbys</code>は長さが<code class="structfield">norderbys</code>で、順序付け演算子を同じように記述します。
 <code class="structfield">reconstructedValue</code>は親タプルのために再構築された値で、ルートレベルの場合、あるいは親レベルの<code class="function">inner_consistent</code>関数が値を返さなかった場合は<code class="literal">(Datum) 0</code>となります。
-<code class="structfield">reconstructedValue</code>は常に<code class="structname">spgConfigOut</code>.<code class="structfield">leafType</code>型です。
 <code class="structfield">traversalValue</code>は親インデックスのタプルの<code class="function">inner_consistent</code>の前の呼び出しから渡された探索データへのポインタで、ルートレベルならNULLです。
 <code class="structfield">level</code>は現在のリーフタプルのレベルを、ルートレベルを0として数えたものです。
 <code class="structfield">returnData</code>は、この問い合わせで再構築されたデータが必要な場合に<code class="literal">true</code>となりますが、これは<code class="function">config</code>関数が<code class="structfield">canReturnData</code>を確認した場合にのみ、そうなります。
@@ -923,7 +937,7 @@ typedef struct spgLeafConsistentOut
        fetching the tuple from the heap, and will reorder the tuples if needed.
 </span>
 この関数は、リーフタプルが問い合わせにマッチすれば<code class="literal">true</code>を返し、マッチしなければ<code class="literal">false</code>を返します。
-<code class="literal">true</code>の場合、<code class="structfield">returnData</code>が<code class="literal">true</code>であれば、<code class="structfield">leafValue</code>は、このリーフタプルにインデックス付けするために元々提供された<code class="structname">spgConfigIn</code>.<code class="structfield">attType</code>型の値にセットされなければなりません。
+<code class="literal">true</code>の場合、<code class="structfield">returnData</code>が<code class="literal">true</code>であれば、<code class="structfield">leafValue</code>を、このリーフタプルにインデックス付けするために元々提供された(<code class="structname">spgConfigIn</code>.<code class="structfield">attType</code>型の)値に設定しなければなりません。
 また、マッチするかどうかが不確実で、マッチするかの確認のために実際のヒープタプルに演算子を再適用しなければならないときは、<code class="structfield">recheck</code>が<code class="literal">true</code>にセットされることがあります。
 順序付け検索を実行するなら、<code class="structfield">orderbys</code>配列に従って<code class="structfield">distances</code>に距離の値の配列を設定します。
 そうでなければNULLのままにします。
@@ -943,13 +957,17 @@ typedef struct spgLeafConsistentOut
        &lt;structname&gt;spgConfigOut&lt;/structname&gt;.&lt;structfield&gt;leafType&lt;/structfield&gt;.
        The output value must not contain an out-of-line TOAST pointer.
 </span>
-インデックページのリーフタプルでデータ項目を物理ストレージに適した形式に変換します。
-<code class="structname">spgConfigIn</code>.<code class="structfield">attType</code>の値を受け付け、<code class="structname">spgConfigOut</code>.<code class="structfield">leafType</code>の値を返します。
-出力値はTOASTされていないべきです。
+インデックスのリーフタプルでデータ項目を物理ストレージに適した形式に変換します。
+<code class="structname">spgConfigIn</code>.<code class="structfield">attType</code>型の値を受け付け、<code class="structname">spgConfigOut</code>.<code class="structfield">leafType</code>型の値を返します。
+出力値は行に収まらないTOASTを含んでいてはいけません。
       </p><p>
-       Note: the <code class="function">compress</code> method is only applied to
+<span class="original">
+       Note: the &lt;function&gt;compress&lt;/function&gt; method is only applied to
        values to be stored.  The consistent methods receive query scankeys
-       unchanged, without transformation using <code class="function">compress</code>.
+       unchanged, without transformation using &lt;function&gt;compress&lt;/function&gt;.
+</span>
+注意: <code class="function">compress</code>メソッドは格納される値にのみ適用されます。
+適合するメソッドは<code class="function">compress</code>を使って変換することなく、問い合わせのscankeysをそのまま受け取ります。
       </p></dd><dt><span class="term"><code class="function">options</code></span></dt><dd><p>
 <span class="original">
        Defines a set of user-visible parameters that control operator class
@@ -976,7 +994,7 @@ LANGUAGE C STRICT;
        functions using the &lt;literal&gt;PG_HAS_OPCLASS_OPTIONS()&lt;/literal&gt; and
        &lt;literal&gt;PG_GET_OPCLASS_OPTIONS()&lt;/literal&gt; macros.
 </span>
-関数には<em class="replaceable"><code>local_relopts</code></em>構造体へのポインタが渡されますが、構造体を演算子クラスに固有のオプションの集合で満たすことが必要です。
+関数には<code class="structname">local_relopts</code>構造体へのポインタが渡されますが、構造体を演算子クラスに固有のオプションの集合で満たすことが必要です。
 オプションはマクロ<code class="literal">PG_HAS_OPCLASS_OPTIONS()</code>と<code class="literal">PG_GET_OPCLASS_OPTIONS()</code>を使って他のサポート関数からアクセスできます。
       </p><p>
 <span class="original">
