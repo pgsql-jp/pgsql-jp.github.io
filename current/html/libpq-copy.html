@@ -173,8 +173,7 @@ int PQputCopyEnd(PGconn *conn,
 <em class="parameter"><code>errormsg</code></em>が<code class="symbol">NULL</code>でない場合は、<code class="command">COPY</code>は強制的に失敗させられました。
 <em class="parameter"><code>errormsg</code></em>が指し示す文字列はエラーメッセージとして使用されます。
 （しかし、このエラーメッセージが正しくサーバから返ったものであるとは仮定すべきではありません。
-サーバは既に別の原因で<code class="command">COPY</code>に失敗していた可能性があります。
-また、この強制的な失敗は3.0より前のプロトコルの接続を使用している場合は動作しません。）
+サーバは既に別の原因で<code class="command">COPY</code>に失敗していた可能性があります。）
       </p><p>
 <span class="original">
        The result is 1 if the termination message was sent; or in
@@ -262,7 +261,7 @@ int PQgetCopyData(PGconn *conn,
 </span>
 行の取り込みに成功した時、戻り値は行内のデータのバイト数になります。
 (これは常に0より大きくなります。)
-返された文字列は常にヌル終端ですが、おそらくテキスト<code class="command">COPY</code>でのみ有用になるでしょう。
+返された文字列は常にNULL終端ですが、おそらくテキスト<code class="command">COPY</code>でのみ有用になるでしょう。
 ゼロという結果は、<code class="command">COPY</code>が進行中で、行がまだ利用できない状態であることを示します。
 (<em class="parameter"><code>async</code></em>が真の場合にのみ発生することがあります。)
 -1という結果は、<code class="command">COPY</code>が完了したことを示します。
@@ -407,14 +406,14 @@ int PQgetlineAsync(PGconn *conn,
 しかし呼び出し側が準備したバッファが少なすぎ、サーバから送られてくる行を保持しておくことができない場合には、分割された行データを返します。
 テキストデータでは、これは最後の1バイトが<code class="literal">\n</code>かどうかを確認すれば検出できます。
 （バイナリ<code class="command">COPY</code>の場合に同様の検出を行うためには、実際に<code class="command">COPY</code>データの書式を解析しなければなりません。）
-なお、返される文字列はヌル終端ではありません。
-（ヌル終端を後から付け加えるのであれば、実際に確保するバッファサイズ-1を<em class="parameter"><code>bufsize</code></em>として渡すようにしてください。）
+なお、返される文字列はNULL終端ではありません。
+（NULL終端を後から付け加えるのであれば、実際に確保するバッファサイズ-1を<em class="parameter"><code>bufsize</code></em>として渡すようにしてください。）
       </p></dd><dt id="LIBPQ-PQPUTLINE"><span class="term"><code class="function">PQputline</code><a id="id-1.7.3.17.10.3.3.1.2" class="indexterm"></a></span></dt><dd><p>
 <span class="original">
        Sends  a  null-terminated  string  to  the server.  Returns 0 if
        OK and &lt;symbol&gt;EOF&lt;/symbol&gt; if unable to send the string.
 </span>
-サーバにヌル終端の文字列を送信します。
+サーバにNULL終端の文字列を送信します。
 問題なければ0を返します。
 文字列の送信ができなかった場合は<code class="symbol">EOF</code>を返します。
 </p><pre class="synopsis">
@@ -452,7 +451,7 @@ int PQputline(PGconn *conn,
        Sends  a  non-null-terminated  string  to  the server.  Returns
        0 if OK and &lt;symbol&gt;EOF&lt;/symbol&gt; if unable to send the string.
 </span>
-ヌル終端ではない文字列をサーバに送信します。
+NULL終端ではない文字列をサーバに送信します。
 問題なければ0を返します。
 文字列の送信ができなかった場合は<code class="symbol">EOF</code>を返します。
 </p><pre class="synopsis">
@@ -467,7 +466,7 @@ int PQputnbytes(PGconn *conn,
        specified directly.  Use this procedure when sending binary data.
 </span>
 これはまさに<a class="xref" href="libpq-copy.html#LIBPQ-PQPUTLINE"><code class="function">PQputline</code></a>と同様です。
-ただし、直接送信バイト数を指定するため、ヌル終端である必要がありません。
+ただし、直接送信バイト数を指定するため、NULL終端である必要がありません。
 バイナリデータを送信する時はこのプロシージャを使用してください。
       </p></dd><dt id="LIBPQ-PQENDCOPY"><span class="term"><code class="function">PQendcopy</code><a id="id-1.7.3.17.10.3.5.1.2" class="indexterm"></a></span></dt><dd><p>
 <span class="original">
@@ -511,7 +510,7 @@ int PQendcopy(PGconn *conn);
        of &lt;acronym&gt;SQL&lt;/acronym&gt; commands will be executed correctly.
 </span>
 <a class="xref" href="libpq-async.html#LIBPQ-PQGETRESULT"><code class="function">PQgetResult</code></a>を使う場合、アプリケーションは<a class="xref" href="libpq-copy.html#LIBPQ-PQGETLINE"><code class="function">PQgetline</code></a>を繰り返し呼び出して<code class="literal">PGRES_COPY_OUT</code>に応答し、終端行を見つけたら続いて<a class="xref" href="libpq-copy.html#LIBPQ-PQENDCOPY"><code class="function">PQendcopy</code></a>を呼び出さなければなりません。
-それから、<a class="xref" href="libpq-async.html#LIBPQ-PQGETRESULT"><code class="function">PQgetResult</code></a>がヌルポインタを返すまで、<a class="xref" href="libpq-async.html#LIBPQ-PQGETRESULT"><code class="function">PQgetResult</code></a>のループに戻らなければなりません。
+それから、<a class="xref" href="libpq-async.html#LIBPQ-PQGETRESULT"><code class="function">PQgetResult</code></a>がNULLポインタを返すまで、<a class="xref" href="libpq-async.html#LIBPQ-PQGETRESULT"><code class="function">PQgetResult</code></a>のループに戻らなければなりません。
 同じように <code class="literal">PGRES_COPY_IN</code>は連続した<a class="xref" href="libpq-copy.html#LIBPQ-PQPUTLINE"><code class="function">PQputline</code></a>で処理し、それから<a class="xref" href="libpq-copy.html#LIBPQ-PQENDCOPY"><code class="function">PQendcopy</code></a>で締めくくった後に<a class="xref" href="libpq-async.html#LIBPQ-PQGETRESULT"><code class="function">PQgetResult</code></a>のループに戻ります。
 このようにすることで、一連の<acronym class="acronym">SQL</acronym>コマンド群に含めた<code class="command">COPY</code>コマンドを確実に、また正しく実行できるはずです。
       </p><p>
