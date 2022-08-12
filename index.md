@@ -5,6 +5,12 @@ layout: default
 
 [正式版](https://www.postgresql.jp/document/)
 
+## PostgreSQL 14
+
+| HTML （オンライン）           | PDF                                           | EPUB                                         | man | 更新日     |
+|:---------------------------|:---------------------------------------------:|:--------------------------------------------:|:---:|:----------:|
+| [14.0](jpug-doc/14.0/html/) | [PDF](jpug-doc/14.0/postgresql-14.0-A4.pdf) | [EPUB](jpug-doc/14.0/postgresql-14.0.epub) | [man.tar.gz](jpug-doc/14.0/man.tar.gz) | 2022-08-12 |
+
 ### 最新
 
 last-updated: 2022-08-09 04:27:43 JST
