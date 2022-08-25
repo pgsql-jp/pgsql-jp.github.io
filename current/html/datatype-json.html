@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>8.14. JSONデータ型</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="datatype-xml.html" title="8.13. XML型" /><link rel="next" href="arrays.html" title="8.15. 配列" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 14.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="datatype.html" title="第8章 データ型">第8章 データ型</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 14.0 &#10;                      datatype-json.html">誤訳等の報告
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>8.14. JSONデータ型</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="datatype-xml.html" title="8.13. XML型" /><link rel="next" href="arrays.html" title="8.15. 配列" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 14.5文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="datatype.html" title="第8章 データ型">第8章 データ型</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 14.5 &#10;                      datatype-json.html">誤訳等の報告
                     </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="datatype-xml.html" title="8.13. XML型">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="datatype.html" title="第8章 データ型">上へ</a></td><td width="60%" align="center">8.14. <acronym class="acronym">JSON</acronym>データ型</td><td width="20%" align="right"> <a accesskey="n" href="arrays.html" title="8.15. 配列">次へ</a></td></tr></table><hr /></div><div class="sect1" id="DATATYPE-JSON"><div class="titlepage"><div><div><h2 class="title" style="clear: both">8.14. <acronym class="acronym">JSON</acronym>データ型</h2></div></div></div><span class="original">
  &lt;title&gt;&lt;acronym&gt;JSON&lt;/acronym&gt; Types&lt;/title&gt;
 </span><a id="id-1.5.7.24.2" class="indexterm"></a><a id="id-1.5.7.24.3" class="indexterm"></a><p>
@@ -511,9 +511,10 @@ GINインデックスは、多数の<code class="type">jsonb</code>ドキュメ�
   </p><p>
 <span class="original">
     The default GIN operator class for &lt;type&gt;jsonb&lt;/type&gt; supports queries with
-    top-level key-exists operators &lt;literal&gt;?&lt;/literal&gt;, &lt;literal&gt;?&amp;amp;&lt;/literal&gt;
-    and &lt;literal&gt;?|&lt;/literal&gt; operators and path/value-exists operator
-    &lt;literal&gt;@&amp;gt;&lt;/literal&gt;.
+    the key-exists operators &lt;literal&gt;?&lt;/literal&gt;, &lt;literal&gt;?|&lt;/literal&gt;
+    and &lt;literal&gt;?&amp;amp;&lt;/literal&gt;, the containment operator
+    &lt;literal&gt;@&amp;gt;&lt;/literal&gt;, and the &lt;type&gt;jsonpath&lt;/type&gt; match
+    operators &lt;literal&gt;@?&lt;/literal&gt; and &lt;literal&gt;@@&lt;/literal&gt;.
     (For details of the semantics that these operators
     implement, see &lt;xref linkend="functions-jsonb-op-table"/&gt;.)
     An example of creating an index with this operator class is:
@@ -526,7 +527,8 @@ CREATE INDEX idxgin ON api USING GIN (jdoc);
 </pre><p>
 <span class="original">
     The non-default GIN operator class &lt;literal&gt;jsonb_path_ops&lt;/literal&gt;
-    supports indexing the &lt;literal&gt;@&amp;gt;&lt;/literal&gt; operator only.
+    does not support the key-exists operators, but it does support
+    &lt;literal&gt;@&amp;gt;&lt;/literal&gt;, &lt;literal&gt;@?&lt;/literal&gt; and &lt;literal&gt;@@&lt;/literal&gt;.
     An example of creating an index with this operator class is:
 </span>
 デフォルトでないGIN演算子クラスは、<code class="literal">@&gt;</code>演算子のみサポートする<code class="literal">jsonb_path_ops</code>があります。
@@ -609,29 +611,6 @@ CREATE INDEX idxgintags ON api USING GIN ((jdoc -&gt; 'tags'));
 （式インデックスに関する詳細情報は<a class="xref" href="indexes-expressional.html" title="11.7. 式に対するインデックス">11.7</a>を参照してください。）
   </p><p>
 <span class="original">
-    Also, GIN index supports &lt;literal&gt;@@&lt;/literal&gt; and &lt;literal&gt;@?&lt;/literal&gt;
-    operators, which perform &lt;literal&gt;jsonpath&lt;/literal&gt; matching.
-</span>
-また、GINインデックスは<code class="literal">jsonpath</code>のマッチングを実行する<code class="literal">@@</code>演算子と<code class="literal">@?</code>演算子をサポートします。
-</p><pre class="programlisting">
-SELECT jdoc-&gt;'guid', jdoc-&gt;'name' FROM api WHERE jdoc @@ '$.tags[*] == "qui"';
-</pre><p>
-</p><pre class="programlisting">
-SELECT jdoc-&gt;'guid', jdoc-&gt;'name' FROM api WHERE jdoc @? '$.tags[*] ? (@ == "qui")';
-</pre><p>
-<span class="original">
-    GIN index extracts statements of following form out of
-    &lt;literal&gt;jsonpath&lt;/literal&gt;: &lt;replaceable&gt;accessors_chain&lt;/replaceable&gt; = &lt;replaceable&gt;const&lt;/replaceable&gt;.
-    Accessors chain may consist of &lt;literal&gt;.key&lt;/literal&gt;,
-    &lt;literal&gt;[*]&lt;/literal&gt;, and &lt;literal&gt;[&lt;replaceable&gt;index&lt;/replaceable&gt;]&lt;/literal&gt; accessors.
-    &lt;literal&gt;jsonb_ops&lt;/literal&gt; additionally supports &lt;literal&gt;.*&lt;/literal&gt;
-    and &lt;literal&gt;.**&lt;/literal&gt; accessors.
-</span>
-GINインデックスは、<code class="literal">jsonpath</code>: <em class="replaceable"><code>accessors_chain</code></em> = <em class="replaceable"><code>const</code></em>の形式の文を抽出します。
-アクセサチェーン(Accessors chain)は<code class="literal">[*]</code>と<code class="literal">[<em class="replaceable"><code>index</code></em>]</code>アクセサで構成されます。
-<code class="literal">jsonb_ops</code>は、さらに<code class="literal">.*</code>と<code class="literal">.**</code>アクセサもサポートします。
-  </p><p>
-<span class="original">
     Another approach to querying is to exploit containment, for example:
 </span>
 別のアプローチとして包含を利用する問い合わせがあります。例を示します。
@@ -656,10 +635,31 @@ SELECT jdoc-&gt;'guid', jdoc-&gt;'name' FROM api WHERE jdoc @&gt; '{"tags": ["qu
 しかし、前の例では、<code class="literal">tags</code>キーの下にあるデータのみをインデックスに格納していたのに対して、そのようなインデックスは、<code class="structfield">jdoc</code>のすべてのキーと値のコピーを保存しますので、注意が必要です。
 シンプルなインデックスアプローチは（それが全てのキーについての問い合わせをサポートしているため）はるかに柔軟ですが、ターゲット式インデックスは単純なインデックスより小さく、検索のときに高速である可能性が高くなります。
   </p><p>
+    GIN indexes also support the <code class="literal">@?</code>
+    and <code class="literal">@@</code> operators, which
+    perform <code class="type">jsonpath</code> matching.  Examples are
+</p><pre class="programlisting">
+SELECT jdoc-&gt;'guid', jdoc-&gt;'name' FROM api WHERE jdoc @? '$.tags[*] ? (@ == "qui")';
+</pre><p>
+</p><pre class="programlisting">
+SELECT jdoc-&gt;'guid', jdoc-&gt;'name' FROM api WHERE jdoc @@ '$.tags[*] == "qui"';
+</pre><p>
+    For these operators, a GIN index extracts clauses of the form
+    <code class="literal"><em class="replaceable"><code>accessors_chain</code></em>
+    = <em class="replaceable"><code>constant</code></em></code> out of
+    the <code class="type">jsonpath</code> pattern, and does the index search based on
+    the keys and values mentioned in these clauses.  The accessors chain
+    may include <code class="literal">.<em class="replaceable"><code>key</code></em></code>,
+    <code class="literal">[*]</code>,
+    and <code class="literal">[<em class="replaceable"><code>index</code></em>]</code> accessors.
+    The <code class="literal">jsonb_ops</code> operator class also
+    supports <code class="literal">.*</code> and <code class="literal">.**</code> accessors,
+    but the <code class="literal">jsonb_path_ops</code> operator class does not.
+  </p><p>
 <span class="original">
     Although the &lt;literal&gt;jsonb_path_ops&lt;/literal&gt; operator class supports
-    only queries with the &lt;literal&gt;@&amp;gt;&lt;/literal&gt;, &lt;literal&gt;@@&lt;/literal&gt;
-    and &lt;literal&gt;@?&lt;/literal&gt; operators, it has notable
+    only queries with the &lt;literal&gt;@&amp;gt;&lt;/literal&gt;, &lt;literal&gt;@?&lt;/literal&gt;
+    and &lt;literal&gt;@@&lt;/literal&gt; operators, it has notable
     performance advantages over the default operator
     class &lt;literal&gt;jsonb_ops&lt;/literal&gt;.  A &lt;literal&gt;jsonb_path_ops&lt;/literal&gt;
     index is usually much smaller than a &lt;literal&gt;jsonb_ops&lt;/literal&gt;
@@ -911,16 +911,10 @@ UPDATE table_name SET jsonb_field[2] = '2';
 入れ子の配列やオブジェクト構造が作られ、前者の場合には、添字のパスにより指定されたように値が代入できるようになるまで<code class="literal">null</code>で埋められます。
 
 </p><pre class="programlisting">
-<span class="original">
-&amp;#45;- Where jsonb_field was {}, it is now {'a': [{'b': 1}]}
-</span>
--- jsonb_fieldが{}であれば、{'a': [{'b': 1}]}になる
+-- Where jsonb_field was {}, it is now {"a": [{"b": 1}]}
 UPDATE table_name SET jsonb_field['a'][0]['b'] = '1';
 
-<span class="original">
-&amp;#45;- Where jsonb_field was [], it is now [null, {'a': 1}]
-</span>
--- jsonb_fieldが[]であれば、[null, {'a': 1}]になる
+-- Where jsonb_field was [], it is now [null, {"a": 1}]
 UPDATE table_name SET jsonb_field[1]['a'] = '1';
 </pre><p>
 
@@ -1215,4 +1209,4 @@ JSONプリミティブ型のパスリテラル。
       from values within objects.
 </span>
 この目的のために、<span class="quote">「<span class="quote">値</span>」</span> という用語は配列の要素を含みますが、JSONの専門用語では、オブジェクト内の値と配列の要素が時々違うことがあります。
-     </p></div></div></div><div xmlns="http://www.w3.org/TR/xhtml1/transitional" class="navfooter"><hr></hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="datatype-xml.html" title="8.13. XML型">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="datatype.html" title="第8章 データ型">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="arrays.html" title="8.15. 配列">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">8.13. <acronym xmlns="http://www.w3.org/1999/xhtml" class="acronym">XML</acronym>型 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 14.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 8.15. 配列</td></tr></table></div></body></html>
+     </p></div></div></div><div xmlns="http://www.w3.org/TR/xhtml1/transitional" class="navfooter"><hr></hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="datatype-xml.html" title="8.13. XML型">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="datatype.html" title="第8章 データ型">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="arrays.html" title="8.15. 配列">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">8.13. <acronym xmlns="http://www.w3.org/1999/xhtml" class="acronym">XML</acronym>型 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 14.5文書">ホーム</a></td><td width="40%" align="right" valign="top"> 8.15. 配列</td></tr></table></div></body></html>
