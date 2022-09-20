@@ -190,7 +190,7 @@ archive_command = 'copy "%p" "C:\\server\\archivedir\\%f"'  # Windows
     &lt;literal&gt;%p&lt;/literal&gt; and &lt;literal&gt;%f&lt;/literal&gt; parameters have been replaced,
     the actual command executed might look like this:
 </span>
-これは、アーカイブ可能なWALセグメントを<code class="literal">/mnt/server/archivedir</code>ディレクトリにコピーします
+これは、アーカイブ可能なWALセグメントを<code class="filename">/mnt/server/archivedir</code>ディレクトリにコピーします
 （これは一例です。
 推奨するものではなく、また、全てのプラットフォームで動作しない可能性があります）。
 <code class="literal">%p</code>および<code class="literal">%f</code>パラメータが置き換えられたあと、実行された実コマンドは以下のようになります。
@@ -243,7 +243,6 @@ test ! -f /mnt/server/archivedir/00000001000000A900000065 &amp;&amp; cp pg_wal/0
     preserve the integrity of your archive in case of administrator error
     (such as sending the output of two different servers to the same archive
     directory).
-
 </span>
 通常アーカイブ用コマンドは既存のアーカイブ済みファイルの上書きを行わないように設計されなければなりません。
 これは、管理者のミス（例えば2つの異なるサーバの出力を同一のアーカイブ用ディレクトリに送信してしまうなど）といった場合からアーカイブ状況の整合性を保護するための安全策として重要です。
@@ -434,7 +433,6 @@ WALアーカイブによって<span class="productname">PostgreSQL</span>デー�
 (ファイル名の2番目のパートはWALファイルの厳密な位置が記載されます。通常は無視することができます。)
 一旦、安全にファイルシステムのバックアップとそのバックアップ中に使用されたWALセグメントファイル(バックアップ履歴ファイルから特定できます)を取得すると、それより数値の小さな全てのWALアーカイブセグメントはファイルシステムの復旧には必要が無く、削除することができます。
 しかし、データを確実に復旧させるためには数世代のバックアップセットを保持することを考慮すべきです。
-
    </p><p>
 <span class="original">
     The backup history file is just a small text file. It contains the
@@ -569,7 +567,9 @@ SELECT * FROM pg_stop_backup(false, true);
      the last WAL segment file written during the backup interval to be
      ready to archive.
 </span>
-これはバックアップモードを終了し、次のWALセグメントへの自動切換えを行います。
+これはバックアップモードを終了し、プライマリでは、次のWALセグメントへの自動切換えを行います。
+スタンバイでは、WALセグメントを自動的に切り替えることはできません。
+ですから、手動切り替えを行うためにプライマリで<code class="function">pg_switch_wal</code>を実行することをお勧めします。
 この切換えの理由は、バックアップ期間中に書き出された最後のWALファイルがアーカイブできるよう準備することです。
     </p><p>
 <span class="original">
@@ -810,7 +810,6 @@ SELECT pg_stop_backup();
     </p></div><div class="sect3" id="BACKUP-LOWLEVEL-BASE-BACKUP-DATA"><div class="titlepage"><div><div><h4 class="title">26.3.3.3. データディレクトリのバックアップ</h4></div></div></div><span class="original">
    &lt;title&gt;Backing Up the Data Directory&lt;/title&gt;
 </span><p>
-
 <span class="original">
     Some file system backup tools emit warnings or errors
     if the files they are trying to copy change while the copy proceeds.
@@ -825,8 +824,8 @@ SELECT pg_stop_backup();
     copying it.  Fortunately, GNU &lt;application&gt;tar&lt;/application&gt; versions 1.16 and
     later exit with 1 if a file was changed during the backup,
     and 2 for other errors.  With GNU &lt;application&gt;tar&lt;/application&gt; version 1.23 and
-    later, you can use the warning options &lt;literal&gt;&amp;#045;-warning=no-file-changed
-    &amp;#045;-warning=no-file-removed&lt;/literal&gt; to hide the related warning messages.
+    later, you can use the warning options &lt;literal&gt;&amp;#45;-warning=no-file-changed
+    &amp;#45;-warning=no-file-removed&lt;/literal&gt; to hide the related warning messages.
 </span>
 ファイルシステムのバックアップツール中には複写している途中でファイルが変更されると警告もしくはエラーを報告するものがあります。
 稼働しているデータベースのベースバックアップを取っている場合には、この状況は正常でエラーではありません。
@@ -1367,13 +1366,12 @@ tar -rf /var/lib/pgsql/backup.tar /var/lib/pgsql/archive/
 バックアップスクリプトにエラー処理を加えておくことを忘れないでください。
      </p></div><div class="sect3" id="COMPRESSED-ARCHIVE-LOGS"><div class="titlepage"><div><div><h4 class="title">26.3.6.2. 圧縮アーカイブログ</h4></div></div></div><span class="original">
      &lt;title&gt;Compressed Archive Logs&lt;/title&gt;
- </span><p>
+</span><p>
 <span class="original">
       If archive storage size is a concern, you can use
       &lt;application&gt;gzip&lt;/application&gt; to compress the archive files:
 </span>
 もし、アーカイブのストレージ容量に懸念がある場合、アーカイブファイルを圧縮するために<span class="application">gzip</span>を使用することもできます。
-
 </p><pre class="programlisting">
 archive_command = 'gzip &lt; %p &gt; /mnt/server/archivedir/%f.gz'
 </pre><p>
