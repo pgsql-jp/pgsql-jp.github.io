@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>5.4. 制約</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="ddl-generated-columns.html" title="5.3. 生成列" /><link rel="next" href="ddl-system-columns.html" title="5.5. システム列" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 14.5文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="ddl.html" title="第5章 データ定義">第5章 データ定義</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 14.5 &#10;                      ddl-constraints.html">誤訳等の報告
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>5.4. 制約</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="ddl-generated-columns.html" title="5.3. 生成列" /><link rel="next" href="ddl-system-columns.html" title="5.5. システム列" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 14.5文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="ddl.html" title="第5章 データ定義">第5章 データ定義</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 14.5 : ddl-constraints.html">誤訳等の報告
                     </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="ddl-generated-columns.html" title="5.3. 生成列">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="ddl.html" title="第5章 データ定義">上へ</a></td><td width="60%" align="center">5.4. 制約</td><td width="20%" align="right"> <a accesskey="n" href="ddl-system-columns.html" title="5.5. システム列">次へ</a></td></tr></table><hr /></div><div class="sect1" id="DDL-CONSTRAINTS"><div class="titlepage"><div><div><h2 class="title" style="clear: both">5.4. 制約</h2></div></div></div><span class="original">
   &lt;title&gt;Constraints&lt;/title&gt;
 </span><a id="id-1.5.4.6.2" class="indexterm"></a><a id="id-1.5.4.6.3" class="indexterm"></a><p>
@@ -209,8 +209,8 @@ CREATE TABLE products (
 </span>
 <span class="productname">PostgreSQL</span>は、検査対象の新しい行もしくは更新対象行以外のテーブルデータを参照する<code class="literal">CHECK</code>制約はサポートしていません。
 このルールに違反する<code class="literal">CHECK</code>制約は単純なテストでは動いたように見えますが、（関連する他の行が後で更新されたことにより）データベースがその制約条件が偽になるような状態にならないことを保証できません。
-これによってデータベースのダンプと再ロードの失敗が引き起こされるでしょう。
-最終的なデータベース状態が制約に対して一貫した状態であったとしても、制約を満たす順で行がロードされないことにより再ロードは失敗することがあります。
+これによってデータベースのダンプとリストアの失敗が引き起こされるでしょう。
+最終的なデータベース状態が制約に対して一貫した状態であったとしても、制約を満たす順で行がロードされないことによりリストアは失敗することがあります。
 可能ならば<code class="literal">UNIQUE</code>、<code class="literal">EXCLUDE</code>、<code class="literal">FOREIGN KEY</code>制約を使って行あるいはテーブルをまたがる制約を表現してください。
     </p><p>
 <span class="original">
@@ -222,11 +222,8 @@ CREATE TABLE products (
      restoring data, so that the check will not be enforced during a
      dump/restore.)
 </span>
-<span class="original"> マッチ度[97.176471]
-If what you desire is a one-time check against other rows at row insertion, rather than a continuously-maintained consistency guarantee, a custom &lt;link linkend="triggers"&gt;trigger&lt;/link&gt; can be used to implement that. (This approach avoids the dump/reload problem because &lt;application&gt;pg_dump&lt;/application&gt; does not reinstall triggers until after reloading data, so that the check will not be enforced during a dump/reload.)
-</span>
 常に一貫性の保障を維持するのではなく、行挿入の際に一回だけの行の検査が必要なら、その実装のためにカスタム<a class="link" href="triggers.html" title="第39章 トリガ">トリガ</a>が利用できます。
-（<span class="application">pg_dump</span>はデータの再ロード後までトリガを再インストールせず、ダンプ/再ロード中は検査が強制されないため、この方法でダンプ/再ロード問題を回避できます。）
+（<span class="application">pg_dump</span>はデータのリストア後までトリガを再インストールせず、ダンプ/リストア中は検査が強制されないため、この方法でダンプ/リストア問題を回避できます。）
     </p></div><div class="note"><h3 class="title">注記</h3><p>
 <span class="original">
      &lt;productname&gt;PostgreSQL&lt;/productname&gt; assumes that
@@ -256,7 +253,7 @@ If what you desire is a one-time check against other rows at row insertion, rath
 </span>
 この仮定に反する一般的な例は、<code class="literal">CHECK</code>式でユーザ定義関数を参照し、その関数の振る舞いを変更することです。
 <span class="productname">PostgreSQL</span>はこれを禁止はしませんが、今や<code class="literal">CHECK</code>制約に違反する行がテーブル中に存在することを通知しません。
-これによって後でデータベースのダンプと再ロードの失敗を引き起こすでしょう。
+これによって後でデータベースのダンプとリストアの失敗を引き起こすでしょう。
 そのような変更に対処するおすすめの方法は、（<code class="command">ALTER TABLE</code>を使って）制約を削除し、関数定義を調整し、そして制約を再度追加して、それによってテーブル全体の行に対して再チェックを行うことです。
     </p></div></div><div class="sect2" id="id-1.5.4.6.7"><div class="titlepage"><div><div><h3 class="title">5.4.2. 非NULL制約</h3></div></div></div><span class="original">
    &lt;title&gt;Not-Null Constraints&lt;/title&gt;

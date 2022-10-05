@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>12.3. テキスト検索の制御</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="textsearch-tables.html" title="12.2. テーブルとインデックス" /><link rel="next" href="textsearch-features.html" title="12.4. 追加機能" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 14.5文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="textsearch.html" title="第12章 全文検索">第12章 全文検索</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 14.5 &#10;                      textsearch-controls.html">誤訳等の報告
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>12.3. テキスト検索の制御</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="textsearch-tables.html" title="12.2. テーブルとインデックス" /><link rel="next" href="textsearch-features.html" title="12.4. 追加機能" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 14.5文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="textsearch.html" title="第12章 全文検索">第12章 全文検索</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 14.5 : textsearch-controls.html">誤訳等の報告
                     </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="textsearch-tables.html" title="12.2. テーブルとインデックス">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="textsearch.html" title="第12章 全文検索">上へ</a></td><td width="60%" align="center">12.3. テキスト検索の制御</td><td width="20%" align="right"> <a accesskey="n" href="textsearch-features.html" title="12.4. 追加機能">次へ</a></td></tr></table><hr /></div><div class="sect1" id="TEXTSEARCH-CONTROLS"><div class="titlepage"><div><div><h2 class="title" style="clear: both">12.3. テキスト検索の制御</h2></div></div></div><span class="original">
   &lt;title&gt;Controlling Text Search&lt;/title&gt;
 </span><p>
@@ -12,7 +12,10 @@
    &lt;productname&gt;PostgreSQL&lt;/productname&gt; provides support for all of these
    functions.
 </span>
-全文検索を実装するためには、文書から<code class="type">tsvector</code>を、そしてユーザの問い合わせから<code class="type">tsquery</code>を作成する関数が存在しなければなりません。また、結果を意味のある順で返す必要があります。そこで、問い合わせとの関連性で文書を比較する関数も必要になってきます。結果を体裁良く表示できることも重要です。<span class="productname">PostgreSQL</span>はこれらすべての機能を提供しています。
+全文検索を実装するためには、文書から<code class="type">tsvector</code>を、そしてユーザの問い合わせから<code class="type">tsquery</code>を作成する関数が存在しなければなりません。
+また、結果を意味のある順で返す必要があります。そこで、問い合わせとの関連性で文書を比較する関数も必要になってきます。
+結果を体裁良く表示できることも重要です。
+<span class="productname">PostgreSQL</span>はこれらすべての機能を提供しています。
   </p><div class="sect2" id="TEXTSEARCH-PARSING-DOCUMENTS"><div class="titlepage"><div><div><h3 class="title">12.3.1. 文書のパース</h3></div></div></div><span class="original">
    &lt;title&gt;Parsing Documents&lt;/title&gt;
 </span><p>
@@ -78,10 +81,17 @@ SELECT to_tsvector('english', 'a fat  cat sat on a mat - it ate a fat rats');
     we used the default configuration &lt;literal&gt;english&lt;/literal&gt; for the
     English language.
 </span>
-<code class="function">to_tsvector</code>関数は、文書をトークンに分解して、そのトークンに型を割り当てるパーサを内部的に呼び出しています。それぞれのトークンに対して辞書(<a class="xref" href="textsearch-dictionaries.html" title="12.6. 辞書">12.6</a>)のリストが検索されます。ここで、辞書のリストはトークンの型によって異なります。最初の辞書は、トークンを<em class="firstterm">認識</em>し、トークンを表現する一つ以上の正規化された<em class="firstterm">語彙素</em>を出力します。例えば、ある辞書は<code class="literal">rats</code>は<code class="literal">rat</code>の複数形であることを認識しているので、<code class="literal">rats</code>は<code class="literal">rat</code>になります。
+<code class="function">to_tsvector</code>関数は、文書をトークンに分解して、そのトークンに型を割り当てるパーサを内部的に呼び出しています。
+それぞれのトークンに対して辞書(<a class="xref" href="textsearch-dictionaries.html" title="12.6. 辞書">12.6</a>)のリストが検索されます。ここで、辞書のリストはトークンの型によって異なります。
+最初の辞書は、トークンを<em class="firstterm">認識</em>し、トークンを表現する一つ以上の正規化された<em class="firstterm">語彙素</em>を出力します。
+例えば、ある辞書は<code class="literal">rats</code>は<code class="literal">rat</code>の複数形であることを認識しているので、<code class="literal">rats</code>は<code class="literal">rat</code>になります。
 ある単語は<em class="firstterm">ストップワード</em>(<a class="xref" href="textsearch-dictionaries.html#TEXTSEARCH-STOPWORDS" title="12.6.1. ストップワード">12.6.1</a>)として認識されます。これは、あまりにも多く出現し検索の役に立たないため、無視されるものです。
 先の例では、<code class="literal">a</code>、<code class="literal">on</code>、および<code class="literal">it</code>がそれです。
-もしリスト中の辞書のどれもがトークンを認識しなければ、そのトークンは無視されます。先の例では、句読点の<code class="literal">-</code>がそうです。なぜなら、実際にはそのトークン型(<code class="literal">Space symbols</code>)に対して辞書が割り当てられておらず、空白トークンは決してインデックス付けされないことを意味します。パーサ、辞書、そしてどのトークンがインデックス付けされるかという選択は、テキスト検索設定(<a class="xref" href="textsearch-configuration.html" title="12.7. 設定例">12.7</a>)によって決められます。同じデータベース中に多くの異なった設定を持つことができ、多くの言語用に定義済の設定が用意されています。先の例では、英語用として、デフォルトの<code class="literal">english</code>設定を使っています。
+もしリスト中の辞書のどれもがトークンを認識しなければ、そのトークンは無視されます。
+先の例では、句読点の<code class="literal">-</code>がそうです。なぜなら、実際にはそのトークン型(<code class="literal">Space symbols</code>)に対して辞書が割り当てられておらず、空白トークンは決してインデックス付けされないことを意味します。
+パーサ、辞書、そしてどのトークンがインデックス付けされるかという選択は、テキスト検索設定(<a class="xref" href="textsearch-configuration.html" title="12.7. 設定例">12.7</a>)によって決められます。
+同じデータベース中に多くの異なった設定を持つことができ、多くの言語用に定義済の設定が用意されています。
+先の例では、英語用として、デフォルトの<code class="literal">english</code>設定を使っています。
    </p><p>
 <span class="original">
     The function &lt;function&gt;setweight&lt;/function&gt; can be used to label the
@@ -92,7 +102,9 @@ SELECT to_tsvector('english', 'a fat  cat sat on a mat - it ate a fat rats');
     different parts of a document, such as title versus body.  Later, this
     information can be used for ranking of search results.
 </span>
-関数<code class="function">setweight</code>を使って<code class="type">tsvector</code>のエントリに与えられた<em class="firstterm">重み</em>のラベルを与えることができます。ここで重みは、<code class="literal">A</code>, <code class="literal">B</code>, <code class="literal">C</code>, <code class="literal">D</code>のどれかの文字です。重みの典型的な使い方は、文書の各部分がどこから来たのかをマークすることです。たとえば、タイトルから来たのか、本文から来たのかなど。後でこの情報は検索結果のランキングに利用できます。
+関数<code class="function">setweight</code>を使って<code class="type">tsvector</code>のエントリに与えられた<em class="firstterm">重み</em>のラベルを与えることができます。ここで重みは、<code class="literal">A</code>, <code class="literal">B</code>, <code class="literal">C</code>, <code class="literal">D</code>のどれかの文字です。
+重みの典型的な使い方は、文書の各部分がどこから来たのかをマークすることです。たとえば、タイトルから来たのか、本文から来たのかなどです。
+後でこの情報は検索結果のランキングに利用できます。
    </p><p>
 <span class="original">
     Because &lt;function&gt;to_tsvector&lt;/function&gt;(&lt;literal&gt;NULL&lt;/literal&gt;) will
@@ -426,7 +438,7 @@ SELECT websearch_to_tsquery('english', '""" )( dummy \\ query &lt;-&gt;');
 ランキングはある問い合わせに対して、どの程度文書が関連しているかを計測しようとするものです。合致している文書が多数あるとき、もっとも関連している文書が最初に表示されるようにするためです。
 <span class="productname">PostgreSQL</span>は、2つの定義済ランキング関数を提供しています。それらは、辞書情報、近接度情報、構造的情報を加味します。すなわち、問い合わせの用語がどの位の頻度で文書に出現するか、文書中でどの程度それらの用語が近接しているか、どの用語が含まれる文書部位がどの程度重要なのかを考慮します。
 しかし、関連度という概念は曖昧で、用途に強く依存します。
-異なる用途は、ランキングのために追加の情報を必要とするかも知れません。たとえば、文書の更新時刻など。
+異なる用途は、ランキングのために追加の情報を必要とするかも知れません。たとえば、文書の更新時刻などです。
 組み込みのランキング関数は例に過ぎません。
 利用者の目的に応じて、自分用のランキング関数を作ったり、その結果を追加の情報と組み合わせることができます。
    </p><p>
@@ -519,7 +531,9 @@ SELECT websearch_to_tsquery('english', '""" )( dummy \\ query &lt;-&gt;');
     you can specify one or more behaviors using
     &lt;literal&gt;|&lt;/literal&gt; (for example, &lt;literal&gt;2|4&lt;/literal&gt;).
 </span>
-文書が長ければ、それだけ問い合わせ用語を含む確率が高くなるため、文書のサイズを考慮にいれることは理にかなっています。たとえば、5つの検索語を含む100語の文書は、たぶん5つの検索語を含む1000語の文書よりも関連性が高いでしょう。ランキング関数には、どちらも整数型の<em class="replaceable"><code>正規化</code></em>オプションがあります。これは、文書の長さがランクに影響を与えるのかどうか、与えるとすればどの程度か、ということを指定します。この整数オプションは、いくつかの挙動を制御するので、ビットマスクになっています。複数の挙動を<code class="literal">|</code>で指定できます(例：<code class="literal">2|4</code>)。
+文書が長ければ、それだけ問い合わせ用語を含む確率が高くなるため、文書のサイズを考慮にいれることは理にかなっています。たとえば、5つの検索語を含む100語の文書は、たぶん5つの検索語を含む1000語の文書よりも関連性が高いでしょう。
+ランキング関数には、どちらも整数型の<em class="replaceable"><code>正規化</code></em>オプションがあります。これは、文書の長さがランクに影響を与えるのかどうか、与えるとすればどの程度か、ということを指定します。
+この整数オプションは、いくつかの挙動を制御するので、ビットマスクになっています。複数の挙動を<code class="literal">|</code>で指定できます(例：<code class="literal">2|4</code>)。
 
     </p><div class="itemizedlist"><ul class="itemizedlist compact" style="list-style-type: bullet; "><li class="listitem" style="list-style-type: disc"><p>
 <span class="original">
@@ -574,7 +588,8 @@ SELECT websearch_to_tsquery('english', '""" )( dummy \\ query &lt;-&gt;');
     into the range zero to one, but of course this is just a cosmetic change;
     it will not affect the ordering of the search results.
 </span>
-これは重要なことですが、ランキング関数はグローバル情報を一切使わないので、時には必要になる1%から100%までの均一な正規化はできません。正規化オプション32(<code class="literal">rank/(rank+1)</code>)を適用することにより、すべてのランクを0から1に分布させることができます。しかし、もちろんこれは表面的な変更に過ぎません。検索結果のならび順に影響を与えるものではありません。
+これは重要なことですが、ランキング関数はグローバル情報を一切使わないので、時には必要になる1%から100%までの均一な正規化はできません。
+正規化オプション32(<code class="literal">rank/(rank+1)</code>)を適用することにより、すべてのランクを0から1に分布させることができます。しかし、もちろんこれは表面的な変更に過ぎません。検索結果のならび順に影響を与えるものではありません。
    </p><p>
 <span class="original">
     Here is an example that selects only the ten highest-ranked matches:

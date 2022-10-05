@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>25.1. 定常的なバキューム作業</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="maintenance.html" title="第25章 定常的なデータベース保守作業" /><link rel="next" href="routine-reindex.html" title="25.2. 定常的なインデックスの再作成" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 14.5文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="maintenance.html" title="第25章 定常的なデータベース保守作業">第25章 定常的なデータベース保守作業</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 14.5 &#10;                      routine-vacuuming.html">誤訳等の報告
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>25.1. 定常的なバキューム作業</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="maintenance.html" title="第25章 定常的なデータベース保守作業" /><link rel="next" href="routine-reindex.html" title="25.2. 定常的なインデックスの再作成" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 14.5文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="maintenance.html" title="第25章 定常的なデータベース保守作業">第25章 定常的なデータベース保守作業</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 14.5 : routine-vacuuming.html">誤訳等の報告
                     </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="maintenance.html" title="第25章 定常的なデータベース保守作業">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="maintenance.html" title="第25章 定常的なデータベース保守作業">上へ</a></td><td width="60%" align="center">25.1. 定常的なバキューム作業</td><td width="20%" align="right"> <a accesskey="n" href="routine-reindex.html" title="25.2. 定常的なインデックスの再作成">次へ</a></td></tr></table><hr /></div><div class="sect1" id="ROUTINE-VACUUMING"><div class="titlepage"><div><div><h2 class="title" style="clear: both">25.1. 定常的なバキューム作業</h2></div></div></div><span class="original">
   &lt;title&gt;Routine Vacuuming&lt;/title&gt;
 </span><a id="id-1.6.12.12.2" class="indexterm"></a><a id="id-1.6.12.12.3" class="indexterm"></a><p>
@@ -276,12 +276,17 @@
 デーモンは、挿入または更新された行数の関数として<code class="command">ANALYZE</code>を厳密に計画します。
 しかし、意味のある統計情報の変更につながるかどうかは判りません。
    </p><p>
+<span class="original">
     Tuples changed in partitions and inheritance children do not trigger
     analyze on the parent table.  If the parent table is empty or rarely
     changed, it may never be processed by autovacuum, and the statistics for
     the inheritance tree as a whole won't be collected. It is necessary to
-    run <code class="command">ANALYZE</code> on the parent table manually in order to
+    run &lt;command&gt;ANALYZE&lt;/command&gt; on the parent table manually in order to
     keep the statistics up to date.
+</span>
+パーティションや継承の子で変更されたタプルは親テーブルでの解析を誘発しません。
+親テーブルが空であったり、まれにしか変更されなかったりする場合、自動バキュームにより処理されることはなく、継承ツリー全体としての統計情報は収集されないかもしれません。
+統計情報を最新に保つためには、親テーブルで<code class="command">ANALYZE</code>を手動で実行することが必要です。
    </p><p>
 <span class="original">
     As with vacuuming for space recovery, frequent updates of statistics
@@ -356,13 +361,18 @@
 自動バキュームデーモンは、有益になる頻度を決定する手段がありませんので、外部テーブルに対して<code class="command">ANALYZE</code>コマンドを発行しません。
 問い合わせが適切な計画作成のために外部テーブルの統計情報が必要であれば、適当なスケジュールでこれらのテーブルに対して手作業で管理する<code class="command">ANALYZE</code>コマンドを実行することを勧めます。
     </p></div><div class="tip"><h3 class="title">ヒント</h3><p>
-     The autovacuum daemon does not issue <code class="command">ANALYZE</code> commands
+<span class="original">
+     The autovacuum daemon does not issue &lt;command&gt;ANALYZE&lt;/command&gt; commands
      for partitioned tables.  Inheritance parents will only be analyzed if the
      parent itself is changed - changes to child tables do not trigger
      autoanalyze on the parent table.  If your queries require statistics on
      parent tables for proper planning, it is necessary to periodically run
-     a manual <code class="command">ANALYZE</code> on those tables to keep the statistics
+     a manual &lt;command&gt;ANALYZE&lt;/command&gt; on those tables to keep the statistics
      up to date.
+</span>
+自動バキュームデーモンはパーティション化テーブルに対して<code class="command">ANALYZE</code>コマンドを発行しません。
+継承の親は親自身が変更された場合にのみ解析されます。子テーブルの変更は親テーブルでの自動解析を誘発しません。
+もし問い合わせが適切な計画のために親テーブルの統計情報を必要とするなら、統計情報を最新に保つために、それらのテーブルに対して定期的に手動で<code class="command">ANALYZE</code>を実行することが必要です。
     </p></div></div><div class="sect2" id="VACUUM-FOR-VISIBILITY-MAP"><div class="titlepage"><div><div><h3 class="title">25.1.4. 可視性マップの更新</h3></div></div></div><span class="original">
    &lt;title&gt;Updating the Visibility Map&lt;/title&gt;
 </span><p>
@@ -800,7 +810,7 @@ HINT:  Stop the postmaster and vacuum that database in single-user mode.
      have the oldest multixact-age.  Both of these kinds of aggressive
      scans will occur even if autovacuum is nominally disabled.
 </span>
-安全装置として、<a class="xref" href="runtime-config-autovacuum.html#GUC-AUTOVACUUM-MULTIXACT-FREEZE-MAX-AGE">autovacuum_multixact_freeze_max_age</a>よりもそのマルチトランザクション年代(<a class="xref" href="routine-vacuuming.html#VACUUM-FOR-MULTIXACT-WRAPAROUND" title="25.1.5.1. マルチトランザクションと周回">25.1.5.1</a>を参照)が大きいどのテーブルに対しても、積極的なバキューム走査が起こります。
+安全装置として、<a class="xref" href="runtime-config-autovacuum.html#GUC-AUTOVACUUM-MULTIXACT-FREEZE-MAX-AGE">autovacuum_multixact_freeze_max_age</a>よりもそのマルチトランザクション年代が大きいどのテーブルに対しても、積極的なバキューム走査が起こります。
 また、マルチトランザクションメンバによるストレージの占有が2GBを超えた場合にも、積極的なバキューム走査は、マルチトランザクション年代の一番古いものから始めて、すべてのテーブルに対してより頻繁に起こります。
 この種の積極的走査はどちらも、自動バキュームが名目上は無効にされていても発生します。
     </p></div></div><div class="sect2" id="AUTOVACUUM"><div class="titlepage"><div><div><h3 class="title">25.1.6. 自動バキュームデーモン</h3></div></div></div><span class="original">
@@ -937,7 +947,7 @@ vacuum insert threshold = vacuum base insert threshold + vacuum insert scale fac
 そのようなバキュームは、テーブルの一部を<em class="firstterm">全可視</em>と印づけたり、タプルを凍結したりもできますので、後続のバキュームで必要となる作業を減らせます。
 より早いバキュームによりタプルを凍結できますので、<code class="command">INSERT</code>操作を受けたものの<code class="command">UPDATE</code>/<code class="command">DELETE</code>操作を全くもしくはほとんど受けていないテーブルに対しては、テーブルの<a class="xref" href="sql-createtable.html#RELOPTION-AUTOVACUUM-FREEZE-MIN-AGE">autovacuum_freeze_min_age</a>を下げる助けになるでしょう。
 不要となったタプル数と挿入されたタプル数は、統計情報コレクタから取り出されます。
-これは、各<code class="command">UPDATE</code>、<code class="command">DELETE</code>操作で更新される、ほぼ正確な数です。
+これは、各<code class="command">UPDATE</code>、<code class="command">DELETE</code>、<code class="command">INSERT</code>操作で更新される、ほぼ正確な数です。
 （負荷が高いと一部の情報が失われる可能性があることから、これはほぼ正確な数でしかありません。）
 テーブルの<code class="structfield">relfrozenxid</code>値が<code class="varname">vacuum_freeze_table_age</code>トランザクション年齢より大きい場合、古いタプルを凍結して、<code class="structfield">relfrozenxid</code>を繰り上げるため、積極的なバキュームが実行されます。
 そうでなければ最後のバキュームの後に変更されたページのみ走査されます。
@@ -946,7 +956,7 @@ vacuum insert threshold = vacuum base insert threshold + vacuum insert scale fac
     For analyze, a similar condition is used: the threshold, defined as:
 </span>
 解析でも似たような条件が使用されます。
-以下で定義される閾値が、前回の<code class="command">ANALYZE</code>の後に挿入、更新、削除されたタプル数と比較されます。
+以下で定義される閾値が、
 </p><pre class="programlisting">
 <span class="original">
 analyze threshold = analyze base threshold + analyze scale factor * number of tuples
@@ -957,11 +967,16 @@ analyze threshold = analyze base threshold + analyze scale factor * number of tu
     is compared to the total number of tuples inserted, updated, or deleted
     since the last &lt;command&gt;ANALYZE&lt;/command&gt;.
 </span>
+前回の<code class="command">ANALYZE</code>の後に挿入、更新、削除されたタプル数と比較されます。
    </p><p>
+<span class="original">
     Partitioned tables are not processed by autovacuum.  Statistics
-    should be collected by running a manual <code class="command">ANALYZE</code> when it is
+    should be collected by running a manual &lt;command&gt;ANALYZE&lt;/command&gt; when it is
     first populated, and again whenever the distribution of data in its
     partitions changes significantly.
+</span>
+パーティション化テーブルは自動バキュームでは処理されません。
+統計情報は、データが初めて投入された時や、パーティション内のデータ分布が顕著に変化した時にも必ず手動で<code class="command">ANALYZE</code>を実行することにより収集しないといけません。
    </p><p>
 <span class="original">
     Temporary tables cannot be accessed by autovacuum.  Therefore,

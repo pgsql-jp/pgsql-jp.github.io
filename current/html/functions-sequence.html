@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>9.17. シーケンス操作関数</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="functions-json.html" title="9.16. JSON関数と演算子" /><link rel="next" href="functions-conditional.html" title="9.18. 条件式" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 14.5文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="functions.html" title="第9章 関数と演算子">第9章 関数と演算子</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?title=version 14.5 &#10;                      functions-sequence.html">誤訳等の報告
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>9.17. シーケンス操作関数</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="functions-json.html" title="9.16. JSON関数と演算子" /><link rel="next" href="functions-conditional.html" title="9.18. 条件式" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 14.5文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="functions.html" title="第9章 関数と演算子">第9章 関数と演算子</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 14.5 : functions-sequence.html">誤訳等の報告
                     </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="functions-json.html" title="9.16. JSON関数と演算子">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="functions.html" title="第9章 関数と演算子">上へ</a></td><td width="60%" align="center">9.17. シーケンス操作関数</td><td width="20%" align="right"> <a accesskey="n" href="functions-conditional.html" title="9.18. 条件式">次へ</a></td></tr></table><hr /></div><div class="sect1" id="FUNCTIONS-SEQUENCE"><div class="titlepage"><div><div><h2 class="title" style="clear: both">9.17. シーケンス操作関数</h2></div></div></div><span class="original">
   &lt;title&gt;Sequence Manipulation Functions&lt;/title&gt;
 </span><a id="id-1.5.8.25.2" class="indexterm"></a><p>
@@ -183,11 +183,10 @@ SELECT setval('myseq', 42, false);    <em class="lineannotation"><span class="li
     objects &lt;emphasis&gt;cannot be used to obtain &lt;quote&gt;gapless&lt;/quote&gt;
     sequences&lt;/emphasis&gt;.
 </span>
-同一のシーケンスから数値を取得する同時実行トランザクション同士のブロックを防止するため、<code class="function">nextval</code>演算は決してロールバックされません。
-つまり、値が一度取り出されたら、それは使用されたものと見なされ、同じ値が再び返されることはありません。
-これは、それを取り囲むトランザクションが後にアボートした場合でも、あるいは呼び出し側の問い合わせがその値を使用せずに終わった場合でも当てはまります。
+同一のシーケンスから数値を取得する同時実行トランザクション同士のブロックを防止するため、<code class="function">nextval</code>で得られる値は、呼び出しているトランザクションが後でアボートした際に再利用目的での回収は行われません。
+これは、トランザクションのアボートあるいはデータベースのクラッシュによって、割り当てられるシーケンスの値に欠番ができることがある、ということを意味します。
+これはトランザクションのアボートがなくても起こります。
 例えば<code class="literal">ON CONFLICT</code>句のある<code class="command">INSERT</code>では、挿入される予定のタプルについて、必要となるすべての<code class="function">nextval</code>の呼び出しも含めて計算し、その後で<code class="literal">ON CONFLICT</code>のルールを代わりに使用することになる競合について検知します。
-このような場合には、割り当てられた値のシーケンス内に未使用の<span class="quote">「<span class="quote">欠損</span>」</span>を残すことになります。
 従って、<span class="productname">PostgreSQL</span>のシーケンスオブジェクトは<span class="emphasis"><em><span class="quote">「<span class="quote">欠番のない</span>」</span>シーケンスを得るために使うことはできません</em></span>。
    </p><p>
 <span class="original">
@@ -195,21 +194,23 @@ SELECT setval('myseq', 42, false);    <em class="lineannotation"><span class="li
     are immediately visible to other transactions, and are not undone if
     the calling transaction rolls back.
 </span>
-<span class="original"> マッチ度[63.583815]
-Likewise, any sequence state changes made by &lt;function&gt;setval&lt;/function&gt; are not undone if the transaction rolls back.
-</span>
-同様に、<code class="function">setval</code>が行ったシーケンス状態の変更はトランザクションがロールバックしても元には戻りません。
+同様に、<code class="function">setval</code>が行ったシーケンス状態の変更は直ちに他のトランザクションから可視になり、トランザクションがロールバックしても元には戻りません。
    </p><p>
+<span class="original">
     If the database cluster crashes before committing a transaction
-    containing a <code class="function">nextval</code>
-    or <code class="function">setval</code> call, the sequence state change might
+    containing a &lt;function&gt;nextval&lt;/function&gt;
+    or &lt;function&gt;setval&lt;/function&gt; call, the sequence state change might
     not have made its way to persistent storage, so that it is uncertain
     whether the sequence will have its original or updated state after the
     cluster restarts.  This is harmless for usage of the sequence within
     the database, since other effects of uncommitted transactions will not
     be visible either.  However, if you wish to use a sequence value for
     persistent outside-the-database purposes, make sure that the
-    <code class="function">nextval</code> call has been committed before doing so.
+    &lt;function&gt;nextval&lt;/function&gt; call has been committed before doing so.
+</span>
+<code class="function">nextval</code>や<code class="function">setval</code>の呼び出しを含むトランザクションがコミットする前にデータベースクラスタがクラッシュすると、そのシーケンスの状態は永続的な記憶装置に格納されないかもしれず、クラスタが再起動した後にそのシーケンスが元の状態のままなのか、更新された状態になっているのかは定かではありません。
+コミットされていないトランザクションは可視ではないので、これはデータベース内のシーケンスの利用に関して言えば無害です。
+しかし、シーケンス値をデータベースの外での永続的な利用を目的として使う場合は、<code class="function">nextval</code>の呼び出しが確実にコミットされてから利用してください。
    </p></div><p>
 <span class="original">
    The sequence to be operated on by a sequence function is specified by
