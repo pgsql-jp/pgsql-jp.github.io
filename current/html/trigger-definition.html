@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>39.1. トリガ動作の概要</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="triggers.html" title="第39章 トリガ" /><link rel="next" href="trigger-datachanges.html" title="39.2. データ変更の可視性" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 14.5文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="triggers.html" title="第39章 トリガ">第39章 トリガ</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 14.5 : trigger-definition.html">誤訳等の報告
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>39.1. トリガ動作の概要</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /><link rel="prev" href="triggers.html" title="第39章 トリガ" /><link rel="next" href="trigger-datachanges.html" title="39.2. データ変更の可視性" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 15rc2文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="triggers.html" title="第39章 トリガ">第39章 トリガ</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 15rc2 : trigger-definition.html">誤訳等の報告
                     </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="triggers.html" title="第39章 トリガ">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="triggers.html" title="第39章 トリガ">上へ</a></td><td width="60%" align="center">39.1. トリガ動作の概要</td><td width="20%" align="right"> <a accesskey="n" href="trigger-datachanges.html" title="39.2. データ変更の可視性">次へ</a></td></tr></table><hr /></div><div class="sect1" id="TRIGGER-DEFINITION"><div class="titlepage"><div><div><h2 class="title" style="clear: both">39.1. トリガ動作の概要</h2></div></div></div><span class="original">
    &lt;title&gt;Overview of Trigger Behavior&lt;/title&gt;
 </span><p>
@@ -214,6 +214,34 @@
 文レベルのトリガに関しては、たとえ行の移動が起こったとしても<code class="command">DELETE</code>トリガも<code class="command">INSERT</code>トリガも発動されません。<code class="command">UPDATE</code>文中に現れた対象テーブルに定義された<code class="command">UPDATE</code>トリガだけが発動されます。
    </p><p>
 <span class="original">
+    No separate triggers are defined for &lt;command&gt;MERGE&lt;/command&gt;. Instead,
+    statement-level or row-level &lt;command&gt;UPDATE&lt;/command&gt;,
+    &lt;command&gt;DELETE&lt;/command&gt;, and &lt;command&gt;INSERT&lt;/command&gt; triggers are fired
+    depending on (for statement-level triggers) what actions are specified in
+    the &lt;command&gt;MERGE&lt;/command&gt; query and (for row-level triggers) what
+    actions are performed.
+</span>
+《機械翻訳》<code class="command">MERGE</code>には個別のトリガーは定義されません。
+かわりに、ステートメント・レベルまたは行レベルの<code class="command">UPDATE</code>、<code class="command">DELETE</code>および<code class="command">INSERT</code>トリガーが、<code class="command">MERGE</code>問合せで指定されたアクション(ステートメント・レベル・トリガーの場合)および実行されたアクション(行レベル・トリガーの場合)に応じて起動されます。
+   </p><p>
+<span class="original">
+    While running a &lt;command&gt;MERGE&lt;/command&gt; command, statement-level
+    &lt;literal&gt;BEFORE&lt;/literal&gt; and &lt;literal&gt;AFTER&lt;/literal&gt; triggers are
+    fired for events specified in the actions of the &lt;command&gt;MERGE&lt;/command&gt;
+    command, irrespective of whether or not the action is ultimately performed.
+    This is the same as an &lt;command&gt;UPDATE&lt;/command&gt; statement that updates
+    no rows, yet statement-level triggers are fired.
+    The row-level triggers are fired only when a row is actually updated,
+    inserted or deleted. So it's perfectly legal that while statement-level
+    triggers are fired for certain types of action, no row-level triggers
+    are fired for the same kind of action.
+</span>
+《機械翻訳》<code class="command">MERGE</code>コマンドの実行中、文レベルの<code class="literal">BEFORE</code>および<code class="literal">AFTER</code>トリガーは、アクションが最終的に実行されるかどうかに関係なく、<code class="command">MERGE</code>コマンドのアクションで指定されたイベントに対して発行されます。
+これは、行を更新しない<code class="command">UPDATE</code>文と同じですが、文レベルのトリガーが発行されます。
+行レベルのトリガーは、行が実際に更新、挿入または削除されたときにのみ発行されます。
+したがって、文レベルのトリガーは特定のタイプのアクションに対して発行されますが、同じ種類のアクションに対して行レベルのトリガーが発行されないことは完全に合法です。
+   </p><p>
+<span class="original">
     Trigger functions invoked by per-statement triggers should always
     return &lt;symbol&gt;NULL&lt;/symbol&gt;. Trigger functions invoked by per-row
     triggers can return a table row (a value of
@@ -303,7 +331,7 @@
     column in a &lt;literal&gt;BEFORE&lt;/literal&gt; trigger are ignored and will be
     overwritten.
 </span>
-生成列に対してはいくつか考慮が必要です。<a id="id-1.8.4.6.16.1" class="indexterm"></a>
+生成列に対してはいくつか考慮が必要です。<a id="id-1.8.4.6.18.1" class="indexterm"></a>
 格納された生成列は、<code class="literal">BEFORE</code>トリガの後、<code class="literal">AFTER</code>トリガの前に計算されます。
 そのため、生成される値は<code class="literal">AFTER</code>トリガで調べることができます。
 <code class="literal">BEFORE</code>トリガでは、皆さんが期待している通り<code class="literal">OLD</code>行は以前の生成された値を含んでいますが、<code class="literal">NEW</code>行は新しく生成される値をまだ含んでおらず、アクセスすべきではありません。
@@ -397,8 +425,8 @@ C言語インタフェースでは、この時点では列の内容は未定義�
 例えば、<code class="command">INSERT</code>トリガで同じテーブルに追加の行を挿入する問い合わせが実行された場合、その結果として<code class="command">INSERT</code>トリガが再度発行されます。
 こうした状況で無限再帰を防ぐのは、トリガプログラマの責任です。
    </p><p>
-    <a id="id-1.8.4.6.21.1" class="indexterm"></a>
-    <a id="id-1.8.4.6.21.2" class="indexterm"></a>
+    <a id="id-1.8.4.6.23.1" class="indexterm"></a>
+    <a id="id-1.8.4.6.23.2" class="indexterm"></a>
 <span class="original">
     When a trigger is being defined, arguments can be specified for
     it. The purpose of including arguments in the
@@ -454,4 +482,4 @@ C言語インタフェースでは、この時点では列の内容は未定義�
 しかし、トリガがアクセスできる影響を受けた行の集合を作成するために、<code class="literal">AFTER STATEMENT</code>トリガは、<em class="firstterm">遷移テーブル(transition tables)</em>の作成を依頼することができます。
 <code class="literal">AFTER ROW</code>トリガも遷移テーブルを依頼できるので、発動中の個々の行における変更だけでなく、テーブル全体におけるすべての変更を見ることができます。
 遷移テーブルを検査する方法も使用中のプログラミング言語に依存しますが、典型的な方法は、トリガ関数の中で発行するSQLコマンドでアクセスできる、読み込み専用の一時テーブルのように振る舞う遷移テーブルを作成することです。
-   </p></div><div xmlns="http://www.w3.org/TR/xhtml1/transitional" class="navfooter"><hr></hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="triggers.html" title="第39章 トリガ">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="triggers.html" title="第39章 トリガ">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="trigger-datachanges.html" title="39.2. データ変更の可視性">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">第39章 トリガ </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 14.5文書">ホーム</a></td><td width="40%" align="right" valign="top"> 39.2. データ変更の可視性</td></tr></table></div></body></html>
+   </p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="triggers.html" title="第39章 トリガ">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="triggers.html" title="第39章 トリガ">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="trigger-datachanges.html" title="39.2. データ変更の可視性">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">第39章 トリガ </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 15rc2文書">ホーム</a></td><td width="40%" align="right" valign="top"> 39.2. データ変更の可視性</td></tr></table></div></body></html>
