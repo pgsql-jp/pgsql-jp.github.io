@@ -520,10 +520,11 @@ COMMIT;
 </span>
 このレベルを使ったアプリケーションでは、直列化の失敗によるトランザクションの再実行に備えておく必要があります。
    </p><p>
-    <code class="command">UPDATE</code>, <code class="command">DELETE</code>,
-    <code class="command">MERGE</code>, <code class="command">SELECT FOR UPDATE</code>,
-    and <code class="command">SELECT FOR SHARE</code> commands
-    behave the same as <code class="command">SELECT</code>
+<span class="original">
+    &lt;command&gt;UPDATE&lt;/command&gt;, &lt;command&gt;DELETE&lt;/command&gt;,
+    &lt;command&gt;MERGE&lt;/command&gt;, &lt;command&gt;SELECT FOR UPDATE&lt;/command&gt;,
+    and &lt;command&gt;SELECT FOR SHARE&lt;/command&gt; commands
+    behave the same as &lt;command&gt;SELECT&lt;/command&gt;
     in terms of searching for target rows: they will only find target rows
     that were committed as of the transaction start time.  However, such a
     target row might have already been updated (or deleted or locked) by
@@ -534,6 +535,13 @@ COMMIT;
     with updating the originally found row.  But if the first updater commits
     (and actually updated or deleted the row, not just locked it)
     then the repeatable read transaction will be rolled back with the message
+</span>
+《マッチ度[91.382979]》<code class="command">UPDATE</code>、<code class="command">DELETE</code>、<code class="command">SELECT FOR UPDATE</code>、および<code class="command">SELECT FOR SHARE</code>コマンドでは、<code class="command">SELECT</code>と同じように対象行を検索します。
+これらのコマンドでは、トランザクションが開始された時点で既にコミットされている対象行のみを検出します。
+しかし、その対象行は、検出されるまでに、同時実行中の他のトランザクションによって、既に更新（もしくは削除あるいはロック）されている可能性があります。
+このような場合、リピータブルリードトランザクションは、最初の更新トランザクションが（それらがまだ進行中の場合）コミットもしくはロールバックするのを待ちます。
+最初の更新処理がロールバックされると、その結果は無視され、リピータブルリードトランザクションでは元々検出した行の更新を続行することができます。
+しかし、最初の更新処理がコミット（かつ、単にロックされるだけでなく、実際に行が更新または削除）されると、リピータブルリードトランザクションでは、以下のようなメッセージを出力してロールバックを行います。
 
 </p><pre class="screen">
 ERROR:  could not serialize access due to concurrent update

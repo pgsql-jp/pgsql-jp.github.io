@@ -130,14 +130,20 @@
 このため、以下の動作はエラーメッセージを生成します。
 
     </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>
-       Data Manipulation Language (DML): <code class="command">INSERT</code>,
-       <code class="command">UPDATE</code>, <code class="command">DELETE</code>, <code class="command">COPY FROM</code>,
-       <code class="command">TRUNCATE</code>.
+<span class="original">
+       Data Manipulation Language (DML): &lt;command&gt;INSERT&lt;/command&gt;,
+       &lt;command&gt;UPDATE&lt;/command&gt;, &lt;command&gt;DELETE&lt;/command&gt;, &lt;command&gt;COPY FROM&lt;/command&gt;,
+       &lt;command&gt;TRUNCATE&lt;/command&gt;.
        Note that there are no allowed actions that result in a trigger
        being executed during recovery.  This restriction applies even to
        temporary tables, because table rows cannot be read or written without
        assigning a transaction ID, which is currently not possible in a
        hot standby environment.
+</span>
+データ操作言語（DML）:
+<code class="command">INSERT</code>、<code class="command">UPDATE</code>、<code class="command">DELETE</code>、<code class="command">COPY FROM</code>および<code class="command">TRUNCATE</code>。
+リカバリ中にトリガ内で実行されてしまう場合でも許されていない動作であることに注意してください。
+現在のホットスタンバイ環境では行うことができないトランザクションIDの割り当てを行うことなく、テーブル行の読み書きを行うことができませんので、この制限は一時テーブルであっても適用されます。
       </p></li><li class="listitem"><p>
 <span class="original">
        Data Definition Language (DDL): &lt;command&gt;CREATE&lt;/command&gt;,
@@ -277,12 +283,17 @@
 最も分かりやすいコンフリクトは性能です。
 プライマリサーバで巨大なデータがロードされた場合、スタンバイサーバにおいて同様に巨大なWALレコードが生成されるので、スタンバイサーバにおける問い合わせは互いにI/Oなどのシステム資源を奪い合います。
    </p><p>
+<span class="original">
     There are also additional types of conflict that can occur with hot standby.
-    These conflicts are <span class="emphasis"><em>hard conflicts</em></span> in the sense that queries
+    These conflicts are &lt;emphasis&gt;hard conflicts&lt;/emphasis&gt; in the sense that queries
     might need to be canceled and, in some cases, sessions disconnected to resolve them.
     The user is provided with several ways to handle these
     conflicts. Conflict cases include:
-
+</span>
+ホットスタンバイで発生する可能性があるコンフリクトの種類には他にもあります。
+これらのコンフリクトは、問い合わせをキャンセルしなければならない可能性があり、解消させるためにはセッションの接続を閉ざすことになる場合もあるため、<span class="emphasis"><em>致命的なコンフリクト</em></span>です。
+ユーザにはこうしたコンフリクトを扱うための複数の方法が提供されます。
+コンフリクトする状況には以下があります。
       </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>
 <span class="original">
          Access Exclusive locks taken on the primary server, including both
@@ -524,9 +535,10 @@ WALに記録された操作はすでにプライマリで発生したもので�
    </p></div><div class="sect2" id="HOT-STANDBY-ADMIN"><div class="titlepage"><div><div><h3 class="title">27.4.3. 管理者のための概説</h3></div></div></div><span class="original">
    &lt;title&gt;Administrator's Overview&lt;/title&gt;
 </span><p>
-    If <code class="varname">hot_standby</code> is <code class="literal">on</code> in <code class="filename">postgresql.conf</code>
+<span class="original">
+    If &lt;varname&gt;hot_standby&lt;/varname&gt; is &lt;literal&gt;on&lt;/literal&gt; in &lt;filename&gt;postgresql.conf&lt;/filename&gt;
     (the default value) and there is a
-    <a class="link" href="warm-standby.html#FILE-STANDBY-SIGNAL"><code class="filename">standby.signal</code></a><a id="id-1.6.14.24.7.2.5" class="indexterm"></a>
+    &lt;link linkend="file-standby-signal"&gt;&lt;filename&gt;standby.signal&lt;/filename&gt;&lt;/link&gt;&lt;indexterm&gt;&lt;primary&gt;standby.signal&lt;/primary&gt;&lt;secondary&gt;for hot standby&lt;/secondary&gt;&lt;/indexterm&gt;
     file present, the server will run in hot standby mode.
     However, it may take some time for hot standby connections to be allowed,
     because the server will not accept connections until it has completed
@@ -535,6 +547,10 @@ WALに記録された操作はすでにプライマリで発生したもので�
     clients that attempt to connect will be refused with an error message.
     To confirm the server has come up, either loop trying to connect from
     the application, or look for these messages in the server logs:
+</span>
+<code class="filename">postgresql.conf</code>において<code class="varname">hot_standby</code>が<code class="literal">on</code>で（これはデフォルトです）、かつ<a class="link" href="warm-standby.html#FILE-STANDBY-SIGNAL"><code class="filename">standby.signal</code></a><a id="id-1.6.14.24.7.2.5" class="indexterm"></a>が存在すれば、サーバはホットスタンバイモードで稼動します。
+しかし、サーバはまず問い合わせが実行できる程度の一貫性を持つ状態を提供するために十分なリカバリを完了させなければなりませんので、ホットスタンバイでの接続が有効になるまでに多少の時間がかかるかもしれません。
+サーバの準備ができたことを確認するために、アプリケーションで接続試行を繰り返すか、サーバログに以下のメッセージがあるかどうかを確認します。
 
 </p><pre class="programlisting">
 LOG:  entering standby mode
@@ -939,8 +955,12 @@ WALの再実行はトリガに基づいたものではありません。
    </p></div><div class="sect2" id="HOT-STANDBY-CAVEATS"><div class="titlepage"><div><div><h3 class="title">27.4.5. 警告</h3></div></div></div><span class="original">
    &lt;title&gt;Caveats&lt;/title&gt;
 </span><p>
+<span class="original">
     There are several limitations of hot standby.
     These can and probably will be fixed in future releases:
+</span>
+ホットスタンバイには幾つかの制限があります。
+将来のリリースでは改善されると思われます。
 
   </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>
 <span class="original">
