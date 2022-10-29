@@ -27,7 +27,7 @@ FDWコールバック関数の<code class="function">GetForeignRelSize</code>、
      columns that are used in qual evaluation but not output by the query.
 </span>
 <code class="literal">root</code>と<code class="literal">baserel</code>に含まれる情報は、外部テーブルから取得する必要のある情報の量(とそれによるコスト)を削減するために使用できます。
-<code class="literal">baserel-&gt;baserestrictinfo</code>は、取得される行をフィルタリングする検索条件(<code class="literal">WHERE</code>句)を含んでいるため、特に興味深いものです。(コアのエクゼキュータが代わりにそれらをチェックできるので、FDW自身がこれらの制約を適用しなければならないわけではありません。)
+<code class="literal">baserel-&gt;baserestrictinfo</code>は、取得される行をフィルタリングする検索条件(<code class="literal">WHERE</code>句)を含んでいるため、特に興味深いものです。(コアのエグゼキュータが代わりにそれらをチェックできるので、FDW自身がこれらの制約を適用しなければならないわけではありません。)
 <code class="literal">baserel-&gt;reltarget-&gt;exprs</code>はどの列が取得される必要があるかを決定するのに使用できます。ただし、このリストは<code class="structname">ForeignScan</code>プランノードから出力すべき列しか含んでおらず、条件検査には必要だが問い合わせからは出力されない列は含まないことに注意してください。
     </p><p>
 <span class="original">
@@ -100,8 +100,8 @@ FDWコールバック関数の<code class="function">GetForeignRelSize</code>、
 </span>
 <code class="function">GetForeignPlan</code>では、一般的に渡されたターゲットリストはそのままプランノードにコピーできます。
 渡された<code class="literal">scan_clauses</code>リストは<code class="literal">baserel-&gt;baserestrictinfo</code>と同じ句を含みますが、実行効率のよい別の順番に並べ替えることもできます。
-FDWにできるのが<code class="structname">RestrictInfo</code>ノードを<code class="literal">scan_clauses</code>リストから(<code class="function">extract_actual_clauses</code>を使って)抜き出して、全ての句をプランノードの条件リストに入れるだけ、といった単純なケースでは、全ての句は実行時にエクゼキュータによってチェックされます。
-より複雑なFDWは内部で一部の句をチェックできるかもしれませんが、そのような場合には、エクゼキュータが再チェックのために時間を無駄にしないように、それらの句はプランノードの条件リストから削除できます。
+FDWにできるのが<code class="structname">RestrictInfo</code>ノードを<code class="literal">scan_clauses</code>リストから(<code class="function">extract_actual_clauses</code>を使って)抜き出して、全ての句をプランノードの条件リストに入れるだけ、といった単純なケースでは、全ての句は実行時にエグゼキュータによってチェックされます。
+より複雑なFDWは内部で一部の句をチェックできるかもしれませんが、そのような場合には、エグゼキュータが再チェックのために時間を無駄にしないように、それらの句はプランノードの条件リストから削除できます。
     </p><p>
 <span class="original">
      As an example, the FDW might identify some restriction clauses of the
@@ -145,7 +145,7 @@ FDWにできるのが<code class="structname">RestrictInfo</code>ノードを<co
      tuple entirely.
 </span>
 <code class="literal">READ COMMITTED</code>分離レベルでの正しい動作を保証するため、プランノードの条件リストから除かれた句はすべて、代わりに<code class="literal">fdw_recheck_quals</code>に追加されるか、<code class="literal">RecheckForeignScan</code>で再検査される必要があります。
-問い合わせに含まれる他のテーブルで同時更新があった場合、エクゼキュータはタプルが元の条件を、それも場合によっては異なるパラメータ値の組み合わせに対して満たすことを確認する必要があるかもしれません。
+問い合わせに含まれる他のテーブルで同時更新があった場合、エグゼキュータはタプルが元の条件を、それも場合によっては異なるパラメータ値の組み合わせに対して満たすことを確認する必要があるかもしれません。
 <code class="literal">fdw_recheck_quals</code>を使うのは、<code class="literal">RecheckForeignScan</code>の内部で検査を実装するより、通常は簡単でしょう。
 しかしこの方法は、外部結合がプッシュダウンされる場合は不十分です。
 なぜなら、この場合の結合タプルはタプル全体を拒絶せずに、一部のフィールドをNULLにしてしまうからです。
