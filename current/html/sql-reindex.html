@@ -257,10 +257,11 @@ REINDEX [ ( <em class="replaceable"><code>option</code></em> [, ...] ) ] { INDEX
    use it, meaning that there will be no blocking but reads might be forced
    into expensive sequential scans.
 </span>
-《マッチ度[70.026762]》<code class="command">REINDEX</code>は、インデックスの中身を1から作り直すという点では、インデックスを削除してから再作成する処理と似ています。
+<code class="command">REINDEX</code>は、インデックスの中身を1から作り直すという点では、インデックスを削除してから再作成する処理と似ています。
 しかし、ロックに関しては異なります。
 <code class="command">REINDEX</code>はインデックスの元となるテーブルの書き込みをロックしますが、読み込みはロックしません。
 また、処理中のインデックスに対する<code class="literal">ACCESS EXCLUSIVE</code>ロックを取得するので、そのインデックスを使用する読み込みはブロックされます。
+特に、問い合わせプランナは、問い合わせに関わらずテーブルの各インデックスで<code class="literal">ACCESS SHARE</code>ロックを取得しようとしますので、<code class="command">REINDEX</code>は、プランがキャッシュされていて、まさにこのインデックスを使わないプリペアド問い合わせを除く問い合わせをすべて実質的にブロックします。
 一方、<code class="command">DROP INDEX</code>は瞬間的に元となるテーブルの<code class="literal">ACCESS EXCLUSIVE</code>ロックを取得するので、書き込みも読み込みもブロックされます。
 その後に行う<code class="command">CREATE INDEX</code>では書き込みのみをロックし、読み込みはロックしません。
 インデックスは存在しないので、インデックスを使用する読み込みは発生しません。
