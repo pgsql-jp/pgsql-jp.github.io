@@ -50,7 +50,7 @@ CREATE POLICY <em class="replaceable"><code>name</code></em> ON <em class="repla
    policy check.  &lt;literal&gt;WITH CHECK&lt;/literal&gt; expressions are enforced
    before any other constraints.
 </span>
-《マッチ度[88.160677]》<code class="command">INSERT</code>文および<code class="command">UPDATE</code>文では、<code class="literal">BEFORE</code>トリガーが実行された後で、かつ、実際のデータ更新が行われるより前に<code class="literal">WITH CHECK</code>式が実行されます。
+<code class="command">INSERT</code>文、<code class="command">UPDATE</code>文および<code class="command">MERGE</code>では、<code class="literal">BEFORE</code>トリガーが実行された後で、かつ、実際のデータ更新が行われるより前に<code class="literal">WITH CHECK</code>式が実行されます。
 従って、<code class="literal">BEFORE ROW</code>トリガーは挿入されるデータを変更する場合があり、これはセキュリティポリシーの検査の結果に影響を与えます。
 <code class="literal">WITH CHECK</code>式は他のいかなる制約よりも前に実行されます。
   </p><p>
@@ -271,7 +271,7 @@ CREATE POLICY <em class="replaceable"><code>name</code></em> ON <em class="repla
          a &lt;literal&gt;USING&lt;/literal&gt; expression, as it only applies in cases
          where records are being added to the relation.
 </span>
-《マッチ度[72.211350]》ポリシーに<code class="literal">INSERT</code>を使うのは、そのポリシーは<code class="literal">INSERT</code>コマンドに適用されるという意味になります。
+ポリシーに<code class="literal">INSERT</code>を使うことは、そのポリシーは<code class="literal">INSERT</code>コマンドと<code class="literal">INSERT</code>の動作を含む<code class="literal">MERGE</code>コマンドに適用するという意味になります。
 このポリシーに反する行を挿入しようとすると、ポリシー違反エラーを起こし、<code class="literal">INSERT</code>コマンド全体が中止されます。
 <code class="literal">INSERT</code>ポリシーはリレーションにレコードを追加する場合にしか適用されないため、<code class="literal">USING</code>式を持つことはできません。
        </p><p>
@@ -300,7 +300,8 @@ CREATE POLICY <em class="replaceable"><code>name</code></em> ON <em class="repla
          while the &lt;literal&gt;WITH CHECK&lt;/literal&gt; expression defines which
          modified rows are allowed to be stored back into the relation.
 </span>
-《マッチ度[77.383592]》ポリシーに<code class="literal">UPDATE</code>を使うのは、そのポリシーは<code class="literal">UPDATE</code>コマンド、<code class="literal">SELECT FOR UPDATE</code>コマンド、<code class="literal">SELECT FOR SHARE</code>コマンド、および補助的に<code class="literal">INSERT</code>コマンドの<code class="literal">ON CONFLICT DO UPDATE</code>句で適用されるという意味になります。
+ポリシーに<code class="literal">UPDATE</code>を使うことは、そのポリシーは<code class="literal">UPDATE</code>コマンド、<code class="literal">SELECT FOR UPDATE</code>コマンド、<code class="literal">SELECT FOR SHARE</code>コマンド、および補助的に<code class="literal">INSERT</code>コマンドの<code class="literal">ON CONFLICT DO UPDATE</code>句で適用されるという意味になります。
+<code class="literal">UPDATE</code>動作を含む<code class="literal">MERGE</code>コマンドも影響を受けます。
 <code class="literal">UPDATE</code>は既存のレコードを取り出すことと、レコードを新しい修正されたレコードで置換することが含まれるので、<code class="literal">UPDATE</code>ポリシーは<code class="literal">USING</code>式と<code class="literal">WITH CHECK</code>式の両方を受け付けます。
 <code class="literal">USING</code>式は<code class="literal">UPDATE</code>コマンドが操作の対象としてどのレコードを見ることができるかを決めるのに使われます。
 一方で<code class="literal">WITH CHECK</code>はどの修正した行をリレーションに戻すことができるかを定義します。
@@ -549,11 +550,11 @@ AND
    the view is defined using the &lt;literal&gt;security_invoker&lt;/literal&gt; option
    (see &lt;link linkend="sql-createview"&gt;&lt;command&gt;CREATE VIEW&lt;/command&gt;&lt;/link&gt;).
 </span>
-《マッチ度[75.544174]》ポリシーの式はユーザの問い合わせに直接追加されるため、式は問い合わせ全体を実行しているユーザの権限によって実行されます。
+ポリシーの式はユーザの問い合わせに直接追加されるため、式は問い合わせ全体を実行しているユーザの権限によって実行されます。
 そのため、あるポリシーを使用するユーザは、その式が参照しているすべてのテーブルおよび関数にアクセスできる必要があります。
 そうでなければ、行単位セキュリティが有効になっているテーブルに問い合わせをしようとしたときに、単に権限なしのエラーを受け取ります。
 しかし、これによってビューの動作が変わることはありません。
-通常の問い合わせおよびビューと同じく、ビューによって参照されるテーブルに対する権限の確認とポリシーは、ビューの所有者の権限およびビューの所有者に適用されるポリシーを利用します。
+通常の問い合わせおよびビューと同じく、ビューによって参照されるテーブルに対する権限の確認とポリシーは、ビューの所有者の権限およびビューの所有者に適用されるポリシーを利用します。ただし、ビューが<code class="literal">security_invoker</code>オプション(<a class="link" href="sql-createview.html" title="CREATE VIEW"><code class="command">CREATE VIEW</code></a>を参照)を使って定義されている場合を除きます。
   </p><p>
 <span class="original">
    No separate policy exists for &lt;command&gt;MERGE&lt;/command&gt;. Instead, the policies
@@ -562,8 +563,8 @@ AND
    while executing &lt;command&gt;MERGE&lt;/command&gt;, depending on the actions that are
    performed.
 </span>
-《機械翻訳》<code class="command">MERGE</code>に個別のポリシーは存在しません。
-かわりに、<code class="command">SELECT</code>、<code class="command">INSERT</code>、<code class="command">UPDATE</code>および<code class="command">DELETE</code>に定義されたポリシーは、実行されるアクションに応じて<code class="command">MERGE</code>の実行時に適用されます。
+<code class="command">MERGE</code>に個別のポリシーは存在しません。
+その代わり、<code class="command">SELECT</code>、<code class="command">INSERT</code>、<code class="command">UPDATE</code>および<code class="command">DELETE</code>に定義されたポリシーが、実行される動作に応じて<code class="command">MERGE</code>の実行時に適用されます。
   </p><p>
 <span class="original">
    Additional discussion and practical examples can be found
