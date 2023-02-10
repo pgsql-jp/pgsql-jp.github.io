@@ -178,11 +178,11 @@
     statement-level &lt;literal&gt;AFTER&lt;/literal&gt; &lt;command&gt;INSERT&lt;/command&gt;
     triggers.
 </span>
-<code class="command">INSERT</code>が<code class="literal">ON CONFLICT DO UPDATE</code>句を含む場合、<code class="varname">EXCLUDED</code>列が参照されていると、行単位<code class="literal">BEFORE</code> <code class="command">INSERT</code>トリガおよび行単位<code class="literal">BEFORE</code> <code class="command">UPDATE</code>トリガの両方の効果が適用され、それが更新後の行の最後の状態から明らかな場合がありえます。
+<code class="command">INSERT</code>が<code class="literal">ON CONFLICT DO UPDATE</code>句を含む場合、<code class="varname">EXCLUDED</code>列が参照されていると、行レベルの<code class="literal">BEFORE</code> <code class="command">INSERT</code>トリガおよび行レベルの<code class="literal">BEFORE</code> <code class="command">UPDATE</code>トリガの両方の効果が適用され、それが更新後の行の最後の状態から明らかな場合がありえます。
 ただし、両方の行レベルの<code class="literal">BEFORE</code>トリガを実行するために<code class="varname">EXCLUDED</code>の参照が必要なわけではありません。
-驚くような結果の可能性について、<code class="literal">BEFORE</code> <code class="command">INSERT</code>と<code class="literal">BEFORE</code> <code class="command">UPDATE</code>の両方の文単位トリガーがあり、それらがいずれも挿入あるいは更新対象の行に影響を与える場合に考慮すべきです（これは更新が冪等ではないが、ほぼ同等であるときには、それでも問題になります）。
-文単位の<code class="command">UPDATE</code>トリガは<code class="literal">ON CONFLICT DO UPDATE</code>が指定されたとき、その<code class="command">UPDATE</code>によって行が影響を受けたかどうかに関わらず（そしてその代替である<code class="command">UPDATE</code>部分が実行されたかどうかに関わらず）実行されることに注意してください。
-<code class="literal">ON CONFLICT DO UPDATE</code>句のある<code class="command">INSERT</code>では、まず文単位の<code class="literal">BEFORE</code> <code class="command">INSERT</code>トリガ、次に文単位の<code class="literal">BEFORE</code> <code class="command">UPDATE</code>トリガ、次いで文単位の<code class="literal">AFTER</code> <code class="command">UPDATE</code>トリガ、最後に文単位の<code class="literal">AFTER</code> <code class="command">INSERT</code>トリガを実行します。
+驚くような結果の可能性について、<code class="literal">BEFORE</code> <code class="command">INSERT</code>と<code class="literal">BEFORE</code> <code class="command">UPDATE</code>の両方の行レベルのトリガがあり、それらがいずれも挿入あるいは更新対象の行に影響を与える場合に考慮すべきです（これは更新が冪等ではないが、ほぼ同等であるときには、それでも問題になります）。
+文レベルの<code class="command">UPDATE</code>トリガは<code class="literal">ON CONFLICT DO UPDATE</code>が指定されたとき、その<code class="command">UPDATE</code>によって行が影響を受けたかどうかに関わらず（そしてその代替である<code class="command">UPDATE</code>部分が実行されたかどうかに関わらず）実行されることに注意してください。
+<code class="literal">ON CONFLICT DO UPDATE</code>句のある<code class="command">INSERT</code>では、まず文レベルの<code class="literal">BEFORE</code> <code class="command">INSERT</code>トリガ、次に文レベルの<code class="literal">BEFORE</code> <code class="command">UPDATE</code>トリガ、次いで文レベルの<code class="literal">AFTER</code> <code class="command">UPDATE</code>トリガ、最後に文レベルの<code class="literal">AFTER</code> <code class="command">INSERT</code>トリガを実行します。
    </p><p>
 <span class="original">
     If an &lt;command&gt;UPDATE&lt;/command&gt; on a partitioned table causes a row to move
@@ -221,8 +221,8 @@
     the &lt;command&gt;MERGE&lt;/command&gt; query and (for row-level triggers) what
     actions are performed.
 </span>
-《機械翻訳》<code class="command">MERGE</code>には個別のトリガーは定義されません。
-かわりに、ステートメント・レベルまたは行レベルの<code class="command">UPDATE</code>、<code class="command">DELETE</code>および<code class="command">INSERT</code>トリガーが、<code class="command">MERGE</code>問合せで指定されたアクション(ステートメント・レベル・トリガーの場合)および実行されたアクション(行レベル・トリガーの場合)に応じて起動されます。
+<code class="command">MERGE</code>には個別のトリガは定義されません。
+かわりに、文レベルまたは行レベルの<code class="command">UPDATE</code>、<code class="command">DELETE</code>および<code class="command">INSERT</code>トリガが、<code class="command">MERGE</code>問い合わせで指定されたアクション(文レベルトリガの場合)および実行されたアクション(行レベルトリガの場合)に応じて起動されます。
    </p><p>
 <span class="original">
     While running a &lt;command&gt;MERGE&lt;/command&gt; command, statement-level
@@ -236,10 +236,10 @@
     triggers are fired for certain types of action, no row-level triggers
     are fired for the same kind of action.
 </span>
-《機械翻訳》<code class="command">MERGE</code>コマンドの実行中、文レベルの<code class="literal">BEFORE</code>および<code class="literal">AFTER</code>トリガーは、アクションが最終的に実行されるかどうかに関係なく、<code class="command">MERGE</code>コマンドのアクションで指定されたイベントに対して発行されます。
-これは、行を更新しない<code class="command">UPDATE</code>文と同じですが、文レベルのトリガーが発行されます。
-行レベルのトリガーは、行が実際に更新、挿入または削除されたときにのみ発行されます。
-したがって、文レベルのトリガーは特定のタイプのアクションに対して発行されますが、同じ種類のアクションに対して行レベルのトリガーが発行されないことは完全に合法です。
+<code class="command">MERGE</code>コマンドの実行中、文レベルの<code class="literal">BEFORE</code>および<code class="literal">AFTER</code>トリガは、アクションが最終的に実行されるかどうかに関係なく、<code class="command">MERGE</code>コマンドのアクションで指定されたイベントに対して発行されます。
+これは、行を更新しない<code class="command">UPDATE</code>文と同じですが、文レベルのトリガは発行されます。
+行レベルのトリガは、行が実際に更新、挿入または削除されたときにのみ発行されます。
+したがって、文レベルのトリガが特定のタイプのアクションに対して発行されるものの、同じ種類のアクションに対して行レベルのトリガが発行されないことは完全に合法です。
    </p><p>
 <span class="original">
     Trigger functions invoked by per-statement triggers should always
