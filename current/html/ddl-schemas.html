@@ -370,9 +370,10 @@ SELECT 3 OPERATOR(pg_catalog.+) 4;
     users to make use of the objects in a schema, additional privileges might
     need to be granted, as appropriate for the object.
 </span>
-《マッチ度[73.846154]》ユーザは、デフォルトでは所有していないスキーマのオブジェクトをアクセスすることはできません。
-アクセスするためには、そのスキーマの所有者からスキーマの<code class="literal">USAGE</code>権限を付与してもらわなければなりません。
-そのスキーマ内のオブジェクトに対して操作を行うには、そのオブジェクトに応じて、さらに追加の権限が必要となる場合があります。
+ユーザは、デフォルトでは所有していないスキーマのオブジェクトをアクセスすることはできません。
+アクセスを許可するには、そのスキーマの所有者がスキーマの<code class="literal">USAGE</code>権限を付与しなければなりません。
+デフォルトでは、誰でも<code class="literal">public</code>にその権限を所有しています。
+ユーザにそのスキーマ内のオブジェクトの利用を許可するには、そのオブジェクトに応じて、さらに追加の権限が必要となる場合があります。
    </p><p>
 <span class="original">
     A user can also be allowed to create objects in someone else's schema.  To
@@ -383,9 +384,9 @@ SELECT 3 OPERATOR(pg_catalog.+) 4;
     Some &lt;link linkend="ddl-schemas-patterns"&gt;usage patterns&lt;/link&gt; call for
     revoking that privilege:
 </span>
-《機械翻訳》ユーザは、他のユーザのスキーマでオブジェクトを作成することを許可することもできます。
+ユーザが、他のユーザのスキーマ内でオブジェクトを作成することを許可することもできます。
 これを許可するには、スキーマに対する<code class="literal">CREATE</code>権限を付与する必要があります。
-<span class="productname">PostgreSQL</span>14以前からアップグレードされたデータベースでは、誰もがスキーマに対する権限<code class="literal">public</code>を持っています。
+<span class="productname">PostgreSQL</span> 14以前からアップグレードされたデータベースでは、誰もが<code class="literal">public</code>スキーマに対するその権限を持っています。
 一部の<a class="link" href="ddl-schemas.html#DDL-SCHEMAS-PATTERNS" title="5.9.6. 使用パターン">使用パターン</a>では、その権限を取り消す必要があります:
 </p><pre class="programlisting">
 REVOKE CREATE ON SCHEMA public FROM PUBLIC;
@@ -483,14 +484,13 @@ REVOKE CREATE ON SCHEMA public FROM PUBLIC;
        the &lt;literal&gt;CREATEROLE&lt;/literal&gt; privilege, in which case no secure
        schema usage pattern exists.
 </span>
-《機械翻訳》通常のユーザをユーザプライベートスキーマに制限します。
+通常のユーザをユーザプライベートスキーマに制限します。
 これを実装するには、まず<code class="literal">REVOKE CREATE ON SCHEMA public FROM PUBLIC</code>を発行します。
 次に、一時的でないオブジェクトを作成する必要があるすべてのユーザに対して、そのユーザと同じ名前のスキーマを作成します。
-デフォルトの検索パスは<code class="literal"></code>で始まり、ユーザ名に解決されることを思い出してください。
+デフォルトの検索パスは、ユーザ名に置き換えられる<code class="literal">$user</code>で始まることを思い出してください。
 したがって、各ユーザが別のスキーマを持っている場合、ユーザはデフォルトで自身のスキーマにアクセスします。
-信頼できないユーザがすでにログインしているデータベースでこのパターンを採用した後、スキーマ<code class="literal">pg_catalog</code>内のオブジェクトのような名前のオブジェクトのパブリックスキーマを監査することを検討してください。
-信頼できないユーザがデータベースの所有者であるか<code class="literal">CREATEROLE</code>権限を持っていない限り、このパターンはセキュアなスキーマ使用パターンです。
-この場合、セキュアなスキーマ使用パターンは存在しません。
+信頼できないユーザがすでにログインしているデータベースでこのパターンを採用した後は、パブリックスキーマ内で、<code class="literal">pg_catalog</code>スキーマ内のオブジェクトに似た名前のオブジェクトを監査することを検討してください。
+信頼できないユーザがデータベースの所有者であるか<code class="literal">CREATEROLE</code>権限を持っていない限り（この場合、セキュアなスキーマ使用パターンは存在しません）、このパターンはセキュアなスキーマ使用パターンです。
       </p><p>
 <span class="original">
        If the database originated in an upgrade
@@ -499,7 +499,7 @@ REVOKE CREATE ON SCHEMA public FROM PUBLIC;
        configuration follows this pattern; ordinary users can create only
        temporary objects until a privileged user furnishes a schema.
 </span>
-《機械翻訳》データベースが<span class="productname">PostgreSQL</span>14以前からのアップグレードで作成された場合、<code class="literal">REVOKE</code>は必須です。
+データベースが<span class="productname">PostgreSQL</span> 14以前からのアップグレードで作成された場合、<code class="literal">REVOKE</code>は必須です。
 そうでない場合、デフォルトの設定はこのパターンに従います。
 特権ユーザがスキーマを提供するまで、一般ユーザは一時オブジェクトしか作成できません。
       </p></li><li class="listitem"><p>
@@ -516,8 +516,9 @@ REVOKE CREATE ON SCHEMA public FROM PUBLIC;
        pattern, this is secure unless an untrusted user is the database owner
        or holds the &lt;literal&gt;CREATEROLE&lt;/literal&gt; privilege.
 </span>
-《マッチ度[82.949932]》<a class="link" href="config-setting.html#CONFIG-SETTING-CONFIGURATION-FILE" title="20.1.2. 設定ファイルによるパラメータ操作"><code class="filename">postgresql.conf</code></a>を変更、あるいは<code class="literal">ALTER ROLE ALL SET search_path = ""</code>を実行することにより、デフォルトサーチパスからpublicスキーマを削除します。
-全員がパブリックスキーマに引き続きオブジェクトを作ることができますが、オブジェクトの選択は修飾名によってのみ行われます。
+<a class="link" href="config-setting.html#CONFIG-SETTING-CONFIGURATION-FILE" title="20.1.2. 設定ファイルによるパラメータ操作"><code class="filename">postgresql.conf</code></a>を変更、あるいは<code class="literal">ALTER ROLE ALL SET search_path = ""</code>を実行することにより、デフォルトサーチパスからpublicスキーマを削除します。
+それから、publicスキーマ内での作成権限を与えます。
+オブジェクトの選択はpublicスキーマ修飾によってのみ行われます。
 修飾されたテーブル名による参照は問題ありませんが、パブリックスキーマ内の関数呼び出しは<a class="link" href="typeconv-func.html" title="10.3. 関数">安全ではないか、あるいは信頼性がありません</a>。
 パブリックスキーマ内に関数や拡張を作る場合は、最初のパターンを代わりに使ってください。
 それ以外では、最初のパターン同様、信頼できないユーザがデータベース所有者である場合や、<code class="literal">CREATEROLE</code>権限を持っている場合を除き、これはセキュアです。
@@ -532,11 +533,12 @@ REVOKE CREATE ON SCHEMA public FROM PUBLIC;
        from &lt;productname&gt;PostgreSQL&lt;/productname&gt; 14 or earlier, this is the
        default.
 </span>
-《マッチ度[59.959350]》デフォルトを維持します。
+デフォルトサーチパスを維持し、publicスキーマ内の作成権限を与えます。
 すべてのユーザがpublicスキーマに暗黙的にアクセスします。
 これはスキーマを考慮しない世界からのスムースな移行を可能にしながら、スキーマがまったく利用できない状況をシミュレートします。
 しかし、これは決してセキュアなパターンではありません。
 このパターンは、データベースに一人、あるいは少数のお互いに信頼できるユーザだけが存在する場合にのみ受け入れ可能です。
+<span class="productname">PostgreSQL</span> 14以前のデータベースをアップグレードした場合はこれがデフォルトです。
       </p></li></ul></div><p>
    </p><p>
 <span class="original">

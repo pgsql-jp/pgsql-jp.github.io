@@ -29,10 +29,12 @@
    which by default will be copied into databases created later.  See
    &lt;xref linkend="manage-ag-templatedbs"/&gt; for more details.
 </span>
-《マッチ度[53.650058]》データベースクラスタの作成には、データベースのデータを保存するディレクトリの作成、共有カタログテーブル(特定のデータベースではなく、クラスタ全体に所属するテーブル)の生成、そして<code class="literal">template1</code>データベースと<code class="literal">postgres</code>データベースの作成といった作業が含まれます。
-後から新しいデータベースを作成する際は、<code class="literal">template1</code>データベースの全ての内容がコピーされます。
-（つまり、<code class="literal">template1</code>にインストールしたものすべてが、後に生成した各データベースに自動的にコピーされます。）
+データベースクラスタの作成には、データベースのデータを保存するディレクトリの作成、共有カタログテーブル(特定のデータベースではなく、クラスタ全体に所属するテーブル)の生成、そして<code class="literal">postgres</code>データベース、<code class="literal">template1</code>データベース、<code class="literal">template0</code>データベースの作成といった作業が含まれます。
 <code class="literal">postgres</code>データベースは、ユーザ、ユーティリティ、サードパーティ製アプリケーションのデフォルトデータベースとしての使用を意図したものです。
+<code class="literal">template1</code>と<code class="literal">template0</code>は、後の<code class="command">CREATE DATABASE</code>コマンドでコピーされる元のデータベースを意図しています。
+新しいデータベースを作成する際は、<code class="literal">template1</code>データベースの全ての内容がコピーされます。
+<code class="literal">template0</code>を修正してはいけませんが、<code class="literal">template1</code>にはオブジェクトを追加でき、そのオブジェクトは後に生成した各データベースにデフォルトでコピーされます。
+より詳細については<a class="xref" href="manage-ag-templatedbs.html" title="23.3. テンプレートデータベース">23.3</a>を参照してください。
   </p><p>
 <span class="original">
    Although &lt;command&gt;initdb&lt;/command&gt; will attempt to create the
@@ -81,11 +83,10 @@
    the environment, and determines the encoding from the locale settings.
    This is almost always sufficient, unless there are special requirements.
 </span>
-《機械翻訳》<code class="command">initdb</code>は、データベースクラスタのデフォルトのロケールと文字セットのエンコーディングを初期化します。
+<code class="command">initdb</code>は、データベースクラスタのデフォルトのロケールと文字セット符号化方式を初期化します。
 これらは、データベースの作成時にデータベースごとに個別に設定することもできます。
-<code class="command">initdb</code>は、テンプレートデータベースのこれらの設定を決定します。
-テンプレートデータベースは、他のすべてのデータベースのデフォルトとして機能します。
-デフォルトでは、<code class="command">initdb</code>はロケールプロバイダ<code class="literal">libc</code>を使用し、環境からロケール設定を取得し、ロケール設定からエンコーディングを決定します。
+<code class="command">initdb</code>はテンプレートデータベースのこれらの設定を決定します。この設定が他のすべてのデータベースのデフォルトとして提供されます。
+デフォルトでは、<code class="command">initdb</code>はロケールプロバイダ<code class="literal">libc</code>を使用し、環境からロケール設定を取得し、ロケール設定から符号化方式を決定します。
 これは、特別な要件がない限り、ほぼ常に十分です。
   </p><p>
 <span class="original">
@@ -95,7 +96,7 @@
    categories.  Note that inconsistent settings for different locale
    categories can give nonsensical results, so this should be used with care.
 </span>
-《機械翻訳》クラスタに別のロケールを選択するには、<code class="option">--locale</code>オプションを使用します。
+クラスタに別のロケールを選択するには、<code class="option">--locale</code>オプションを使用します。
 また、個々のロケールカテゴリに値を設定するための個々のオプション<code class="option">--lc-*</code>もあります(下記参照)。
 異なるロケールカテゴリの設定に一貫性がないと、無意味な結果になることがあるので、注意して使用してください。
   </p><p>
@@ -109,7 +110,8 @@
    &lt;command&gt;initdb&lt;/command&gt; will still select and initialize libc locale
    settings when the ICU locale provider is used.
 </span>
-《機械翻訳》また、ICUライブラリを使用してロケールサービスを提供することもできます(これも後で作成されるデータベースのデフォルトを設定するだけです)。
+また、ICUライブラリを使用してロケールサービスを提供することもできます。
+(これも後で作成されるデータベースのデフォルトを設定するだけです。)
 このオプションを選択するには、<code class="literal">--locale-provider=icu</code>を指定します。
 適用する特定のICUロケールIDを選択するには、<code class="option">--icu-locale</code>オプションを使用します。
 実装上の理由とレガシーコードをサポートするために、<code class="command">initdb</code>はICUロケールプロバイダが使用されている場合でもlibcロケール設定を選択し初期化することに注意してください。
@@ -120,14 +122,14 @@
    options, it is advisable to check that the result matches what was
    intended.
 </span>
-《機械翻訳》<code class="command">initdb</code>を実行すると、選択したロケール設定を出力します。
-複雑な要件がある場合や、複数のオプションを指定した場合は、結果が意図したものと一致することを確認することをお勧めします。
+<code class="command">initdb</code>を実行すると、選択したロケール設定を出力します。
+複雑な要件がある場合や、複数のオプションを指定した場合は、結果が意図したものと一致するのを確認することをお勧めします。
   </p><p>
 <span class="original">
    More details about locale settings can be found in &lt;xref
    linkend="locale"/&gt;.
 </span>
-《機械翻訳》ロケール設定の詳細については<a class="xref" href="locale.html" title="24.1. ロケールのサポート">24.1</a>を参照してください。
+ロケール設定の詳細については<a class="xref" href="locale.html" title="24.1. ロケールのサポート">24.1</a>を参照してください。
   </p><p>
 <span class="original">
    To alter the default encoding, use the &lt;option&gt;&amp;#45;-encoding&lt;/option&gt;.
@@ -145,7 +147,7 @@
         and &lt;literal&gt;local&lt;/literal&gt; lines).  See &lt;xref linkend="auth-pg-hba-conf"/&gt;
         for an overview of valid values.
 </span>
-《機械翻訳》このオプションは、<code class="filename">pg_hba.conf</code>で使用されるローカルユーザーのデフォルトの認証方法を指定します（<code class="literal">host</code>および<code class="literal">local</code>行）。
+このオプションは、<code class="filename">pg_hba.conf</code>で使用されるローカルユーザーのデフォルトの認証方法（<code class="literal">host</code>および<code class="literal">local</code>行）を指定します。
 有効な値の概要については<a class="xref" href="auth-pg-hba-conf.html" title="21.1. pg_hba.confファイル">21.1</a>を参照してください。
        </p><p>
 <span class="original">
@@ -154,7 +156,7 @@
         specified authentication method for non-replication as well as
         replication connections.
 </span>
-《機械翻訳》<code class="command">initdb</code>は、レプリケーション接続だけでなく非レプリケーション接続に対しても、指定された認証方法を使用して<code class="filename">pg_hba.conf</code>エントリを事前設定します。
+<code class="command">initdb</code>は、非レプリケーションおよびレプリケーションの接続について、指定の認証方式を使うエントリを<code class="filename">pg_hba.conf</code>に事前に作成します。
        </p><p>
 <span class="original">
         Do not use &lt;literal&gt;trust&lt;/literal&gt; unless you trust all local users on your
@@ -199,9 +201,9 @@
         the &lt;productname&gt;PostgreSQL&lt;/productname&gt; server are described
         in &lt;xref linkend="multibyte-charset-supported"/&gt;.
 </span>
-《マッチ度[74.654378]》テンプレートデータベースの符号化方式を選択します。
-これが今後作成される全てのデータベースについてのデフォルト符号化方式となりますが、作成時に上書きすることもできます。
-デフォルトは、ロケールから取得しますが、取得できなければ<code class="literal">SQL_ASCII</code>になります。
+テンプレートデータベースの符号化方式を選択します。
+これが今後作成されるすべてのデータベースについてのデフォルト符号化方式となりますが、作成時に上書きすることもできます。
+デフォルトは、libcロケールプロバイダが使われていればロケールから取得し、ICUロケールプロバイダが使われていれば<code class="literal">UTF8</code>になります。
 <span class="productname">PostgreSQL</span>サーバによってサポートされる文字セットについては<a class="xref" href="multibyte.html#MULTIBYTE-CHARSET-SUPPORTED" title="24.3.1. サポートされる文字セット">24.3.1</a>で説明します。
        </p></dd><dt id="APP-INITDB-ALLOW-GROUP-ACCESS"><span class="term"><code class="option">-g</code><br /></span><span class="term"><code class="option">--allow-group-access</code></span></dt><dd><p>
 <span class="original">
@@ -216,7 +218,7 @@
 <span class="original">
         Specifies the ICU locale ID, if the ICU locale provider is used.
 </span>
-《機械翻訳》ICUロケールプロバイダが使用されている場合は、ICUロケールIDを指定します。
+ICUロケールプロバイダが使われている場合は、ICUロケールIDを指定します。
        </p></dd><dt id="APP-INITDB-DATA-CHECKSUMS"><span class="term"><code class="option">-k</code><br /></span><span class="term"><code class="option">--data-checksums</code></span></dt><dd><p>
 <span class="original">
         Use checksums on data pages to help detect corruption by the
@@ -262,7 +264,7 @@ I/Oシステムによる破損検知を補助するために、データペー�
         DATABASE&lt;/command&gt; command when new databases are subsequently
         created.  The default is &lt;literal&gt;libc&lt;/literal&gt;.
 </span>
-《機械翻訳》このオプションは、新しいクラスタで作成されたデータベースのロケールプロバイダを設定します。
+このオプションは、新しいクラスタで作成されたデータベースのロケールプロバイダを設定します。
 新しいデータベースが後で作成されるときに、<code class="command">CREATE DATABASE</code>コマンドで上書きできます。
 デフォルトは<code class="literal">libc</code>です。
        </p></dd><dt><span class="term"><code class="option">-N</code><br /></span><span class="term"><code class="option">--no-sync</code></span></dt><dd><p>
@@ -299,12 +301,13 @@ I/Oシステムによる破損検知を補助するために、データペー�
 <span class="original">
         Safely write all database files to disk and exit.  This does not
         perform any of the normal &lt;application&gt;initdb&lt;/application&gt; operations.
+        Generally, this option is useful for ensuring reliable recovery after
+        changing &lt;xref linkend="guc-fsync"/&gt; from &lt;literal&gt;off&lt;/literal&gt; to
+        &lt;literal&gt;on&lt;/literal&gt;.
 </span>
 すべてのデータベースファイルを安全にディスクに書き出し、終了します。
 これは通常の<span class="application">initdb</span>の操作をまったく行いません。
-        Generally, this option is useful for ensuring reliable recovery after
-        changing <a class="xref" href="runtime-config-wal.html#GUC-FSYNC">fsync</a> from <code class="literal">off</code> to
-        <code class="literal">on</code>.
+通常、このオプションは、<a class="xref" href="runtime-config-wal.html#GUC-FSYNC">fsync</a>を<code class="literal">off</code>から<code class="literal">on</code>に変更した後の信頼できるリカバリを確実にするのに有用です。
        </p></dd><dt><span class="term"><code class="option">-T <em class="replaceable"><code>config</code></em></code><br /></span><span class="term"><code class="option">--text-search-config=<em class="replaceable"><code>config</code></em></code></span></dt><dd><p>
 <span class="original">
         Sets the default text search configuration.
