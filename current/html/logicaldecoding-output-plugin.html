@@ -188,7 +188,7 @@ SQLで変更データを見るような場合、任意のかたちでデータ�
       when &lt;varname&gt;synchronous_commit&lt;/varname&gt; is set
       to &lt;literal&gt;off&lt;/literal&gt;.
 </span>
-ディスクに安全に書きだされたトランザクションだけがデコードされます。
+ディスクに安全にフラッシュされたトランザクションだけがデコードされます。
 そのため、<code class="varname">synchronous_commit</code>が<code class="literal">off</code>の場合には、直後に呼び出された<code class="literal">pg_logical_slot_get_changes()</code>がその<code class="command">COMMIT</code>をデコードしないことがあります。
      </p></div><div class="sect3" id="LOGICALDECODING-OUTPUT-PLUGIN-STARTUP"><div class="titlepage"><div><div><h4 class="title">49.6.4.1. 開始コールバック</h4></div></div></div><span class="original">
      &lt;title&gt;Startup Callback&lt;/title&gt;
@@ -511,14 +511,14 @@ typedef bool (*LogicalDecodeFilterPrepareCB) (struct LogicalDecodingContext *ctx
       check if the plugin has already received this &lt;command&gt;PREPARE&lt;/command&gt;
       in which case it can either error out or skip the remaining changes of
       the transaction.
-&lt;programlisting&gt;
-typedef void (*LogicalDecodeBeginPrepareCB) (struct LogicalDecodingContext *ctx,
-                                             ReorderBufferTXN *txn);
-&lt;/programlisting&gt;
 </span>
-《マッチ度[68.505338]》必須である<code class="function">begin_prepare_cb</code>コールバックは、準備されたトランザクションの開始がデコードされるたびに呼び出されます。
+必須である<code class="function">begin_prepare_cb</code>コールバックは、準備されたトランザクションの開始がデコードされるたびに呼び出されます。
 <em class="parameter"><code>txn</code></em>パラメータの一部である<em class="parameter"><code>gid</code></em>フィールドをこのコールバックで使用して、プラグインがこの<code class="command">PREPARE</code>を既に受信しているかどうかをチェックできます。
 この場合、エラーになるか、トランザクションの残りの変更をスキップできます。
+</p><pre class="programlisting">
+typedef void (*LogicalDecodeBeginPrepareCB) (struct LogicalDecodingContext *ctx,
+                                             ReorderBufferTXN *txn);
+</pre><p>
      </p></div><div class="sect3" id="LOGICALDECODING-OUTPUT-PLUGIN-PREPARE"><div class="titlepage"><div><div><h4 class="title">49.6.4.11. トランザクション準備コールバック</h4></div></div></div><span class="original">
      &lt;title&gt;Transaction Prepare Callback&lt;/title&gt;
 </span><p>
