@@ -37,12 +37,12 @@
    and instance data pointers point to (if anything) and will never attempt
    to free them &amp;mdash; that is the responsibility of the event handler.
 </span>
-《マッチ度[93.049327]》それぞれの登録されたイベントハンドラは、<span class="application">libpq</span>からは曖昧とした<code class="literal">void *</code>ポインタとしてだけ知られる２つのデータの断片と提携します。
+それぞれの登録されたイベントハンドラは、<span class="application">libpq</span>からは不透明な<code class="literal">void *</code>ポインタとしてだけ知られる２つのデータの断片と提携します。
 イベントハンドラが<code class="structname">PGconn</code>で登録された時にアプリケーションが提供する<em class="firstterm">通過地点</em>ポインタがあります。
 通過地点ポインタは<code class="structname">PGconn</code>やそれから生成されたすべての（複数の）<code class="structname">PGresult</code>が有効な間決して変わることはありません。
 したがって使用された場合、長期間生存しているデータを指し示します。
 さらに、<em class="firstterm">インスタンスデータ</em>ポインタがあって、それはすべての<code class="structname">PGconn</code>と<code class="structname">PGresult</code>で<code class="symbol">NULL</code>から開始します。
-ポインタは、<a class="xref" href="libpq-events.html#LIBPQ-PQINSTANCEDATA"><code class="function">PQinstanceData</code></a>、<a class="xref" href="libpq-events.html#LIBPQ-PQSETINSTANCEDATA"><code class="function">PQsetInstanceData</code></a>、<a class="xref" href="libpq-events.html#LIBPQ-PQRESULTINSTANCEDATA"><code class="function">PQresultInstanceData</code></a>および<code class="function">PQsetResultInstanceData</code>関数を使って操作することができます。
+ポインタは、<a class="xref" href="libpq-events.html#LIBPQ-PQINSTANCEDATA"><code class="function">PQinstanceData</code></a>、<a class="xref" href="libpq-events.html#LIBPQ-PQSETINSTANCEDATA"><code class="function">PQsetInstanceData</code></a>、<a class="xref" href="libpq-events.html#LIBPQ-PQRESULTINSTANCEDATA"><code class="function">PQresultInstanceData</code></a>および<a class="xref" href="libpq-events.html#LIBPQ-PQRESULTSETINSTANCEDATA"><code class="function">PQresultSetInstanceData</code></a>関数を使って操作することができます。
 通過地点ポインタとは異なり、<code class="structname">PGconn</code>のインスタンスデータはそれから作成された<code class="structname">PGresult</code>により自動的に継承されません。
 <span class="application">libpq</span>は通過地点とインスタンスデータポインタが（もしあったとしても）何を指し示すのか判らず、決して解放しようとは試みません。
 それはイベントハンドラの責任です。
@@ -68,10 +68,10 @@
        register event will be fired per event handler per connection.  If the
        event procedure fails (returns zero), the registration is cancelled.
 </span>
-《マッチ度[82.282282]》登録イベントは<a class="xref" href="libpq-events.html#LIBPQ-PQREGISTEREVENTPROC"><code class="function">PQregisterEventProc</code></a>が呼ばれたとき発生します。
-イベントプロシージャが必要とするかもしれない任意の<code class="literal">instanceData</code>を初期化するために、これは理想的な時間です。
-接続毎、イベントハンドラ毎でたった１つの登録イベントが発行されます。
-イベントプロシージャが失敗すると、登録は中止されます。
+登録イベントは<a class="xref" href="libpq-events.html#LIBPQ-PQREGISTEREVENTPROC"><code class="function">PQregisterEventProc</code></a>が呼ばれたとき発生します。
+イベントプロシージャが必要とするかもしれない任意の<code class="literal">instanceData</code>を初期化するために、これは理想的な機会です。
+接続毎、イベントハンドラ毎でただ１つの登録イベントが発行されます。
+イベントプロシージャが失敗する（ゼロが返される）と、登録はキャンセルされます。
 
 </p><pre class="synopsis">
 typedef struct
@@ -105,10 +105,10 @@ typedef struct
        With earlier versions, however, it's important to return success
        (nonzero) or the connection will be aborted.
 </span>
-《機械翻訳》接続リセットイベントは<a class="xref" href="libpq-connect.html#LIBPQ-PQRESET"><code class="function">PQreset</code></a>または<code class="function">PQresetPoll</code>の完了時に発生します。
-どちらの場合も、イベントはリセットが成功した場合にのみ発生します。
-<span class="productname">PostgreSQL</span>v15以降では、イベントプロシージャの戻り値は無視されます。
-しかし、以前のバージョンでは、成功(ゼロ以外)を返すことが重要です。
+接続初期化イベントは<a class="xref" href="libpq-connect.html#LIBPQ-PQRESET"><code class="function">PQreset</code></a>または<code class="function">PQresetPoll</code>の完了時点で発行されます。
+どちらの場合も、初期化が成功したときのみ発行されます。
+<span class="productname">PostgreSQL</span>v15以降では、イベントプロシージャの返り値は無視されます。
+しかし、以前のバージョンでは、成功（ゼロ以外）を返すことが重要です。
 そうしないと接続は中断されます。
 
 </p><pre class="synopsis">
@@ -197,12 +197,11 @@ typedef struct
        or &lt;literal&gt;PGEVT_RESULTDESTROY&lt;/literal&gt; events for this result or
        results copied from it.
 </span>
-《マッチ度[57.208589]》<code class="literal">PGEVT_RESULTCREATE</code>イベントが受け取られた時、<em class="parameter"><code>evtInfo</code></em>ポインタは<code class="structname">PGEventResultCreate *</code>にキャストされなければなりません。
+<code class="literal">PGEVT_RESULTCREATE</code>イベントが受け取られた時、<em class="parameter"><code>evtInfo</code></em>ポインタは<code class="structname">PGEventResultCreate *</code>にキャストされなければなりません。
 <em class="parameter"><code>conn</code></em>は結果を生成するために使われた接続です。
 これは、結果と関連しなければならないすべての<code class="literal">instanceData</code>を初期化するために、理想的な場所です。
-イベントプロシージャが失敗すると、結果は消去され、失敗が伝播します。
-イベントプロシージャはそれ自身の結果オブジェクトを<a class="xref" href="libpq-exec.html#LIBPQ-PQCLEAR"><code class="function">PQclear</code></a>しようと試みてはいけません。
-失敗コードを返す時、<code class="literal">PGEVT_RESULTDESTROY</code>イベントは送られないのですべての消去が行われなくてはなりません。
+イベントプロシージャが失敗する（ゼロが返される）と、そのイベントプロシージャは結果の残りの存在期間中無視されます。
+つまり、この結果またはそこからコピーされた結果に対して、<code class="literal">PGEVT_RESULTCOPY</code>または<code class="literal">PGEVT_RESULTDESTROY</code>イベントを受け取りません。
       </p></dd><dt id="LIBPQ-PGEVT-RESULTCOPY"><span class="term"><code class="literal">PGEVT_RESULTCOPY</code></span></dt><dd><p>
 <span class="original">
        The result copy event is fired in response to
@@ -238,12 +237,12 @@ typedef struct
        or &lt;literal&gt;PGEVT_RESULTDESTROY&lt;/literal&gt; events for that result or
        results copied from it.
 </span>
-《マッチ度[65.271967]》<code class="literal">PGEVT_RESULTCOPY</code>イベントが受け取られた時、<em class="parameter"><code>evtInfo</code></em>ポインタは<code class="structname">PGEventResultCopy *</code>にキャストされなければなりません。
-<em class="parameter"><code>src</code></em>結果はコピーされるものであり、一方で<em class="parameter"><code>dest</code></em>結果はコピー先です。
+<code class="literal">PGEVT_RESULTCOPY</code>イベントが受け取られた時、<em class="parameter"><code>evtInfo</code></em>ポインタは<code class="structname">PGEventResultCopy *</code>にキャストされなければなりません。
+<em class="parameter"><code>src</code></em>は結果のコピー元で、<em class="parameter"><code>dest</code></em>結果はコピー先です。
 このイベントは<code class="literal">instanceData</code>のディープコピーを提供するために使用されます。
 <code class="literal">PQcopyResult</code>ではこれを行うことができないためです。
-もしイベントプロシージャが失敗すると、コピー操作全体は失敗になり、<em class="parameter"><code>dest</code></em>結果は消去されます。
-失敗コードを返す時、<code class="literal">PGEVT_RESULTDESTROY</code>イベントがコピー先の結果に対し送られないため、すべての消去を行われなければなりません。
+もしイベントプロシージャが失敗する（ゼロが返される）と、そのイベントプロシージャは新しい結果の残りの存在期間中無視されます。
+つまり、その結果またはそこからコピーされた結果の<code class="literal">PGEVT_RESULTCOPY</code>または<code class="literal">PGEVT_RESULTDESTROY</code>イベントを受け取りません。
       </p></dd><dt id="LIBPQ-PGEVT-RESULTDESTROY"><span class="term"><code class="literal">PGEVT_RESULTDESTROY</code></span></dt><dd><p>
 <span class="original">
        The result destroy event is fired in response to a
