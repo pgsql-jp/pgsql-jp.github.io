@@ -107,8 +107,9 @@ echo '\x \\ SELECT * FROM foo;' | psql
        transactions.  (See &lt;xref linkend="protocol-flow-multi-statement"/&gt;
        for more details about how the server handles multi-query strings.)
 </span>
-《機械翻訳》<code class="option">-c</code>に渡された各<acronym class="acronym">SQL</acronym>コマンド文字列は、単一の要求としてサーバーに送信されます。
-このため、サーバーは、文字列に複数の<acronym class="acronym">SQL</acronym>コマンドが含まれている場合でも、複数のトランザクションに分割するための明示的な<code class="command">BEGIN</code>/<code class="command">COMMIT</code>コマンドが文字列に含まれていない限り、単一のトランザクションとして実行します(サーバーが複数のクエリ文字列を処理する方法の詳細については<a class="xref" href="protocol-flow.html#PROTOCOL-FLOW-MULTI-STATEMENT" title="55.2.2.1. 簡易問い合わせでの複文">55.2.2.1</a>を参照してください)。
+<code class="option">-c</code>に渡される各<acronym class="acronym">SQL</acronym>のコマンド文字列は、単一の要求としてサーバに送信されます。
+このため、トランザクションを複数に分ける<code class="command">BEGIN</code>/<code class="command">COMMIT</code>コマンドが明示的に文字列内に含まれない限り、文字列内に複数の<acronym class="acronym">SQL</acronym>コマンドが含まれていたとしても、サーバはそれを1つのトランザクションとして実行します。
+（複数問い合わせの文字列をどのようにサーバが処理するかについて、詳しくは<a class="xref" href="protocol-flow.html#PROTOCOL-FLOW-MULTI-STATEMENT" title="55.2.2.1. 簡易問い合わせでの複文">55.2.2.1</a>を参照してください。）
       </p><p>
 <span class="original">
        If having several commands executed in one transaction is not desired,
@@ -117,7 +118,7 @@ echo '\x \\ SELECT * FROM foo;' | psql
        either using &lt;application&gt;echo&lt;/application&gt; as illustrated above, or
        via a shell here-document, for example:
 </span>
-《機械翻訳》1つのトランザクションで複数のコマンドを実行することが望ましくない場合は、繰り返し<code class="option">-c</code>コマンドを使用するか、または上記の<span class="application">echo</span>を使用するかシェルhere-documentを介して<span class="application">psql</span>の標準入力に複数のコマンドを送ります。例:
+1つのトランザクションで複数のコマンドを実行することが望ましくない場合は、繰り返し<code class="option">-c</code>コマンドを使用するか、あるいは、上記のように<span class="application">echo</span>を使用するか、以下の例のようにシェルのヒアドキュメントを介して<span class="application">psql</span>の標準入力に複数のコマンドを送ります。
 </p><pre class="programlisting">
 psql &lt;&lt;EOF
 \x
@@ -267,8 +268,7 @@ EOF
        do not use the command history (see
        &lt;xref linkend="app-psql-readline"/&gt; below).
 </span>
-《機械翻訳》行編集に<span class="application">Readline</span>を使用しないでください。
-また、コマンド履歴も使用しないでください(下記の<a class="xref" href="app-psql.html#APP-PSQL-READLINE" title="コマンドライン編集">「コマンドライン編集」</a>を参照)。
+行編集とコマンド履歴に<span class="application">Readline</span>を使用しません(下記の<a class="xref" href="app-psql.html#APP-PSQL-READLINE" title="コマンドライン編集">「コマンドライン編集」</a>を参照)。
       </p></dd><dt><span class="term"><code class="option">-o <em class="replaceable"><code>filename</code></em></code><br /></span><span class="term"><code class="option">--output=<em class="replaceable"><code>filename</code></em></code></span></dt><dd><p>
 <span class="original">
       Put all query output into file &lt;replaceable
@@ -479,9 +479,10 @@ EOF
         either all the commands complete successfully, or no changes are
         applied.
 </span>
-《マッチ度[68.143101]》このオプションは、1つ以上の<code class="option">-c</code>オプションや<code class="option">-f</code>オプションと組み合わせてのみ使うことができます。
+このオプションは、1つ以上の<code class="option">-c</code>オプションや<code class="option">-f</code>オプションと組み合わせてのみ使うことができます。
 これにより<span class="application">psql</span>は、最初のそのようなオプションの前に<code class="command">BEGIN</code>コマンドを発行し、最後のオプションの後に<code class="command">COMMIT</code>コマンドを発行するようになります。
-そうすることで、全てのコマンドが単一のトランザクションに囲まれます。
+そうすることで、すべてのコマンドが単一のトランザクションに囲まれます。
+コマンドのいずれかが失敗して、変数<code class="varname">ON_ERROR_STOP</code>が設定されていれば、<code class="command">ROLLBACK</code>が代わりに送られます。
 これによりすべてのコマンドが成功して完了するか、変更がまったく行われないかのいずれかになります。
        </p><p>
 <span class="original">
@@ -1354,11 +1355,11 @@ Cの形式のブロックコメントは、サーバに送信され、サーバ�
         parameter can be set, and access privileges (if non-default access
         privileges have been granted).
 </span>
-《機械翻訳》サーバー構成パラメーターとその値を一覧表示します。
-<em class="replaceable"><code>pattern</code></em>が指定されている場合は、そのパターンに名前が一致するパラメーターのみが一覧表示されます。
-<em class="replaceable"><code>pattern</code></em>が指定されていない場合は、デフォルト以外の値に設定されているパラメーターのみが一覧表示されます。
-(すべてのパラメーターを表示するには<code class="literal">\dconfig*</code>を使用してください。
-)コマンド名に<code class="literal">+</code>が追加されている場合は、各パラメーターが、そのデータ型、パラメーターを設定できるコンテキスト、およびアクセス権限(デフォルト以外のアクセス権限が付与されている場合)とともに一覧表示されます。
+サーバ構成パラメータとその値の一覧を表示します。
+<em class="replaceable"><code>pattern</code></em>が指定されている場合は、そのパターンに名前がマッチするパラメータのみが一覧表示されます。
+<em class="replaceable"><code>pattern</code></em>が指定されていない場合は、デフォルト以外の値に設定されているパラメータのみが一覧表示されます。
+(すべてのパラメータを表示するには<code class="literal">\dconfig *</code>を使用してください。)
+コマンド名に<code class="literal">+</code>が追加されている場合は、各パラメータが、そのデータ型、パラメータを設定できるコンテキスト、および(デフォルト以外のアクセス権限が付与されている場合)アクセス権限とともに一覧表示されます。
         </p></dd><dt><span class="term"><code class="literal">\dC[+] [ <a class="link" href="app-psql.html#APP-PSQL-PATTERNS" title="パターン"><em class="replaceable"><code>pattern</code></em></a> ]</code></span></dt><dd><p>
 <span class="original">
         Lists type casts.
@@ -1630,11 +1631,12 @@ Cの形式のブロックコメントは、サーバに送信され、サーバ�
 <span class="original">
         This is an alias for &lt;command&gt;\lo_list&lt;/command&gt;, which shows a
         list of large objects.
-</span>
-<code class="command">\lo_list</code>の別名で、ラージオブジェクトの一覧を表示します。
-        If <code class="literal">+</code> is appended to the command name,
+        If &lt;literal&gt;+&lt;/literal&gt; is appended to the command name,
         each large object is listed with its associated permissions,
         if any.
+</span>
+<code class="command">\lo_list</code>の別名で、ラージオブジェクトの一覧を表示します。
+コマンド名に<code class="literal">+</code>が追加されている場合は、各ラージオブジェクトが、もしあれば関連する権限とともに一覧表示されます。
         </p></dd><dt><span class="term"><code class="literal">\dL[S+] [ <a class="link" href="app-psql.html#APP-PSQL-PATTERNS" title="パターン"><em class="replaceable"><code>pattern</code></em></a> ]</code></span></dt><dd><p>
 <span class="original">
         Lists procedural languages. If &lt;replaceable
@@ -1799,9 +1801,9 @@ Cの形式のブロックコメントは、サーバに送信され、サーバ�
         If &lt;literal&gt;+&lt;/literal&gt; is appended to the command name, the tables and
         schemas associated with each publication are shown as well.
 </span>
-《マッチ度[82.943144]》レプリケーションのパブリケーションを一覧表示します。
+レプリケーションのパブリケーションを一覧表示します。
 <em class="replaceable"><code>pattern</code></em>が指定された場合、名前がそのパターンにマッチするパブリケーションのみが表示されます。
-コマンド名の後に<code class="literal">+</code>が付けられた場合、各パブリケーションに関連付けられているテーブルも表示されます。
+コマンド名の後に<code class="literal">+</code>が付けられた場合、各パブリケーションに関連付けられているテーブルやスキーマも表示されます。
         </p></dd><dt><span class="term"><code class="literal">\dRs[+] [ <a class="link" href="app-psql.html#APP-PSQL-PATTERNS" title="パターン"><em class="replaceable"><code>pattern</code></em></a> ]</code></span></dt><dd><p>
 <span class="original">
         Lists replication subscriptions.
@@ -2191,8 +2193,8 @@ Tue Oct 26 21:40:57 CEST 1999
          environment, &lt;replaceable class="parameter"&gt;psql_var&lt;/replaceable&gt;
          is not changed.  Example:
 </span>
-《機械翻訳》環境変数<em class="replaceable"><code>env_var</code></em>の値を取得し、<span class="application">psql</span>変数<em class="replaceable"><code>psql_var</code></em>に割り当てます。
-<span class="application">psql</span>プロセスの環境で<em class="replaceable"><code>env_var</code></em>が定義されていない場合、<em class="replaceable"><code>psql_var</code></em>は変更されません。
+環境変数<em class="replaceable"><code>env_var</code></em>の値を取得し、<span class="application">psql</span>変数<em class="replaceable"><code>psql_var</code></em>に割り当てます。
+<span class="application">psql</span>のプロセスの環境で<em class="replaceable"><code>env_var</code></em>が定義されていない場合、<em class="replaceable"><code>psql_var</code></em>は変更されません。
 例:
 </p><pre class="programlisting">
 =&gt; <strong class="userinput"><code>\getenv home HOME</code></strong>
@@ -2567,11 +2569,12 @@ lo_import 152801
         Shows a list of all &lt;productname&gt;PostgreSQL&lt;/productname&gt;
         large objects currently stored in the database,
         along with any comments provided for them.
-</span>
-現在データベースに保存されている全ての<span class="productname">PostgreSQL</span>ラージオブジェクトの一覧を、そのオブジェクトに付けられたコメントと一緒に表示します。
-        If <code class="literal">+</code> is appended to the command name,
+        If &lt;literal&gt;+&lt;/literal&gt; is appended to the command name,
         each large object is listed with its associated permissions,
         if any.
+</span>
+現在データベースに保存されているすべての<span class="productname">PostgreSQL</span>ラージオブジェクトの一覧を、そのオブジェクトに付けられたコメントと一緒に表示します。
+コマンド名に<code class="literal">+</code>が追加されている場合は、各ラージオブジェクトが、もしあれば関連する権限とともに一覧表示されます。
         </p></dd><dt><span class="term"><code class="literal">\lo_unlink <em class="replaceable"><code>loid</code></em></code></span></dt><dd><p>
 <span class="original">
         Deletes the large object with &lt;acronym&gt;OID&lt;/acronym&gt;
@@ -2986,8 +2989,8 @@ null値の代わりに表示する文字列を設定します。
           &lt;application&gt;psql&lt;/application&gt;'s output format (such as
           &lt;filename&gt;pspg &amp;#45;-stream&lt;/filename&gt;).
 </span>
-《機械翻訳》<code class="literal">\watch</code>コマンドを使用してクエリを繰り返し実行する場合、Unixシステムでは環境変数<code class="envar">PSQL_WATCH_PAGER</code>が代わりにページャプログラムを検索するために使用されます。
-これは従来のページャを混乱させる可能性があるため別に設定されていますが、<span class="application">psql</span>の出力フォーマットを理解するツール(<code class="filename">pspg--stream</code>など)に出力を送るために使用できます。
+<code class="literal">\watch</code>コマンドを使用して問い合わせを繰り返し実行する場合、Unixシステムでは環境変数<code class="envar">PSQL_WATCH_PAGER</code>がページャプログラムを検索するために代わりに使用されます。
+これは従来のページャを混乱させる可能性があるため別に設定されていますが、<span class="application">psql</span>の出力フォーマットを理解するツール(<code class="filename">pspg --stream</code>など)に出力を送るために使用できます。
           </p><p>
 <span class="original">
           When the &lt;literal&gt;pager&lt;/literal&gt; option is &lt;literal&gt;off&lt;/literal&gt;, the pager
@@ -3449,9 +3452,9 @@ select 1\; select 2\; select 3;
         transactions.  (See &lt;xref linkend="protocol-flow-multi-statement"/&gt;
         for more details about how the server handles multi-query strings.)
 </span>
-《機械翻訳》バックスラッシュのないセミコロンに達すると、3つのSQLコマンドが単一の要求でサーバーに送信されます。
-サーバーは、このような要求を単一のトランザクションとして実行します。
-ただし、文字列に明示的な<code class="command">BEGIN</code>/<code class="command">COMMIT</code>コマンドが含まれている場合は、複数のトランザクションに分割されます(サーバーが複数のクエリー文字列を処理する方法の詳細は<a class="xref" href="protocol-flow.html#PROTOCOL-FLOW-MULTI-STATEMENT" title="55.2.2.1. 簡易問い合わせでの複文">55.2.2.1</a>を参照してください)。
+上記は、バックスラッシュの無いセミコロンに達したときに、3つのSQLコマンドがサーバに単一リクエストでサーバに送られます。
+文字列にそれを複数トランザクションに分けるための明示的な<code class="command">BEGIN</code>/<code class="command">COMMIT</code>が含まれているのでない限り、サーバはこのようなリクエストを単一トランザクションとして実行します。
+（複数問い合わせの文字列をどのようにサーバが処理するかについて、詳しくは<a class="xref" href="protocol-flow.html#PROTOCOL-FLOW-MULTI-STATEMENT" title="55.2.2.1. 簡易問い合わせでの複文">55.2.2.1</a>を参照してください。）
         </p></dd></dl></div><p>
   </p><div class="refsect3" id="APP-PSQL-PATTERNS"><h4>パターン</h4><span class="original">
    &lt;title&gt;Patterns&lt;/title&gt;
@@ -4045,7 +4048,7 @@ SQLキーワードを補完する時に大文字小文字のどちらを使用�
         These are set every time you connect to a database
         (including program start-up), but can be changed or unset.
 </span>
-文字列としてのサーバーのバージョン番号、例えば<code class="literal">9.6.2</code>、<code class="literal">10.1</code>、<code class="literal">11beta1</code>など、および数値形式でのバージョン番号、例えば<code class="literal">90602</code>、<code class="literal">100001</code>などです。
+文字列としてのサーバのバージョン番号、例えば<code class="literal">9.6.2</code>、<code class="literal">10.1</code>、<code class="literal">11beta1</code>など、および数値形式でのバージョン番号、例えば<code class="literal">90602</code>、<code class="literal">100001</code>などです。
 これらは（プログラムの起動時を含め）データベースに接続する度に設定されますが、変更することも未設定にすることもできます。
         </p></dd><dt><span class="term"><code class="varname">SHOW_ALL_RESULTS</code></span></dt><dd><p>
 <span class="original">
@@ -4054,8 +4057,7 @@ SQLキーワードを補完する時に大文字小文字のどちらを使用�
         all of them.  The default is &lt;literal&gt;on&lt;/literal&gt;.  The off behavior
         is for compatibility with older versions of psql.
 </span>
-《機械翻訳》この変数が<code class="literal">off</code>に設定されている場合は、結合された問い合わせ(<code class="literal">\;</code>)の最後の結果だけが表示されます。
-すべての結果は表示されません。
+この変数が<code class="literal">off</code>に設定されている場合は、結合された問い合わせ(<code class="literal">\;</code>)の最後の結果だけが表示されます。すべての結果は表示されません。
 デフォルトは<code class="literal">on</code>です。
 offの動作は古いバージョンのpsqlとの互換性のためです。
         </p></dd><dt><span class="term"><code class="varname">SHOW_CONTEXT</code></span></dt><dd><p>
@@ -4419,7 +4421,7 @@ testdb=&gt; \set PROMPT1 '%[%033[1;33;40m%]%n@%/%R%[%033[0m%]%# '
 この機能は<span class="application">tcsh</span>の機能を真似たものです。
     </p></div></div><div class="refsect3" id="APP-PSQL-READLINE"><h4>コマンドライン編集</h4><span class="original">
     &lt;title&gt;Command-Line Editing&lt;/title&gt;
-</span><a id="id-1.9.4.20.8.5.5.2" class="indexterm"></a><a id="id-1.9.4.20.8.5.5.3" class="indexterm"></a><p>
+</span><a id="id-1.9.4.20.8.5.5.2" class="indexterm"></a><a id="id-1.9.4.20.8.5.5.3" class="indexterm"></a><a id="id-1.9.4.20.8.5.5.4" class="indexterm"></a><a id="id-1.9.4.20.8.5.5.5" class="indexterm"></a><p>
 <span class="original">
     &lt;application&gt;psql&lt;/application&gt; uses
     the &lt;application&gt;Readline&lt;/application&gt;
@@ -4429,8 +4431,8 @@ testdb=&gt; \set PROMPT1 '%[%033[1;33;40m%]%n@%/%R%[%033[0m%]%# '
     reloaded when &lt;application&gt;psql&lt;/application&gt; starts up.  Type
     up-arrow or control-P to retrieve previous lines.
 </span>
-《機械翻訳》<span class="application">psql</span>は<span class="application">Readline</span>または<span class="application">libedit</span>ライブラリがあれば、それを使って行の編集と検索を行います。
-コマンド履歴は<span class="application">psql</span>の終了時に自動的に保存され、<span class="application">psql</span>の起動時に再ロードされます。
+<span class="application">psql</span>は<span class="application">Readline</span>または<span class="application">libedit</span>ライブラリがあれば、それを使って行の編集と検索を行ないます。
+コマンド履歴は<span class="application">psql</span>の終了時に自動的に保存され、<span class="application">psql</span>の起動時に再読み込みされます。
 前の行を取得するには、上矢印またはcontrol-Pと入力します。
     </p><p>
 <span class="original">
@@ -4443,18 +4445,25 @@ testdb=&gt; \set PROMPT1 '%[%033[1;33;40m%]%n@%/%R%[%033[0m%]%# '
     when there's more than one.  (Depending on the library in use, you may need to
     press &lt;literal&gt;TAB&lt;/literal&gt; more than once to get a menu.)
 </span>
-《機械翻訳》タブ補完を使用して、多くの(すべてではない)コンテキストで部分的に入力されたキーワードやSQLオブジェクト名を入力することもできます。
-たとえば、コマンドの開始時に<code class="literal">ins</code>と入力してTabキーを押すと<code class="literal">insert into</code>が入力されます。
-次に、テーブル名またはスキーマ名の数文字を入力して<code class="literal">TAB</code>キーを押すと、入力されていない名前が入力されたり、複数の補完候補がある場合に補完候補のメニューが表示されます(使用しているライブラリによっては、メニューを表示するには<code class="literal">TAB</code>キーを複数回押す必要があります)。
+タブ補完を使用して、多くの(すべてではない)コンテキストで部分的に入力されたキーワードやSQLオブジェクト名を入力することもできます。
+たとえば、コマンドの開始時に<code class="literal">ins</code>と入力してTABキーを押すと<code class="literal">insert into </code>が入力されます。
+次に、テーブル名またはスキーマ名の数文字を入力して<code class="literal">TAB</code>キーを押すと、入力されていない名前が入力されたり、複数の補完候補がある場合に補完候補のメニューが表示されます。
+(使用しているライブラリによっては、メニューを表示するには<code class="literal">TAB</code>キーを複数回押す必要があります。)
     </p><p>
+<span class="original">
     Tab completion for SQL object names requires sending queries to the
     server to find possible matches.  In some contexts this can interfere
-    with other operations.  For example, after <code class="command">BEGIN</code>
-    it will be too late to issue <code class="command">SET TRANSACTION ISOLATION
-    LEVEL</code> if a tab-completion query is issued in between.
+    with other operations.  For example, after &lt;command&gt;BEGIN&lt;/command&gt;
+    it will be too late to issue &lt;command&gt;SET TRANSACTION ISOLATION
+    LEVEL&lt;/command&gt; if a tab-completion query is issued in between.
     If you do not want tab completion at all, you
     can turn it off permanently by putting this in a file named
-    <code class="filename">.inputrc</code> in your home directory:
+    &lt;filename&gt;.inputrc&lt;/filename&gt; in your home directory:
+</span>
+SQLオブジェクト名のタブ補完は、マッチする可能性のあるものを見つけるためサーバへの問い合わせの送信が必要です。
+コンテクストによっては、これが他の操作と干渉することもあります。
+たとえば、<code class="command">BEGIN</code>の後、タブ補完の問い合わせがその間に発行されれば、<code class="command">SET TRANSACTION ISOLATION LEVEL</code>を発行するには遅いでしょう。
+タブ補完を何らかの事情により使用したくなければ、ホームディレクトリ内の<code class="filename">.inputrc</code>というファイルに以下のように書き込むことで無効にできます。
 </p><pre class="programlisting">
 $if psql
 set disable-completion on
@@ -4466,7 +4475,7 @@ $endif
     for further details.)
 </span>
 （これは<span class="application">psql</span>の機能ではなく、<span class="application">Readline</span>の機能です。
-詳細については<span class="application">Readline</span>のドキュメントを参照してください）。
+詳細については<span class="application">Readline</span>のドキュメントを参照してください。）
     </p><p>
 <span class="original">
      The &lt;option&gt;-n&lt;/option&gt; (&lt;option&gt;&amp;#45;-no-readline&lt;/option&gt;) command line
@@ -4477,8 +4486,8 @@ $endif
      commands.  It is particularly useful when you need to copy-and-paste
      text that contains &lt;literal&gt;TAB&lt;/literal&gt; characters.
 </span>
-《機械翻訳》<code class="option">-n</code>(<code class="option">--no-readline</code>)コマンドラインオプションは、<span class="application">psql</span>の1回の実行で<span class="application">Readline</span>の使用を無効にする場合にも便利です。
-これにより、タブの入力、コマンドライン履歴の使用または記録、複数行コマンドの編集が防止されます。
+<code class="option">-n</code>(<code class="option">--no-readline</code>)コマンドラインオプションは、<span class="application">Readline</span>の使用を、<span class="application">psql</span>のその回の実行に限って無効にする場合にも便利です。
+これにより、タブ補完、コマンドライン履歴の使用または記録、複数行コマンドの編集が防止されます。
 <code class="literal">TAB</code>文字を含むテキストをコピーして貼り付ける必要がある場合に特に便利です。
     </p></div></div></div><div class="refsect1" id="APP-PSQL-ENVIRONMENT"><h2>環境</h2><span class="original">
   &lt;title&gt;Environment&lt;/title&gt;
@@ -4580,8 +4589,8 @@ Unixシステム上のデフォルトは<code class="literal">+</code>です。
       &lt;command&gt;\watch&lt;/command&gt; if started with the option
       &lt;literal&gt;&amp;#45;-stream&lt;/literal&gt;.
 </span>
-《機械翻訳》<code class="command">\watch</code>コマンドを使用してクエリを繰り返し実行する場合、デフォルトではページャは使用されません。
-この動作は、UNIXシステムでは<code class="envar">PSQL_WATCH_PAGER</code>をpagerコマンドに設定することで変更できます。
+<code class="command">\watch</code>コマンドを使用して問い合わせを繰り返し実行する場合、デフォルトではページャは使用されません。
+この動作は、Unixシステムでは<code class="envar">PSQL_WATCH_PAGER</code>をページャコマンドに設定することで変更できます。
 <code class="literal">pspg</code>ページャ(<span class="productname">PostgreSQL</span>の一部ではありませんが、多くのオープンソースソフトウェアディストリビューションで利用可能です)は、オプション<code class="literal">--stream</code>で起動すると、<code class="command">\watch</code>の出力を表示できます。
      </p></dd><dt><span class="term"><code class="envar">PSQLRC</code></span></dt><dd><p>
 <span class="original">
@@ -4636,10 +4645,10 @@ Unixシステム上のデフォルトは<code class="literal">+</code>です。
      The directory to look in can be set explicitly via
      the &lt;envar&gt;PGSYSCONFDIR&lt;/envar&gt; environment variable.
 </span>
-《マッチ度[84.980237]》システム全体の開始ファイルは<code class="filename">psqlrc</code>という名前で、インストレーションの<span class="quote">「<span class="quote">システム設定</span>」</span>ディレクトリの中で探されます。
-このディレクトリを特定するには<code class="literal">pg_config --sysconfdir</code>を実行するのが最も確実です。
-デフォルトでは、<span class="productname">PostgreSQL</span>の実行ファイルを含むディレクトリからの相対パスで<code class="filename">../etc/</code>になります。
-このディレクトリの名前は環境変数<code class="envar">PGSYSCONFDIR</code>を使って明示的に設定することができます。
+システム全体の開始ファイルは<code class="filename">psqlrc</code>という名前です。
+デフォルトでは、インストレーションの<span class="quote">「<span class="quote">システム設定</span>」</span>ディレクトリの中で探されます。このディレクトリを特定するには<code class="literal">pg_config --sysconfdir</code>を実行するのが最も確実です。
+通常は、<span class="productname">PostgreSQL</span>の実行ファイルを含むディレクトリからの相対パスで<code class="filename">../etc/</code>になります。
+調べるディレクトリは、環境変数<code class="envar">PGSYSCONFDIR</code>を使って明示的に設定できます。
     </p><p>
 <span class="original">
      The user's personal startup file is named &lt;filename&gt;.psqlrc&lt;/filename&gt;
@@ -4649,9 +4658,9 @@ Unixシステム上のデフォルトは<code class="literal">+</code>です。
      In either case, this default file path can be overridden by setting
      the &lt;envar&gt;PSQLRC&lt;/envar&gt; environment variable.
 </span>
-《マッチ度[68.390805]》ユーザ用の開始ファイルは<code class="filename">.psqlrc</code>という名前で、実行しているユーザのホームディレクトリの中で探されます。
-Windowsではそのような概念がないので、個人用の開始ファイルは<code class="filename">%APPDATA%\postgresql\psqlrc.conf</code>という名前になります。
-ユーザ用の開始ファイルは環境変数<code class="envar">PSQLRC</code>で明示的に設定することができます。
+ユーザの個人用の開始ファイルは<code class="filename">.psqlrc</code>という名前で、実行しているユーザのホームディレクトリの中で探されます。
+Windowsでは、個人用の開始ファイルは、その代わりに<code class="filename">%APPDATA%\postgresql\psqlrc.conf</code>という名前になります。
+どちらの場合でも、デフォルトのファイルパスは環境変数<code class="envar">PSQLRC</code>を設定することで上書きできます。
     </p><p>
 <span class="original">
      Both the system-wide startup file and the user's personal startup file
@@ -4665,8 +4674,9 @@ Windowsではそのような概念がないので、個人用の開始ファイ�
      These version suffixes are added after determining the file path
      as explained above.
 </span>
-《マッチ度[70.895522]》システム全体用の開始ファイルとユーザ用の開始ファイルに、例えば、<code class="filename">~/.psqlrc-9.2</code>や<code class="filename">~/.psqlrc-9.2.5</code>のように、ハイフン記号と<span class="productname">PostgreSQL</span>のメジャーリリース番号またはマイナーリリース番号をファイル名に付加することで、特定バージョンの<span class="application">psql</span>向けのファイルとすることができます。
+システム全体用の開始ファイルとユーザの個人用の開始ファイルに、たとえば<code class="filename">~/.psqlrc-15</code>や<code class="filename">~/.psqlrc-15.0</code>のように、ダッシュ記号と<span class="productname">PostgreSQL</span>のメジャーリリース番号またはマイナーリリース番号をファイル名に付加することで、特定バージョンの<span class="application">psql</span>向けのファイルとすることができます。
 マッチするバージョンのファイルはバージョン指定のないファイルよりも優先して読み込まれます。
+このバージョンの接尾辞は上で説明したファイルパスの決定の後に追加されます。
     </p></dd><dt><span class="term"><code class="filename">.psql_history</code></span></dt><dd><p>
 <span class="original">
      The command-line history is stored in the file
@@ -4694,11 +4704,10 @@ Windowsではそのような概念がないので、個人用の開始ファイ�
        should also work with servers of a newer major version, but this cannot
        be guaranteed in all cases.
 </span><p>
-《機械翻訳》<span class="application">psql</span>は、同じメジャーバージョンまたは古いメジャーバージョンのサーバで最もよく機能します。
-バックスラッシュコマンドは、サーバのバージョンが<span class="application">psql</span>自体よりも新しい場合に特に失敗する可能性があります。
-ただし、<code class="literal">\d</code>ファミリのバックスラッシュコマンドは、バージョンが9.2以前のサーバでも動作するはずです。
-ただし、<span class="application">psql</span>自体より新しいサーバで動作する必要はありません。
-SQLコマンドを実行してクエリ結果を表示する一般的な機能は、メジャーバージョンが新しいサーバでも動作するはずですが、すべてのケースで保証されるわけではありません。
+<span class="application">psql</span>は、同じまたはより古いメジャーバージョンのサーバと稼働させることが最善です。
+特にバックスラッシュコマンドは、サーバが<span class="application">psql</span>自身のバージョンより新しいと失敗しやすくなります。
+<code class="literal">\d</code>系列のバックスラッシュコマンドは9.2までさかのぼるバージョンのサーバで動作するはずですが、<span class="application">psql</span>自身よりもサーバが新しい場合は、必ずしもそうではありません。
+SQLコマンドの実行ならびに問い合わせ結果の表示といった一般的な機能はより新しいメジャーバージョンのサーバとでも動作するはずですが、すべての場合において保証することはできません。
       </p><p>
 <span class="original">
        If you want to use &lt;application&gt;psql&lt;/application&gt; to connect to several
