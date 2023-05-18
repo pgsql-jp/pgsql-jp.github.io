@@ -17,7 +17,7 @@ last-updated: 2023-05-18 04:22:17 JST
 
 | HTML （オンライン）           | PDF                                           | EPUB                                         | man | 更新日     |
 |:---------------------------|:---------------------------------------------:|:--------------------------------------------:|:---:|:----------:|
-| [15.0](jpug-doc/15.0/html/) |  |   |   | |
+| [15.0](jpug-doc/15.0/html/) | [PDF](jpug-doc/15.0/postgresql-15.0-A4.pdf) | [EPUB](jpug-doc/15.0/postgresql-15.0.epub) | [man.tar.gz](jpug-doc/15.0/man.tar.gz) | 2023-05-18 |
 
 ### PostgreSQL 14
 

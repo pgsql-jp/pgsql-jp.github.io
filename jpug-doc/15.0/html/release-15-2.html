@@ -1,0 +1,1200 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>E.2. Release 15.2</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="release-15-3.html" title="E.1. Release 15.3" /><link rel="next" href="release-15-1.html" title="E.3. Release 15.1" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 15.3文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="release.html" title="付録E リリースノート">付録E リリースノート</a></td><td width="20%" align="right"></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="release-15-3.html" title="E.1. Release 15.3">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="release.html" title="付録E リリースノート">上へ</a></td><td width="60%" align="center">E.2. Release 15.2</td><td width="20%" align="right"> <a accesskey="n" href="release-15-1.html" title="E.3. Release 15.1">次へ</a></td></tr></table><hr /></div><div class="sect1" id="RELEASE-15-2"><div class="titlepage"><div><div><h2 class="title" style="clear: both">E.2. Release 15.2</h2></div></div></div><p><strong>Release date: </strong>2023-02-09</p><p>
+<!--
+   This release contains a variety of fixes from 15.1.
+   For information about new features in major release 15, see
+   <xref linkend="release-15"/>.
+-->
+《機械翻訳》このリリースでは、15.1のさまざまな修正が包含されています。
+メジャーリリース15の新機能については、<a class="xref" href="release-15.html" title="E.4. リリース 15">E.4</a>を参照してください。
+  </p><div class="sect2" id="id-1.11.6.6.4"><div class="titlepage"><div><div><h3 class="title">E.2.1. Migration to Version 15.2</h3></div></div></div><p>
+<!--
+    A dump/restore is not required for those running 15.X.
+-->
+《機械翻訳》15.Xを実行している場合は、ダンプ/リストアは必要ありません。
+   </p><p>
+<!--
+    However, if you are upgrading from a version earlier than 15.1,
+    see <xref linkend="release-15-1"/>.
+-->
+《機械翻訳》ただし、15.1年以前のバージョンからアップグレード処理にいる場合は、<a class="xref" href="release-15-1.html" title="E.3. Release 15.1">E.3</a>を参照してください。
+   </p></div><div class="sect2" id="id-1.11.6.6.5"><div class="titlepage"><div><div><h3 class="title">E.2.2. Changes</h3></div></div></div><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><!--
+Author: Michael Paquier <michael@paquier.xyz>
+Branch: master [71c37797d] 2023-02-06 11:20:07 +0900
+Branch: REL_15_STABLE [715c345dd] 2023-02-06 11:20:20 +0900
+Branch: REL_14_STABLE [626f2c1d6] 2023-02-06 11:20:23 +0900
+Branch: REL_13_STABLE [45a945ee9] 2023-02-06 11:20:27 +0900
+Branch: REL_12_STABLE [3f7342671] 2023-02-06 11:20:31 +0900
+--><p>
+<!--
+      <application>libpq</application> can leak memory contents after
+      GSSAPI transport encryption initiation fails (Jacob Champion)
+-->
+《機械翻訳》<span class="application">libpq</span>GSSAPIトランスポートメモリの開始に失敗した後、リーク暗号化の内容を取得できますか(Jacob Champion)
+     </p><p>
+<!--
+      A modified server, or an unauthenticated man-in-the-middle, can
+      send a not-zero-terminated error message during setup of GSSAPI
+      (Kerberos) transport encryption.  <application>libpq</application>
+      will then copy that string, as well as following bytes in
+      application memory up to the next zero byte, to its error report.
+      Depending on what the calling application does with the error
+      report, this could result in disclosure of application memory
+      contents.  There is also a small probability of a crash due to
+      reading beyond the end of memory.  Fix by properly zero-terminating
+      the server message.
+      (CVE-2022-41862)
+-->
+《機械翻訳》変更されたサーバ、または認証されていないman-in-the-middleは、GSSAPI(Kerberos)トランスポート暗号化のセットアップ中に、ゼロで終端されていないエラーメッセージを送信できます。
+<span class="application">libpq</span>は、その文字列をコピーするとともに、アプリケーションメモリ内の次のゼロバイトまでのバイトをエラーレポートに送信します。
+呼び出し側のアプリケーションがエラーレポートに対して行う処理によっては、アプリケーションメモリの内容が開示される可能性があります。
+また、メモリの終わりを超えて読み取りが行われるために、クラッシュが発生する可能性もわずかにあります。
+適切にゼロで終端されるように、を修正します。
+(CVE-2022-41862)サーバメッセージ
+     </p></li><li class="listitem"><!--
+Author: Tom Lane <tgl@sss.pgh.pa.us>
+Branch: master [3f7836ff6] 2023-01-05 14:12:17 -0500
+Branch: REL_15_STABLE [3706cc97a] 2023-01-05 14:12:17 -0500
+Branch: REL_14_STABLE [8cd190e13] 2023-01-05 14:12:17 -0500
+Branch: REL_13_STABLE [ad38e2f89] 2023-01-05 14:12:17 -0500
+Branch: master [3f244d020] 2023-01-15 13:14:52 -0500
+Branch: REL_15_STABLE [a8f7687a0] 2023-01-15 14:06:46 -0500
+Branch: REL_14_STABLE [a8b88c26f] 2023-01-15 14:06:46 -0500
+Branch: REL_13_STABLE [787db4be9] 2023-01-15 14:06:46 -0500
+--><p>
+<!--
+      Fix calculation of which <literal>GENERATED</literal> columns need
+      to be updated in child tables during an <command>UPDATE</command> on
+      a partitioned table or inheritance tree (Amit Langote, Tom Lane)
+-->
+《機械翻訳》パーティション化されたテーブルまたは継承ツリー<code class="command">Tom Lane Amit Langote</code>での更新中に、子表で更新する必要がある<code class="literal">GENERATED</code>列の計算を修正しました。
+     </p><p>
+<!--
+      This fixes failure to update <literal>GENERATED</literal> columns
+      that do not exist in the parent table, or that have different
+      dependencies than are in the parent column's generation expression.
+-->
+《機械翻訳》これにより、更新テーブルに存在しない、または親カラムの生成式とは依存関係が異なる親<code class="literal">GENERATED</code>カラムの障害が修正されました。
+     </p></li><li class="listitem"><!--
+Author: Dean Rasheed <dean.a.rasheed@gmail.com>
+Branch: master [fe9e658f4] 2023-01-30 10:04:57 +0000
+Branch: REL_15_STABLE [4785af9e6] 2023-01-30 10:07:32 +0000
+--><p>
+<!--
+      Fix possible failure of <command>MERGE</command> to compute
+      <literal>GENERATED</literal> columns (Dean Rasheed)
+-->
+《機械翻訳》<code class="command">マージ</code>で発生する可能性があった<code class="literal">GENERATED</code>列の計算エラーを修正しました。
+(Dean Rasheed)
+     </p><p>
+<!--
+      When the first row-level action of the <command>MERGE</command> was
+      an <literal>UPDATE</literal>, any
+      subsequent <literal>INSERT</literal> actions would fail to
+      compute <literal>GENERATED</literal> columns that were deemed
+      unnecessary to compute for the <literal>UPDATE</literal> action
+      (due to not depending on any of the <literal>UPDATE</literal> target
+      columns).
+-->
+《機械翻訳》<code class="command">行</code>の最初のレベル-マージアクションが<code class="literal">更新</code>であった場合、その後の<code class="literal">INSERT</code>アクションは、<code class="literal">更新</code>アクションのために計算する必要がないと見なされた<code class="literal">GENERATED</code>列を計算できませんでした(これは、<code class="literal">更新</code>ターゲット列のいずれにも依存していないためです)。
+     </p></li><li class="listitem"><!--
+Author: Dean Rasheed <dean.a.rasheed@gmail.com>
+Branch: master [f026c16a2] 2023-01-10 14:17:47 +0000
+Branch: REL_15_STABLE [38255f2d0] 2023-01-10 14:16:27 +0000
+--><p>
+<!--
+      Fix <command>MERGE</command>'s check for
+      unreachable <literal>WHEN</literal> clauses (Dean Rasheed)
+-->
+《機械翻訳》<code class="command">マージ</code>の到達不能<code class="literal">WHEN</code>句のチェックを修正しました。
+(Dean Rasheed)
+     </p><p>
+<!--
+      A <literal>WHEN</literal> clause following an
+      unconditional <literal>WHEN</literal> clause should be rejected as
+      unreachable, but this case was not always detected.
+-->
+《機械翻訳》無条件<code class="literal">WHEN</code>句に続く<code class="literal">WHEN</code>句は到達不能として拒否されるべきですが、このケースは常に検出されたわけではありませんでした。
+     </p></li><li class="listitem"><!--
+Author: Dean Rasheed <dean.a.rasheed@gmail.com>
+Branch: master [7b2ccc5e0] 2022-11-25 13:31:48 +0000
+Branch: REL_15_STABLE [04d61bfe6] 2022-11-25 13:29:51 +0000
+--><p>
+<!--
+      Fix <command>MERGE</command>'s rule-detection test (Dean Rasheed)
+-->
+《機械翻訳》フィックス<code class="command">マージ</code>ルール検知テスト(Dean Rasheed)
+     </p><p>
+<!--
+      <command>MERGE</command> is not supported on tables with rules;
+      but it also failed on tables that once had rules but no longer do.
+-->
+《機械翻訳》<code class="command">マージ</code>は、ルールを持つテーブルではサポートされていません。
+しかし、以前はルールを持っていたが現在は持っていないテーブルでも失敗します。
+     </p></li><li class="listitem"><!--
+Author: Alvaro Herrera <alvherre@alvh.no-ip.org>
+Branch: master [6ff5aa129] 2022-11-17 18:56:11 +0100
+Branch: REL_15_STABLE [3d45edcef] 2022-11-17 18:56:11 +0100
+--><p>
+<!--
+      In <command>MERGE</command>, don't count a <literal>DO
+      NOTHING</literal> action as a processed tuple (&Aacute;lvaro Herrera)
+-->
+《機械翻訳》In<code class="command">マージ</code>,don'tカウントa<code class="literal">DO NOTHING</code>アクションas a processedタプル(Á・アルバロ・ヘレラ)
+     </p><p>
+<!--
+      This makes the code's behavior match the documentation.
+-->
+《機械翻訳》これにより、マッチでのコードの行動が文書になります。
+     </p></li><li class="listitem"><!--
+Author: Tom Lane <tgl@sss.pgh.pa.us>
+Branch: master [935277b24] 2022-12-16 13:07:42 -0500
+Branch: REL_15_STABLE [ae98debf7] 2022-12-16 13:07:42 -0500
+Branch: REL_14_STABLE [ea5ae4cae] 2022-12-16 13:07:42 -0500
+--><p>
+<!--
+      Allow a <literal>WITH RECURSIVE ... CYCLE</literal> CTE
+      to access its output column (Tom Lane)
+-->
+《機械翻訳》<code class="literal">WITH RECURSIVE.サイクル</code>CTEからアクセスへの出力カラム(Tom Lane)を許可します。
+     </p><p>
+<!--
+      A reference to the <literal>SET</literal> column from within the CTE
+      would fail with <quote>cache lookup failed for type 0</quote>.
+-->
+《機械翻訳》CTE内から<code class="literal">SET</code>カラムへのリファレンスは、<span class="quote">「<span class="quote">タイプ0のキャッシュ検索に失敗</span>」</span>で失敗します。
+     </p></li><li class="listitem"><!--
+Author: Etsuro Fujita <efujita@postgresql.org>
+Branch: master [ffbb7e65a] 2022-11-25 17:45:00 +0900
+Branch: REL_15_STABLE [fc02019c0] 2022-11-25 17:45:01 +0900
+Branch: REL_14_STABLE [e52245228] 2022-11-25 17:45:03 +0900
+Branch: master [4b3e37993] 2022-12-08 16:15:00 +0900
+Branch: REL_15_STABLE [a0bf7a0ec] 2022-12-08 16:15:01 +0900
+Branch: REL_14_STABLE [d43a97ef4] 2022-12-08 16:15:03 +0900
+--><p>
+<!--
+      Fix handling of pending inserts when doing a bulk insertion to a
+      foreign table (Etsuro Fujita)
+-->
+《機械翻訳》ハンドリング(Etsuro Fujita)にバルクを挿入するときに、保留中の挿入の外部テーブルを修正する
+     </p><p>
+<!--
+      In some cases pending insertions were not flushed to the FDW soon
+      enough, leading to logical inconsistencies, for
+      example <literal>BEFORE ROW</literal> triggers not seeing rows they
+      should be able to see.
+-->
+《機械翻訳》場合によっては、保留中の挿入がすぐにFDWにフラッシュされず、ロジカルの不整合が発生することがありました。
+これは、例<code class="literal">前行</code>のトリガーでは、表示できるはずの行が表示されないためです。
+     </p></li><li class="listitem"><!--
+Author: Tom Lane <tgl@sss.pgh.pa.us>
+Branch: master [c9f7f9264] 2023-01-21 13:10:29 -0500
+Branch: REL_15_STABLE [9e4288ce6] 2023-01-21 13:10:29 -0500
+Branch: REL_14_STABLE [70ec756b0] 2023-01-21 13:10:29 -0500
+Branch: REL_13_STABLE [72d611109] 2023-01-21 13:10:29 -0500
+Branch: REL_12_STABLE [a5f3f2fce] 2023-01-21 13:10:30 -0500
+Branch: REL_11_STABLE [6c122edde] 2023-01-21 13:10:30 -0500
+--><p>
+<!--
+      Allow <literal>REPLICA IDENTITY</literal>
+      to be set on an index that's not (yet) valid (Tom Lane)
+-->
+《機械翻訳》<code class="literal">レプリカアイデンティティ</code>が(まだ)有効ではないインデックスに設定されることを許可する(Tom Lane)
+     </p><p>
+<!--
+      When <application>pg_dump</application> dumps a partitioned index
+      that's marked <literal>REPLICA IDENTITY</literal>, it generates a
+      command sequence that applies <literal>REPLICA IDENTITY</literal>
+      before the partitioned index has been marked valid, causing restore
+      to fail.  There seems no very good reason to prohibit doing it in
+      that order, so allow it.  The marking will have no effect anyway
+      until the index becomes valid.
+-->
+《機械翻訳》<span class="application">pg_ダンプ</span>が<code class="literal">レプリカアイデンティティ</code>とマークされた分割インデックスをダンプする時、分割コマンドが有効とマークされた<code class="literal">レプリカアイデンティティ</code>前を適用するインデックスシーケンスを生成し、リストアを失敗させます。
+そのオーダーでそれを行うことを禁止する十分な理由はなさそうなので、許可してください。
+マーキングはインデックスが有効になるまで何の効果も持ちません。
+     </p></li><li class="listitem"><!--
+Author: Dean Rasheed <dean.a.rasheed@gmail.com>
+Branch: master [2605643a3] 2022-12-03 12:11:33 +0000
+Branch: REL_15_STABLE [c67204db6] 2022-12-03 12:14:36 +0000
+Branch: REL_14_STABLE [2c7ed9f75] 2022-12-03 12:16:07 +0000
+Branch: REL_13_STABLE [3bed88123] 2022-12-03 12:17:47 +0000
+Branch: REL_12_STABLE [33f600f04] 2022-12-03 12:18:58 +0000
+Branch: REL_11_STABLE [30f9b03a0] 2022-12-03 12:20:02 +0000
+--><p>
+<!--
+      Fix handling of <literal>DEFAULT</literal> markers in rules that
+      perform an <command>INSERT</command> from a
+      multi-row <literal>VALUES</literal> list (Dean Rasheed)
+-->
+《機械翻訳》ハンドリング-行<code class="literal">VALUES</code>デフォルトから<code class="command">INSERT</code>を実行するルール内の<code class="literal">マルチ</code>マーカーのリストを修正しました。
+(Dean Rasheed)
+     </p><p>
+<!--
+      In some cases a <literal>DEFAULT</literal> marker would not get
+      replaced with the proper default-value expression, leading to
+      an <quote>unrecognized node type</quote> error.
+-->
+《機械翻訳》場合によっては、<code class="literal">デフォルト</code>マーカーが適切なデフォルト評価式に置き換えられず、<span class="quote">「<span class="quote">認識されないノードタイプ</span>」</span>エラーになることがあります。
+     </p></li><li class="listitem"><!--
+Author: Alexander Korotkov <akorotkov@postgresql.org>
+Branch: master [3161ae86c] 2023-01-12 18:16:34 +0300
+Branch: REL_15_STABLE [4dc3f94fa] 2023-01-12 18:17:43 +0300
+Branch: REL_14_STABLE [0d9221f1d] 2023-01-12 18:18:04 +0300
+Branch: REL_13_STABLE [2ff3ac3b5] 2023-01-12 18:18:31 +0300
+Branch: REL_12_STABLE [9e24e4781] 2023-01-12 18:19:19 +0300
+--><p>
+<!--
+      Reject uses of undefined variables in <type>jsonpath</type>
+      existence checks (Alexander Korotkov, David G. Johnston)
+-->
+《機械翻訳》<code class="type">jsonpath</code>存在チェックで未定義変数の使用を拒否する(Alexander Korotkov、David G.Johnston)
+     </p><p>
+<!--
+      While <type>jsonpath</type> match operators threw an error for an
+      undefined variable in the path pattern, the existence operators
+      silently treated it as a match.
+-->
+《機械翻訳》<code class="type">jsonpath</code>マッチのオペレーターは、パスパターンの未定義の変数にエラーを投げたが、存在のオペレーターは黙ってそれをマッチとして扱った。
+     </p></li><li class="listitem"><!--
+Author: Tom Lane <tgl@sss.pgh.pa.us>
+Branch: master [b0feda79f] 2022-12-12 16:17:54 -0500
+Branch: REL_15_STABLE [d79b76b10] 2022-12-12 16:17:49 -0500
+Branch: REL_14_STABLE [a18328bb3] 2022-12-12 16:17:49 -0500
+--><p>
+<!--
+      Fix <type>jsonb</type> subscripting to cope with toasted subscript
+      values (Tom Lane, David G. Johnston)
+-->
+《機械翻訳》<code class="type">jsonb</code>の添字を修正し、焼き添字値に対応できるようにしました。
+Tom Lane、David G.Johnston)
+     </p><p>
+<!--
+      Using a text value fetched directly from a table as
+      a <type>jsonb</type> subscript was likely to fail.
+      Fetches would usually not find any matching element.
+      Assignments could store the value with a garbage key,
+      although keys long enough to cause that problem are probably rare in
+      the field.
+-->
+《機械翻訳》テーブルから直接フェッチされたテキスト値を<code class="type">jsonb</code>添字として使用すると、失敗する可能性がありました。
+フェッチでは通常、マッチング要素は検出されません。
+割り当てでは、値をガベージキーとともに保存できますが、この問題を引き起こすのに十分な長さのキーは、この分野ではおそらくまれです。
+     </p></li><li class="listitem"><!--
+Author: Thomas Munro <tmunro@postgresql.org>
+Branch: master [ffcf6f4cf] 2023-01-26 14:52:19 +1300
+Branch: REL_15_STABLE [d9f5345bf] 2023-01-26 14:53:37 +1300
+Branch: REL_14_STABLE [2f65b8468] 2023-01-26 14:54:17 +1300
+Branch: REL_13_STABLE [1a5afe007] 2023-01-26 14:54:39 +1300
+Branch: REL_12_STABLE [b55303792] 2023-01-26 14:55:03 +1300
+Branch: REL_11_STABLE [d95dcc9ab] 2023-01-26 14:55:37 +1300
+--><p>
+<!--
+      Fix edge-case data corruption in parallel hash joins (Dmitry Astapov)
+-->
+《機械翻訳》Fix edge-ケースデータcorruption inパラレルハッシュjoins(Dmitry Astapov)
+     </p><p>
+<!--
+      If the final chunk of a large tuple being written out to a temporary
+      file was exactly 32760 bytes, it would be corrupted due to a
+      fencepost bug.  The query would typically fail later with
+      corrupted-data symptoms.
+-->
+《機械翻訳》一時的タプルに書き出されるラージファイルの最後のチャンクが正確に32760バイトである場合、フェンスポストバグによって破損します。
+通常、クエリは後で破損したデータの症状で失敗します。
+     </p></li><li class="listitem"><!--
+Author: Michael Paquier <michael@paquier.xyz>
+Branch: master [7e8a80d1f] 2023-01-19 13:13:05 +0900
+Branch: REL_15_STABLE [49e3a5e71] 2023-01-19 13:13:27 +0900
+Branch: REL_14_STABLE [2e21e2857] 2023-01-19 13:13:28 +0900
+Branch: REL_13_STABLE [fed4e92f3] 2023-01-19 13:13:30 +0900
+Branch: REL_12_STABLE [162a48287] 2023-01-19 13:13:32 +0900
+Branch: REL_11_STABLE [0c2f34af7] 2023-01-19 13:13:34 +0900
+--><p>
+<!--
+      Honor non-default settings
+      of <varname>checkpoint_completion_target</varname>
+      (Bharath Rupireddy)
+-->
+《機械翻訳》デフォルト以外の設定<code class="varname">チェックポイント_completion_ターゲット</code>を有効にする(Bharath Rupireddy)
+     </p><p>
+<!--
+      Internal state was not updated after a change
+      in <varname>checkpoint_completion_target</varname>, possibly
+      resulting in performing checkpoint I/O faster or slower than
+      desired, especially if that setting was changed on-the-fly.
+-->
+《機械翻訳》<code class="varname">チェックポイント_completion_ターゲット</code>での変更後に内部状態が更新されなかったため、チェックポイント入出力の実行が必要以上に高速または低速になった可能性があります。
+特に、その設定がオンザフライで変更された場合にその可能性があります。
+     </p></li><li class="listitem"><!--
+Author: Tom Lane <tgl@sss.pgh.pa.us>
+Branch: master [44e9e3426] 2023-01-19 12:23:20 -0500
+Branch: REL_15_STABLE [abe203304] 2023-01-19 12:23:20 -0500
+Branch: REL_14_STABLE [103450724] 2023-01-19 12:23:20 -0500
+Branch: REL_13_STABLE [1b9a0b96a] 2023-01-19 12:23:20 -0500
+Branch: REL_12_STABLE [87591db19] 2023-01-19 12:23:20 -0500
+Branch: REL_11_STABLE [0a269527f] 2023-01-19 12:23:20 -0500
+--><p>
+<!--
+      Log the correct ending timestamp
+      in <varname>recovery_target_xid</varname> mode (Tom Lane)
+-->
+《機械翻訳》ログ<code class="varname">リカバリ_タイムスタンプ_xid</code>の正しい終点ターゲットモード(Tom Lane)
+     </p><p>
+<!--
+      When ending recovery based on the <varname>recovery_target_xid</varname>
+      setting with <varname>recovery_target_inclusive</varname>
+      = <literal>off</literal>, we printed an incorrect timestamp (always
+      2000-01-01) in the <quote>recovery stopping before
+      ... transaction</quote> log message.
+-->
+《機械翻訳》<code class="varname">リカバリ_リカバリ_xid</code>設定に基づいて、<code class="varname">リカバリ_ターゲット_inclusive</code>=<code class="literal">オフ</code>でターゲットを終了すると、<span class="quote">「<span class="quote">リカバリstopping前.トランザクション</span>」</span>ログメッセージに誤ったタイムスタンプ(常に2000-01-01)が出力されました。
+     </p></li><li class="listitem"><!--
+Author: Peter Eisentraut <peter@eisentraut.org>
+Branch: master [1561612e3] 2023-01-16 09:44:04 +0100
+Branch: REL_15_STABLE [ac01fa647] 2023-01-16 09:45:03 +0100
+Branch: REL_14_STABLE [f463335e1] 2023-01-16 09:48:09 +0100
+Branch: REL_13_STABLE [cf74b6ead] 2023-01-16 09:54:15 +0100
+--><p>
+<!--
+      Improve error reporting for some buffered file read failures
+      (Peter Eisentraut)
+-->
+《機械翻訳》改善エラーが、一部のバッファファイル読み取りエラーを報告しています(Peter Eisentraut)
+     </p><p>
+<!--
+      Correctly report a short read, giving the numbers of bytes desired
+      and actually read, instead of reporting an irrelevant error code.
+      Most places got this right already, but some recently-written
+      replication logic did not.
+-->
+《機械翻訳》正しくは、短い読み取りをレポートし、必要なバイト数と実際に読み取られたバイト数を示し、代わりは無関係なエラーコードを報告します。
+ほとんどの場所ではすでにこれが正しく行われていますが、最近書かれたレプリケーションロジックの中にはそうでないものもあります。
+     </p></li><li class="listitem"><!--
+Author: Tom Lane <tgl@sss.pgh.pa.us>
+Branch: master [647fa5005] 2023-01-15 17:32:09 -0500
+Branch: REL_15_STABLE [db9127c58] 2023-01-15 17:32:09 -0500
+--><p>
+<!--
+      Remove arbitrary limit on number of elements
+      in <type>int2vector</type> and <type>oidvector</type> (Tom Lane)
+-->
+《機械翻訳》<code class="type">int 2ベクタ</code>と<code class="type">oidvector</code>の要素数に関する任意の制限を削除しました。
+(Tom Lane)
+     </p><p>
+<!--
+      The input functions for these types previously rejected more than
+      100 elements.  With the introduction of the logical replication
+      column list feature, it's necessary to
+      accept <type>int2vector</type>s having up to 1600 columns,
+      otherwise long column lists cause logical-replication failures.
+-->
+《機械翻訳》これらのタイプの入力関数は、以前は100以上の要素を拒否していました。
+ロジカルレプリケーションカラムリスト機能の序文では、最大1600列の<code class="type">int 2ベクタ</code>を受け入れる必要があります。
+そうしないと、長いカラムリストによってロジカル-レプリケーションの障害が発生します。
+     </p></li><li class="listitem"><!--
+Author: Tom Lane <tgl@sss.pgh.pa.us>
+Branch: master [20432f873] 2022-12-13 14:23:58 -0500
+Branch: REL_15_STABLE [18431ee6f] 2022-12-13 14:23:59 -0500
+Branch: REL_14_STABLE [ae47f8a96] 2022-12-13 14:23:59 -0500
+Branch: REL_13_STABLE [942cc240f] 2022-12-13 14:23:59 -0500
+Branch: REL_12_STABLE [1cca4a75f] 2022-12-13 14:23:59 -0500
+Branch: REL_11_STABLE [f48aa5df4] 2022-12-13 14:23:59 -0500
+--><p>
+<!--
+      In extended query protocol, avoid an immediate commit
+      after <command>ANALYZE</command> if we're running a pipeline
+      (Tom Lane)
+-->
+《機械翻訳》拡張クエリプロトコルでは、パイプライン<code class="command">Tom Lane</code>を運行している場合は、すぐ後のコミットを避けてください。
+ANALYZE
+     </p><p>
+<!--
+      If there's not been an explicit <command>BEGIN
+      TRANSACTION</command>, <command>ANALYZE</command> would take it on
+      itself to commit, which should not happen within a pipelined series
+      of commands.
+-->
+《機械翻訳》明示的な<code class="command">BEGINトランザクション</code>がない場合、<code class="command">ANALYZE</code>は自分自身からコミットに対してそれを実行しますが、これはパイプライン化されたコマンドシリーズ内では発生しません。
+     </p></li><li class="listitem"><!--
+Author: Noah Misch <noah@leadboat.com>
+Branch: master [e52daaabf] 2023-01-21 06:08:00 -0800
+Branch: REL_15_STABLE [b152bb7b2] 2023-01-21 06:08:03 -0800
+Branch: REL_14_STABLE [6900aea67] 2023-01-21 06:08:04 -0800
+Branch: REL_13_STABLE [a9bccffe5] 2023-01-21 06:08:04 -0800
+Branch: REL_12_STABLE [e75b5c855] 2023-01-21 06:08:04 -0800
+Branch: REL_11_STABLE [8f70de7e0] 2023-01-21 06:08:05 -0800
+--><p>
+<!--
+      Reject cancel request packets having the wrong length
+      (Andrey Borodin)
+-->
+《機械翻訳》キャンセルリクエスト(Andrey Borodin)を含む間違い長さパケットを拒否する
+     </p><p>
+<!--
+      The server would process a cancel request even if its length word
+      was too small.  This led to reading beyond the end of the allocated
+      buffer.  In theory that could cause a segfault, but it seems quite
+      unlikely to happen in practice, since the buffer would have to be
+      very close to the end of memory.  The more likely outcome was a bogus
+      log message about wrong backend PID or cancel code.  Complain about
+      the wrong length, instead.
+-->
+《機械翻訳》サーバは、その長さリクエストが小さすぎる場合でも、キャンセルワードをプロセスします。
+これにより、割り当てられたバッファの終わりを超えて読み取りが行われました。
+理論的には、それはセグフォルトを引き起こす可能性がありますが、実際には発生する可能性は非常に低いようです。
+なぜなら、バッファはメモリの終わりまでクローズである必要があるからです。
+より可能性の高い結果は、間違いバックエンドPIDまたはキャンセルコードに関する偽のログメッセージでした。
+代わりに間違い長さについて苦情を言ってください。
+     </p></li><li class="listitem"><!--
+Author: David Rowley <drowley@postgresql.org>
+Branch: master [94985c210] 2022-12-10 19:27:20 +1300
+Branch: REL_15_STABLE [04788ee4c] 2022-12-10 19:27:53 +1300
+--><p>
+<!--
+      Fix planner preprocessing oversights for window function run-condition
+      expressions (Richard Guo, David Rowley)
+-->
+《機械翻訳》ウィンドウ関数の実行条件式に対するプランナの前処理ミスを修正しました。
+(Richard Guo、David Rowley)
+     </p><p>
+<!--
+      This could lead to planner errors such as <quote>WindowFunc not
+      found in subplan target lists</quote>.
+-->
+《機械翻訳》これにより、<span class="quote">「<span class="quote">プランナのターゲットリストにWindowFuncが見つからない</span>」</span>などのサブプランエラーが発生する可能性があります。
+     </p></li><li class="listitem"><!--
+Author: David Rowley <drowley@postgresql.org>
+Branch: master [a85832722] 2022-12-07 00:09:36 +1300
+Branch: REL_15_STABLE [2a535620c] 2022-12-07 00:10:21 +1300
+--><p>
+<!--
+      Fix possible dangling-pointer access during execution of window
+      function run-condition expressions (David Rowley)
+-->
+《機械翻訳》ポインタ実行条件式(David Rowley)の実行中に発生する可能性があったダングリングウィンドウ関数アクセスが修正されました。
+     </p><p>
+<!--
+      In practice, because the run-condition optimization is only applied
+      to certain window functions that happen to all
+      return <type>int8</type>, this only manifested as a problem on
+      32-bit builds.
+-->
+《機械翻訳》実際には、実行条件最適化は、すべての結果<code class="type">int8</code>に発生する特定のウィンドウ関数にのみ適用されるため、これは32ビットビルドでのみ問題として現れます。
+     </p></li><li class="listitem"><!--
+Author: Tom Lane <tgl@sss.pgh.pa.us>
+Branch: master [5beb7881f] 2022-12-22 10:35:02 -0500
+Branch: REL_15_STABLE [1a3daa5bb] 2022-12-22 10:35:02 -0500
+Branch: REL_14_STABLE [97431d673] 2022-12-22 10:35:02 -0500
+Branch: REL_13_STABLE [4fceb454f] 2022-12-22 10:35:03 -0500
+Branch: REL_12_STABLE [d572003f7] 2022-12-22 10:35:03 -0500
+Branch: REL_11_STABLE [8cd700cc5] 2022-12-22 10:35:03 -0500
+--><p>
+<!--
+      Add recursion and looping defenses in subquery pullup (Tom Lane)
+-->
+《機械翻訳》サブクエリのプルアップに再帰およびループ防御を追加(Tom Lane)
+     </p><p>
+<!--
+      A contrived query can result in deep recursion and unreasonable
+      amounts of time spent trying to flatten subqueries.  A proper fix
+      for that seems unduly invasive for a back-patch, but we can at least
+      add stack depth checks and an interrupt check to allow the query to
+      be cancelled.
+-->
+《機械翻訳》不自然なクエリを使用すると、再帰が深くなり、サブクエリをフラット化するために不合理な時間がかかる可能性があります。
+これに対する適切な修正は、バックパッチに対して過度に侵襲的に見えるが、少なくともスタック深度チェックと割り込みチェックを追加して、クエリをキャンセルできるようにすることができる。
+     </p></li><li class="listitem"><!--
+Author: Tom Lane <tgl@sss.pgh.pa.us>
+Branch: master [d69d01ba9] 2022-12-05 12:36:40 -0500
+Branch: REL_15_STABLE [c959f84c2] 2022-12-05 12:36:41 -0500
+Branch: REL_14_STABLE [dc3648f65] 2022-12-05 12:36:41 -0500
+Branch: master [e76913802] 2022-12-04 13:48:12 -0500
+Branch: REL_15_STABLE [834d97c32] 2022-12-04 13:48:12 -0500
+Branch: REL_14_STABLE [ce093aa18] 2022-12-04 13:48:12 -0500
+--><p>
+<!--
+      Fix planner issues when combining Memoize nodes with partitionwise
+      joins or parameterized nestloops (Richard Guo)
+-->
+《機械翻訳》Memoizeノードをパーティションワイズ結合またはパラメータ化されたnestloopsと組み合わせる場合のプランナ問題を修正しました。
+(Richard Guo)
+     </p><p>
+<!--
+      These errors could lead to not using Memoize in contexts where it
+      would be useful, or possibly to wrong query plans.
+-->
+《機械翻訳》これらのエラーは、Memoizeが有用なコンテキストでMemoizeを使用しないことにつながる可能性があり、場合によっては間違いクエリプランにつながる可能性がある。
+     </p></li><li class="listitem"><!--
+Author: Tom Lane <tgl@sss.pgh.pa.us>
+Branch: master [fe12f2f8f] 2022-12-04 13:17:18 -0500
+Branch: REL_15_STABLE [bf8fd64ff] 2022-12-04 13:17:18 -0500
+Branch: REL_14_STABLE [ec3daeec3] 2022-12-04 13:17:18 -0500
+Branch: REL_13_STABLE [4ebca555c] 2022-12-04 13:17:18 -0500
+Branch: REL_12_STABLE [1ff549e84] 2022-12-04 13:17:18 -0500
+Branch: REL_11_STABLE [2df073313] 2022-12-04 13:17:18 -0500
+--><p>
+<!--
+      Fix partitionwise-join code to tolerate failure to produce a plan for
+      each partition (Tom Lane)
+-->
+《機械翻訳》パーティションワイズの修正-結合コードは、パーティション(Tom Lane)ごとにプランを生成できないことを許容します。
+     </p><p>
+<!--
+      This could result in <quote>could not devise a query plan for the
+      given query</quote> errors.
+-->
+《機械翻訳》これにより、<span class="quote">「<span class="quote">指定されたクエリプランにクエリを設定できなかった</span>」</span>エラーが発生する可能性があります。
+     </p></li><li class="listitem"><!--
+Author: Tom Lane <tgl@sss.pgh.pa.us>
+Branch: master [9c6ad5eaa] 2022-11-22 14:40:20 -0500
+Branch: REL_15_STABLE [2debceed2] 2022-11-22 14:40:44 -0500
+Branch: REL_14_STABLE [bd06fe4de] 2022-11-22 14:40:45 -0500
+Branch: REL_13_STABLE [6e639267a] 2022-11-22 14:40:45 -0500
+Branch: REL_12_STABLE [ec10b6139] 2022-11-22 14:40:45 -0500
+Branch: REL_11_STABLE [b96a096db] 2022-11-22 14:40:46 -0500
+--><p>
+<!--
+      Limit the amount of cleanup work done
+      by <function>get_actual_variable_range</function> (Simon Riggs)
+-->
+《機械翻訳》<code class="function">get_actual_クリーンアップ_変数</code>によって行われるレンジ作業の量を制限しますSimon Riggs)
+     </p><p>
+<!--
+      Planner runs occurring just after deletion of a large number of
+      tuples appearing at the end of an index could expend significant
+      amounts of work setting the <quote>killed</quote> bits for those
+      index entries.  Limit the amount of work done in any one query by
+      giving up on this process after examining 100 heap pages.  All the
+      cleanup will still happen eventually, but without so large a
+      performance hiccup.
+-->
+《機械翻訳》プランナの最後に表示されるラージ番号のタプルの削除の直後に発生するインデックス実行は、これらのインデックスエントリの<span class="quote">「<span class="quote">強制終了された</span>」</span>ビットを設定するために大量の作業を消費する可能性があります。
+1つのクエリで実行される作業量を制限するには、100ヒープのページを調べた後でこのプロセスを放棄します。
+クリーンアップは最終的にはすべて発生しますが、ラージのようなパフォーマンスの問題は発生しません。
+     </p></li><li class="listitem"><!--
+Author: Andres Freund <andres@anarazel.de>
+Branch: master [cb2e7ddfe] 2022-12-02 18:10:30 -0800
+Branch: REL_15_STABLE [c6a60471a] 2022-12-02 18:07:47 -0800
+--><p>
+<!--
+      Prevent the statistics machinery from getting confused when a
+      relation's relkind changes (Andres Freund)
+-->
+《機械翻訳》リレーションの関係が変化したときに統計処理機構が混乱しないようにする(Andres Freund)
+     </p><p>
+<!--
+      Converting a table to a view could lead to crashes or assertion
+      failures.
+-->
+《機械翻訳》テーブルをビューに変換すると、クラッシュやアサーションエラーが発生する可能性があります。
+     </p></li><li class="listitem"><!--
+Author: Tom Lane <tgl@sss.pgh.pa.us>
+Branch: master [1dd6700f4] 2022-12-01 11:38:14 -0500
+Branch: REL_15_STABLE [a711b36e5] 2022-12-01 11:38:15 -0500
+Branch: REL_14_STABLE [de0ff6088] 2022-12-01 11:38:15 -0500
+--><p>
+<!--
+      Fix under-parenthesized display of <literal>AT TIME ZONE</literal>
+      constructs (Tom Lane)
+-->
+《機械翻訳》<code class="literal">ATタイムゾーン</code>構成の括弧で囲まれたディスプレイを修正します(Tom Lane)
+     </p><p>
+<!--
+      This could result in dump/restore failures for rules or views in
+      which an argument of <literal>AT TIME ZONE</literal> is itself an
+      expression.
+-->
+《機械翻訳》これにより、<code class="literal">ATタイムゾーン</code>の引数が自分自身式であるルールまたはビューで、ダンプ/リストア障害が発生する可能性があります。
+     </p></li><li class="listitem"><!--
+Author: Tom Lane <tgl@sss.pgh.pa.us>
+Branch: master [8b47ccb62] 2022-11-29 11:46:33 -0500
+Branch: REL_15_STABLE [5dfc2b753] 2022-11-29 11:46:33 -0500
+Branch: REL_14_STABLE [7715a3c24] 2022-11-29 11:46:33 -0500
+--><p>
+<!--
+      Prevent clobbering of cached parsetrees for utility statements in
+      SQL functions (Tom Lane, Daniel Gustafsson)
+-->
+《機械翻訳》ユーティリティ関数のSQLステートメントで、キャッシュされたparsetreesが破損しないようにしました。
+(Tom Lane、Daniel Gustafsson)
+     </p><p>
+<!--
+      If a SQL-language function executes the same utility command more
+      than once within a single calling query, it could crash or report
+      strange errors such as <quote>unrecognized node type</quote>.
+-->
+《機械翻訳》SQL言語機能が単一の発呼側ユーティリティコマンド内で同じクエリを複数回実行する場合、<span class="quote">「<span class="quote">認識されないクラッシュタイプ</span>」</span>などのレポートまたはノードの奇妙なエラーが発生する可能性があります。
+     </p></li><li class="listitem"><!--
+Author: Tom Lane <tgl@sss.pgh.pa.us>
+Branch: master [5644d6f90] 2022-11-21 17:07:29 -0500
+Branch: REL_15_STABLE [0353db996] 2022-11-21 17:07:07 -0500
+Branch: REL_14_STABLE [1b9c04b13] 2022-11-21 17:07:07 -0500
+Branch: REL_13_STABLE [74670688f] 2022-11-21 17:07:07 -0500
+Branch: REL_12_STABLE [1aed4c4fd] 2022-11-21 17:07:07 -0500
+Branch: REL_11_STABLE [c0eed8891] 2022-11-21 17:07:07 -0500
+--><p>
+<!--
+      Ensure that execution of full-text-search queries can be cancelled
+      while they are performing phrase matches (Tom Lane)
+-->
+《機械翻訳》保証-テキスト-検索の完全なクエリーの実行は、語句一致の実行中にキャンセルできます(Tom Lane)
+     </p></li><li class="listitem"><!--
+Author: Jeff Davis <jdavis@postgresql.org>
+Branch: master [edf12e7bb] 2022-12-01 11:49:15 -0800
+Branch: REL_15_STABLE [9377b4f30] 2022-12-01 11:55:59 -0800
+Branch: REL_14_STABLE [47e1224d5] 2022-12-01 11:53:53 -0800
+Branch: REL_13_STABLE [a844052b5] 2022-12-01 11:52:06 -0800
+Branch: REL_12_STABLE [f98c4fb1d] 2022-12-01 11:49:43 -0800
+--><p>
+<!--
+      Fix memory leak in hashing strings with nondeterministic collations
+      (Jeff Davis)
+-->
+《機械翻訳》非決定性照合によるハッシュ文字列のメモリーリークを修正しました。
+(Jeff Davis)
+     </p></li><li class="listitem"><!--
+Author: Amit Kapila <akapila@postgresql.org>
+Branch: master [6c6d6ba3e] 2023-01-24 09:25:36 +0530
+Branch: REL_15_STABLE [267135d01] 2023-01-24 09:12:04 +0530
+Branch: REL_14_STABLE [fd270b728] 2023-01-24 09:02:05 +0530
+--><p>
+<!--
+      Fix deadlock between <command>DROP DATABASE</command> and logical
+      replication worker process (Hou Zhijie)
+-->
+《機械翻訳》デッドロック<code class="command">DROPデータベース</code>-ロジカルレプリケーションワーカープロセス(Hou Zhijie)間を固定
+     </p><p>
+<!--
+      This was caused by an ill-advised choice to block interrupts while
+      creating a logical replication slot in the worker.  In version 15
+      that could lead to an undetected deadlock.  In version 14, no
+      deadlock has been observed, but it's still a bad idea to block
+      interrupts while waiting for network I/O.
+-->
+《機械翻訳》これは、ワーカーにロジカルレプリケーションスロットを作成しているときに、ブロック割り込みを誤って選択したことが原因です。
+バージョン15では、デッドロックが検出されない可能性があります。
+バージョン14では、デッドロックは観測されていませんが、ネットワーク入出力を待機している間のアイディアからブロックへの割り込みは依然として不良です。
+     </p></li><li class="listitem"><!--
+Author: Andres Freund <andres@anarazel.de>
+Branch: master [bc54ef4ec] 2023-01-23 18:27:42 -0800
+Branch: REL_15_STABLE [704a330a9] 2023-01-23 18:27:45 -0800
+Branch: REL_14_STABLE [0a796b8b3] 2023-01-23 18:27:48 -0800
+Branch: REL_13_STABLE [c5864805b] 2023-01-23 18:27:51 -0800
+Branch: REL_12_STABLE [92fc12787] 2023-01-23 18:27:55 -0800
+Branch: REL_11_STABLE [243373159] 2023-01-23 18:27:58 -0800
+--><p>
+<!--
+      Clean up the <application>libpq</application> connection object
+      after a failed replication connection attempt (Andres Freund)
+-->
+《機械翻訳》レプリケーションオブジェクトの試行に失敗した後、<span class="application">libpq</span>コネクションコネクションをクリーンアップする(Andres Freund)
+     </p><p>
+<!--
+      The previous coding leaked the connection object.  In background
+      code paths that's pretty harmless because the calling process will
+      give up and exit.  But in commands such as <command>CREATE
+      SUBSCRIPTION</command>, such a failure resulted in a small
+      session-lifespan memory leak.
+-->
+《機械翻訳》前のコーディングはコネクションオブジェクトをリークしました。
+バックグラウンドコード経路では、それはかなり無害です。
+なぜなら、呼び出し側のプロセスはあきらめて出て行くからです。
+しかし、<code class="command">CREATEサブスクリプション</code>のようなコマンドでは、そのような失敗は小さなセッション寿命メモリーリークをもたらしました。
+     </p></li><li class="listitem"><!--
+Author: Tom Lane <tgl@sss.pgh.pa.us>
+Branch: master [8242752f9] 2022-11-29 15:43:17 -0500
+Branch: REL_15_STABLE [55fa993d7] 2022-11-29 15:43:17 -0500
+Branch: REL_14_STABLE [06998eab1] 2022-11-29 15:43:17 -0500
+Branch: REL_13_STABLE [6e8ad1152] 2022-11-29 15:43:17 -0500
+Branch: REL_12_STABLE [c4a153d77] 2022-11-29 15:43:17 -0500
+Branch: REL_11_STABLE [a6c9e1db2] 2022-11-29 15:43:17 -0500
+--><p>
+<!--
+      In hot-standby servers, reduce processing effort for tracking XIDs
+      known to be active on the primary (Simon Riggs, Michail Nikolaev)
+-->
+《機械翻訳》ホット-スタンバイサーバで、プライマリ(Simon Riggs、ミハイニコラーエフ)のアクティブであることがわかっているXIDを追跡するための処理作業を削減します。
+     </p><p>
+<!--
+      Insufficiently-aggressive cleanup of the KnownAssignedXids array
+      could lead to poor performance, particularly
+      when <varname>max_connections</varname> is set to a large value on
+      the standby.
+-->
+《機械翻訳》KnownAssignedXids配列のクリーンアップの積極性が不十分な場合、特に<code class="varname">最大_connections</code>がスタンバイのラージ値に設定されている場合は、パフォーマンスの質が低下する可能性があります。
+     </p></li><li class="listitem"><!--
+Author: Alvaro Herrera <alvherre@alvh.no-ip.org>
+Branch: master [0557e1770] 2022-11-22 10:56:07 +0100
+Branch: REL_15_STABLE [1ad033df1] 2022-11-22 10:56:07 +0100
+Branch: REL_14_STABLE [1b3ed7571] 2022-11-22 10:56:07 +0100
+Branch: REL_13_STABLE [36eeb37cd] 2022-11-22 10:56:07 +0100
+--><p>
+<!--
+      Ignore invalidated logical-replication slots while determining
+      oldest catalog xmin (Sirisha Chamarthi)
+-->
+《機械翻訳》最も古いロジカルxmin(Sirisha Chamarthi)を決定するときに、無効になったカタログ-レプリケーションスロットを無視する
+     </p><p>
+<!--
+      A replication slot could prevent cleanup of dead tuples in the
+      system catalogs even after it becomes invalidated due to
+      exceeding <varname>max_slot_wal_keep_size</varname>.  Thus, failure
+      of a replication consumer could lead to indefinitely-large catalog
+      bloat.
+-->
+《機械翻訳》レプリケーションスロットは、<code class="varname">最大_スロット_wal_keep_サイズ</code>を超えたために無効になった後でも、システムカタログ内の無効なタプルのクリーンアップを防ぐことができます。
+したがって、レプリケーションコンシューマの障害は、無期限にラージカタログの膨張につながる可能性があります。
+     </p></li><li class="listitem"><!--
+Author: Amit Kapila <akapila@postgresql.org>
+Branch: master [2b6df0546] 2023-01-07 12:17:14 +0530
+Branch: REL_15_STABLE [18b81258a] 2023-01-07 12:04:33 +0530
+Branch: REL_14_STABLE [b2cc5b810] 2023-01-07 11:52:41 +0530
+--><p>
+<!--
+      In logical decoding, notify the remote node when a transaction is
+      detected to have crashed (Hou Zhijie)
+-->
+《機械翻訳》ロジカルデコーディングでは、トランザクションの衝突を検知した場合、リモートノードに通報(Hou Zhijie)
+     </p><p>
+<!--
+      After a server restart, we'll re-stream the changes for transactions
+      occurring shortly before the restart.  Some of these transactions
+      probably never completed; when we realize that one didn't we throw
+      away the relevant decoding state locally, but we neglected to tell
+      the subscriber about it.  That led to the subscriber keeping useless
+      streaming files until it's next restarted.
+-->
+《機械翻訳》サーバリスタートの後、リスタートの前でまもなく発生するトランザクションの変更を再ストリームします。
+これらのトランザクションの中には、おそらく完了しなかったものもあります。
+完了しなかったことに気付いたとき、関連するデコード状態をローカルで破棄しましたが、そのことをサブスクライバーに伝えることを怠っていました。
+そのため、サブスクライバーは、次に再起動されるまで、役に立たないストリーミングファイルを保持していました。
+     </p></li><li class="listitem"><!--
+Author: Amit Kapila <akapila@postgresql.org>
+Branch: REL_15_STABLE [898ef41bf] 2022-11-25 09:38:03 +0530
+Branch: REL_14_STABLE [9f2cc1a73] 2022-11-25 09:25:50 +0530
+Branch: REL_13_STABLE [4ec157c15] 2022-11-25 09:15:31 +0530
+Branch: REL_12_STABLE [aa9d916f6] 2022-11-25 09:00:15 +0530
+Branch: REL_11_STABLE [9b788aafd] 2022-11-25 08:56:54 +0530
+--><p>
+<!--
+      Fix uninitialized-memory usage in logical decoding (Masahiko Sawada)
+-->
+《機械翻訳》初期化されていない問題を修正-ロジカルデコーディング(Masahiko Sawada)でのメモリの使用
+     </p><p>
+<!--
+      In certain cases, resumption of logical decoding could try to re-use
+      XID data that had already been freed, leading to unpredictable
+      behavior.
+-->
+《機械翻訳》場合によっては、ロジカルデコーディングを再開すると、トライがすでに解放されていたXIDデータを再利用する可能性があり、予測不可能な動作につながる可能性があります。
+     </p></li><li class="listitem"><!--
+Author: Michael Paquier <michael@paquier.xyz>
+Branch: master [5ad165d2c] 2023-01-12 13:40:33 +0900
+Branch: REL_15_STABLE [6f25e4877] 2023-01-12 13:41:22 +0900
+--><p>
+<!--
+      Acquire spinlock while updating shared state during logical decoding
+      context creation (Masahiko Sawada)
+-->
+《機械翻訳》スピンロックコンテキストの作成時に更新が状態を共有している間にロジカルデコーディングを取得(Masahiko Sawada)
+     </p><p>
+<!--
+      We neglected to acquire the appropriate lock while updating data
+      about two-phase transactions, potentially allowing other processes
+      to see inconsistent data.
+-->
+《機械翻訳》我々は、適切なロックを取得することを怠った一方で、更新データは2段階の取引について、潜在的に他のプロセスが一貫性のないデータを見ることを可能にした。
+     </p></li><li class="listitem"><!--
+Author: Amit Kapila <akapila@postgresql.org>
+Branch: master [40b149135] 2022-12-02 10:52:58 +0530
+Branch: REL_15_STABLE [ebf87c019] 2022-12-02 11:14:42 +0530
+--><p>
+<!--
+      Fix <application>pgoutput</application> replication plug-in to not
+      send columns not listed in a table's replication column list
+      (Hou Zhijie)
+-->
+《機械翻訳》<span class="application">pgoutput</span>レプリケーションプラグインが、テーブルのレプリケーションカラムリスト(Hou Zhijie)にリストされていないカラムを送信しないように修正しました。
+     </p><p>
+<!--
+      <literal>UPDATE</literal> and <literal>DELETE</literal> events did
+      not pay attention to the configured column list, thus sending more
+      data than expected.  This did not cause a problem when the receiver
+      is our built-in logical replication code, but it might confuse other
+      receivers, and in any case it wasted network bandwidth.
+-->
+《機械翻訳》<code class="literal">更新</code>および<code class="literal">削除</code>イベントは、設定されたカラムリストに注意を払わなかったため、予想よりも多くのデータを送信しました。
+レシーバが組み込みのロジカルレプリケーションコードである場合、これは問題になりませんでしたが、他のレシーバを混乱させる可能性があり、どのケースでもネットワーク帯域幅が無駄になりました。
+     </p></li><li class="listitem"><!--
+Author: Amit Kapila <akapila@postgresql.org>
+Branch: master [e848be60b] 2022-11-14 10:43:33 +0530
+Branch: REL_15_STABLE [e49e19181] 2022-11-14 10:32:47 +0530
+Branch: REL_14_STABLE [9693f1900] 2022-11-14 10:22:28 +0530
+Branch: REL_13_STABLE [20c223336] 2022-11-14 10:11:10 +0530
+Branch: REL_12_STABLE [4dccccb37] 2022-11-14 10:01:14 +0530
+Branch: REL_11_STABLE [1703033f8] 2022-11-14 09:52:06 +0530
+--><p>
+<!--
+      Avoid rare <quote>failed to acquire cleanup lock</quote> panic
+      during WAL replay of hash-index page split operations (Robert Haas)
+-->
+《機械翻訳》ハッシュ-ロック分割操作のWALリプレイ中に稀な<span class="quote">「<span class="quote">クリーンアップインデックスページの取得に失敗した</span>」</span>パニックを回避しました。
+(Robert Haas)
+     </p></li><li class="listitem"><!--
+Author: Jeff Davis <jdavis@postgresql.org>
+Branch: master [d6a3dbe14] 2022-11-11 12:38:29 -0800
+Branch: REL_15_STABLE [7bf713dd2] 2022-11-11 12:46:11 -0800
+Branch: REL_14_STABLE [f893af496] 2022-11-11 12:46:22 -0800
+Branch: REL_13_STABLE [58a45bb1d] 2022-11-11 12:46:34 -0800
+Branch: REL_12_STABLE [7dd39e9e8] 2022-11-11 12:46:44 -0800
+Branch: REL_11_STABLE [5eaf3e375] 2022-11-11 12:46:52 -0800
+--><p>
+<!--
+      Advance a heap page's LSN when setting its all-visible bit during
+      WAL replay (Jeff Davis)
+-->
+《機械翻訳》WALヒープページ中に全可視ビットを設定する際に、リプレイのLSNを進める(Jeff Davis)
+     </p><p>
+<!--
+      Failure to do this left the page possibly different on standby
+      servers than the primary, and violated some other expectations about
+      when the LSN changes.  This seems only a theoretical hazard so
+      far as <productname>PostgreSQL</productname> itself is concerned,
+      but it could upset third-party tools.
+-->
+《機械翻訳》これに失敗すると、スタンバイサーバのページはプライマリとは異なる可能性があり、LSNがいつ変更されるかについての他のいくつかの予想に反しました。
+これは<span class="productname">PostgreSQL</span>自分自身に関する限り、理論的な危険にしか見えませんが、サードパーティのツールを混乱させる可能性があります。
+     </p></li><li class="listitem"><!--
+Author: Dean Rasheed <dean.a.rasheed@gmail.com>
+Branch: master [b2d479289] 2023-02-03 11:13:34 +0000
+Branch: REL_15_STABLE [4f74741a5] 2023-02-03 11:11:59 +0000
+Branch: REL_14_STABLE [86bfbeab4] 2023-02-03 11:09:15 +0000
+--><p>
+<!--
+      Fix <function>int64_div_fast_to_numeric()</function> to work for a
+      wider range of inputs (Dean Rasheed)
+-->
+《機械翻訳》<code class="function">int64_div_fast_to_numeric)</code>がより広いレンジの入力に対して動作するよう修正しました。
+(Dean Rasheed)
+     </p><p>
+<!--
+      This function misbehaved with some values of its second argument.
+      No such usages exist in core <productname>PostgreSQL</productname>,
+      but it's clearly a hazard for external modules, so repair.
+-->
+《機械翻訳》この関数は、その2番目の引数のいくつかの値で誤動作しました。
+コアにはそのような用途は存在しませんが(しかし、それは明らかに外部のモジュールにとって危険であるため、修理してください。
+<span class="productname">PostgreSQL</span>
+     </p></li><li class="listitem"><!--
+Author: Thomas Munro <tmunro@postgresql.org>
+Branch: master [f1821b58f] 2023-01-13 11:02:12 +1300
+Branch: REL_15_STABLE [8a98523a5] 2023-01-13 11:02:00 +1300
+Branch: REL_14_STABLE [547e60b83] 2023-01-13 10:57:29 +1300
+Branch: REL_13_STABLE [c159b0383] 2023-01-13 10:54:49 +1300
+Branch: REL_12_STABLE [bf388ab82] 2023-01-13 10:54:34 +1300
+Branch: REL_11_STABLE [1b40710a8] 2023-01-13 10:54:20 +1300
+--><p>
+<!--
+      Fix latent buffer-overrun problem in <literal>WaitEventSet</literal>
+      logic (Thomas Munro)
+-->
+《機械翻訳》<code class="literal">WaitEventSet</code>ロジックの潜在的なバッファ・オーバーラン問題の解決Thomas Munro)
+     </p><p>
+<!--
+      The <function>epoll</function>-based
+      and <function>kqueue</function>-based implementations could ask the
+      kernel for too many events if the size of their internal buffer was
+      different from the size of the caller's output buffer.  That case is
+      not known to occur in released <productname>PostgreSQL</productname>
+      versions, but this error is a hazard for external modules and future
+      bug fixes.
+-->
+《機械翻訳》<code class="function">epoll</code>ベースおよび<code class="function">kqueue</code>ベースの実装では、内部カーネルのサイズが呼び出し元の出力バッファのサイズと異なる場合、非常に多くのイベントをバッファに要求する可能性があります。
+このケースは、リリースされたバージョンでは発生しないことがわかっていますが、このエラーは外部モジュールおよび将来のバグ修正にとって危険です。
+<span class="productname">PostgreSQL</span>
+     </p></li><li class="listitem"><!--
+Author: Andres Freund <andres@anarazel.de>
+Branch: master [8c954168c] 2022-11-19 12:22:04 -0800
+Branch: REL_15_STABLE [a0d35ebcc] 2022-11-19 12:33:11 -0800
+Branch: REL_14_STABLE [fc4154286] 2022-11-19 12:33:14 -0800
+Branch: REL_13_STABLE [c13667b51] 2022-11-19 12:36:33 -0800
+Branch: REL_12_STABLE [4cbcb7ed8] 2022-11-19 12:36:48 -0800
+Branch: REL_11_STABLE [140c80372] 2022-11-19 12:36:52 -0800
+--><p>
+<!--
+      Avoid nominally-undefined behavior when accessing shared memory in
+      32-bit builds (Andres Freund)
+-->
+《機械翻訳》32ビットビルドで共有メモリをアクセスするときに、名目上未定義の動作を回避する(Andres Freund)
+     </p><p>
+<!--
+      clang's undefined-behavior sanitizer complained about use of a
+      pointer that was less aligned than it should be.  It's very unlikely
+      that this would cause a problem in non-debug builds, but it's worth
+      fixing for testing purposes.
+-->
+《機械翻訳》clangの定義されていない動作の消毒剤は、ポインタの使用が本来よりも調整されていないことに不満を言っていました。
+これがデバッグ以外のビルドで問題を引き起こす可能性は非常に低いですが、テスト目的で修正する価値があります。
+     </p></li><li class="listitem"><!--
+Author: Tomas Vondra <tomas.vondra@postgresql.org>
+Branch: master [02699bc1f] 2022-12-30 20:49:50 +0100
+Branch: REL_15_STABLE [c4f64cfab] 2022-12-30 20:49:11 +0100
+Branch: REL_14_STABLE [883dc0214] 2022-12-30 20:47:58 +0100
+--><p>
+<!--
+      Fix assertion failure in BRIN minmax-multi opclasses (Tomas Vondra)
+-->
+《機械翻訳》BRIN minmaxのアサーション障害の修正-マルチのOpclasses(Tomas Vondra)
+     </p><p>
+<!--
+      The assertion was overly strict, so this mistake was harmless in
+      non-assert builds.
+-->
+《機械翻訳》アサーションは過度に厳格であったため、このミスは非アサートビルドでは無害でした。
+     </p></li><li class="listitem"><!--
+Author: Tom Lane <tgl@sss.pgh.pa.us>
+Branch: master [51dfaa0b0] 2022-11-29 10:52:44 -0500
+Branch: REL_15_STABLE [556c0b913] 2022-11-29 10:52:44 -0500
+Branch: REL_14_STABLE [0224646be] 2022-11-29 10:52:44 -0500
+Branch: REL_13_STABLE [aca695fb6] 2022-11-29 10:52:44 -0500
+Branch: REL_12_STABLE [bb8d48cb9] 2022-11-29 10:52:44 -0500
+--><p>
+<!--
+      Remove faulty assertion in useless-RESULT-RTE optimization logic
+      (Tom Lane)
+-->
+《機械翻訳》不要なアサーションの不良を取り除く-結果-RTE最適化ロジック(Tom Lane)
+     </p></li><li class="listitem"><!--
+Author: Michael Paquier <michael@paquier.xyz>
+Branch: master [2fcf685f6] 2022-12-23 10:04:18 +0900
+Branch: REL_15_STABLE [e3897a3a4] 2022-12-23 10:04:30 +0900
+Branch: REL_14_STABLE [7ad458e06] 2022-12-23 10:04:33 +0900
+Branch: REL_13_STABLE [4dbe72d61] 2022-12-23 10:04:34 +0900
+Branch: REL_12_STABLE [7445869e1] 2022-12-23 10:04:36 +0900
+Branch: REL_11_STABLE [df6fea51f] 2022-12-23 10:04:37 +0900
+--><p>
+<!--
+      Fix copy-and-paste errors in cache-lookup-failure messages for ACL
+      checks (Justin Pryzby)
+-->
+《機械翻訳》コピーチェック(ペースト)のキャッシュルックアップ失敗メッセージのACLおよびJustin Pryzbyエラーを修正しました。
+     </p><p>
+<!--
+      In principle these errors should never be reached.  But if they are,
+      some of them reported the wrong type of object.
+-->
+《機械翻訳》原則として、これらの誤りに達することはないはずであるが、もしそうであれば、オブジェクトの間違いタイプを報告した者もいた。
+     </p></li><li class="listitem"><!--
+Author: Robert Haas <rhaas@postgresql.org>
+Branch: master [45f5c81ad] 2022-12-12 10:26:48 -0500
+Branch: REL_15_STABLE [8b5ba2f3f] 2022-12-12 10:33:02 -0500
+--><p>
+<!--
+      Fix possible corruption of very large tablespace map files
+      in <application>pg_basebackup</application> (Antonin Houska)
+-->
+《機械翻訳》<span class="application">pg_basebackup</span>のラージテーブル空間マップファイルが破損する可能性を修正しました。
+(Antonin Houska)
+     </p></li><li class="listitem"><!--
+Author: Tom Lane <tgl@sss.pgh.pa.us>
+Branch: master [74739d1d3] 2023-01-19 19:32:50 -0500
+Branch: REL_15_STABLE [488e89bf7] 2023-01-19 19:32:47 -0500
+--><p>
+<!--
+      Avoid harmless warning from <application>pg_dump</application>
+      in <option>&#45;-if-exists</option> mode (Tom Lane)
+-->
+《機械翻訳》<code class="option">--if-exists</code>モードの<span class="application">pg_ダンプ</span>からの無害なワーニングを回避しますTom Lane)
+     </p><p>
+<!--
+      If the <literal>public</literal> schema has a non-default owner then
+      use of <application>pg_dump</application>'s <option>&#45;-if-exists</option>
+      option resulted in a warning message <quote>warning: could not find
+      where to insert IF EXISTS in statement "&#45;- *not* dropping schema,
+      since initdb creates it"</quote>.  The dump output was okay, though.
+-->
+《機械翻訳》<code class="literal">public</code>スキーマにデフォルト以外の所有者がある場合、<span class="application">pg_ダンプ</span>の<code class="option">--if-exists</code>オプションを使用すると、ワーニングメッセージ<span class="quote">「<span class="quote">ワーニング:could not find where to insert IF EXISTS inステートメント"--*not*droppingスキーマ,since initdb creates it"</span>」</span>となります。
+しかし、ダンプの出力は問題ありませんでした。
+     </p></li><li class="listitem"><!--
+Author: Tom Lane <tgl@sss.pgh.pa.us>
+Branch: master [cabfb8241] 2022-12-02 14:24:44 -0500
+Branch: REL_15_STABLE [97299cf99] 2022-12-02 14:24:44 -0500
+Branch: REL_14_STABLE [303b26c1b] 2022-12-02 14:24:44 -0500
+--><p>
+<!--
+      Fix <application>psql</application>'s <literal>\sf</literal>
+      and <literal>\ef</literal> commands to handle SQL-language functions
+      that have <acronym>SQL</acronym>-standard function bodies (Tom Lane)
+-->
+《機械翻訳》<span class="application">psql</span>の<code class="literal">\sf</code>および<code class="literal">\ef</code>コマンドを、<acronym class="acronym">ハンドル</acronym>標準のSQLボディ(Tom Lane)を持つSQL関数言語関数に修正しました。
+     </p><p>
+<!--
+      These commands misidentified the start of the function body when it
+      used new-style syntax.
+-->
+《機械翻訳》これらのコマンドは、new-スタート関数を使用したときに、スタイル本体の構文を誤って識別しました。
+     </p></li><li class="listitem"><!--
+Author: Dean Rasheed <dean.a.rasheed@gmail.com>
+Branch: master [e7a59094b] 2023-01-06 11:18:44 +0000
+Branch: REL_15_STABLE [2daf4664c] 2023-01-06 11:16:53 +0000
+Branch: REL_14_STABLE [48599a18d] 2023-01-06 11:15:22 +0000
+Branch: REL_13_STABLE [2ad4abedf] 2023-01-06 11:13:34 +0000
+Branch: REL_12_STABLE [274185d11] 2023-01-06 11:11:51 +0000
+Branch: REL_11_STABLE [c54b88870] 2023-01-06 11:09:56 +0000
+--><p>
+<!--
+      Fix tab completion of <command>ALTER
+      FUNCTION/PROCEDURE/ROUTINE</command> ... <command>SET
+      SCHEMA</command> (Dean Rasheed)
+-->
+《機械翻訳》<code class="command">ALTER関数/プロシージャ/ルーチン</code>.<code class="command">SETスキーマ</code>のタブ完了を修正しました。
+(Dean Rasheed)
+     </p></li><li class="listitem"><!--
+Author: Tom Lane <tgl@sss.pgh.pa.us>
+Branch: master [aeaaf520f] 2022-11-21 15:37:10 -0500
+Branch: REL_15_STABLE [b8988cf1d] 2022-11-21 15:37:10 -0500
+--><p>
+<!--
+      Update <filename>contrib/pageinspect</filename> to mark its
+      disk-accessing functions as <literal>PARALLEL RESTRICTED</literal>
+      (Tom Lane)
+-->
+《機械翻訳》更新<code class="filename">contrib/pageinspect</code>からマークまで、そのディスクアクセス機能は<code class="literal">パラレル制限</code>として機能します(Tom Lane)
+     </p><p>
+<!--
+      This avoids possible failure if one of these functions is used to
+      examine a temporary table, since a session's temporary tables are not
+      accessible from parallel workers.
+-->
+《機械翻訳》これにより、これらの関数のいずれかを使用して一時テーブルを検査する場合に発生する可能性のある失敗が回避されます。
+これは、セッションのテンポラリ・テーブルにパラレル・ワーカーからアクセスできないためです。
+     </p></li><li class="listitem"><!--
+Author: Tom Lane <tgl@sss.pgh.pa.us>
+Branch: master [701c881f7] 2022-12-21 17:51:50 -0500
+Branch: REL_15_STABLE [b87037b37] 2022-12-21 17:51:50 -0500
+Branch: REL_14_STABLE [f489b480f] 2022-12-21 17:51:50 -0500
+Branch: REL_13_STABLE [d35f1d485] 2022-12-21 17:51:50 -0500
+Branch: REL_12_STABLE [c8314d62a] 2022-12-21 17:51:50 -0500
+Branch: REL_11_STABLE [0ff4056b8] 2022-12-21 17:51:50 -0500
+--><p>
+<!--
+      Fix <filename>contrib/seg</filename> to not crash or print garbage
+      if an input number has more than 127 digits (Tom Lane)
+-->
+《機械翻訳》<code class="filename">contrib/seg</code>を修正し、入力番号が127桁以上の場合Tom Lane)、クラッシュまたはプリントガベージではないようにしました。
+     </p></li><li class="listitem"><!--
+Author: Tom Lane <tgl@sss.pgh.pa.us>
+Branch: REL_15_STABLE [576506303] 2022-11-10 10:23:49 -0500
+Branch: REL_14_STABLE [06dca17ad] 2022-11-10 10:23:49 -0500
+Branch: REL_13_STABLE [0942acb73] 2022-11-10 10:23:49 -0500
+Branch: REL_12_STABLE [cf0f465c0] 2022-11-10 10:23:49 -0500
+--><p>
+<!--
+      Fix build on Microsoft Visual Studio 2013 (Tom Lane)
+-->
+《機械翻訳》Microsoft Visual Studio 2013のビルドを修正する(Tom Lane)
+     </p><p>
+<!--
+      A previous patch supposed that all platforms of interest
+      have <function>snprintf()</function>, but MSVC 2013 isn't quite
+      there yet.  Revert to using <function>sprintf()</function> on that
+      platform.
+-->
+《機械翻訳》以前のパッチでは、対象となるすべてのプラットフォームに<code class="function">snprintf()</code>があると想定されていましたが、MSVC 2013はまだそこにありません。
+そのプラットフォームで<code class="function">sprintf()</code>を使用するように戻します。
+     </p></li><li class="listitem"><!--
+Author: Andrew Dunstan <andrew@dunslane.net>
+Branch: master [341f4e002] 2022-11-25 15:28:38 -0500
+Branch: REL_15_STABLE [fed54fc9a] 2022-11-25 15:37:33 -0500
+Branch: REL_14_STABLE [f76191fd9] 2022-11-25 15:37:33 -0500
+Branch: REL_13_STABLE [9fe5cff14] 2022-11-25 15:37:33 -0500
+Branch: REL_12_STABLE [171c7fffa] 2022-11-25 15:37:34 -0500
+Branch: REL_11_STABLE [ae7c51213] 2022-11-25 15:37:34 -0500
+--><p>
+<!--
+      Fix compile failure in building PL/Perl with MSVC when using
+      Strawberry Perl (Andrew Dunstan)
+-->
+《機械翻訳》Strawberry Perlを使用する場合に、MSVCを使用してPL/Perlを構築する際のコンパイルの失敗を修正しました。
+(Andrew Dunstan)
+     </p></li><li class="listitem"><!--
+Author: Andrew Dunstan <andrew@dunslane.net>
+Branch: master [ccc59a83c] 2022-11-27 09:03:22 -0500
+Branch: REL_15_STABLE [b5d8fd418] 2022-11-27 09:18:14 -0500
+Branch: REL_14_STABLE [f3f70b8de] 2022-11-27 09:18:20 -0500
+Branch: REL_13_STABLE [68d89d80c] 2022-11-27 09:18:32 -0500
+Branch: REL_12_STABLE [85565cbca] 2022-11-27 09:18:40 -0500
+Branch: REL_11_STABLE [724dd5649] 2022-11-27 09:18:46 -0500
+--><p>
+<!--
+      Fix mismatch of PL/Perl built with MSVC versus a Perl library built
+      with gcc (Andrew Dunstan)
+-->
+《機械翻訳》MSVCで構築されたPL/Perlとgccで構築されたPerlライブラリの不一致を修正しました。
+(Andrew Dunstan)
+     </p><p>
+<!--
+      Such combinations could previously fail with <quote>loadable library
+      and perl binaries are mismatched</quote> errors.
+-->
+《機械翻訳》このような組み合わせは、以前は<span class="quote">「<span class="quote">ロード可能ライブラリとperlバイナリが一致しない</span>」</span>エラーで失敗する可能性がありました。
+     </p></li><li class="listitem"><!--
+Author: Andres Freund <andres@anarazel.de>
+Branch: master [388e80132] 2022-12-29 12:47:29 -0800
+Branch: REL_15_STABLE [c6e75e4c2] 2023-01-02 15:49:33 -0800
+Branch: REL_14_STABLE [7b5dec760] 2023-01-02 15:50:00 -0800
+Branch: REL_13_STABLE [ce073d014] 2023-01-02 15:50:33 -0800
+Branch: REL_12_STABLE [f0e13802f] 2023-01-02 15:51:03 -0800
+Branch: REL_11_STABLE [99f8bc335] 2023-01-02 15:51:05 -0800
+--><p>
+<!--
+      Suppress compiler warnings from Perl's header files (Andres Freund)
+-->
+《機械翻訳》Perlのコンパイラファイルからヘッダの警告を表示しない(Andres Freund)
+     </p><p>
+<!--
+      Our preferred compiler options provoke warnings about constructs
+      appearing in recent versions of Perl's header files.  When using
+      <application>gcc</application>, we can suppress these warnings with
+      a pragma.
+-->
+《機械翻訳》私たちが好むコンパイラオプションは、Perlのヘッダファイルの最近のバージョンで使用されている構文に関する警告を引き起こします。
+<span class="application">gcc</span>を使用する場合は、プラグマを使用してこれらの警告を抑制できます。
+     </p></li><li class="listitem"><!--
+Author: Tom Lane <tgl@sss.pgh.pa.us>
+Branch: REL_15_STABLE [9a40a0311] 2023-01-20 11:58:12 -0500
+Branch: REL_14_STABLE [21c058648] 2023-01-20 11:58:12 -0500
+Branch: REL_13_STABLE [c78f109b8] 2023-01-20 11:58:12 -0500
+Branch: REL_12_STABLE [6d066d56b] 2023-01-20 11:58:12 -0500
+Branch: REL_11_STABLE [b69e9dfab] 2023-01-20 11:58:12 -0500
+--><p>
+<!--
+      Fix <application>pg_waldump</application> to build on compilers that
+      don't discard unused static-inline functions (Tom Lane)
+-->
+《機械翻訳》未使用のビルドインライン関数を破棄しないコンパイラで、<span class="application">pg_waldump</span>を静的に修正しました。
+(Tom Lane)
+     </p></li><li class="listitem"><!--
+Author: Tom Lane <tgl@sss.pgh.pa.us>
+Branch: master [758f44bc3] 2023-01-31 17:36:55 -0500
+Branch: REL_15_STABLE [65f0d9d27] 2023-01-31 17:37:06 -0500
+Branch: REL_14_STABLE [7e6154779] 2023-01-31 17:37:14 -0500
+Branch: REL_13_STABLE [20d9da107] 2023-01-31 17:37:22 -0500
+Branch: REL_12_STABLE [2c95d8776] 2023-01-31 17:37:28 -0500
+Branch: REL_11_STABLE [7ddc428ef] 2023-01-31 17:37:34 -0500
+--><p>
+<!--
+      Update time zone data files to <application>tzdata</application>
+      release 2022g for DST law changes in Greenland and Mexico,
+      plus historical corrections for northern Canada, Colombia, and
+      Singapore.
+-->
+《機械翻訳》更新タイムゾーンデータファイルから<span class="application">tzdata</span>リリース2022gへ:グリーンランドとメキシコでのDST法の変更、カナダ北部、コロンビア、シンガポールでのプラスの歴史的修正。
+     </p><p>
+<!--
+      Notably, a new timezone America/Ciudad_Juarez has been split off
+      from America/Ojinaga.
+-->
+《機械翻訳》注目すべきことに、新しいタイムゾーンAmerica/Ciudad_Juarezは、America/Ojinagaからオフに分割された。
+     </p></li></ul></div></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="release-15-3.html" title="E.1. Release 15.3">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="release.html" title="付録E リリースノート">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="release-15-1.html" title="E.3. Release 15.1">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">E.1. Release 15.3 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 15.3文書">ホーム</a></td><td width="40%" align="right" valign="top"> E.3. Release 15.1</td></tr></table></div></body></html>
