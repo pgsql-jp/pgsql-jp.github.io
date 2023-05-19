@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>5.11. テーブルのパーティショニング</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="ddl-inherit.html" title="5.10. 継承" /><link rel="next" href="ddl-foreign-data.html" title="5.12. 外部データ" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 15.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="ddl.html" title="第5章 データ定義">第5章 データ定義</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 15.0 : ddl-partitioning.html">誤訳等の報告
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>5.11. テーブルのパーティショニング</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="ddl-inherit.html" title="5.10. 継承" /><link rel="next" href="ddl-foreign-data.html" title="5.12. 外部データ" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 15.3文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="ddl.html" title="第5章 データ定義">第5章 データ定義</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 15.3 : ddl-partitioning.html">誤訳等の報告
                     </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="ddl-inherit.html" title="5.10. 継承">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="ddl.html" title="第5章 データ定義">上へ</a></td><td width="60%" align="center">5.11. テーブルのパーティショニング</td><td width="20%" align="right"> <a accesskey="n" href="ddl-foreign-data.html" title="5.12. 外部データ">次へ</a></td></tr></table><hr /></div><div class="sect1" id="DDL-PARTITIONING"><div class="titlepage"><div><div><h2 class="title" style="clear: both">5.11. テーブルのパーティショニング</h2></div></div></div><span class="original">
    &lt;title&gt;Table Partitioning&lt;/title&gt;
 </span><a id="id-1.5.4.13.2" class="indexterm"></a><a id="id-1.5.4.13.3" class="indexterm"></a><a id="id-1.5.4.13.4" class="indexterm"></a><a id="id-1.5.4.13.5" class="indexterm"></a><a id="id-1.5.4.13.6" class="indexterm"></a><a id="id-1.5.4.13.7" class="indexterm"></a><p>
@@ -477,15 +477,22 @@ CREATE TABLE measurement_y2008m02 PARTITION OF measurement
 
 <span class="original">
      As an alternative, it is sometimes more convenient to create the
-     new table outside the partition structure, and make it a proper
+     new table outside the partition structure, and attach it as a
      partition later. This allows new data to be loaded, checked, and
      transformed prior to it appearing in the partitioned table.
+     Moreover, the &lt;literal&gt;ATTACH PARTITION&lt;/literal&gt; operation requires
+     only &lt;literal&gt;SHARE UPDATE EXCLUSIVE&lt;/literal&gt; lock on the
+     partitioned table, as opposed to the &lt;literal&gt;ACCESS
+     EXCLUSIVE&lt;/literal&gt; lock that is required by &lt;command&gt;CREATE TABLE
+     ... PARTITION OF&lt;/command&gt;, so it is more friendly to concurrent
+     operations on the partitioned table.
      The &lt;literal&gt;CREATE TABLE ... LIKE&lt;/literal&gt; option is helpful
      to avoid tediously repeating the parent table's definition:
 </span>
-別の方法として、新しいテーブルをパーティション構造の外部に作成し、その後でそれを適切なパーティションにする方が便利な場合もあります。
-こうすると、パーティションテーブル内でデータが見えるようになるより前に、新しいデータをロードし、確認し、変換することができます。
-<code class="literal">CREATE TABLE ... LIKE</code>オプションは親テーブルの定義を長々と繰り返すことを避けることができて有用です。
+《機械翻訳》別の方法として、パーティション構造の外部に新しい表を作成し、後でそれをパーティションとして添付する方が便利な場合があります。
+これにより、パーティション表に表示される前に、新しいデータをロード、チェックおよび変換できます。
+さらに、<code class="command">CREATE TABLE.PARTITION OF</code>で必要な<code class="literal">ACCESS EXCLUSIVE</code>ロックとは対照的に、<code class="literal">ATTACH PARTITION</code>操作では、パーティション表に<code class="literal">SHARE UPDATE EXCLUSIVE</code>ロックのみが必要であるため、パーティション表に対する同時操作にはより適しています。
+<code class="literal">CREATE TABLE.LIKE</code>オプションは、親表の定義を何度も繰り返さないようにするために役立ちます。
 
 </p><pre class="programlisting">
 CREATE TABLE measurement_y2008m02
@@ -504,12 +511,6 @@ ALTER TABLE measurement_y2008m02 ADD CONSTRAINT y2008m02
 ALTER TABLE measurement ATTACH PARTITION measurement_y2008m02
     FOR VALUES FROM ('2008-02-01') TO ('2008-03-01' );
 </pre><p>
-    </p><p>
-<span class="original">
-     The &lt;command&gt;ATTACH PARTITION&lt;/command&gt; command requires taking a
-     &lt;literal&gt;SHARE UPDATE EXCLUSIVE&lt;/literal&gt; lock on the partitioned table.
-</span>
-<code class="command">ATTACH PARTITION</code>コマンドは、パーティションテーブルへの<code class="literal">SHARE UPDATE EXCLUSIVE</code>ロックの取得を必要とします。
     </p><p>
 <span class="original">
      Before running the &lt;command&gt;ATTACH PARTITION&lt;/command&gt; command, it is
@@ -1546,4 +1547,4 @@ EXPLAIN SELECT count(*) FROM measurement WHERE logdate &gt;= DATE '2008-01-01';
 2種類のワークロードのいずれかでも、大量のデータを再パーティショニングすることは非常に遅いため、初期に適切な決定を下すことが重要です。
 計画したワークロードのシミュレーションは、パーティショニング戦略を最適化するためにしばしば役立ちます。
 単純に多数のパーティションがより少数のパーティションより優れていることや、少数のパーティションが多数のパーティションより優れていることを前提としないでください。
-   </p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ddl-inherit.html" title="5.10. 継承">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="ddl.html" title="第5章 データ定義">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="ddl-foreign-data.html" title="5.12. 外部データ">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">5.10. 継承 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 15.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 5.12. 外部データ</td></tr></table></div></body></html>
+   </p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ddl-inherit.html" title="5.10. 継承">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="ddl.html" title="第5章 データ定義">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="ddl-foreign-data.html" title="5.12. 外部データ">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">5.10. 継承 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 15.3文書">ホーム</a></td><td width="40%" align="right" valign="top"> 5.12. 外部データ</td></tr></table></div></body></html>

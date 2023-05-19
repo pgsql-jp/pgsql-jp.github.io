@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>MERGE</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="sql-lock.html" title="LOCK" /><link rel="next" href="sql-move.html" title="MOVE" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 15.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="sql-commands.html" title="SQLコマンド">SQLコマンド</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 15.0 : sql-merge.html">誤訳等の報告
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>MERGE</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="sql-lock.html" title="LOCK" /><link rel="next" href="sql-move.html" title="MOVE" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 15.3文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="sql-commands.html" title="SQLコマンド">SQLコマンド</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 15.3 : sql-merge.html">誤訳等の報告
                     </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="sql-lock.html" title="LOCK">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="sql-commands.html" title="SQLコマンド">上へ</a></td><td width="60%" align="center">MERGE</td><td width="20%" align="right"> <a accesskey="n" href="sql-move.html" title="MOVE">次へ</a></td></tr></table><hr /></div><div class="refentry" id="SQL-MERGE"><div class="titlepage"></div><a id="id-1.9.3.156.1" class="indexterm"></a><div class="refnamediv"><h2><span class="refentrytitle">MERGE</span></h2><p>MERGE<span class="original">
   &lt;refpurpose&gt;conditionally insert, update, or delete rows of a table&lt;/refpurpose&gt;
 </span> — テーブルの行を条件付きでINSERT、UPDATE、DELETEする</p></div><div class="refsynopsisdiv"><h2>概要</h2><pre class="synopsis">
 [ WITH <em class="replaceable"><code>with_query</code></em> [, ...] ]
-MERGE INTO <em class="replaceable"><code>target_table_name</code></em> [ [ AS ] <em class="replaceable"><code>target_alias</code></em> ]
+MERGE INTO [ ONLY ] <em class="replaceable"><code>target_table_name</code></em> [ * ] [ [ AS ] <em class="replaceable"><code>target_alias</code></em> ]
 USING <em class="replaceable"><code>data_source</code></em> ON <em class="replaceable"><code>join_condition</code></em>
 <em class="replaceable"><code>when_clause</code></em> [...]
 
 <span class="phrase">where <em class="replaceable"><code>data_source</code></em> is:</span>
 
-{ <em class="replaceable"><code>source_table_name</code></em> | ( <em class="replaceable"><code>source_query</code></em> ) } [ [ AS ] <em class="replaceable"><code>source_alias</code></em> ]
+{ [ ONLY ] <em class="replaceable"><code>source_table_name</code></em> [ * ] | ( <em class="replaceable"><code>source_query</code></em> ) } [ [ AS ] <em class="replaceable"><code>source_alias</code></em> ]
 
 <span class="phrase">and <em class="replaceable"><code>when_clause</code></em> is:</span>
 
@@ -121,8 +121,21 @@ DELETE
 </span><div class="variablelist"><dl class="variablelist"><dt><span class="term"><em class="replaceable"><code>target_table_name</code></em></span></dt><dd><p>
 <span class="original">
       The name (optionally schema-qualified) of the target table to merge into.
+      If &lt;literal&gt;ONLY&lt;/literal&gt; is specified before the table name, matching
+      rows are updated or deleted in the named table only.  If
+      &lt;literal&gt;ONLY&lt;/literal&gt; is not specified, matching rows are also updated
+      or deleted in any tables inheriting from the named table.  Optionally,
+      &lt;literal&gt;*&lt;/literal&gt; can be specified after the table name to explicitly
+      indicate that descendant tables are included.  The
+      &lt;literal&gt;ONLY&lt;/literal&gt; keyword and &lt;literal&gt;*&lt;/literal&gt; option do not
+      affect insert actions, which always insert into the named table only.
 </span>
-マージ先のターゲットテーブルの名前（スキーマ修飾名も可）。
+《機械翻訳》マージ先のターゲット表の名前です(スキーマ修飾名も可)。
+表名の前に<code class="literal">ONLY</code>を指定すると、指定した表でのみ一致する行が更新または削除されます。
+<code class="literal">ONLY</code>を指定しないと、指定した表を継承する表でも一致する行が更新または削除されます。
+オプションで、表名の後に<code class="literal">*</code>を指定して、子孫表が含まれることを明示的に示すことができます。
+<code class="literal">ONLY</code>キーワードおよび<code class="literal">*</code>オプションは、挿入アクションには影響しません。
+挿入アクションは、常に指定した表にのみ挿入されます。
      </p></dd><dt><span class="term"><em class="replaceable"><code>target_alias</code></em></span></dt><dd><p>
 <span class="original">
       A substitute name for the target table. When an alias is
@@ -137,9 +150,17 @@ DELETE
      </p></dd><dt><span class="term"><em class="replaceable"><code>source_table_name</code></em></span></dt><dd><p>
 <span class="original">
       The name (optionally schema-qualified) of the source table, view, or
-      transition table.
+      transition table.  If &lt;literal&gt;ONLY&lt;/literal&gt; is specified before the
+      table name, matching rows are included from the named table only.  If
+      &lt;literal&gt;ONLY&lt;/literal&gt; is not specified, matching rows are also included
+      from any tables inheriting from the named table.  Optionally,
+      &lt;literal&gt;*&lt;/literal&gt; can be specified after the table name to explicitly
+      indicate that descendant tables are included.
 </span>
-ソーステーブル、ビューまたは遷移テーブルの名前（スキーマ修飾名も可）。
+《機械翻訳》ソーステーブル、ビュー、または移行テーブルの名前(オプションでスキーマ修飾)。
+<code class="literal">ONLY</code>が指定されている場合、前表の名前、マッチング行は記名的テーブルからのみ含まれます。
+<code class="literal">ONLY</code>が指定されていない場合、マッチング行は記名的テーブルから継承するすべての表からも含まれます。
+オプションで、系列の表が含まれることを明示するために、表名前の後に<code class="literal">*</code>を指定できます。
      </p></dd><dt><span class="term"><em class="replaceable"><code>source_query</code></em></span></dt><dd><p>
 <span class="original">
       A query (&lt;command&gt;SELECT&lt;/command&gt; statement or &lt;command&gt;VALUES&lt;/command&gt;
@@ -613,4 +634,4 @@ WHEN MATCHED THEN
     the &lt;acronym&gt;SQL&lt;/acronym&gt; standard.
 </span>
 WITH句と<code class="literal">DO NOTHING</code>アクションは、<acronym class="acronym">SQL</acronym>標準の拡張です。
-  </p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="sql-lock.html" title="LOCK">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="sql-commands.html" title="SQLコマンド">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="sql-move.html" title="MOVE">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">LOCK </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 15.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> MOVE</td></tr></table></div></body></html>
+  </p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="sql-lock.html" title="LOCK">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="sql-commands.html" title="SQLコマンド">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="sql-move.html" title="MOVE">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">LOCK </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 15.3文書">ホーム</a></td><td width="40%" align="right" valign="top"> MOVE</td></tr></table></div></body></html>

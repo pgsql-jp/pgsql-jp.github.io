@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>14.1. EXPLAINの利用</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="performance-tips.html" title="第14章 性能に関するヒント" /><link rel="next" href="planner-stats.html" title="14.2. プランナで使用される統計情報" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 15.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="performance-tips.html" title="第14章 性能に関するヒント">第14章 性能に関するヒント</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 15.0 : using-explain.html">誤訳等の報告
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>14.1. EXPLAINの利用</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="performance-tips.html" title="第14章 性能に関するヒント" /><link rel="next" href="planner-stats.html" title="14.2. プランナで使用される統計情報" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 15.3文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="performance-tips.html" title="第14章 性能に関するヒント">第14章 性能に関するヒント</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 15.3 : using-explain.html">誤訳等の報告
                     </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="performance-tips.html" title="第14章 性能に関するヒント">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="performance-tips.html" title="第14章 性能に関するヒント">上へ</a></td><td width="60%" align="center">14.1. <code class="command">EXPLAIN</code>の利用</td><td width="20%" align="right"> <a accesskey="n" href="planner-stats.html" title="14.2. プランナで使用される統計情報">次へ</a></td></tr></table><hr /></div><div class="sect1" id="USING-EXPLAIN"><div class="titlepage"><div><div><h2 class="title" style="clear: both">14.1. <code class="command">EXPLAIN</code>の利用</h2></div></div></div><span class="original">
   &lt;title&gt;Using &lt;command&gt;EXPLAIN&lt;/command&gt;&lt;/title&gt;
 </span><a id="id-1.5.13.5.2" class="indexterm"></a><a id="id-1.5.13.5.3" class="indexterm"></a><a id="id-1.5.13.5.4" class="indexterm"></a><p>
@@ -958,9 +958,10 @@ ROLLBACK;
    </p><p>
 <span class="original">
     As seen in this example, when the query is an &lt;command&gt;INSERT&lt;/command&gt;,
-    &lt;command&gt;UPDATE&lt;/command&gt;, or &lt;command&gt;DELETE&lt;/command&gt; command, the actual work of
+    &lt;command&gt;UPDATE&lt;/command&gt;, &lt;command&gt;DELETE&lt;/command&gt;, or
+    &lt;command&gt;MERGE&lt;/command&gt; command, the actual work of
     applying the table changes is done by a top-level Insert, Update,
-    or Delete plan node.  The plan nodes underneath this node perform
+    Delete, or Merge plan node.  The plan nodes underneath this node perform
     the work of locating the old rows and/or computing the new data.
     So above, we see the same sort of bitmap table scan we've seen already,
     and its output is fed to an Update node that stores the updated rows.
@@ -971,17 +972,24 @@ ROLLBACK;
     the same for every correct query plan, so it doesn't affect planning
     decisions.
 </span>
-この例で分かるように、問い合わせが<code class="command">INSERT</code>、<code class="command">UPDATE</code>、<code class="command">DELETE</code>である場合、テーブル変更を行うための実作業は最上位のInsert、Update、Delete計画ノードで行われます。
+《マッチ度[89.538808]》この例で分かるように、問い合わせが<code class="command">INSERT</code>、<code class="command">UPDATE</code>、<code class="command">DELETE</code>である場合、テーブル変更を行うための実作業は最上位のInsert、Update、Delete計画ノードで行われます。
 このノード以下にある計画ノードは、古い行の検索、新しいデータの計算、あるいはその両方を行います。
 このため、前に述べたものと同じ種類のビットマップテーブルスキャンがあり、その出力が更新される行を格納するUpdateノードに渡されることが分かります。
 データ変更ノードが実行時間の多くを費やす可能性があります（現在これが一番多くの時間を費やしています）が、プランナは現在その作業を考慮してコスト推定に何も加えません。
 これは、行われる作業がすべての正確な問い合わせ計画の作業と同一であるためであり、このため計画の決定に影響を与えません。
+《機械翻訳》この例で見られるように、クエリが<code class="command">INSERT</code>、<code class="command">更新</code>、<code class="command">削除</code>、または<code class="command">マージ</code>コマンドである場合、表の変更を適用する実際の作業は、トップ-レベル挿入、更新、削除、またはマージプランノードによって行われます。
+このノードの下にある計画ノードは、古い行の検索や新しいデータの計算の作業を実行します。
+したがって、上では、すでに見たのと同じビットマップテーブルスキャンのソートが表示され、その出力は、更新された行を格納する更新ノードに供給されています。
+データ-変更診断にはかなりの実行時間がかかる可能性がありますが(ここでは、時間の大部分を消費しています)、現時点では、その作業のために検証するための検証見積もりには何も追加されていないことは注目に値します。
+これは、実行される作業がすべての正しいで同じであるため、計画の決定に影響を与えないためです。
+ノードプランナコストアカウントクエリプラン
    </p><p>
 <span class="original">
-    When an &lt;command&gt;UPDATE&lt;/command&gt; or &lt;command&gt;DELETE&lt;/command&gt; command affects an
+    When an &lt;command&gt;UPDATE&lt;/command&gt;, &lt;command&gt;DELETE&lt;/command&gt;, or
+    &lt;command&gt;MERGE&lt;/command&gt; command affects an
     inheritance hierarchy, the output might look like this:
 </span>
-<code class="command">UPDATE</code>もしくは<code class="command">DELETE</code>コマンドが継承階層に影響する場合には、出力は以下のようになるでしょう。
+《機械翻訳》<code class="command">更新</code>、<code class="command">削除</code>、または<code class="command">マージ</code>コマンドが継承階層に影響を与える場合、出力は次のようになります。
 
 </p><pre class="screen">
 EXPLAIN UPDATE parent SET f2 = f2 + 1 WHERE f1 = 101;
@@ -1164,4 +1172,4 @@ EXPLAIN ANALYZE SELECT * FROM tenk1 WHERE unique1 &lt; 100 AND unique2 &gt; 9000
 しかし、プラン時にパラメータ値が入手できずそのノードが行を生成できないために、エグゼキューターがあるノードが実行不要であると判断できるケースがあります。
 （今の所、これはパーティションテーブルを走査しているAppendあるいはMergeAppendノードの子ノードでのみ起きることがあります。）
 これが起きると、これらのプランノードは<code class="command">EXPLAIN</code>の出力から削除され、<code class="literal">Subplans Removed: <em class="replaceable"><code>N</code></em></code>という注釈が代わりに表示されます。
-   </p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="performance-tips.html" title="第14章 性能に関するヒント">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="performance-tips.html" title="第14章 性能に関するヒント">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="planner-stats.html" title="14.2. プランナで使用される統計情報">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">第14章 性能に関するヒント </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 15.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 14.2. プランナで使用される統計情報</td></tr></table></div></body></html>
+   </p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="performance-tips.html" title="第14章 性能に関するヒント">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="performance-tips.html" title="第14章 性能に関するヒント">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="planner-stats.html" title="14.2. プランナで使用される統計情報">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">第14章 性能に関するヒント </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 15.3文書">ホーム</a></td><td width="40%" align="right" valign="top"> 14.2. プランナで使用される統計情報</td></tr></table></div></body></html>
