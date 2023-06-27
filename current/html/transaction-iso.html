@@ -20,7 +20,7 @@
 <acronym class="acronym">SQL</acronym>の標準規格では、トランザクションの分離について4つのレベルを定義しています。
 標準規格で定義されているもののうち最も厳密なものはシリアライザブルです。
 1セットのシリアライザブルなトランザクションを同時実行した場合には、ある順番でひとつずつそれらを実行した場合と同じ結果となることが保証されるものです。本文で詳しく述べます。
-他の3レベルは、同時実行しているトランザクション間の相互作用に起因する、各レベルでは発生してはならない現象面に基づき定義されます。
+他の3レベルは、同時実行しているトランザクション間の相互作用に起因する、各レベルで発生してはならない現象面に基づき定義されます。
 標準規格のシリアライザブルの定義では、このレベルではこれらの現象が起こりえないと述べています。
 (これは驚くことではありません。トランザクションの効果がひとつずつ実行された場合と一貫性を持たなければならないとしたら、相互作用によって発生した現象はどうやっても見つけ出すことはできないでしょう。)
    </p><p>
@@ -54,7 +54,7 @@
         has been modified by another transaction (that committed since the
         initial read).
 </span>
-トランザクションが、以前読み込んだデータを再度読み込み、そのデータが(最初の読み込みの後にコミットした)別のトランザクションによって更新されたことを見出す。
+トランザクションが、以前読み込んだデータを再度読み込み、そのデータが（最初の読み込みの後にコミットした）別のトランザクションによって更新されたことを見出す。
        </p></dd><dt><span class="term">
 <span class="original">
        phantom read
@@ -317,7 +317,7 @@ SQL標準では、ある分離レベルで発生しては<span class="emphasis">
 これらのコマンドは、問い合わせが開始された時点で既にコミットされた対象行のみを検出します。
 しかし、その対象行は、検出されるまでに、同時実行中の他のトランザクションによって、既に更新（もしくは削除あるいはロック）されてしまっているかもしれません。
 このような場合更新されるべき処理は、最初の更新トランザクションが（それがまだ進行中の場合）コミットもしくはロールバックするのを待ちます。
-最初の更新処理がロールバックされるとその結果は無視されて、2番目の更新処理で元々検出した行の更新を続行することができます。
+最初の更新処理がロールバックされるとその結果は無視されて、2番目の更新処理で元々検出した行の更新を続行できます。
 最初の更新処理がコミットされると、2番目の更新処理では、最初の更新処理により行が削除された場合はその行を無視します。
 行が削除されなかった時の更新処理は、最初のコミットで更新された行に適用されます。
 コマンドの検索条件（<code class="literal">WHERE</code>句）は、更新された行がまだその検索条件に一致するかどうかの確認のため再評価されます。
@@ -335,7 +335,7 @@ SQL標準では、ある分離レベルで発生しては<span class="emphasis">
     conventionally visible to the command.
 </span>
 <code class="literal">ON CONFLICT DO UPDATE</code>句のある<code class="command">INSERT</code>は同じように動作します。
-リードコミッティドモードでは、挿入を提案された各行は挿入または更新されます。
+リードコミッティドモードでは、挿入を提案された各行が挿入または更新されます。
 無関係なエラーが発生しなければ、それら2つの結果のうち1つが保証されます。
 まだその結果が<code class="command">INSERT</code>に対して可視になっていない他のトランザクションに起因する競合では、慣習的な意味でそのコマンドに対して可視のバージョンの行が存在<span class="emphasis"><em>しない</em></span>にも関わらず、<code class="command">UPDATE</code>句がその行に対して動作します。
    </p><p>
@@ -475,7 +475,7 @@ COMMIT;
     consistent view of the database than Read Committed mode provides.
 </span>
 リードコミッティドモードで提供されている部分的なトランザクション分離は、多くのアプリケーションでは適切です。
-またこのモードは高速で、使い方も簡単ですが、全ての場合に対して充分ではありません。
+またこのモードは高速で、使い方も簡単ですが、全ての場合に対して十分ではありません。
 複雑な問い合わせや更新を行うアプリケーションは、リードコミッティドモードが提供する以上のより厳正なデータベースの厳密に一貫性のある見え方を必要とします。
    </p></div><div class="sect2" id="XACT-REPEATABLE-READ"><div class="titlepage"><div><div><h3 class="title">13.2.2. リピータブルリード分離レベル</h3></div></div></div><span class="original">
    &lt;title&gt;Repeatable Read Isolation Level&lt;/title&gt;
@@ -540,7 +540,7 @@ COMMIT;
 これらのコマンドでは、トランザクションが開始された時点で既にコミットされている対象行のみを検出します。
 しかし、その対象行は、検出されるまでに、同時実行中の他のトランザクションによって、既に更新（もしくは削除あるいはロック）されている可能性があります。
 このような場合、リピータブルリードトランザクションは、最初の更新トランザクションが（それらがまだ進行中の場合）コミットもしくはロールバックするのを待ちます。
-最初の更新処理がロールバックされると、その結果は無視され、リピータブルリードトランザクションでは元々検出した行の更新を続行することができます。
+最初の更新処理がロールバックされると、その結果は無視され、リピータブルリードトランザクションでは元々検出した行の更新を続行できます。
 しかし、最初の更新処理がコミット（かつ、単にロックされるだけでなく、実際に行が更新または削除）されると、リピータブルリードトランザクションでは、以下のようなメッセージを出力してロールバックを行います。
 
 </p><pre class="screen">
@@ -551,7 +551,7 @@ ERROR:  could not serialize access due to concurrent update
     because a repeatable read transaction cannot modify or lock rows changed by
     other transactions after the repeatable read transaction began.
 </span>
-これは、リピータブルリードトランザクションでは、トランザクションが開始された後に別のトランザクションによって更新されたデータは変更またはロックすることができないためです。
+これは、リピータブルリードトランザクションでは、トランザクションが開始された後に別のトランザクションによって更新されたデータを変更またはロックすることができないためです。
    </p><p>
 <span class="original">
     When an application receives this error message, it should abort
@@ -586,8 +586,8 @@ ERROR:  could not serialize access due to concurrent update
 </span>
 リピータブルリードモードでは、全てのトランザクションがデータベースの一貫した不変のビューの状態を参照することが保証されます。
 しかし、このビューは常にいくつかの同じレベルの同時実行トランザクションの直列（一度に一つずつの）実行と一貫性を持つとは限りません。
-例えば、このレベルの読み取りのみのトランザクションは、バッチが完了したことを示すために更新された制御レコードを参照することができますが、
-制御レコードのより以前のバージョンを読み取るため、論理的にそのバッチの一部となる詳細なレコードの１つを参照することは<span class="emphasis"><em>できません</em></span>。
+例えば、このレベルの読み取りのみのトランザクションは、バッチが完了したことを示すために更新された制御レコードを参照できますが、
+制御レコードのより以前のバージョンを読み取るため、論理的にそのバッチの一部となる詳細なレコードの1つを参照することは<span class="emphasis"><em>できません</em></span>。
 この分離レベルで実行するトランザクションによりビジネスルールを強制しようとすることは、競合するトランザクションをブロックするために注意深く明示的なロックを持たないと、正確に動作しないことが多くあります。
    </p><p>
 <span class="original">
@@ -615,7 +615,7 @@ ERROR:  could not serialize access due to concurrent update
      same behavior described here.  To retain the legacy Serializable
      behavior, Repeatable Read should now be requested.
 </span>
-<span class="productname">PostgreSQL</span> version 9.1より前まででは、シリアライザブル分離レベルの要求はここで説明した通りの動作をそのまま提供していました。
+<span class="productname">PostgreSQL</span> version 9.1より前までは、シリアライザブル分離レベルの要求はここで説明した通りの動作をそのまま提供していました。
 以前のシリアライザブルの動作を維持するためには、リピータブルリードを要求しなければならなくなりました。
     </p></div></div><div class="sect2" id="XACT-SERIALIZABLE"><div class="titlepage"><div><div><h3 class="title">13.2.3. シリアライザブル分離レベル</h3></div></div></div><span class="original">
    &lt;title&gt;Serializable Isolation Level&lt;/title&gt;
@@ -796,7 +796,7 @@ ERROR:  could not serialize access due to read/write dependencies among transact
 </span>
 シリアライザブルトランザクションの一貫した使用は開発を単純化することができます。
 正常にコミットされた同時実行のシリアライザブルトランザクションのどんな集合も、あたかもそれらが一度に一つずつ実行されたのと同じ結果になることが保証されるので、単独で実行されたときに単一トランザクションが正しく動作するよう書かれていると実証できるなら、他のトランザクションが何をしているかの情報が全く無くとも、複数シリアライザブルトランザクションが混在する中で正しく動作するかコミットに成功しないかであると確証を持つことができます。
-この技術を使用する環境では、直列化の失敗(常にSQLSTATE値が'40001'で返る)を扱うための、汎用的な手段を持っていることが重要です。
+この技術を使用する環境では、直列化の失敗（常にSQLSTATE値が'40001'で返る）を扱うための、汎用的な手段を持っていることが重要です。
 なぜなら、どのトランザクションが読み取り/書き込みの依存性に影響し、直列化異常を防ぐためにロールバックさせる必要があるかということを、正確に予測することは非常に困難だからです。
 読み取り/書き込みの依存性を監視したり、直列化異常で終了したトランザクションを再起動することはコストがかかります。
 しかしながら、このコストと、明示的なロックと<code class="literal">SELECT FOR UPDATE</code>または<code class="literal">SELECT FOR SHARE</code>を使用したブロッキングとで比較検討すると、シリアライザブルトランザクションはいくつかの環境において最良な実行を選択することになります。
@@ -851,7 +851,7 @@ ERROR:  could not serialize access due to read/write dependencies among transact
        Don't put more into a single transaction than needed for integrity
        purposes.
 </span>
-完全性のために必要とされる以上のものを１つのトランザクションに入れないようにしてください。
+完全性のために必要とされる以上のものを1つのトランザクションに入れないようにしてください。
       </p></li><li class="listitem"><p>
 <span class="original">
        Don't leave connections dangling &lt;quote&gt;idle in transaction&lt;/quote&gt;
@@ -879,7 +879,7 @@ ERROR:  could not serialize access due to read/write dependencies among transact
        &lt;xref linkend="guc-max-pred-locks-per-page"/&gt;.
 </span>
 述語ロックのテーブルがメモリ不足になると、複数のページレベルの述語ロックを単一のリレーションレベルの述語ロックへと結合するようシステムが強いられ、直列化失敗の発生割合が増加する恐れがあります。
-これは、<a class="xref" href="runtime-config-locks.html#GUC-MAX-PRED-LOCKS-PER-TRANSACTION">max_pred_locks_per_transaction</a>、<a class="xref" href="runtime-config-locks.html#GUC-MAX-PRED-LOCKS-PER-RELATION">max_pred_locks_per_relation</a>、<a class="xref" href="runtime-config-locks.html#GUC-MAX-PRED-LOCKS-PER-PAGE">max_pred_locks_per_page</a>のいずれか、あるいは、すべてを増やすことにより回避することができます。
+これは、<a class="xref" href="runtime-config-locks.html#GUC-MAX-PRED-LOCKS-PER-TRANSACTION">max_pred_locks_per_transaction</a>、<a class="xref" href="runtime-config-locks.html#GUC-MAX-PRED-LOCKS-PER-RELATION">max_pred_locks_per_relation</a>、<a class="xref" href="runtime-config-locks.html#GUC-MAX-PRED-LOCKS-PER-PAGE">max_pred_locks_per_page</a>のいずれか、あるいは、すべてを増やすことにより回避できます。
       </p></li><li class="listitem"><p>
 <span class="original">
        A sequential scan will always necessitate a relation-level predicate
@@ -892,7 +892,7 @@ ERROR:  could not serialize access due to read/write dependencies among transact
 </span>
 シーケンシャルスキャンは常にリレーションレベルでの述語ロックを必要とします。
 これによって、直列化失敗の頻度が増える可能性があります。
-<a class="xref" href="runtime-config-query.html#GUC-RANDOM-PAGE-COST">random_page_cost</a>を縮小および(または)<a class="xref" href="runtime-config-query.html#GUC-CPU-TUPLE-COST">cpu_tuple_cost</a>を増加することによりインデックススキャンの使用を促進することは有用かもしれません。
+<a class="xref" href="runtime-config-query.html#GUC-RANDOM-PAGE-COST">random_page_cost</a>を縮小および（または）<a class="xref" href="runtime-config-query.html#GUC-CPU-TUPLE-COST">cpu_tuple_cost</a>を増加することによりインデックススキャンの使用を促進することは有用かもしれません。
 トランザクションのロールバックや再実行の減少を、問い合わせ実行時間の全体的な変化と比較検討するようにしてください。
       </p></li></ul></div><p>
    </p><p>
