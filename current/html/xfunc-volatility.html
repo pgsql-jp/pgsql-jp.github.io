@@ -40,9 +40,9 @@ VOLATILE関数を使用した問い合わせは、その行の値を必要とす
       row, it is not valid to use a &lt;literal&gt;VOLATILE&lt;/literal&gt; function in an
       index scan condition.)
 </span>
-<code class="literal">STABLE</code>関数はデータベースを変更することができません。
+<code class="literal">STABLE</code>関数はデータベースを変更できません。
 また、単一の文内ですべての行に対して同一の引数を渡した場合に同一の結果を返すことが保証されています。
-この区分により、オプティマイザは複数の関数の呼び出しを１つの呼び出しに最適化することができます。
+この区分により、オプティマイザは複数の関数の呼び出しを１つの呼び出しに最適化できます。
 特に、インデックススキャン条件内でこうした関数を含んだ式を使用することは安全です。
 （インデックススキャンは行ごとに一度ではなく、一度だけ比較値の評価を行いますので、インデックススキャン条件内で<code class="literal">VOLATILE</code>関数を使用することは意味がありません。）
      </p></li><li class="listitem"><p>
@@ -55,10 +55,10 @@ VOLATILE関数を使用した問い合わせは、その行の値を必要とす
       &lt;literal&gt;SELECT ... WHERE x = 4&lt;/literal&gt;, because the function underlying
       the integer addition operator is marked &lt;literal&gt;IMMUTABLE&lt;/literal&gt;.
 </span>
-<code class="literal">IMMUTABLE</code>関数はデータベースを変更することができません。
+<code class="literal">IMMUTABLE</code>関数はデータベースを変更できません。
 また、同一引数に対する呼び出しは常に同一の結果を返すことが保証されています。
-問い合わせが定数の引数でこうした関数を呼び出した場合、オプティマイザはこの関数を事前に評価することができます。
-例えば、<code class="literal">SELECT ... WHERE x = 2 + 2</code>といった問い合わせは、<code class="literal">SELECT ... WHERE x = 4</code>のように単純化することができます。
+問い合わせが定数の引数でこうした関数を呼び出した場合、オプティマイザはこの関数を事前に評価できます。
+例えば、<code class="literal">SELECT ... WHERE x = 2 + 2</code>といった問い合わせは、<code class="literal">SELECT ... WHERE x = 4</code>のように単純化できます。
 これは、整数加算演算子の基になる関数が<code class="literal">IMMUTABLE</code>として宣言されているためです。
      </p></li></ul></div><p>
    </p><p>
@@ -77,7 +77,7 @@ VOLATILE関数を使用した問い合わせは、その行の値を必要とす
     &lt;literal&gt;timeofday()&lt;/literal&gt;.
 </span>
 副作用を持つ関数はすべて<code class="literal">VOLATILE</code>と付けなければ<span class="emphasis"><em>なりません</em></span>。
-こうした関数は最適化することができないためです。
+こうした関数は最適化できないためです。
 関数が副作用を持たなかったとしても、単一問い合わせ内で値が変動する場合は<code class="literal">VOLATILE</code>と付けなければなりません。
 例えば、<code class="literal">random()</code>、<code class="literal">currval()</code>、<code class="literal">timeofday()</code>などです。
    </p><p>
@@ -104,7 +104,7 @@ VOLATILE関数を使用した問い合わせは、その行の値を必要とす
 計画作成を行い、すぐに実行されるような単一の対話式問い合わせを考えた場合、相対的に<code class="literal">STABLE</code>区分と<code class="literal">IMMUTABLE</code>区分との違いはあまりありません。
 このような場合、関数が計画作成中に一度実行されるか、問い合わせ実行中に一度実行されるかがあまり問題になりません。
 しかし、計画が保存され、後で再利用される場合は大きな違いが現れます。
-本来ならば関数が計画作成段階で早めに定数を保持することができない場合に<code class="literal">IMMUTABLE</code>を付けると、その後にこの計画を使用する時に古くて意味のない値が再利用されてしまうことになります。
+本来ならば関数が計画作成段階で早めに定数を保持できない場合に<code class="literal">IMMUTABLE</code>を付けると、その後にこの計画を使用する時に古くて意味のない値が再利用されてしまうことになります。
 これは、プリペアド文や計画をキャッシュする関数言語（<span class="application">PL/pgSQL</span>など）を使用する場合は危険です。
    </p><p>
 <span class="original">
@@ -130,7 +130,7 @@ SQLもしくは標準手続き言語で作成された関数では、変動性�
      Functions written in C can manage snapshots however they want, but it's
      usually a good idea to make C functions work this way too.
 </span>
-しかし、C言語で作成された関数は、どのようにでもスナップショットを管理することができますが、通常C関数でもこのように動作させることは良い考えです。
+しかし、C言語で作成された関数は、どのようにでもスナップショットを管理できますが、通常C関数でもこのように動作させることは良い考えです。
     </p></div><p>
 <span class="original">
     Because of this snapshotting behavior,
@@ -142,7 +142,7 @@ SQLもしくは標準手続き言語で作成された関数では、変動性�
     calling query, and so it will see a fixed view of the database throughout
     that query.
 </span>
-このスナップショット処理の動作のため、同時実行の問い合わせによって別途変更されている可能性があるテーブルから選択していたとしても、<code class="command">SELECT</code>コマンドのみを含む関数は、安全に<code class="literal">STABLE</code>とすることができます。
+このスナップショット処理の動作のため、同時実行の問い合わせによって別途変更されている可能性があるテーブルから選択していたとしても、<code class="command">SELECT</code>コマンドのみを含む関数は、安全に<code class="literal">STABLE</code>印を付けられます。
 <span class="productname">PostgreSQL</span>は、呼び出し元の問い合わせに対して確立されたスナップショットを使用して<code class="literal">STABLE</code>関数のすべてのコマンドを実行します。
 したがってその問い合わせの間、データベースに対して固定された視点で値を参照することになります。
    </p><p>
