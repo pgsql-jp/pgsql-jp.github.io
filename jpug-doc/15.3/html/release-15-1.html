@@ -1,0 +1,635 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>E.3. Release 15.1</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="release-15-2.html" title="E.2. リリース15.2" /><link rel="next" href="release-15.html" title="E.4. リリース 15" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 15.3文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="release.html" title="付録E リリースノート">付録E リリースノート</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 15.3 : release-15-1.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="release-15-2.html" title="E.2. リリース15.2">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="release.html" title="付録E リリースノート">上へ</a></td><td width="60%" align="center">E.3. Release 15.1</td><td width="20%" align="right"> <a accesskey="n" href="release-15.html" title="E.4. リリース 15">次へ</a></td></tr></table><hr /></div><div class="sect1" id="RELEASE-15-1"><div class="titlepage"><div><div><h2 class="title" style="clear: both">E.3. Release 15.1</h2></div></div></div><p><strong>Release date: </strong>2022-11-10</p><p>
+<span class="original">
+   This release contains a variety of fixes from 15.0.
+   For information about new features in major release 15, see
+   &lt;xref linkend="release-15"/&gt;.
+</span>
+このリリースは15.0に対し、様々な不具合を修正したものです。
+15メジャーリリースにおける新機能については、<a class="xref" href="release-15.html" title="E.4. リリース 15">E.4</a>を参照してください。
+  </p><div class="sect2" id="id-1.11.6.7.4"><div class="titlepage"><div><div><h3 class="title">E.3.1. バージョン15.1への移行</h3></div></div></div><span class="original">
+   &lt;title&gt;Migration to Version 15.1&lt;/title&gt;
+</span><p>
+<span class="original">
+    A dump/restore is not required for those running 15.X.
+</span>
+15.Xからの移行では、ダンプ/リストアは不要です。
+   </p><p>
+<span class="original">
+    However, if you regularly create and drop tables exceeding 1GB,
+    see the first changelog entry below.
+</span>
+しかしながら、1ギガバイトを超えるテーブルを日常的に作成および削除している場合は、次の最初の変更ログエントリを参照してください。
+   </p></div><div class="sect2" id="id-1.11.6.7.5"><div class="titlepage"><div><div><h3 class="title">E.3.2. 変更点</h3></div></div></div><span class="original">
+   &lt;title&gt;Changes&lt;/title&gt;
+</span><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+Branch: master [0e758ae89] 2022-11-07 11:36:45 -0500
+Branch: REL_15_STABLE [5fe0ab420] 2022-11-07 11:36:45 -0500
+</span><p>
+<span class="original">
+      Fix failure to remove non-first segments of large tables
+      (Tom Lane)
+</span>
+大きなテーブルの最初以外のセグメントを削除できない問題を修正しました。
+(Tom Lane)
+     </p><p>
+<span class="original">
+      &lt;productname&gt;PostgreSQL&lt;/productname&gt; splits large tables into
+      multiple files (normally with 1GB per file).  The logic for dropping
+      a table was broken and would miss removing all but the first such
+      file, in two cases: drops of temporary tables and WAL replay of
+      drops of regular tables.  Applications that routinely create
+      multi-gigabyte temporary tables could suffer significant disk space
+      leakage.
+</span>
+<span class="productname">PostgreSQL</span>は大きなテーブルを複数のファイル(通常は1ファイルごとに1ギガバイト)に分割します。
+テーブルを削除するためのロジックが破損しており、一時テーブルの削除と通常のテーブルのWAL再生の削除の2つの場合で最初のファイル以外を削除できませんでした。
+数ギガバイトの一時テーブルを日常的に作成するアプリケーションでは、重大なディスクスペースリークが発生する可能性があります。
+     </p><p>
+<span class="original">
+      Orphaned temporary-table files are removed during postmaster start,
+      so the mere act of updating to 15.1 is sufficient to clear any
+      leaked temporary-table storage.  However, if you suffered any
+      database crashes while using 15.0, and there might have been
+      large tables dropped just before such crashes, it's advisable
+      to check the database directories for files named according to the
+      pattern
+      &lt;literal&gt;&lt;replaceable&gt;NNNN&lt;/replaceable&gt;.&lt;replaceable&gt;NN&lt;/replaceable&gt;&lt;/literal&gt;.
+      If there is no matching file named
+      just &lt;literal&gt;&lt;replaceable&gt;NNNN&lt;/replaceable&gt;&lt;/literal&gt; (without
+      the &lt;literal&gt;.&lt;replaceable&gt;NN&lt;/replaceable&gt;&lt;/literal&gt; suffix), these
+      files should be removed manually.
+</span>
+孤立した一時テーブルファイルは、postmasterの起動時に削除されますので、15.1への更新だけで、リークされた一時テーブルのストレージをクリアすることができます。
+ただし、15.0の使用中にデータベースのクラッシュが発生し、クラッシュの直前にラージテーブルがドロップされた可能性がある場合は、データベースディレクトリにパターン<code class="literal"><em class="replaceable"><code>NNNN</code></em>.<em class="replaceable"><code>NN</code></em></code>に従ったファイル名をチェックすることをお勧めします。
+一致したファイル名が<code class="literal"><em class="replaceable"><code>NNNN</code></em></code>だけ(<code class="literal">.<em class="replaceable"><code>NN</code></em></code>サフィックスなし)存在しない場合は、これらのファイルを手動で削除する必要があります。
+     </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+Branch: master [b8f2687fd] 2022-10-11 18:24:14 -0400
+Branch: REL_15_STABLE [07ce67698] 2022-10-11 18:24:14 -0400
+Branch: REL_14_STABLE [3162bd95c] 2022-10-11 18:24:14 -0400
+Branch: REL_13_STABLE [21e042b0b] 2022-10-11 18:24:14 -0400
+Branch: REL_12_STABLE [abc510fa2] 2022-10-11 18:24:15 -0400
+Branch: REL_11_STABLE [addde9bc6] 2022-10-11 18:24:15 -0400
+Branch: REL_10_STABLE [23e2a06ac] 2022-10-11 18:24:15 -0400
+</span><p>
+<span class="original">
+      Fix handling of &lt;literal&gt;DEFAULT&lt;/literal&gt; tokens that appear
+      in a multi-row &lt;literal&gt;VALUES&lt;/literal&gt; clause of an
+      &lt;command&gt;INSERT&lt;/command&gt; on an updatable view (Tom Lane)
+</span>
+更新可能ビューの<code class="command">INSERT</code>の複数行<code class="literal">VALUES</code>句に存在する<code class="literal">DEFAULT</code>トークンの処理を修正しました。
+(Tom Lane)
+     </p><p>
+<span class="original">
+      This oversight could lead to &lt;quote&gt;cache lookup failed for
+      type&lt;/quote&gt; errors, or in older branches even to crashes.
+</span>
+この見落としは、<span class="quote">「<span class="quote">cache lookup failed for type</span>」</span>エラーにつながる可能性があり、古いブランチではクラッシュにつながる可能性さえありました。
+     </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+Branch: master [797e313dc] 2022-10-17 12:14:39 -0400
+Branch: REL_15_STABLE [4a41a069e] 2022-10-17 12:14:39 -0400
+Branch: REL_14_STABLE [2f26cec48] 2022-10-17 12:14:39 -0400
+Branch: REL_13_STABLE [b21615d1e] 2022-10-17 12:14:39 -0400
+Branch: REL_12_STABLE [65c1106d8] 2022-10-17 12:14:39 -0400
+Branch: REL_11_STABLE [e9377e3e5] 2022-10-17 12:14:39 -0400
+Branch: REL_10_STABLE [ecf4ce689] 2022-10-17 12:14:39 -0400
+</span><p>
+<span class="original">
+      Disallow rules named &lt;literal&gt;_RETURN&lt;/literal&gt; that are
+      not &lt;literal&gt;ON SELECT&lt;/literal&gt; (Tom Lane)
+</span>
+<code class="literal">ON SELECT</code>ではない<code class="literal">_RETURN</code>という名前のルールを禁止しました。
+(Tom Lane)
+     </p><p>
+<span class="original">
+      This avoids confusion between a view's &lt;literal&gt;ON SELECT&lt;/literal&gt;
+      rule and any other rules it may have.
+</span>
+これにより、ビューの<code class="literal">ON SELECT</code>ルールとその他のルールとの間の混乱が回避されます。
+     </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+Branch: master [d57534740] 2022-10-16 19:18:08 -0400
+Branch: REL_15_STABLE [d4abb0bc5] 2022-10-16 19:18:08 -0400
+Branch: REL_14_STABLE [8122160ff] 2022-10-16 19:18:08 -0400
+</span><p>
+<span class="original">
+      Avoid failure in &lt;command&gt;EXPLAIN VERBOSE&lt;/command&gt; for a query
+      using &lt;literal&gt;SEARCH BREADTH FIRST&lt;/literal&gt; with constant
+      initial values (Tom Lane)
+</span>
+一定の初期値で<code class="literal">SEARCH BREADTH FIRST</code>を使用する問い合わせの<code class="command">EXPLAIN VERBOSE</code>が失敗しないようにしました。
+(Tom Lane)
+     </p></li><li class="listitem"><span class="original">
+Author: Alvaro Herrera &lt;alvherre@alvh.no-ip.org&gt;
+Branch: master [cba4e78f3] 2022-10-15 19:24:26 +0200
+Branch: REL_15_STABLE [16d11d684] 2022-10-15 19:24:26 +0200
+</span><p>
+<span class="original">
+      Prevent use of &lt;command&gt;MERGE&lt;/command&gt; on a partitioned table with
+      foreign-table partitions (&amp;Aacute;lvaro Herrera)
+</span>
+外部テーブルパーティションを含むパーティションテーブルで<code class="command">MERGE</code>の使用を禁止しました。
+(Álvaro Herrera)
+     </p><p>
+<span class="original">
+      The case isn't supported, and previously threw an incomprehensible
+      error.
+</span>
+このケースはサポートされておらず、以前は理解できないエラーが発生していました。
+     </p></li><li class="listitem"><span class="original">
+Author: Alvaro Herrera &lt;alvherre@alvh.no-ip.org&gt;
+Branch: master [b0284bfb1] 2022-11-03 20:40:21 +0100
+Branch: REL_15_STABLE [c301e1c0c] 2022-11-03 20:40:21 +0100
+Branch: REL_14_STABLE [18865f4df] 2022-11-03 20:40:21 +0100
+Branch: REL_13_STABLE [41b6e7c9a] 2022-11-03 20:40:21 +0100
+Branch: REL_12_STABLE [ab70b3a52] 2022-11-03 20:40:21 +0100
+Author: Alvaro Herrera &lt;alvherre@alvh.no-ip.org&gt;
+Branch: master [614a406b4] 2022-10-07 19:37:48 +0200
+Branch: REL_15_STABLE Release: REL_15_0 [6083132ab] 2022-10-07 19:37:48 +0200
+Branch: REL_14_STABLE [483d26930] 2022-10-07 19:37:48 +0200
+Branch: REL_13_STABLE [7d520e68e] 2022-10-07 19:37:48 +0200
+Branch: REL_12_STABLE [669803af0] 2022-10-07 19:37:48 +0200
+</span><p>
+<span class="original">
+      Fix construction of per-partition foreign key constraints while
+      doing &lt;command&gt;ALTER TABLE ATTACH PARTITION&lt;/command&gt;
+      (Jehan-Guillaume de Rorthais, &amp;Aacute;lvaro Herrera)
+</span>
+<code class="command">ALTER TABLE ATTACH PARTITION</code>の実行中のパーティションごとの外部キー制約の構築を修正しました。
+(Jehan-Guillaume de Rorthais, Álvaro Herrera)
+     </p><p>
+<span class="original">
+      Previously, incorrect or duplicate constraints could be constructed
+      for the newly-added partition.
+</span>
+これまでは、新しく追加されたパーティションに対して、不正確または重複した制約が作成される可能性がありました。
+     </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+Branch: master [f4857082b] 2022-11-01 14:34:44 -0400
+Branch: REL_15_STABLE [1f1865e90] 2022-11-01 14:34:44 -0400
+</span><p>
+<span class="original">
+      Fix planner failure with extended statistics on partitioned or
+      inherited tables (Richard Guo, Justin Pryzby)
+</span>
+パーティションテーブルまたは継承されたテーブルの拡張統計でのプランナの失敗を修正しました。
+(Richard Guo, Justin Pryzby)
+     </p><p>
+<span class="original">
+      Some cases failed with &lt;quote&gt;cache lookup failed for statistics
+      object&lt;/quote&gt;.
+</span>
+<span class="quote">「<span class="quote">cache lookup failed for statistics object</span>」</span>で失敗したケースもあります。
+     </p></li><li class="listitem"><span class="original">
+Author: Michael Paquier &lt;michael@paquier.xyz&gt;
+Branch: master [56b662523] 2022-10-13 09:31:57 +0900
+Branch: REL_15_STABLE [ca4070f2b] 2022-10-26 09:41:13 +0900
+Branch: REL_14_STABLE [5a30d43fa] 2022-10-26 09:41:18 +0900
+Branch: REL_13_STABLE [594b97509] 2022-10-26 09:41:22 +0900
+Branch: REL_12_STABLE [51c24d9e2] 2022-10-26 09:41:26 +0900
+Branch: REL_11_STABLE [341fba2a6] 2022-10-26 09:41:28 +0900
+Branch: REL_10_STABLE [b02fc7df1] 2022-10-26 09:41:31 +0900
+</span><p>
+<span class="original">
+      Fix mis-ordering of WAL operations in fast insert path for GIN
+      indexes (Matthias van de Meent, Zhang Mingli)
+</span>
+GINインデックスの高速挿入パスにおけるWAL操作の順序の誤りを修正しました。
+(Matthias van de Meent, Zhang Mingli)
+     </p><p>
+<span class="original">
+      This mistake is not known to have any negative consequences within
+      core &lt;productname&gt;PostgreSQL&lt;/productname&gt;, but it did cause issues
+      for some extensions.
+</span>
+この間違いが<span class="productname">PostgreSQL</span>コア内で悪影響を及ぼすことは知られていませんが、一部の拡張機能では問題が発生しました。
+     </p></li><li class="listitem"><span class="original">
+Author: Amit Kapila &lt;akapila@postgresql.org&gt;
+Branch: master [16b1fe003] 2022-10-20 08:49:48 +0530
+Branch: REL_15_STABLE [64ff0fe4e] 2022-10-20 09:43:59 +0530
+Branch: REL_14_STABLE [a592ed923] 2022-10-20 09:34:18 +0530
+Branch: REL_13_STABLE [25f7be1ca] 2022-10-20 09:25:13 +0530
+Branch: REL_12_STABLE [1bf4d9206] 2022-10-20 09:16:28 +0530
+Branch: REL_11_STABLE [5f7076cb6] 2022-10-20 09:07:04 +0530
+Branch: REL_10_STABLE [10ed7b9e4] 2022-10-20 08:58:11 +0530
+Branch: REL_15_STABLE [343afa967] 2022-10-21 10:03:35 +0530
+Branch: REL_14_STABLE [4fbe6096b] 2022-10-21 09:52:44 +0530
+Branch: REL_13_STABLE [38dbaaf27] 2022-10-21 09:42:24 +0530
+Branch: REL_12_STABLE [02600886c] 2022-10-21 09:32:21 +0530
+Branch: REL_11_STABLE [216af69ae] 2022-10-21 09:22:20 +0530
+</span><p>
+<span class="original">
+      Fix bugs in logical decoding when replay starts from a point
+      between the beginning of a transaction and the beginning of its
+      subtransaction (Masahiko Sawada, Kuroda Hayato)
+</span>
+トランザクションの開始とそのサブトランザクションの開始の間のポイントからリプレイが開始される場合の論理デコードのバグを修正しました。
+(Masahiko Sawada, Kuroda Hayato)
+     </p><p>
+<span class="original">
+      These errors could lead to assertion failures in debug builds, and
+      otherwise to memory leaks.
+</span>
+これらのエラーは、デバッグビルドのアサーションエラーにつながる可能性があり、メモリリークにつながる可能性がありました。
+     </p></li><li class="listitem"><span class="original">
+Author: Amit Kapila &lt;akapila@postgresql.org&gt;
+Branch: master [ce20f8b9f] 2022-10-21 12:57:18 +0530
+Branch: REL_15_STABLE [10eaa9750] 2022-10-21 12:43:28 +0530
+Branch: REL_14_STABLE [36fc013fa] 2022-10-21 12:33:47 +0530
+Branch: REL_13_STABLE [1eed947f9] 2022-10-21 12:22:47 +0530
+Branch: REL_12_STABLE [f7f82cf05] 2022-10-21 12:10:11 +0530
+Branch: REL_11_STABLE [5c51afe23] 2022-10-21 12:08:14 +0530
+Branch: REL_10_STABLE [61838d2dd] 2022-10-21 11:54:34 +0530
+Author: Amit Kapila &lt;akapila@postgresql.org&gt;
+Branch: master [f972ec5c2] 2022-08-23 10:20:02 +0530
+Branch: REL_15_STABLE Release: REL_15_0 [42681dffa] 2022-08-23 10:08:43 +0530
+Branch: REL_14_STABLE [6d05d575b] 2022-08-23 09:24:51 +0530
+Branch: REL_13_STABLE [4985a4591] 2022-08-23 09:10:28 +0530
+Branch: REL_12_STABLE [9415873ae] 2022-08-23 08:51:20 +0530
+Branch: REL_11_STABLE [51e9469a4] 2022-08-23 08:42:51 +0530
+Branch: REL_10_STABLE [6b50433e8] 2022-08-23 08:39:31 +0530
+</span><p>
+<span class="original">
+      Accept interrupts in more places during logical decoding (Amit
+      Kapila, Masahiko Sawada)
+</span>
+論理デコード中に、より多くの場所で割り込みを受け付けるようにしました。
+(Amit Kapila, Masahiko Sawada)
+     </p><p>
+<span class="original">
+      This ameliorates problems with slow shutdown of replication workers.
+</span>
+これにより、レプリケーションワーカーのシャットダウンが遅いという問題が改善されます。
+     </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+Branch: master [be541efbf] 2022-11-02 12:29:39 -0400
+Branch: REL_15_STABLE [414d29a82] 2022-11-02 12:29:39 -0400
+Branch: REL_14_STABLE [a5b7821fc] 2022-11-02 12:29:39 -0400
+Branch: REL_13_STABLE [4d3f7e75c] 2022-11-02 12:29:39 -0400
+</span><p>
+<span class="original">
+      Prevent attempts to replicate into a foreign-table partition in
+      replication workers (Shi Yu, Tom Lane)
+</span>
+レプリケーションワーカーで外部テーブルのパーティションへのレプリケーションの試みを防止しました。
+(Shi Yu, Tom Lane)
+     </p><p>
+<span class="original">
+      Although partitioned tables can have foreign tables as partitions,
+      replicating into such a partition isn't currently supported.
+      The logical replication worker process would crash if it was
+      attempted.  Now, an error is thrown.
+</span>
+パーティションテーブルは外部テーブルをパーティションとして含めることができますが、そのようなパーティションへのレプリケーションは現在サポートされていません。
+それを試みた場合、論理レプリケーションワーカープロセスはこれまでクラッシュしましたが、今はエラーを出すようになりました。
+     </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+Branch: master [dea834938] 2022-11-03 12:02:14 -0400
+Branch: REL_15_STABLE [f2dc7f9e3] 2022-11-03 12:01:57 -0400
+Branch: REL_14_STABLE [2489c38cd] 2022-11-03 12:01:57 -0400
+Branch: REL_13_STABLE [b00f342ea] 2022-11-03 12:01:57 -0400
+Branch: REL_12_STABLE [d9ffccf8d] 2022-11-03 12:01:57 -0400
+Branch: REL_11_STABLE [ed019b5ef] 2022-11-03 12:01:57 -0400
+Branch: REL_10_STABLE [5f3cec77b] 2022-11-03 12:01:57 -0400
+</span><p>
+<span class="original">
+      Avoid crash after function syntax error in replication workers
+      (Maxim Orlov, Anton Melnikov, Masahiko Sawada, Tom Lane)
+</span>
+レプリケーションワーカーの関数構文エラー後のクラッシュを回避するようにしました。
+(Maxim Orlov, Anton Melnikov, Masahiko Sawada, Tom Lane)
+     </p><p>
+<span class="original">
+      If a syntax error occurred in a SQL-language or PL/pgSQL-language
+      &lt;command&gt;CREATE FUNCTION&lt;/command&gt; or &lt;command&gt;DO&lt;/command&gt; command
+      executed in a logical replication worker, the worker process would
+      crash with a null pointer dereference or assertion failure.
+</span>
+論理レプリケーションワーカーで実行されたSQL言語またはPL/pgSQL言語の<code class="command">CREATE FUNCTION</code>または<code class="command">DO</code>コマンドで構文エラーが発生した場合、ワーカープロセスはnullポインタの逆参照またはアサーション失敗でクラッシュしていました。
+     </p></li><li class="listitem"><span class="original">
+Author: Michael Paquier &lt;michael@paquier.xyz&gt;
+Branch: master [9668c4a66] 2022-10-19 14:06:56 +0900
+Branch: REL_15_STABLE [5d2a47a29] 2022-10-19 14:07:01 +0900
+</span><p>
+<span class="original">
+      Avoid double call of the shutdown callback of an archiver module
+      (Nathan Bossart, Bharath Rupireddy)
+</span>
+アーカイバモジュールのシャットダウンコールバックの二重呼び出しを回避しました。
+(Nathan Bossart, Bharath Rupireddy)
+     </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+Branch: master [eec346611] 2022-10-17 11:35:23 -0400
+Branch: REL_15_STABLE [2e3326929] 2022-10-17 11:35:23 -0400
+Branch: REL_14_STABLE [8c611602b] 2022-10-17 11:35:23 -0400
+Branch: REL_13_STABLE [62b263bf7] 2022-10-17 11:35:23 -0400
+Branch: REL_12_STABLE [99b6b705d] 2022-10-17 11:35:23 -0400
+</span><p>
+<span class="original">
+      Add plan-time check for attempted access to a table that has no
+      table access method (Tom Lane)
+</span>
+テーブルアクセスメソッドを持たないテーブルへのアクセス試行に対するプラン作成時のチェックを追加しました。
+(Tom Lane)
+     </p><p>
+<span class="original">
+      This prevents a crash in some catalog-corruption scenarios, for
+      example use of a view whose &lt;literal&gt;ON SELECT&lt;/literal&gt; rule is
+      missing.
+</span>
+これにより、例えば<code class="literal">ON SELECT</code>ルールが欠落しているビューの使用など、一部のカタログ破損シナリオでのクラッシュが防止されます。
+     </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+Branch: master [18a4a620e] 2022-10-11 18:54:31 -0400
+Branch: REL_15_STABLE [e7b4ff327] 2022-10-11 18:54:31 -0400
+Branch: REL_14_STABLE [b10546ecf] 2022-10-11 18:54:31 -0400
+Branch: REL_13_STABLE [744270137] 2022-10-11 18:54:31 -0400
+Branch: REL_12_STABLE [8f98352b5] 2022-10-11 18:54:31 -0400
+Branch: REL_11_STABLE [6c1de98ba] 2022-10-11 18:54:31 -0400
+Branch: REL_10_STABLE [ab35b9dd7] 2022-10-11 18:54:31 -0400
+</span><p>
+<span class="original">
+      Prevent postmaster crash when shared-memory state is corrupted
+      (Tom Lane)
+</span>
+共有メモリ状態が破損したときのpostmasterクラッシュを防止します。
+(Tom Lane)
+     </p><p>
+<span class="original">
+      The postmaster process is supposed to survive and initiate a
+      database restart if shared memory becomes corrupted, but one
+      bit of code was being insufficiently cautious about that.
+</span>
+postmasterプロセスは、共有メモリが破損した場合にも存続してデータベース再起動をすることになっていましたが、コードの一部でそれに対する注意が不十分でした。
+     </p></li><li class="listitem"><span class="original">
+Author: Alvaro Herrera &lt;alvherre@alvh.no-ip.org&gt;
+Branch: master [db1b931a4] 2022-10-14 19:06:26 +0200
+Branch: REL_15_STABLE [27ca0bce5] 2022-10-14 19:06:26 +0200
+Branch: REL_14_STABLE [b8af4166f] 2022-10-14 19:06:26 +0200
+</span><p>
+<span class="original">
+      In &lt;application&gt;libpq&lt;/application&gt;, handle single-row mode
+      correctly when pipelining (Denis Laxalde)
+</span>
+<span class="application">libpq</span>がパイプラインで単一行モードを正しく処理するよう修正しました。
+(Denis Laxalde)
+     </p><p>
+<span class="original">
+      The single-row flag was not reset at the correct time if pipeline
+      mode was also active.
+</span>
+パイプラインモードも有効である場合、単独行フラグは正しいタイミングでリセットされませんでした。
+     </p></li><li class="listitem"><span class="original">
+Author: Peter Eisentraut &lt;peter@eisentraut.org&gt;
+Branch: master [2598b76bf] 2022-10-22 09:42:52 +0200
+Branch: REL_15_STABLE [4a6de748d] 2022-10-22 09:41:38 +0200
+</span><p>
+<span class="original">
+      Fix &lt;application&gt;psql&lt;/application&gt;'s exit status when a
+      command-line query is canceled (Peter Eisentraut)
+</span>
+コマンドライン問い合わせがキャンセルされた場合の<span class="application">psql</span>の終了ステータスを修正しました。
+(Peter Eisentraut)
+     </p><p>
+<span class="original">
+      &lt;literal&gt;psql -c &lt;replaceable&gt;query&lt;/replaceable&gt;&lt;/literal&gt; would
+      exit successfully if the query was canceled.  Fix it to exit with
+      nonzero status, as in other error cases.
+</span>
+<code class="literal">psql -c <em class="replaceable"><code>query</code></em></code>は、問い合わせがキャンセルされた場合に正常に終了していました。
+他のエラーの場合と同様に、非ゼロステータスで終了するように修正します。
+     </p></li><li class="listitem"><span class="original">
+Author: Robert Haas &lt;rhaas@postgresql.org&gt;
+Branch: master [1f0c4fa25] 2022-10-21 08:21:55 -0400
+Branch: REL_15_STABLE [5c013e620] 2022-10-21 08:31:39 -0400
+Branch: REL_14_STABLE [aaad8adb0] 2022-10-21 08:39:48 -0400
+Branch: REL_13_STABLE [0bf2cd160] 2022-10-21 08:45:08 -0400
+Branch: REL_12_STABLE [475e9daf3] 2022-10-21 08:59:26 -0400
+Branch: REL_11_STABLE [38214dabd] 2022-10-21 09:05:57 -0400
+Branch: REL_10_STABLE [ba58266eb] 2022-10-21 09:11:47 -0400
+</span><p>
+<span class="original">
+      Allow cross-platform tablespace relocation
+      in &lt;application&gt;pg_basebackup&lt;/application&gt; (Robert Haas)
+</span>
+<span class="application">pg_basebackup</span>でクロスプラットフォームのテーブル空間の再配置を許可します。
+(Robert Haas)
+     </p><p>
+<span class="original">
+      Allow the remote path in &lt;option&gt;&amp;#45;-tablespace-mapping&lt;/option&gt; to be
+      either a Unix-style or Windows-style absolute path, since the source
+      server could be on a different OS than the local system.
+</span>
+<code class="option">--tablespace-mapping</code>のリモートパスは、UnixスタイルまたはWindowsスタイルの絶対パスのいずれかにできるようになりました。
+これは、ソースサーバがローカルシステムとは異なるOS上にある可能性があるためです。
+     </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+Branch: master [26ee7fb36] 2022-11-02 11:30:04 -0400
+Branch: REL_15_STABLE [0eede9625] 2022-11-02 11:30:04 -0400
+</span><p>
+<span class="original">
+      Fix &lt;application&gt;pg_dump&lt;/application&gt;'s failure to dump comments
+      attached to some &lt;literal&gt;CHECK&lt;/literal&gt; constraints (Tom Lane)
+</span>
+一部の<code class="literal">CHECK</code>制約に付加されたコメントを<span class="application">pg_dump</span>がダンプ出来ない問題を修正しました。
+(Tom Lane)
+     </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+Branch: master [34fa0ddae] 2022-11-04 10:39:52 -0400
+Branch: REL_15_STABLE [2c6d43650] 2022-11-04 10:39:52 -0400
+</span><p>
+<span class="original">
+      Fix &lt;command&gt;CREATE DATABASE&lt;/command&gt; to allow
+      its &lt;literal&gt;oid&lt;/literal&gt; parameter to exceed
+      2&lt;superscript&gt;31&lt;/superscript&gt; (Tom Lane)
+</span>
+<code class="command">CREATE DATABASE</code>の<code class="literal">oid</code>パラメータが2<sup>31</sup>を超えることができるように修正しました。
+(Tom Lane)
+     </p><p>
+<span class="original">
+      This oversight prevented &lt;application&gt;pg_upgrade&lt;/application&gt; from
+      succeeding when the source installation contained databases with
+      OIDs larger than that.
+</span>
+この見落としにより、ソースインストールにそれよりも大きなOIDを持つデータベースが含まれていた場合、<span class="application">pg_upgrade</span>が成功しませんでした。
+     </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+Branch: master [495e73c20] 2022-11-01 12:48:01 -0400
+Branch: REL_15_STABLE [8b0a5cf3f] 2022-11-01 12:48:01 -0400
+Branch: REL_14_STABLE [0f2f5645a] 2022-11-01 12:48:01 -0400
+Branch: REL_13_STABLE [a9fdb48b7] 2022-11-01 12:48:01 -0400
+Branch: REL_12_STABLE [ca4c6764b] 2022-11-01 12:48:01 -0400
+Branch: REL_11_STABLE [149e00192] 2022-11-01 12:48:01 -0400
+Branch: REL_10_STABLE [56083ff30] 2022-11-01 12:48:01 -0400
+</span><p>
+<span class="original">
+      In &lt;application&gt;pg_stat_statements&lt;/application&gt;, fix access to
+      already-freed memory (zhaoqigui)
+</span>
+<span class="application">pg_stat_statements</span>で既に解放されたメモリへのアクセスを修正しました。
+(zhaoqigui)
+     </p><p>
+<span class="original">
+      This occurred if &lt;application&gt;pg_stat_statements&lt;/application&gt;
+      tracked a &lt;command&gt;ROLLBACK&lt;/command&gt; command issued via extended
+      query protocol.  In debug builds it consistently led to an assertion
+      failure.  In production builds there would often be no visible ill
+      effect; but if the freed memory had already been reused, the likely
+      result would be to store garbage for the query string.
+</span>
+これは、<span class="application">pg_stat_statements</span>が拡張問い合わせプロトコル経由で発行された<code class="command">ROLLBACK</code>コマンドを追跡した場合に発生しました。
+デバッグビルドでは、一貫してアサーション失敗につながりました。
+稼働ビルドでは、目立った悪影響はほとんどありません。
+しかし、解放されたメモリがすでに再利用されていた場合、結果として問い合わせ文字列のためにごみデータを格納することになります。
+     </p></li><li class="listitem"><span class="original">
+Author: Thomas Munro &lt;tmunro@postgresql.org&gt;
+Branch: master [c2ae01f69] 2022-10-19 22:18:26 +1300
+Branch: REL_15_STABLE [af64846e1] 2022-10-19 22:18:54 +1300
+Branch: REL_14_STABLE [d033f8f8b] 2022-10-19 22:32:14 +1300
+Branch: REL_13_STABLE [cf94cb586] 2022-10-19 22:38:58 +1300
+Branch: REL_12_STABLE [aa34bc4e2] 2022-10-19 22:44:53 +1300
+Branch: REL_11_STABLE [da3a6825e] 2022-10-19 22:49:25 +1300
+</span><p>
+<span class="original">
+      Fix incompatibilities with LLVM 15 (Thomas Munro, Andres Freund)
+</span>
+LLVM 15との非互換性を修正しました。
+(Thomas Munro, Andres Freund)
+     </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+Branch: master [1c72d82c2] 2022-11-02 17:37:29 -0400
+Branch: REL_15_STABLE [a5737e765] 2022-11-02 17:37:26 -0400
+Branch: REL_14_STABLE [058c7b5dd] 2022-11-02 17:37:26 -0400
+Branch: REL_13_STABLE [c479492c0] 2022-11-02 17:37:26 -0400
+Branch: REL_12_STABLE [5ecf836e9] 2022-11-02 17:37:26 -0400
+Branch: REL_11_STABLE [a0f9be1f9] 2022-11-02 17:37:26 -0400
+Branch: REL_10_STABLE [19cefebe7] 2022-11-02 17:37:26 -0400
+</span><p>
+<span class="original">
+      Allow use of &lt;function&gt;__sync_lock_test_and_set()&lt;/function&gt; for
+      spinlocks on any machine (Tom Lane)
+</span>
+どのようなマシンであってもスピンロックのために<code class="function">__sync_lock_test_and_set()</code>を使用できるようにしました。
+(Tom Lane)
+     </p><p>
+<span class="original">
+      This eases porting to new machine architectures, at least if you're
+      using a compiler that supports this GCC builtin function.
+</span>
+これにより、少なくともこのGCCビルトイン関数をサポートするコンパイラを使用している場合には、新しいマシンアーキテクチャへの移植が容易になります。
+     </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+Branch: master [717ec1aae] 2022-10-16 15:27:04 -0400
+Branch: REL_15_STABLE [24c4c2617] 2022-10-16 15:27:04 -0400
+Branch: REL_14_STABLE [18e60712d] 2022-10-16 15:27:04 -0400
+Branch: REL_13_STABLE [bc7a40b42] 2022-10-16 15:27:04 -0400
+Branch: REL_12_STABLE [3d7df87c4] 2022-10-16 15:27:04 -0400
+Branch: REL_11_STABLE [6618c276b] 2022-10-16 15:27:04 -0400
+Branch: REL_10_STABLE [02d074e3e] 2022-10-16 15:27:04 -0400
+Branch: REL9_6_STABLE [9bfa043a1] 2022-10-16 15:27:04 -0400
+Branch: REL9_5_STABLE [377b37cf7] 2022-10-16 15:27:04 -0400
+Branch: REL9_4_STABLE [57dfb6ce6] 2022-10-16 15:27:04 -0400
+Branch: REL9_3_STABLE [ee4c44014] 2022-10-16 15:27:04 -0400
+Branch: REL9_2_STABLE [fec443414] 2022-10-16 15:27:04 -0400
+</span><p>
+<span class="original">
+      Rename symbol &lt;literal&gt;REF&lt;/literal&gt; to &lt;literal&gt;REF_P&lt;/literal&gt; to
+      avoid compile failure on recent macOS (Tom Lane)
+</span>
+最近のmacOSでのコンパイル障害を回避するために、シンボル<code class="literal">REF</code>を<code class="literal">REF_P</code>に変更しました。
+(Tom Lane)
+     </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+Branch: master [450ee7012] 2022-10-16 11:47:44 -0400
+Branch: REL_15_STABLE [bd4b2926e] 2022-10-16 11:47:44 -0400
+Branch: REL_14_STABLE [6fa431d84] 2022-10-16 11:47:44 -0400
+Branch: REL_13_STABLE [a2acafc7b] 2022-10-16 11:47:44 -0400
+Branch: REL_12_STABLE [d33ac1ec2] 2022-10-16 11:47:44 -0400
+</span><p>
+<span class="original">
+      Avoid using &lt;function&gt;sprintf&lt;/function&gt;, to avoid compile-time
+      deprecation warnings (Tom Lane)
+</span>
+コンパイル時の非推奨警告を回避するため、<code class="function">sprintf</code>の使用を避けました。
+(Tom Lane)
+     </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+Branch: master [e7c7605a7] 2022-11-01 17:08:28 -0400
+Branch: REL_15_STABLE [c3d16eb3d] 2022-11-01 17:08:49 -0400
+Branch: REL_14_STABLE [97bb80b1b] 2022-11-01 17:08:58 -0400
+Branch: REL_13_STABLE [ebf48810b] 2022-11-01 17:09:04 -0400
+Branch: REL_12_STABLE [ec9a000d8] 2022-11-01 17:09:09 -0400
+Branch: REL_11_STABLE [b1cb77bdf] 2022-11-01 17:09:16 -0400
+Branch: REL_10_STABLE [b3326a753] 2022-11-01 17:09:21 -0400
+</span><p>
+<span class="original">
+      Update time zone data files to &lt;application&gt;tzdata&lt;/application&gt;
+      release 2022f for DST law changes in Chile, Fiji, Iran, Jordan,
+      Mexico, Palestine, and Syria, plus historical corrections for Chile,
+      Crimea, Iran, and Mexico.
+</span>
+タイムゾーンデータファイルが<span class="application">tzdata</span>リリース2022fに更新されました。チリ、フィジー、イラン、ヨルダン、メキシコ、パレスチナ、シリアでの夏時間法の変更と、チリ、クリミア、イラン、メキシコの歴史的な修正が含まれます。
+     </p><p>
+<span class="original">
+      Also, the Europe/Kiev zone has been renamed to Europe/Kyiv.
+      Also, the following zones have been merged into nearby,
+      more-populous zones whose clocks have agreed with them since 1970:
+      Antarctica/Vostok, Asia/Brunei,
+      Asia/Kuala_Lumpur, Atlantic/Reykjavik, Europe/Amsterdam,
+      Europe/Copenhagen, Europe/Luxembourg, Europe/Monaco, Europe/Oslo,
+      Europe/Stockholm, Indian/Christmas, Indian/Cocos, Indian/Kerguelen,
+      Indian/Mahe, Indian/Reunion, Pacific/Chuuk, Pacific/Funafuti,
+      Pacific/Majuro, Pacific/Pohnpei, Pacific/Wake and Pacific/Wallis.
+      (This indirectly affects zones that were already links to one of
+      these: Arctic/Longyearbyen, Atlantic/Jan_Mayen, Iceland,
+      Pacific/Ponape, Pacific/Truk, and Pacific/Yap.)  America/Nipigon,
+      America/Rainy_River, America/Thunder_Bay, Europe/Uzhgorod, and
+      Europe/Zaporozhye were also merged into nearby zones after
+      discovering that their claimed post-1970 differences from those
+      zones seem to have been errors.
+      In all these cases, the previous zone name remains as an alias;
+      but the actual data is that of the zone that was merged into.
+</span>
+また、Europe/KievゾーンはEurope/Kyivに名前が変更されました。
+また、Antarctica/Vostok、Asia/Brunei、Asia/Kuala_Lumpur、Atlantic/Reykjavik、Europe/Amsterdam、Europe/Copenhagen、Europe/Luxembourg、Europe/Monaco、Europe/Oslo、Europe/Stockholm、Indian/Christmas、Indian/Cocos、Indian/Kerguelen、Indian/Mahe、Indian/Reunion、Pacific/Chuuk、Pacific/Funafuti、Pacific/Majuro、Pacific/Pohnpei、Pacific/Wake、Pacific/Wallisの各ゾーンは、1970年以降、より人口の多い近隣のゾーンに統合され、時計が一致するようになりました。
+(これは、すでにこれらのゾーンのいずれかにリンクされていたゾーンに間接的に影響します:Arctic/Longyearbyen、Atlantic/Jan_Mayen、Iceland、Pacific/Ponape、Pacific/Truk、Pacific/Yap)
+America/Nipigon、America/Rainy_River、America/Thunder_Bay、Europe/Uzhgorod、Europe/Zaporozhyeも、1970年以降にこれらのゾーンとの間で主張された違いが誤りであったことが判明した後、近隣のゾーンに統合されました。
+これらのすべての場合において、以前のゾーン名はエイリアスとして残ります。ただし実際のデータは統合されたゾーンのものです。
+     </p><p>
+<span class="original">
+      These zone mergers result in loss of pre-1970 timezone history for
+      the merged zones, which may be troublesome for applications
+      expecting consistency of &lt;type&gt;timestamptz&lt;/type&gt; display.  As an
+      example, the stored value &lt;literal&gt;1944-06-01 12:00 UTC&lt;/literal&gt;
+      would previously display as &lt;literal&gt;1944-06-01
+      13:00:00+01&lt;/literal&gt; if the Europe/Stockholm zone is selected, but
+      now it will read out as &lt;literal&gt;1944-06-01 14:00:00+02&lt;/literal&gt;.
+</span>
+これらのゾーンの合併により、合併されたゾーンの1970年以前のタイムゾーン歴史が失われます。
+これは、<code class="type">timestamptz</code>表示の一貫性を期待するアプリケーションにとって厄介な問題になる可能性があります。
+例として、格納された値<code class="literal">1944-06-01 12:00 UTC</code>は、Europe/Stockholmゾーンが選択された場合、以前は<code class="literal">1944-06-01 13:00:00+01</code>として表示されていましたが、現在は<code class="literal">1944-06-01 14:00:00+02</code>として読み取られます。
+     </p><p>
+<span class="original">
+      It is possible to build the time zone data files with options that
+      will restore the older zone data, but that choice also inserts a lot
+      of other old (and typically poorly-attested) zone data, resulting in
+      more total changes from the previous release than accepting these
+      upstream changes does.  &lt;productname&gt;PostgreSQL&lt;/productname&gt; has
+      chosen to ship the &lt;productname&gt;tzdb&lt;/productname&gt; data
+      as-recommended, and so far as we are aware most major operating
+      system distributions are doing likewise.  However, if these changes
+      cause significant problems for your application, a possible solution
+      is to install a local build of the time zone data files using
+      &lt;productname&gt;tzdb&lt;/productname&gt;'s backwards-compatibility options
+      (see their &lt;literal&gt;PACKRATDATA&lt;/literal&gt;
+      and &lt;literal&gt;PACKRATLIST&lt;/literal&gt; options).
+</span>
+古いゾーンデータをビルドするオプションでタイムゾーンデータファイルをリストアすることは可能ですが、その選択は他の多くの古い(そして一般的にあまり証明されていない)ゾーンデータを挿入し、これらのアップストリームの変更を受け入れるよりも、以前のリリースからのより多くの総変更をもたらします。
+<span class="productname">PostgreSQL</span>は推奨されるように<span class="productname">tzdb</span>データを出荷することを選択しました。
+私たちが知っている限り、ほとんどのメジャーオペレーティングシステムディストリビューションは同様に行っています。
+しかし、これらの変更があなたのアプリケーションに重大な問題を引き起こす場合、可能な解決策は、<span class="productname">tzdb</span>の後方互換性オプションを使用してタイムゾーンデータファイルのローカルビルドをインストールすることです(<code class="literal">PACKRATDATA</code>と<code class="literal">PACKRATLIST</code>オプションを参照してください)。
+     </p></li></ul></div></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="release-15-2.html" title="E.2. リリース15.2">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="release.html" title="付録E リリースノート">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="release-15.html" title="E.4. リリース 15">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">E.2. リリース15.2 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 15.3文書">ホーム</a></td><td width="40%" align="right" valign="top"> E.4. リリース 15</td></tr></table></div></body></html>
