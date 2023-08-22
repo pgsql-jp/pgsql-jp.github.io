@@ -43,28 +43,40 @@ typedef struct CustomPath
 } CustomPath;
 </pre><p>
   </p><p>
-    <code class="structfield">path</code> must be initialized as for any other path, including
+<span class="original">
+    &lt;structfield&gt;path&lt;/structfield&gt; must be initialized as for any other path, including
     the row-count estimate, start and total cost, and sort ordering provided
-    by this path.  <code class="structfield">flags</code> is a bit mask, which
+    by this path.  &lt;structfield&gt;flags&lt;/structfield&gt; is a bit mask, which
     specifies whether the scan provider can support certain optional
-    capabilities.  <code class="structfield">flags</code> should include
-    <code class="literal">CUSTOMPATH_SUPPORT_BACKWARD_SCAN</code> if the custom path can support
-    a backward scan, <code class="literal">CUSTOMPATH_SUPPORT_MARK_RESTORE</code> if it
+    capabilities.  &lt;structfield&gt;flags&lt;/structfield&gt; should include
+    &lt;literal&gt;CUSTOMPATH_SUPPORT_BACKWARD_SCAN&lt;/literal&gt; if the custom path can support
+    a backward scan, &lt;literal&gt;CUSTOMPATH_SUPPORT_MARK_RESTORE&lt;/literal&gt; if it
     can support mark and restore,
-    and <code class="literal">CUSTOMPATH_SUPPORT_PROJECTION</code> if it can perform
-    projections.  (If <code class="literal">CUSTOMPATH_SUPPORT_PROJECTION</code> is not
+    and &lt;literal&gt;CUSTOMPATH_SUPPORT_PROJECTION&lt;/literal&gt; if it can perform
+    projections.  (If &lt;literal&gt;CUSTOMPATH_SUPPORT_PROJECTION&lt;/literal&gt; is not
     set, the scan node will only be asked to produce Vars of the scanned
     relation; while if that flag is set, the scan node must be able to
     evaluate scalar expressions over these Vars.)
-    An optional <code class="structfield">custom_paths</code> is a list of <code class="structname">Path</code>
+    An optional &lt;structfield&gt;custom_paths&lt;/structfield&gt; is a list of &lt;structname&gt;Path&lt;/structname&gt;
     nodes used by this custom-path node; these will be transformed into
-    <code class="structname">Plan</code> nodes by planner.
-    <code class="structfield">custom_private</code> can be used to store the custom path's
+    &lt;structname&gt;Plan&lt;/structname&gt; nodes by planner.
+    &lt;structfield&gt;custom_private&lt;/structfield&gt; can be used to store the custom path's
     private data.  Private data should be stored in a form that can be handled
-    by <code class="literal">nodeToString</code>, so that debugging routines that attempt to
-    print the custom path will work as designed.  <code class="structfield">methods</code> must
+    by &lt;literal&gt;nodeToString&lt;/literal&gt;, so that debugging routines that attempt to
+    print the custom path will work as designed.  &lt;structfield&gt;methods&lt;/structfield&gt; must
     point to a (usually statically allocated) object implementing the required
     custom path methods, which are further detailed below.
+</span>
+<code class="structfield">path</code>は、他のすべてのパスと同じく、行数の推定値、開始とトータルのコスト、このパスで提供されるソート順を含めて初期化される必要があります。
+<code class="structfield">flags</code>はビットマスクで、スキャンプロバイダが特定のオプションをサポートできるかどうかを指定します。
+カスタムパスが逆向きスキャンをサポートできるなら<code class="literal">CUSTOMPATH_SUPPORT_BACKWARD_SCAN</code>を、マークとリストアをサポートできるなら<code class="literal">CUSTOMPATH_SUPPORT_MARK_RESTORE</code>を、プロジェクションを実行できるなら<code class="literal">CUSTOMPATH_SUPPORT_PROJECTION</code>を<code class="structfield">flags</code>に含めます。
+(<code class="literal">CUSTOMPATH_SUPPORT_PROJECTION</code>が設定されていなければ、スキャンノードはスキャンされるリレーションのVarを生成するよう依頼されるだけです。一方、そのフラグが設定されていれば、スキャンノードはこのVarのスカラ式を評価できないといけません。)
+オプションの<code class="structfield">custom_paths</code>はこのカスタムパスのノードで使用される<code class="structname">Path</code>のノードのリストです。
+プランナがこれを<code class="structname">Plan</code>のノードに変換します。
+<code class="structfield">custom_private</code>はカスタムパスのプライベートデータを格納するために使うことができます。
+プライベートデータは<code class="literal">nodeToString</code>が処理できるような形式で格納してください。
+そうすることで、カスタムパスを出力するデバッグルーチンが設計通りに動作します。
+<code class="structfield">methods</code>は要求されるカスタムパスのメソッドのオブジェクト（通常は静的に割り当てられる）を指している必要があり、以下でさらに詳しく説明します。
   </p><p>
 <span class="original">
    A custom scan provider can also provide join paths.  Just as for base
@@ -118,13 +130,18 @@ List *(*ReparameterizeCustomPathByChild) (PlannerInfo *root,
                                           List *custom_private,
                                           RelOptInfo *child_rel);
 </pre><p>
+<span class="original">
     This callback is called while converting a path parameterized by the
-    top-most parent of the given child relation <code class="literal">child_rel</code>
+    top-most parent of the given child relation &lt;literal&gt;child_rel&lt;/literal&gt;
     to be parameterized by the child relation.  The callback is used to
     reparameterize any paths or translate any expression nodes saved in the
-    given <code class="literal">custom_private</code> member of a
-    <code class="structname">CustomPath</code>.  The callback may use
-    <code class="literal">reparameterize_path_by_child</code>,
-    <code class="literal">adjust_appendrel_attrs</code> or
-    <code class="literal">adjust_appendrel_attrs_multilevel</code> as required.
+    given &lt;literal&gt;custom_private&lt;/literal&gt; member of a
+    &lt;structname&gt;CustomPath&lt;/structname&gt;.  The callback may use
+    &lt;literal&gt;reparameterize_path_by_child&lt;/literal&gt;,
+    &lt;literal&gt;adjust_appendrel_attrs&lt;/literal&gt; or
+    &lt;literal&gt;adjust_appendrel_attrs_multilevel&lt;/literal&gt; as required.
+</span>
+このコールバックは、指定された子リレーション<code class="literal">child_rel</code>の最上位の親によりパラメータ化されたパスを子リレーションによりパラメータ化されるよう変換する時に呼び出されます。
+コールバックはパスを再パラメータ化したり、<code class="structname">CustomPath</code>の指定された<code class="literal">custom_private</code>メンバーに保存されている式ノードを変換したりするのに使われます。
+コールバックは必要に応じて<code class="literal">reparameterize_path_by_child</code>、<code class="literal">adjust_appendrel_attrs</code>または<code class="literal">adjust_appendrel_attrs_multilevel</code>を使います。
    </p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="custom-scan.html" title="第61章 カスタムスキャンプロバイダの作成">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="custom-scan.html" title="第61章 カスタムスキャンプロバイダの作成">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="custom-scan-plan.html" title="61.2. カスタムスキャン計画の作成">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">第61章 カスタムスキャンプロバイダの作成 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 15.4文書">ホーム</a></td><td width="40%" align="right" valign="top"> 61.2. カスタムスキャン計画の作成</td></tr></table></div></body></html>
