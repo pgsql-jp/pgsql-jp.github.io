@@ -1,0 +1,182 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>F.37. pg_walinspect</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="pgvisibility.html" title="F.36. pg_visibility" /><link rel="next" href="postgres-fdw.html" title="F.38. postgres_fdw" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 15.4文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="contrib.html" title="付録F 追加で提供されるモジュール">付録F 追加で提供されるモジュール</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 15.4 : pgwalinspect.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="pgvisibility.html" title="F.36. pg_visibility">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="contrib.html" title="付録F 追加で提供されるモジュール">上へ</a></td><td width="60%" align="center">F.37. pg_walinspect</td><td width="20%" align="right"> <a accesskey="n" href="postgres-fdw.html" title="F.38. postgres_fdw">次へ</a></td></tr></table><hr /></div><div class="sect1" id="PGWALINSPECT"><div class="titlepage"><div><div><h2 class="title" style="clear: both">F.37. pg_walinspect</h2></div></div></div><a id="id-1.11.7.46.2" class="indexterm"></a><p>
+<span class="original">
+  The &lt;filename&gt;pg_walinspect&lt;/filename&gt; module provides SQL functions that
+  allow you to inspect the contents of write-ahead log of
+  a running &lt;productname&gt;PostgreSQL&lt;/productname&gt; database cluster at a low
+  level, which is useful for debugging, analytical, reporting or
+  educational purposes. It is similar to &lt;xref linkend="pgwaldump"/&gt;, but
+  accessible through SQL rather than a separate utility.
+</span>
+<code class="filename">pg_walinspect</code>モジュールは、実行中の<span class="productname">PostgreSQL</span>データベースクラスタの先行書き込みログの内容を低レベルで検査することを可能にするSQL関数を提供します。
+これはデバッグ、分析、報告、教育目的に有用です。
+<a class="xref" href="pgwaldump.html" title="pg_waldump"><span class="refentrytitle"><span class="application">pg_waldump</span></span></a>と似ていますが、独立したユーティリティではなくSQLを通してアクセスできます。
+ </p><p>
+<span class="original">
+  All the functions of this module will provide the WAL information using the
+  current server's timeline ID.
+</span>
+このモジュールのすべての関数は、現在のサーバのタイムラインIDを使ってWAL情報を提供します。
+ </p><p>
+<span class="original">
+  All the functions of this module will try to find the first valid WAL record
+  that is at or after the given &lt;replaceable&gt;in_lsn&lt;/replaceable&gt; or
+  &lt;replaceable&gt;start_lsn&lt;/replaceable&gt; and will emit error if no such record
+  is available. Similarly, the &lt;replaceable&gt;end_lsn&lt;/replaceable&gt; must be
+  available, and if it falls in the middle of a record, the entire record must
+  be available.
+</span>
+このモジュールのすべての関数は、指定された<em class="replaceable"><code>in_lsn</code></em>または<em class="replaceable"><code>start_lsn</code></em>以降の最初の有効なWALレコードを見つけようとします。
+そのようなレコードがない場合はエラーを出力します。
+同様に、<em class="replaceable"><code>end_lsn</code></em>が利用可能でなければならず、レコードの途中にある場合は、レコード全体が利用可能でなければなりません。
+ </p><div class="note"><h3 class="title">注記</h3><p>
+<span class="original">
+   Some functions, such as &lt;function&gt;&lt;link
+   linkend="pg-logical-emit-message"&gt;pg_logical_emit_message&lt;/link&gt;&lt;/function&gt;,
+   return the LSN &lt;emphasis&gt;after&lt;/emphasis&gt; the record just
+   inserted. Therefore, if you pass that LSN as
+   &lt;replaceable&gt;in_lsn&lt;/replaceable&gt; or &lt;replaceable&gt;start_lsn&lt;/replaceable&gt;
+   to one of these functions, it will return the &lt;emphasis&gt;next&lt;/emphasis&gt;
+   record.
+</span>
+<code class="function"><a class="link" href="functions-admin.html#PG-LOGICAL-EMIT-MESSAGE">pg_logical_emit_message</a></code>などの一部の関数は、挿入されたばかりのレコード<span class="emphasis"><em>の後</em></span>のLSNを返します。
+したがって、そのLSNを<em class="replaceable"><code>in_lsn</code></em>または<em class="replaceable"><code>start_lsn</code></em>としてこれらの関数の1つに渡すと、<span class="emphasis"><em>next</em></span>レコードを返します。
+  </p></div><p>
+<span class="original">
+  By default, use of these functions is restricted to superusers and members of
+  the &lt;literal&gt;pg_read_server_files&lt;/literal&gt; role. Access may be granted by
+  superusers to others using &lt;command&gt;GRANT&lt;/command&gt;.
+</span>
+デフォルトでは、これらの関数の使用はスーパーユーザと<code class="literal">pg_read_server_files</code>ロールのメンバに制限されています。
+スーパーユーザは<code class="command">GRANT</code>を使用して他のユーザにアクセスを許可できます。
+ </p><div class="sect2" id="id-1.11.7.46.8"><div class="titlepage"><div><div><h3 class="title">F.37.1. 一般的な関数</h3></div></div></div><span class="original">
+  &lt;title&gt;General Functions&lt;/title&gt;
+</span><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+     <code class="function">pg_get_wal_record_info(in_lsn pg_lsn) returns record</code>
+    </span></dt><dd><p>
+<span class="original">
+      Gets WAL record information of a given LSN. If the given LSN isn't
+      at the start of a WAL record, it gives the information of the next
+      available valid WAL record; or an error if no such record is found.
+      For example, usage of the function is as
+      follows:
+</span>
+指定されたLSNのWALレコード情報を取得します。
+指定されたLSNがWALレコードの先頭にない場合、次に利用可能な有効なWALレコードの情報を提供します。
+そのようなレコードが見つからない場合はエラーになります。
+例の場合、関数の利用は次のとおりです。
+</p><pre class="screen">
+postgres=# SELECT * FROM pg_get_wal_record_info('0/1E826E98');
+-[ RECORD 1 ]----+----------------------------------------------------
+start_lsn        | 0/1E826F20
+end_lsn          | 0/1E826F60
+prev_lsn         | 0/1E826C80
+xid              | 0
+resource_manager | Heap2
+record_type      | PRUNE
+record_length    | 58
+main_data_length | 8
+fpi_length       | 0
+description      | snapshotConflictHorizon 33748 nredirected 0 ndead 2
+block_ref        | blkref #0: rel 1663/5/60221 fork main blk 2
+</pre><p>
+     </p></dd><dt><span class="term">
+     <code class="function">
+      pg_get_wal_records_info(start_lsn pg_lsn, end_lsn pg_lsn)
+      returns setof record
+     </code>
+    </span></dt><dd><p>
+<span class="original">
+      Gets information of all the valid WAL records between
+      &lt;replaceable&gt;start_lsn&lt;/replaceable&gt; and &lt;replaceable&gt;end_lsn&lt;/replaceable&gt;.
+      Returns one row per WAL record. If &lt;replaceable&gt;start_lsn&lt;/replaceable&gt;
+      or &lt;replaceable&gt;end_lsn&lt;/replaceable&gt; are not yet available, the
+      function will raise an error. For example:
+</span>
+<em class="replaceable"><code>start_lsn</code></em>から<em class="replaceable"><code>end_lsn</code></em>までのすべての有効なWALレコードの情報を取得します。
+WALレコードごとに1行を返します。
+<em class="replaceable"><code>start_lsn</code></em>または<em class="replaceable"><code>end_lsn</code></em>がまだ使用できない場合、この関数はエラーを発生させます。
+例をあげます。
+</p><pre class="screen">
+postgres=# SELECT * FROM pg_get_wal_records_info('0/1E913618', '0/1E913740') LIMIT 1;
+-[ RECORD 1 ]----+--------------------------------------------------------------
+start_lsn        | 0/1E913618
+end_lsn          | 0/1E913650
+prev_lsn         | 0/1E9135A0
+xid              | 0
+resource_manager | Standby
+record_type      | RUNNING_XACTS
+record_length    | 50
+main_data_length | 24
+fpi_length       | 0
+description      | nextXid 33775 latestCompletedXid 33774 oldestRunningXid 33775
+block_ref        |
+</pre><p>
+     </p></dd><dt><span class="term">
+     <code class="function">
+      pg_get_wal_records_info_till_end_of_wal(start_lsn pg_lsn)
+      returns setof record
+     </code>
+    </span></dt><dd><p>
+<span class="original">
+      This function is the same as &lt;function&gt;pg_get_wal_records_info()&lt;/function&gt;,
+      except that it gets information of all the valid WAL records from
+      &lt;replaceable&gt;start_lsn&lt;/replaceable&gt; till the end of WAL.
+</span>
+この関数は、<em class="replaceable"><code>start_lsn</code></em>からWALの終了までの全ての有効なWALレコードの情報を取得する点を除いて<code class="function">pg_get_wal_records_info()</code>と同じです。
+     </p></dd><dt><span class="term">
+     <code class="function">
+      pg_get_wal_stats(start_lsn pg_lsn, end_lsn pg_lsn, per_record boolean DEFAULT false)
+      returns setof record
+     </code>
+    </span></dt><dd><p>
+<span class="original">
+      Gets statistics of all the valid WAL records between
+      &lt;replaceable&gt;start_lsn&lt;/replaceable&gt; and
+      &lt;replaceable&gt;end_lsn&lt;/replaceable&gt;. By default, it returns one row per
+      &lt;replaceable&gt;resource_manager&lt;/replaceable&gt; type. When
+      &lt;replaceable&gt;per_record&lt;/replaceable&gt; is set to &lt;literal&gt;true&lt;/literal&gt;,
+      it returns one row per &lt;replaceable&gt;record_type&lt;/replaceable&gt;.
+      If &lt;replaceable&gt;start_lsn&lt;/replaceable&gt;
+      or &lt;replaceable&gt;end_lsn&lt;/replaceable&gt; are not yet available, the
+      function will raise an error. For example:
+</span>
+<em class="replaceable"><code>start_lsn</code></em>から<em class="replaceable"><code>end_lsn</code></em>までのすべての有効なWALレコードの統計情報を取得します。
+デフォルトでは、<em class="replaceable"><code>resource_manager</code></em>タイプごとに1行を返します。
+<em class="replaceable"><code>per_record</code></em>が<code class="literal">true</code>に設定されている場合、<em class="replaceable"><code>record_type</code></em>ごとに1行を返します。
+<em class="replaceable"><code>start_lsn</code></em>または<em class="replaceable"><code>end_lsn</code></em>がまだ使用できない場合、この関数はエラーを発生させます。
+例をあげます。
+</p><pre class="screen">
+postgres=# SELECT * FROM pg_get_wal_stats('0/1E847D00', '0/1E84F500')
+           WHERE count &gt; 0 AND
+                 "resource_manager/record_type" = 'Transaction'
+           LIMIT 1;
+-[ RECORD 1 ]----------------+-------------------
+resource_manager/record_type | Transaction
+count                        | 2
+count_percentage             | 8
+record_size                  | 875
+record_size_percentage       | 41.23468426013195
+fpi_size                     | 0
+fpi_size_percentage          | 0
+combined_size                | 875
+combined_size_percentage     | 2.8634072910530795
+</pre><p>
+     </p></dd><dt><span class="term">
+     <code class="function">
+      pg_get_wal_stats_till_end_of_wal(start_lsn pg_lsn, per_record boolean DEFAULT false)
+      returns setof record
+     </code>
+    </span></dt><dd><p>
+<span class="original">
+      This function is the same as &lt;function&gt;pg_get_wal_stats()&lt;/function&gt;,
+      except that it gets statistics of all the valid WAL records from
+      &lt;replaceable&gt;start_lsn&lt;/replaceable&gt; till end of WAL.
+</span>
+この関数は<code class="function">pg_get_wal_stats()</code>と同じですが、<em class="replaceable"><code>start_lsn</code></em>からWAL終了までの全ての有効なWALレコードの統計を取得する点が異なります。
+     </p></dd></dl></div></div><div class="sect2" id="id-1.11.7.46.9"><div class="titlepage"><div><div><h3 class="title">F.37.2. 作者</h3></div></div></div><span class="original">
+  &lt;title&gt;Author&lt;/title&gt;
+</span><p>
+   Bharath Rupireddy <code class="email">&lt;<a class="email" href="mailto:bharath.rupireddyforpostgres@gmail.com">bharath.rupireddyforpostgres@gmail.com</a>&gt;</code>
+  </p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="pgvisibility.html" title="F.36. pg_visibility">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="contrib.html" title="付録F 追加で提供されるモジュール">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="postgres-fdw.html" title="F.38. postgres_fdw">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">F.36. pg_visibility </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 15.4文書">ホーム</a></td><td width="40%" align="right" valign="top"> F.38. postgres_fdw</td></tr></table></div></body></html>
