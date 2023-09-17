@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>31.7. アーキテクチャ</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="logical-replication-restrictions.html" title="31.6. 制限事項" /><link rel="next" href="logical-replication-monitoring.html" title="31.8. 監視" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 15.3文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="logical-replication.html" title="第31章 論理レプリケーション">第31章 論理レプリケーション</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 15.3 : logical-replication-architecture.html">誤訳等の報告
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>31.7. アーキテクチャ</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="logical-replication-restrictions.html" title="31.6. 制限事項" /><link rel="next" href="logical-replication-monitoring.html" title="31.8. 監視" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 15.4文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="logical-replication.html" title="第31章 論理レプリケーション">第31章 論理レプリケーション</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 15.4 : logical-replication-architecture.html">誤訳等の報告
                     </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="logical-replication-restrictions.html" title="31.6. 制限事項">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="logical-replication.html" title="第31章 論理レプリケーション">上へ</a></td><td width="60%" align="center">31.7. アーキテクチャ</td><td width="20%" align="right"> <a accesskey="n" href="logical-replication-monitoring.html" title="31.8. 監視">次へ</a></td></tr></table><hr /></div><div class="sect1" id="LOGICAL-REPLICATION-ARCHITECTURE"><div class="titlepage"><div><div><h2 class="title" style="clear: both">31.7. アーキテクチャ</h2></div></div></div><span class="original">
   &lt;title&gt;Architecture&lt;/title&gt;
 </span><p>
@@ -40,12 +40,17 @@ WAL送信プロセスはWALのロジカルデコーディング（<a class="xref
   </p><p>
 <span class="original">
    The apply process on the subscriber database always runs with
-   &lt;varname&gt;session_replication_role&lt;/varname&gt; set
-   to &lt;literal&gt;replica&lt;/literal&gt;, which produces the usual effects on triggers
-   and constraints.
+   &lt;link linkend="guc-session-replication-role"&gt;&lt;varname&gt;session_replication_role&lt;/varname&gt;&lt;/link&gt;
+   set to &lt;literal&gt;replica&lt;/literal&gt;. This means that, by default,
+   triggers and rules will not fire on a subscriber. Users can optionally choose to
+   enable triggers and rules on a table using the
+   &lt;link linkend="sql-altertable"&gt;&lt;command&gt;ALTER TABLE&lt;/command&gt;&lt;/link&gt; command
+   and the &lt;literal&gt;ENABLE TRIGGER&lt;/literal&gt; and &lt;literal&gt;ENABLE RULE&lt;/literal&gt;
+   clauses.
 </span>
-サブスクライバーデータベースの適用プロセスは、常に<code class="varname">session_replication_role</code>を<code class="literal">replica</code>にセットして実行されます。
-これによりトリガーと制約で通常の効果を生成します。
+サブスクライバーデータベース上の適用プロセスは、常に<a class="link" href="runtime-config-client.html#GUC-SESSION-REPLICATION-ROLE"><code class="varname">session_replication_role</code></a>を<code class="literal">replica</code>に設定して実行されます。
+これは、デフォルトでは、トリガーとルールはサブスクライバー上では起動されないことを意味します。
+ユーザーは、必要に応じて、 <a class="link" href="sql-altertable.html" title="ALTER TABLE"><code class="command">ALTER TABLE</code></a>コマンド、<code class="literal">ENABLE TRIGGER</code>および<code class="literal">ENABLE RULE</code>句を使用して、テーブルのトリガーおよびルールを有効にすることを選択できます。
   </p><p>
 <span class="original">
    The logical replication apply process currently only fires row triggers,
@@ -88,4 +93,4 @@ WAL送信プロセスはWALのロジカルデコーディング（<a class="xref
 </span>
 パブリケーションの<code class="literal">パブリッシュ</code>パラメータは、レプリケーションされるDML操作にのみ影響します。
 初期データ同期では、既存のテーブルデータをコピーするときにこのパラメータは考慮されません。
-     </p></div></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="logical-replication-restrictions.html" title="31.6. 制限事項">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="logical-replication.html" title="第31章 論理レプリケーション">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="logical-replication-monitoring.html" title="31.8. 監視">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">31.6. 制限事項 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 15.3文書">ホーム</a></td><td width="40%" align="right" valign="top"> 31.8. 監視</td></tr></table></div></body></html>
+     </p></div></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="logical-replication-restrictions.html" title="31.6. 制限事項">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="logical-replication.html" title="第31章 論理レプリケーション">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="logical-replication-monitoring.html" title="31.8. 監視">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">31.6. 制限事項 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 15.4文書">ホーム</a></td><td width="40%" align="right" valign="top"> 31.8. 監視</td></tr></table></div></body></html>
