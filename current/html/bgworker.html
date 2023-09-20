@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>第48章 バックグラウンドワーカープロセス</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="spi-spi-start-transaction.html" title="SPI_start_transaction" /><link rel="next" href="logicaldecoding.html" title="第49章 ロジカルデコーディング" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 15.4文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="server-programming.html" title="パート V. サーバプログラミング">パート V. サーバプログラミング</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 15.4 : bgworker.html">誤訳等の報告
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>第48章 バックグラウンドワーカープロセス</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="spi-spi-start-transaction.html" title="SPI_start_transaction" /><link rel="next" href="logicaldecoding.html" title="第49章 ロジカルデコーディング" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 16.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="server-programming.html" title="パート V. サーバプログラミング">パート V. サーバプログラミング</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 16.0 : bgworker.html">誤訳等の報告
                     </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="spi-spi-start-transaction.html" title="SPI_start_transaction">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="server-programming.html" title="パート V. サーバプログラミング">上へ</a></td><td width="60%" align="center">第48章 バックグラウンドワーカープロセス</td><td width="20%" align="right"> <a accesskey="n" href="logicaldecoding.html" title="第49章 ロジカルデコーディング">次へ</a></td></tr></table><hr /></div><div class="chapter" id="BGWORKER"><div class="titlepage"><div><div><h2 class="title">第48章 バックグラウンドワーカープロセス</h2></div></div></div><span class="original">
  &lt;title&gt;Background Worker Processes&lt;/title&gt;
 </span><a id="id-1.8.13.2" class="indexterm"></a><a id="id-1.8.13.3" class="indexterm"></a><p>
@@ -71,7 +71,7 @@ typedef struct BackgroundWorker
     char        bgw_function_name[BGW_MAXLEN];
     Datum       bgw_main_arg;
     char        bgw_extra[BGW_EXTRALEN];
-    int         bgw_notify_pid;
+    pid_t       bgw_notify_pid;
 } BackgroundWorker;
 </pre><p>
   </p><p>
@@ -156,19 +156,24 @@ typedef struct BackgroundWorker
    which the initial entry point for the background worker should be sought.
    The named library will be dynamically loaded by the worker process and
    &lt;structfield&gt;bgw_function_name&lt;/structfield&gt; will be used to identify the
-   function to be called.  If loading a function from the core code, this must
-   be set to "postgres".
+   function to be called.  If calling a function in the core code, this must
+   be set to &lt;literal&gt;"postgres"&lt;/literal&gt;.
 </span>
-<code class="structfield">bgw_library_name</code>はバックグラウンドワーカーの初期エントリーポイントのためのライブラリ名です。
+《マッチ度[88.613861]》<code class="structfield">bgw_library_name</code>はバックグラウンドワーカーの初期エントリーポイントのためのライブラリ名です。
 その指定されたライブラリがワーカープロセスによって動的にロードされます。呼び出すべき関数を特定するために<code class="structfield">bgw_function_name</code>が使用されます。
 コアコードから関数をロードする場合、"postgres"を設定する必要があります。
+《機械翻訳》<code class="structfield">bgw_library_name</code>は、バックグラウンドワーカーの初期エントリポイントを探すべきライブラリの名前です。
+指定されたライブラリはワーカープロセスによって動的にロードされ、<code class="structfield">bgw_function_name</code>は呼び出される関数を識別するために使用されます。
+コアコード内の関数を呼び出す場合、これは<code class="literal">"postgres"</code>に設定する必要があります。
   </p><p>
 <span class="original">
-   &lt;structfield&gt;bgw_function_name&lt;/structfield&gt; is the name of a function in
-   a dynamically loaded library which should be used as the initial entry point
-   for a new background worker.
+   &lt;structfield&gt;bgw_function_name&lt;/structfield&gt; is the name of the function
+   to use as the initial entry point for the new background worker.  If
+   this function is in a dynamically loaded library, it must be marked
+   &lt;literal&gt;PGDLLEXPORT&lt;/literal&gt; (and not &lt;literal&gt;static&lt;/literal&gt;).
 </span>
-<code class="structfield">bgw_function_name</code>は新しいバックグラウンドワーカーから動的にロードされるときに初期エントリポイントの関数名です。
+《機械翻訳》<code class="structfield">bgw_function_name</code>は、新しいバックグラウンドワーカーの初期エントリポイントとして使用する関数の名前です。
+この関数が動的にロードされたライブラリ内にある場合、<code class="literal">PGDLLEXPORT</code>（<code class="literal">static</code>ではない）とマークする必要があります。
   </p><p>
 <span class="original">
    &lt;structfield&gt;bgw_main_arg&lt;/structfield&gt; is the &lt;type&gt;Datum&lt;/type&gt; argument
@@ -371,4 +376,4 @@ postmasterがバックグラウンドワーカーを開始しようと試みた�
    &lt;xref linkend="guc-max-worker-processes"/&gt;.
 </span>
 登録できるバックグラウンドワーカーの最大数は<a class="xref" href="runtime-config-resource.html#GUC-MAX-WORKER-PROCESSES">max_worker_processes</a>によって制限されています。
-  </p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="spi-spi-start-transaction.html" title="SPI_start_transaction">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="server-programming.html" title="パート V. サーバプログラミング">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="logicaldecoding.html" title="第49章 ロジカルデコーディング">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">SPI_start_transaction </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 15.4文書">ホーム</a></td><td width="40%" align="right" valign="top"> 第49章 ロジカルデコーディング</td></tr></table></div></body></html>
+  </p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="spi-spi-start-transaction.html" title="SPI_start_transaction">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="server-programming.html" title="パート V. サーバプログラミング">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="logicaldecoding.html" title="第49章 ロジカルデコーディング">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">SPI_start_transaction </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 16.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 第49章 ロジカルデコーディング</td></tr></table></div></body></html>

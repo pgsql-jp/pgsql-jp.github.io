@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>25.1. 定常的なバキューム作業</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="maintenance.html" title="第25章 定常的なデータベース保守作業" /><link rel="next" href="routine-reindex.html" title="25.2. 定常的なインデックスの再作成" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 15.4文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="maintenance.html" title="第25章 定常的なデータベース保守作業">第25章 定常的なデータベース保守作業</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 15.4 : routine-vacuuming.html">誤訳等の報告
-                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="maintenance.html" title="第25章 定常的なデータベース保守作業">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="maintenance.html" title="第25章 定常的なデータベース保守作業">上へ</a></td><td width="60%" align="center">25.1. 定常的なバキューム作業</td><td width="20%" align="right"> <a accesskey="n" href="routine-reindex.html" title="25.2. 定常的なインデックスの再作成">次へ</a></td></tr></table><hr /></div><div class="sect1" id="ROUTINE-VACUUMING"><div class="titlepage"><div><div><h2 class="title" style="clear: both">25.1. 定常的なバキューム作業</h2></div></div></div><span class="original">
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>25.1. 定常的なバキューム作業</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="maintenance.html" title="第25章 定常的なデータベース保守作業" /><link rel="next" href="routine-reindex.html" title="25.2. 定常的なインデックスの再作成" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 16.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="maintenance.html" title="第25章 定常的なデータベース保守作業">第25章 定常的なデータベース保守作業</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 16.0 : routine-vacuuming.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="maintenance.html" title="第25章 定常的なデータベース保守作業">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="maintenance.html" title="第25章 定常的なデータベース保守作業">上へ</a></td><td width="60%" align="center">25.1. 定常的なバキューム作業</td><td width="20%" align="right"> <a accesskey="n" href="routine-reindex.html" title="25.2. 定常的なインデックスの再作成">次へ</a></td></tr></table><hr /></div><div class="sect1" id="ROUTINE-VACUUMING"><div class="titlepage"><div><div><h2 class="title" style="clear: both">25.1. 定常的なバキューム作業 <a href="#ROUTINE-VACUUMING" class="id_link">#</a></h2></div></div></div><span class="original">
   &lt;title&gt;Routine Vacuuming&lt;/title&gt;
 </span><a id="id-1.6.12.12.2" class="indexterm"></a><a id="id-1.6.12.12.3" class="indexterm"></a><p>
 <span class="original">
@@ -24,7 +24,7 @@
 データベース管理者によっては、<span class="application">cron</span>もしくは<span class="application">タスクスケジューラ</span>スクリプトに従って典型的に実行される、手作業管理の<code class="command">VACUUM</code>コマンドによりデーモンの活動を補足したり、置き換えたりすることを意図するかもしれません。
 手作業管理のバキューム処理を適切に設定するためには、以下のいくつかの小節で説明する問題点を理解することが必須です。
 自動バキューム処理に信頼をおいている管理者にとっても、この資料に目を通すことはそれらの理解と自動バキューム処理の調整に役に立つことでしょう。
-  </p><div class="sect2" id="VACUUM-BASICS"><div class="titlepage"><div><div><h3 class="title">25.1.1. バキューム作業の基本</h3></div></div></div><span class="original">
+  </p><div class="sect2" id="VACUUM-BASICS"><div class="titlepage"><div><div><h3 class="title">25.1.1. バキューム作業の基本 <a href="#VACUUM-BASICS" class="id_link">#</a></h3></div></div></div><span class="original">
    &lt;title&gt;Vacuuming Basics&lt;/title&gt;
 </span><p>
 <span class="original">
@@ -101,7 +101,7 @@
 このため、他の実行中のセッションの性能を劣化させる可能性があります。
 バックグラウンドで実行されるバキューム処理による性能への影響を軽減させることを調整できるような設定パラメータがあります。
 <a class="xref" href="runtime-config-resource.html#RUNTIME-CONFIG-RESOURCE-VACUUM-COST" title="20.4.4. コストに基づくVacuum遅延">20.4.4</a>を参照してください。
-   </p></div><div class="sect2" id="VACUUM-FOR-SPACE-RECOVERY"><div class="titlepage"><div><div><h3 class="title">25.1.2. ディスク容量の復旧</h3></div></div></div><span class="original">
+   </p></div><div class="sect2" id="VACUUM-FOR-SPACE-RECOVERY"><div class="titlepage"><div><div><h3 class="title">25.1.2. ディスク容量の復旧 <a href="#VACUUM-FOR-SPACE-RECOVERY" class="id_link">#</a></h3></div></div></div><span class="original">
    &lt;title&gt;Recovering Disk Space&lt;/title&gt;
 </span><a id="id-1.6.12.12.6.2" class="indexterm"></a><a id="id-1.6.12.12.6.3" class="indexterm"></a><p>
 <span class="original">
@@ -241,7 +241,7 @@
 <code class="command">TRUNCATE</code>はテーブルの全ての内容を即座に削除します。
 また、その後に不要となったディスク容量を回収するために<code class="command">VACUUM</code>や<code class="command">VACUUM FULL</code>を行う必要がありません。
 不利な点は厳格なMVCCの意味論に違反することです。
-   </p></div></div><div class="sect2" id="VACUUM-FOR-STATISTICS"><div class="titlepage"><div><div><h3 class="title">25.1.3. プランナ用の統計情報の更新</h3></div></div></div><span class="original">
+   </p></div></div><div class="sect2" id="VACUUM-FOR-STATISTICS"><div class="titlepage"><div><div><h3 class="title">25.1.3. プランナ用の統計情報の更新 <a href="#VACUUM-FOR-STATISTICS" class="id_link">#</a></h3></div></div></div><span class="original">
    &lt;title&gt;Updating Planner Statistics&lt;/title&gt;
 </span><a id="id-1.6.12.12.7.2" class="indexterm"></a><a id="id-1.6.12.12.7.3" class="indexterm"></a><a id="id-1.6.12.12.7.4" class="indexterm"></a><p>
 <span class="original">
@@ -373,7 +373,7 @@
 自動バキュームデーモンはパーティション化テーブルに対して<code class="command">ANALYZE</code>コマンドを発行しません。
 継承の親は親自身が変更された場合にのみ解析されます。子テーブルの変更は親テーブルでの自動解析を誘発しません。
 もし問い合わせが適切な計画のために親テーブルの統計情報を必要とするなら、統計情報を最新に保つために、それらのテーブルに対して定期的に手動で<code class="command">ANALYZE</code>を実行することが必要です。
-    </p></div></div><div class="sect2" id="VACUUM-FOR-VISIBILITY-MAP"><div class="titlepage"><div><div><h3 class="title">25.1.4. 可視性マップの更新</h3></div></div></div><span class="original">
+    </p></div></div><div class="sect2" id="VACUUM-FOR-VISIBILITY-MAP"><div class="titlepage"><div><div><h3 class="title">25.1.4. 可視性マップの更新 <a href="#VACUUM-FOR-VISIBILITY-MAP" class="id_link">#</a></h3></div></div></div><span class="original">
    &lt;title&gt;Updating the Visibility Map&lt;/title&gt;
 </span><p>
 <span class="original">
@@ -409,7 +409,7 @@
 そのページのタプルがすべて可視であることが分かれば、ヒープの取り出しを省くことができます。
 可視性マップによりディスクアクセスを防ぐことができる大規模なデータ群に対して、特に有効です。
 可視性マップはヒープより非常に小さいため、ヒープが非常に大きい場合であっても簡単にキャッシュすることができます。
-   </p></div><div class="sect2" id="VACUUM-FOR-WRAPAROUND"><div class="titlepage"><div><div><h3 class="title">25.1.5. トランザクションIDの周回エラーの防止</h3></div></div></div><span class="original">
+   </p></div><div class="sect2" id="VACUUM-FOR-WRAPAROUND"><div class="titlepage"><div><div><h3 class="title">25.1.5. トランザクションIDの周回エラーの防止 <a href="#VACUUM-FOR-WRAPAROUND" class="id_link">#</a></h3></div></div></div><span class="original">
    &lt;title&gt;Preventing Transaction ID Wraparound Failures&lt;/title&gt;
 </span><a id="id-1.6.12.12.9.2" class="indexterm"></a><a id="id-1.6.12.12.9.3" class="indexterm"></a><a id="id-1.6.12.12.9.4" class="indexterm"></a><a id="id-1.6.12.12.9.5" class="indexterm"></a><p>
 <span class="original">
@@ -677,14 +677,15 @@ SELECT datname, age(datfrozenxid) FROM pg_database;
      parameter is specified, &lt;command&gt;VACUUM&lt;/command&gt; prints various
      statistics about the table.  This includes information about how
      &lt;structfield&gt;relfrozenxid&lt;/structfield&gt; and
-     &lt;structfield&gt;relminmxid&lt;/structfield&gt; advanced.  The same details appear
-     in the server log when autovacuum logging (controlled by &lt;xref
+     &lt;structfield&gt;relminmxid&lt;/structfield&gt; advanced, and the number of
+     newly frozen pages.  The same details appear in the server log when
+     autovacuum logging (controlled by &lt;xref
       linkend="guc-log-autovacuum-min-duration"/&gt;) reports on a
      &lt;command&gt;VACUUM&lt;/command&gt; operation executed by autovacuum.
 </span>
-<code class="command">VACUUM</code>コマンドの<code class="literal">VERBOSE</code>パラメータが指定されている場合、<code class="command">VACUUM</code>はテーブルに関するさまざまな統計情報を出力します。
-これには<code class="structfield">relfrozenxid</code>および<code class="structfield">relminmxid</code>をどのように繰り上げたかの詳細情報が含まれます。
-(<a class="xref" href="runtime-config-logging.html#GUC-LOG-AUTOVACUUM-MIN-DURATION">log_autovacuum_min_duration</a>で制御される)自動バキュームロギングが自動バキュームによって実行された<code class="command">VACUUM</code>操作を報告する場合にも、サーバログに同じ詳細が表示されます。
+《機械翻訳》<code class="command">VACUUM</code>コマンドの<code class="literal">VERBOSE</code>パラメータが指定されている場合、<code class="command">VACUUM</code>はテーブルに関するさまざまな統計情報を出力します。
+ これには、<code class="structfield">relfrozenxid</code>と<code class="structfield">relminmxid</code>がどのように進んだか、新しく凍結されたページの数などの情報が含まれます。
+ 自動バキュームロギング（<a class="xref" href="runtime-config-logging.html#GUC-LOG-AUTOVACUUM-MIN-DURATION">log_autovacuum_min_duration</a>で制御）によって実行された<code class="command">VACUUM</code>操作について、サーバログに詳細が出力されるときにも同じ詳細が表示されます。
     </p></div><p>
 <span class="original">
     &lt;command&gt;VACUUM&lt;/command&gt; normally only scans pages that have been modified
@@ -762,7 +763,7 @@ HINT:  Stop the postmaster and vacuum that database in single-user mode.
 しかし、システムがこの安全のための停止モードになると、コマンドを実行しませんので、実行するためには、サーバを停止し、シングルユーザモードでサーバを起動して<code class="command">VACUUM</code>を行う他ありません。
 この停止モードはシングルユーザモードでは強制されません。
 シングルユーザモードの使用に関する詳細は<a class="xref" href="app-postgres.html" title="postgres"><span class="refentrytitle"><span class="application">postgres</span></span></a>マニュアルページを参照してください。
-   </p><div class="sect3" id="VACUUM-FOR-MULTIXACT-WRAPAROUND"><div class="titlepage"><div><div><h4 class="title">25.1.5.1. マルチトランザクションと周回</h4></div></div></div><span class="original">
+   </p><div class="sect3" id="VACUUM-FOR-MULTIXACT-WRAPAROUND"><div class="titlepage"><div><div><h4 class="title">25.1.5.1. マルチトランザクションと周回 <a href="#VACUUM-FOR-MULTIXACT-WRAPAROUND" class="id_link">#</a></h4></div></div></div><span class="original">
     &lt;title&gt;Multixacts and Wraparound&lt;/title&gt;
 </span><a id="id-1.6.12.12.9.20.2" class="indexterm"></a><a id="id-1.6.12.12.9.20.3" class="indexterm"></a><a id="id-1.6.12.12.9.20.4" class="indexterm"></a><p>
 <span class="original">
@@ -833,7 +834,7 @@ HINT:  Stop the postmaster and vacuum that database in single-user mode.
 安全装置として、<a class="xref" href="runtime-config-autovacuum.html#GUC-AUTOVACUUM-MULTIXACT-FREEZE-MAX-AGE">autovacuum_multixact_freeze_max_age</a>よりもそのマルチトランザクション年代が大きいどのテーブルに対しても、積極的なバキューム走査が起こります。
 また、マルチトランザクションメンバによるストレージの占有が2GBを超えた場合にも、積極的なバキューム走査は、マルチトランザクション年代の一番古いものから始めて、すべてのテーブルに対してより頻繁に起こります。
 この種の積極的走査はどちらも、自動バキュームが名目上は無効にされていても発生します。
-    </p></div></div><div class="sect2" id="AUTOVACUUM"><div class="titlepage"><div><div><h3 class="title">25.1.6. 自動バキュームデーモン</h3></div></div></div><span class="original">
+    </p></div></div><div class="sect2" id="AUTOVACUUM"><div class="titlepage"><div><div><h3 class="title">25.1.6. 自動バキュームデーモン <a href="#AUTOVACUUM" class="id_link">#</a></h3></div></div></div><span class="original">
    &lt;title&gt;The Autovacuum Daemon&lt;/title&gt;
 </span><a id="id-1.6.12.12.10.2" class="indexterm"></a><a id="id-1.6.12.12.10.3" class="indexterm"></a><p>
 <span class="original">
@@ -1058,4 +1059,4 @@ analyze threshold = analyze base threshold + analyze scale factor * number of tu
      effectively prevent autovacuums from ever completing.
 </span>
 <code class="literal">SHARE UPDATE EXCLUSIVE</code>ロックと衝突するロックを獲得する、定期的に動作するコマンド(例えばANALYZE)により、自動バキュームが実質的に終わらなくなることがあります。
-    </p></div></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="maintenance.html" title="第25章 定常的なデータベース保守作業">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="maintenance.html" title="第25章 定常的なデータベース保守作業">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="routine-reindex.html" title="25.2. 定常的なインデックスの再作成">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">第25章 定常的なデータベース保守作業 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 15.4文書">ホーム</a></td><td width="40%" align="right" valign="top"> 25.2. 定常的なインデックスの再作成</td></tr></table></div></body></html>
+    </p></div></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="maintenance.html" title="第25章 定常的なデータベース保守作業">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="maintenance.html" title="第25章 定常的なデータベース保守作業">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="routine-reindex.html" title="25.2. 定常的なインデックスの再作成">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">第25章 定常的なデータベース保守作業 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 16.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 25.2. 定常的なインデックスの再作成</td></tr></table></div></body></html>

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>GRANT</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="sql-fetch.html" title="FETCH" /><link rel="next" href="sql-importforeignschema.html" title="IMPORT FOREIGN SCHEMA" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 15.4文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="sql-commands.html" title="SQLコマンド">SQLコマンド</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 15.4 : sql-grant.html">誤訳等の報告
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>GRANT</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="sql-fetch.html" title="FETCH" /><link rel="next" href="sql-importforeignschema.html" title="IMPORT FOREIGN SCHEMA" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 16.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="sql-commands.html" title="SQLコマンド">SQLコマンド</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 16.0 : sql-grant.html">誤訳等の報告
                     </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="sql-fetch.html" title="FETCH">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="sql-commands.html" title="SQLコマンド">上へ</a></td><td width="60%" align="center">GRANT</td><td width="20%" align="right"> <a accesskey="n" href="sql-importforeignschema.html" title="IMPORT FOREIGN SCHEMA">次へ</a></td></tr></table><hr /></div><div class="refentry" id="SQL-GRANT"><div class="titlepage"></div><a id="id-1.9.3.150.1" class="indexterm"></a><div class="refnamediv"><h2><span class="refentrytitle">GRANT</span></h2><p>GRANT<span class="original">
   &lt;refpurpose&gt;define access privileges&lt;/refpurpose&gt;
 </span> — アクセス権限を定義する</p></div><div class="refsynopsisdiv"><h2>概要</h2><pre class="synopsis">
@@ -80,7 +80,7 @@ GRANT { USAGE | ALL [ PRIVILEGES ] }
     [ GRANTED BY <em class="replaceable"><code>role_specification</code></em> ]
 
 GRANT <em class="replaceable"><code>role_name</code></em> [, ...] TO <em class="replaceable"><code>role_specification</code></em> [, ...]
-    [ WITH ADMIN OPTION ]
+    [ WITH { ADMIN | INHERIT | SET } { OPTION | TRUE | FALSE } ]
     [ GRANTED BY <em class="replaceable"><code>role_specification</code></em> ]
 
 <span class="original">
@@ -233,36 +233,115 @@ GRANT <em class="replaceable"><code>role_name</code></em> [, ...] TO <em class="
 <span class="original">
    This variant of the &lt;command&gt;GRANT&lt;/command&gt; command grants membership
    in a role to one or more other roles.  Membership in a role is significant
-   because it conveys the privileges granted to a role to each of its
-   members.
+   because it potentially allows access to the privileges granted to a role
+   to each of its members, and potentially also the ability to make changes
+   to the role itself. However, the actual permissions conferred depend on
+   the options associated with the grant.
 </span>
-この種類の<code class="command">GRANT</code>コマンドは、ロール内のメンバ資格を1つ以上の他のロールに付与します。
+《マッチ度[51.870324]》この種類の<code class="command">GRANT</code>コマンドは、ロール内のメンバ資格を1つ以上の他のロールに付与します。
 これによりロールに付与された権限が各メンバに与えられるので、ロール内のメンバ資格は重要です。
+《機械翻訳》<code class="command">GRANT</code>コマンドのこの変形では、メンバーシップ内のロールに1つ以上の他のロールを付与します。
+メンバーシップ内のロールは、各メンバーに対してロールに付与された権限をアクセスに付与する可能性があり、makeへの権限がロール自分自身に変更される可能性もあるため、重要です。
+ただし、付与される実際の権限は、付与に関連付けられたオプションによって異なります。
   </p><p>
 <span class="original">
-   If &lt;literal&gt;WITH ADMIN OPTION&lt;/literal&gt; is specified, the member can
+   Each of the options described below can be set to either
+   &lt;literal&gt;TRUE&lt;/literal&gt; or &lt;literal&gt;FALSE&lt;/literal&gt;. The keyword
+   &lt;literal&gt;OPTION&lt;/literal&gt; is accepted as a synonym for
+   &lt;literal&gt;TRUE&lt;/literal&gt;, so that &lt;literal&gt;WITH ADMIN OPTION&lt;/literal&gt;
+   is a synonym for &lt;literal&gt;WITH ADMIN TRUE&lt;/literal&gt;.
+</span>
+《機械翻訳》以下の各オプションは、<code class="literal">真</code>または<code class="literal">偽</code>のいずれかに設定できます。
+キーワード<code class="literal">OPTION</code>は<code class="literal">真</code>の同義語として受け入れられるため、<code class="literal">WITHアドミンオプション</code>は<code class="literal">WITH ADMIN真</code>の同義語です。
+  </p><p>
+<span class="original">
+   The &lt;literal&gt;ADMIN&lt;/literal&gt; option allows the member to
    in turn grant membership in the role to others, and revoke membership
    in the role as well.  Without the admin option, ordinary users cannot
    do that.  A role is not considered to hold &lt;literal&gt;WITH ADMIN
    OPTION&lt;/literal&gt; on itself.  Database superusers can grant or revoke
-   membership in any role to anyone.  Roles having
-   &lt;literal&gt;CREATEROLE&lt;/literal&gt; privilege can grant or revoke membership
-   in any role that is not a superuser.
+   membership in any role to anyone. This option defaults to
+   &lt;literal&gt;FALSE&lt;/literal&gt;.
 </span>
-<code class="literal">WITH ADMIN OPTION</code>が指定された場合、メンバはロール内のメンバ資格を他に付与できるようになります。
+《マッチ度[61.613692]》<code class="literal">WITH ADMIN OPTION</code>が指定された場合、メンバはロール内のメンバ資格を他に付与できるようになります。
 また同様にロール内のメンバ資格を取り消すこともできるようになります。
 アドミンオプションがないと、一般ユーザは他への権限の付与や取り消しを行うことができません。
 ロールはそれ自体についての<code class="literal">WITH ADMIN OPTION</code>を保持しているとはみなされません。
 データベーススーパーユーザはすべてのロール内のメンバ資格を誰にでも付与したり、取り消したりすることができます。
 <code class="literal">CREATEROLE</code>権限を持つロールは、スーパーユーザロール以外の任意のロール内のメンバ資格の付与、取り消しが可能です。
+《機械翻訳》<code class="literal">ADMIN</code>オプションを使用すると、メンバはロールのメンバーシップを他のユーザーに付与し、ロールのメンバーシップを取り消すことができます。
+アドミンオプションがない場合、一般ユーザーはこれを行うことができません。
+ロールは自分自身で<code class="literal">WITHアドミンオプション</code>を保持しているとはみなされません。
+データベーススーパーユーザーは、どのロールのメンバーシップも誰にでも付与または取り消すことができます。
+このオプションのデフォルトは<code class="literal">偽</code>です。
+  </p><p>
+<span class="original">
+   The &lt;literal&gt;INHERIT&lt;/literal&gt; option, if it is set to
+   &lt;literal&gt;TRUE&lt;/literal&gt;, causes the member to inherit the privileges of
+   the granted role. That is, it can automatically use whatever database
+   privileges have been granted to that role. If set to
+   &lt;literal&gt;FALSE&lt;/literal&gt;, the member does not inherit the privileges
+   of the granted role. If this clause is not specified, it defaults to
+   true if the member role is set to &lt;literal&gt;INHERIT&lt;/literal&gt; and to false
+   if the member role is set to &lt;literal&gt;NOINHERIT&lt;/literal&gt;.
+   See &lt;link linkend="sql-createrole"&gt;&lt;command&gt;CREATE ROLE&lt;/command&gt;&lt;/link&gt;.
+</span>
+《機械翻訳》<code class="literal">INHERIT</code>オプションが<code class="literal">真</code>に設定されている場合、メンバは付与されたロールの権限を継承します。
+つまり、そのデータベースに付与されているロール権限を自動的に使用できます。
+<code class="literal">偽</code>に設定されている場合、メンバは付与されたロールの権限を継承しません。
+この句が指定されていない場合、メンバロールが<code class="literal">INHERIT</code>に設定されていると真がデフォルトになり、メンバロールが<code class="literal">NOINHERIT</code>に設定されていると偽がデフォルトになります。
+<a class="link" href="sql-createrole.html" title="CREATE ROLE"><code class="command">CREATEロール</code></a>を参照してください。
+  </p><p>
+<span class="original">
+   The &lt;literal&gt;SET&lt;/literal&gt; option, if it is set to
+   &lt;literal&gt;TRUE&lt;/literal&gt;, allows the member to change to the granted
+   role using the
+   &lt;link linkend="sql-set-role"&gt;&lt;command&gt;SET ROLE&lt;/command&gt;&lt;/link&gt;
+   command. If a role is an indirect member of another role, it can use
+   &lt;literal&gt;SET ROLE&lt;/literal&gt; to change to that role only if there is a
+   chain of grants each of which has &lt;literal&gt;SET TRUE&lt;/literal&gt;.
+   This option defaults to &lt;literal&gt;TRUE&lt;/literal&gt;.
+</span>
+《機械翻訳》<code class="literal">SET</code>オプションが<code class="literal">真</code>に設定されている場合、<a class="link" href="sql-set-role.html" title="SET ROLE"><code class="command">SETメンバ</code></a>ロールを使用して、ロールを認可されたコマンドに変更できます。
+あるロールが別のロールの間接メンバである場合、<code class="literal">SETロール</code>を持つ認可のチェーンがある場合にのみ、<code class="literal">SET真</code>を使用してそのロールに変更できます。
+このオプションのデフォルトは<code class="literal">真</code>です。
+  </p><p>
+<span class="original">
+   To create an object owned by another role or give ownership of an existing
+   object to another role, you must have the ability to &lt;literal&gt;SET
+   ROLE&lt;/literal&gt; to that role; otherwise, commands such as &lt;literal&gt;ALTER
+   ... OWNER TO&lt;/literal&gt; or &lt;literal&gt;CREATE DATABASE ... OWNER&lt;/literal&gt;
+   will fail.  However, a user who inherits the privileges of a role but does
+   not have the ability to &lt;literal&gt;SET ROLE&lt;/literal&gt; to that role may be
+   able to obtain full access to the role by manipulating existing objects
+   owned by that role (e.g. they could redefine an existing function to act
+   as a Trojan horse).  Therefore, if a role's privileges are to be inherited
+   but should not be accessible via &lt;literal&gt;SET ROLE&lt;/literal&gt;, it should not
+   own any SQL objects.
+</span>
+《機械翻訳》別のオブジェクトが所有するロールを作成する場合、または既存のオブジェクトのオーナーシップを別のロールに付与する場合は、そのロールに対して<code class="literal">SETロール</code>を実行できる必要があります。
+実行できない場合、<code class="literal">ALTER.所有者TO</code>または<code class="literal">CREATEデータベース.所有者</code>などのコマンドは失敗します。
+ただし、ロールの権限は継承に付与されているが、そのロールに対して<code class="literal">SETロール</code>を実行できる権限を持たないユーザは、そのロールが所有する既存のオブジェクトを操作することで、そのロールに対して完全なアクセスを取得できる場合があります(たとえば、既存のを再定義してトロイの木馬として機能させることができます)。
+したがって、ロールの権限を継承するが、<code class="literal">SET</code>を介してアクセスできないようにする場合は、オブジェクトを所有しないようにします。
+関数ロールSQL
   </p><p>
 <span class="original">
    If &lt;literal&gt;GRANTED BY&lt;/literal&gt; is specified, the grant is recorded as
-   having been done by the specified role.  Only database superusers may
-   use this option, except when it names the same role executing the command.
+   having been done by the specified role. A user can only attribute a grant
+   to another role if they possess the privileges of that role. The role
+   recorded as the grantor must have &lt;literal&gt;ADMIN OPTION&lt;/literal&gt; on the
+   target role, unless it is the bootstrap superuser. When a grant is recorded
+   as having a grantor other than the bootstrap superuser, it depends on the
+   grantor continuing to possess &lt;literal&gt;ADMIN OPTION&lt;/literal&gt; on the role;
+   so, if &lt;literal&gt;ADMIN OPTION&lt;/literal&gt; is revoked, dependent grants must
+   be revoked as well.
 </span>
-<code class="literal">GRANTED BY</code>が指定された場合、付与は指定されたロールにより行なわれたと記録されます。
-コマンドを実行しているのと同じロールの名前を指定する場合を除き、データベーススーパーユーザだけがこのオプションを利用できます。
+《機械翻訳》<code class="literal">GRANTED BY</code>が指定されている場合、付与は指定されたロールによって行われたものとして記録されます。
+ユーザが別のロールに付与を属性できるのは、そのロールの権限を所有している場合のみです。
+付与者として記録されているロールは、ターゲットロールに<code class="literal">アドミンオプション</code>を持っている必要があります。
+ただし、ブートストラップスーパーユーザの場合は除きます。
+ブートストラップスーパーユーザ以外の付与者を持っていると記録されている付与は、ロールに<code class="literal">アドミンオプション</code>を引き続き所有している付与者に依存します。
+したがって、<code class="literal">アドミンオプション</code>が取り消された場合、依存する付与も取り消される必要があります。
   </p><p>
 <span class="original">
    Unlike the case with privileges, membership in a role cannot be granted
@@ -339,11 +418,13 @@ GRANT <em class="replaceable"><code>role_name</code></em> [, ...] TO <em class="
     owner of the affected object.  In particular, privileges granted via
     such a command will appear to have been granted by the object owner.
     (For role membership, the membership appears to have been granted
-    by the containing role itself.)
+    by the bootstrap superuser.)
 </span>
-スーパーユーザが<code class="command">GRANT</code>や<code class="command">REVOKE</code>の発行を選択した場合、それらのコマンドは対象とするオブジェクトの所有者が発行したかのように実行されます。
+《マッチ度[89.350649]》スーパーユーザが<code class="command">GRANT</code>や<code class="command">REVOKE</code>の発行を選択した場合、それらのコマンドは対象とするオブジェクトの所有者が発行したかのように実行されます。
 特に、こうしたコマンドで与えられる権限は、オブジェクトの所有者によって与えられたものとして表されます。
 （ロールのメンバ資格では、メンバ資格は含まれるロール自身が与えたものとして表されます。）
+《機械翻訳》スーパーユーザが<code class="command">GRANT</code>または<code class="command">REVOKE</code>コマンドを発行することを選択した場合、コマンドは影響を受けたオブジェクトの所有者によって発行されたものとして実行されます。
+特に、そのようなコマンドを介して付与された特権は、オブジェクト所有者によって付与されたものとして表示されます(ロールメンバーシップの場合、メンバーシップはブートストラップスーパーユーザによって付与されたものとして表示されます)。
    </p><p>
 <span class="original">
     &lt;command&gt;GRANT&lt;/command&gt; and &lt;command&gt;REVOKE&lt;/command&gt; can also be done by a role
@@ -508,4 +589,4 @@ PostgreSQLではグラントオプションはロールに対して与えるこ�
 データベース、テーブル空間、スキーマ、言語、設定パラメータについての権限は<span class="productname">PostgreSQL</span>の拡張です。
    </p></div><div class="refsect1" id="id-1.9.3.150.9"><h2>関連項目</h2><span class="original">
   &lt;title&gt;See Also&lt;/title&gt;
-</span><span class="simplelist"><a class="xref" href="sql-revoke.html" title="REVOKE"><span class="refentrytitle">REVOKE</span></a>, <a class="xref" href="sql-alterdefaultprivileges.html" title="ALTER DEFAULT PRIVILEGES"><span class="refentrytitle">ALTER DEFAULT PRIVILEGES</span></a></span></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="sql-fetch.html" title="FETCH">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="sql-commands.html" title="SQLコマンド">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="sql-importforeignschema.html" title="IMPORT FOREIGN SCHEMA">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">FETCH </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 15.4文書">ホーム</a></td><td width="40%" align="right" valign="top"> IMPORT FOREIGN SCHEMA</td></tr></table></div></body></html>
+</span><span class="simplelist"><a class="xref" href="sql-revoke.html" title="REVOKE"><span class="refentrytitle">REVOKE</span></a>, <a class="xref" href="sql-alterdefaultprivileges.html" title="ALTER DEFAULT PRIVILEGES"><span class="refentrytitle">ALTER DEFAULT PRIVILEGES</span></a></span></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="sql-fetch.html" title="FETCH">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="sql-commands.html" title="SQLコマンド">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="sql-importforeignschema.html" title="IMPORT FOREIGN SCHEMA">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">FETCH </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 16.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> IMPORT FOREIGN SCHEMA</td></tr></table></div></body></html>
