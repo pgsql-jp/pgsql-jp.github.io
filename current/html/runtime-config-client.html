@@ -690,14 +690,10 @@ PostgreSQLは<code class="literal">origin</code>と<code class="literal">local</
         autovacuums.  For more information see &lt;xref
         linkend="vacuum-for-wraparound"/&gt;.
 </span>
-《マッチ度[79.520295]》<code class="command">VACUUM</code>がテーブルスキャン時に行バージョンをフリーズするかどうかを決定する際に使用する、カットオフ（トランザクション）年代を指定します。
+<code class="command">VACUUM</code>が、古いXIDを持つページをフリーズするきっかけとするかどうかを決定する、カットオフ年代を（トランザクション単位で）指定します。
 デフォルトは5千万トランザクションです。
 ユーザはこの値を0から10億までの間で任意の値に設定することができますが、<code class="command">VACUUM</code>は警告なく<a class="xref" href="runtime-config-autovacuum.html#GUC-AUTOVACUUM-FREEZE-MAX-AGE">autovacuum_freeze_max_age</a>の半分までの値に値を制限します。
 このため、強制的なautovacuumの間隔が不合理に短くなることはありません。
-詳細は<a class="xref" href="routine-vacuuming.html#VACUUM-FOR-WRAPAROUND" title="25.1.5. トランザクションIDの周回エラーの防止">25.1.5</a>を参照してください。
-《機械翻訳》古いXIDを持つバキュームをトリガで凍結するかどうかを決定するために、<code class="command">ページ</code>が使用する期限(トランザクション単位)を指定します。
-デフォルトは50,000,000トランザクションです。
-ユーザはこの値をゼロから10億までの範囲で設定できますが、<code class="command">VACUUM</code>は暗黙のうちに有効値を<a class="xref" href="runtime-config-autovacuum.html#GUC-AUTOVACUUM-FREEZE-MAX-AGE">autovacuum_freeze_max_age</a>の値の半分に制限するため、強制された自動バキュームの間に不当に短い時間が生じることはありません。
 詳細は<a class="xref" href="routine-vacuuming.html#VACUUM-FOR-WRAPAROUND" title="25.1.5. トランザクションIDの周回エラーの防止">25.1.5</a>を参照してください。
        </p></dd><dt id="GUC-VACUUM-FAILSAFE-AGE"><span class="term"><code class="varname">vacuum_failsafe_age</code> (<code class="type">integer</code>)
       <a id="id-1.6.7.15.2.2.22.1.3" class="indexterm"></a>
@@ -714,7 +710,7 @@ PostgreSQLは<code class="literal">origin</code>と<code class="literal">local</
         already been running for some time, though it's possible for
         the failsafe to trigger during any &lt;command&gt;VACUUM&lt;/command&gt;.
 </span>
-<code class="command">VACUUM</code>がシステム全体トランザクションID周回障害を避けるために異例の措置を取るようになる、テーブルの<code class="structname">pg_class</code>.<code class="structfield">relfrozenxid</code>フィールドが到達する最大の（トランザクション数単位での）年齢を指定します。
+<code class="command">VACUUM</code>がシステム全体に渡るトランザクションID周回障害を避けるために異例の措置を取るようになる、テーブルの<code class="structname">pg_class</code>.<code class="structfield">relfrozenxid</code>フィールドが到達する最大の（トランザクション数単位での）年齢を指定します。
 これは<code class="command">VACUUM</code>の最後の手段となる戦略です。
 この安全機構は典型的には、トランザクションID周回を防ぐための自動バキュームがすでに走っているときに起動されます。
 しかし、すべての<code class="command">VACUUM</code>の実行中にこの安全機構が起動する可能性があります。
@@ -728,8 +724,8 @@ PostgreSQLは<code class="literal">origin</code>と<code class="literal">local</
         free to make use of all of
         &lt;glossterm linkend="glossary-shared-memory"&gt;shared buffers&lt;/glossterm&gt;.
 </span>
-《機械翻訳》フェイルセーフがトリガーされると、有効なコストベースの遅延は適用されなくなり、それ以降の重要でないメンテナンスタスク(インデックスバキューム処理など)はバイパスされ、使用中の<a class="glossterm" href="glossary.html#GLOSSARY-BUFFER-ACCESS-STRATEGY"><em class="glossterm"><a class="glossterm" href="glossary.html#GLOSSARY-BUFFER-ACCESS-STRATEGY" title="Buffer Access Strategy">バッファアクセスストラテジ</a></em></a>はディセーブルになります。
-その結果、<code class="command">バキューム</code>は<a class="glossterm" href="glossary.html#GLOSSARY-SHARED-MEMORY"><em class="glossterm"><a class="glossterm" href="glossary.html#GLOSSARY-SHARED-MEMORY" title="Shared memory【共有メモリ】">共有バッファ</a></em></a>のすべてをフリーからmakeで使用することになります。
+この安全機構が起動すると、すべての有効なコストに基づく遅延はもはや適用されず、（インデックスのバキュームのような）必須ではない保守タスクは迂回されます。
+使用中の<a class="glossterm" href="glossary.html#GLOSSARY-BUFFER-ACCESS-STRATEGY"><em class="glossterm"><a class="glossterm" href="glossary.html#GLOSSARY-BUFFER-ACCESS-STRATEGY" title="Buffer Access Strategy">バッファアクセスストラテジ</a></em></a>は無効になり、その結果<code class="command">VACUUM</code>は<a class="glossterm" href="glossary.html#GLOSSARY-SHARED-MEMORY"><em class="glossterm"><a class="glossterm" href="glossary.html#GLOSSARY-SHARED-MEMORY" title="Shared memory【共有メモリ】">共有バッファ</a></em></a>のすべてを自由に使用することになります。
        </p><p>
 <span class="original">
         The default is 1.6 billion transactions.  Although users can
@@ -778,15 +774,10 @@ PostgreSQLは<code class="literal">origin</code>と<code class="literal">local</
         autovacuums.
         For more information see &lt;xref linkend="vacuum-for-multixact-wraparound"/&gt;.
 </span>
-《マッチ度[74.153298]》<code class="command">VACUUM</code>がテーブルをスキャンする際に、マルチトランザクションIDをより新しいトランザクションIDまたはマルチトランザクションIDに置き換えるかどうかを決める下限値をマルチトランザクション単位で指定します。
+<code class="command">VACUUM</code>がテーブルをスキャンする際に、ページを凍結するきっかけとするかどうかを決める下限値をマルチトランザクション単位で指定します。
 デフォルトは500万マルチトランザクションです。
 ユーザは0から10億まで任意の値を設定できますが、強制的な自動バキュームの間隔が短くなり過ぎないように、<code class="command">VACUUM</code>は<a class="xref" href="runtime-config-autovacuum.html#GUC-AUTOVACUUM-MULTIXACT-FREEZE-MAX-AGE">autovacuum_multixact_freeze_max_age</a>の半分に暗黙的に実効的な値を制限します。
 詳細は<a class="xref" href="routine-vacuuming.html#VACUUM-FOR-MULTIXACT-WRAPAROUND" title="25.1.5.1. マルチトランザクションと周回">25.1.5.1</a>をご覧ください。
-《機械翻訳》<code class="command">VACUUM</code>が古いマルチトランザクションIDのあるページをトリガで凍らせるかどうかを決定するために使用するカットオフ年齢を(multixactsで)指定します。
-デフォルトは5,000,000 multixactsです。
-ユーザはこの値をゼロから10億までのどこにでも設定できますが、<code class="command">VACUUM</code>は暗黙のうちに有効値を<a class="xref" href="runtime-config-autovacuum.html#GUC-AUTOVACUUM-MULTIXACT-FREEZE-MAX-AGE">autovacuum_multixact_freeze_max_age</a>の値の半分に制限します。
-これにより、強制された自動真空の間に不当に短い時間がないようにします。
-詳細は<a class="xref" href="routine-vacuuming.html#VACUUM-FOR-MULTIXACT-WRAPAROUND" title="25.1.5.1. マルチトランザクションと周回">25.1.5.1</a>を参照してください。
        </p></dd><dt id="GUC-VACUUM-MULTIXACT-FAILSAFE-AGE"><span class="term"><code class="varname">vacuum_multixact_failsafe_age</code> (<code class="type">integer</code>)
       <a id="id-1.6.7.15.2.2.25.1.3" class="indexterm"></a>
       <a id="id-1.6.7.15.2.2.25.1.4" class="indexterm"></a>
@@ -925,6 +916,7 @@ SET XML OPTION { DOCUMENT | CONTENT };
 更なる情報については、<a class="xref" href="gin-implementation.html#GIN-FAST-UPDATE" title="70.4.1. GIN高速更新手法">70.4.1</a>と<a class="xref" href="gin-tips.html" title="70.5. GINの小技">70.5</a>を参照してください。
        </p></dd><dt id="GUC-CREATEROLE-SELF-GRANT"><span class="term"><code class="varname">createrole_self_grant</code> (<code class="type">string</code>)
       <a id="id-1.6.7.15.2.2.30.1.3" class="indexterm"></a>
+      <a id="id-1.6.7.15.2.2.30.1.4" class="indexterm"></a>
       </span> <a href="#GUC-CREATEROLE-SELF-GRANT" class="id_link">#</a></dt><dd><p>
 <span class="original">
         If a user who has &lt;literal&gt;CREATEROLE&lt;/literal&gt; but not
@@ -935,9 +927,9 @@ SET XML OPTION { DOCUMENT | CONTENT };
         comma-separated list of these. The default value is an empty string,
         which disables the feature.
 </span>
-《機械翻訳》<code class="literal">CREATEROLE</code>を持ち、<code class="literal">ユーザ</code>を持たないスーパーユーザがロールを作成し、これが空でない値に設定されている場合、新しく作成されたロールは、指定されたオプションを持つ作成ユーザに付与されます。
+<code class="literal">CREATEROLE</code>を持ち、<code class="literal">SUPERUSER</code>を持たないユーザがロールを作成し、これが空でない値に設定されている場合、新しく作成されたロールは、この指定されたオプションを持ち、ロールを作成したユーザに付与されます。
 値は、<code class="literal">set</code>、<code class="literal">inherit</code>、またはこれらのリストをカンマで区切ったものである必要があります。
-デフォルト値は空の文字列であるため、機能は無効になります。
+デフォルト値は空の文字列であるため、この機能は無効になります。
        </p><p>
 <span class="original">
         The purpose of this option is to allow a &lt;literal&gt;CREATEROLE&lt;/literal&gt;
@@ -953,10 +945,10 @@ SET XML OPTION { DOCUMENT | CONTENT };
         to produce a similar behavior for &lt;literal&gt;CREATEROLE&lt;/literal&gt; users
         for users which they create.
 </span>
-《機械翻訳》このオプションの目的は、ユーザではない<code class="literal">CREATEROLE</code>スーパーユーザが、作成されたユーザを自動的に継承するか、または<code class="literal">SETロール</code>する権限を自動的に取得できるようにすることです。
-<code class="literal">CREATEROLE</code>ユーザは、作成されたロールに対して常に暗黙的に付与<code class="literal">アドミンオプション</code>されるため、そのユーザは、この設定と同じ効果を達成する<code class="literal">GRANT</code>ステートメントを常に実行できます。
-ただし、付与が自動的に行われる場合は、使用上の理由から便利です。
-スーパーユーザは、すべてのロールの権限を自動的に継承し、どのロールに対しても常に<code class="literal">SETロール</code>できます。
+このオプションの目的は、<code class="literal">CREATEROLE</code>が許可されているスーパーユーザではないユーザが、作成されたユーザを自動的に継承するか、または<code class="literal">SET ROLE</code>権限を自動的に取得できるようにすることです。
+<code class="literal">CREATEROLE</code>ユーザは、作成されたロールに対して常に暗黙的に<code class="literal">ADMIN OPTION</code>が付与されるため、そのユーザは、この設定と同じ効果を達成する<code class="literal">GRANT</code>文を常に実行できます。
+しかし、権限付与が自動的に行われることは、使用上の理由から便利です。
+スーパーユーザは、すべてのロールの権限を自動的に継承し、どのロールに対しても常に<code class="literal">SET ROLE</code>できます。
 また、この設定を使用して、<code class="literal">CREATEROLE</code>ユーザが作成したユーザに対して同様の動作を生成できます。
        </p></dd></dl></div></div><div class="sect2" id="RUNTIME-CONFIG-CLIENT-FORMAT"><div class="titlepage"><div><div><h3 class="title">20.11.2. ロケールと書式設定 <a href="#RUNTIME-CONFIG-CLIENT-FORMAT" class="id_link">#</a></h3></div></div></div><span class="original">
      &lt;title&gt;Locale and Formatting&lt;/title&gt;
@@ -1210,6 +1202,7 @@ SET XML OPTION { DOCUMENT | CONTENT };
 この変数が空に設定された場合（これがデフォルトです）、値はシステムに依存する方法でサーバの実行環境から継承されます。
        </p></dd><dt id="GUC-ICU-VALIDATION-LEVEL"><span class="term"><code class="varname">icu_validation_level</code> (<code class="type">enum</code>)
       <a id="id-1.6.7.15.3.2.11.1.3" class="indexterm"></a>
+      <a id="id-1.6.7.15.3.2.11.1.4" class="indexterm"></a>
       </span> <a href="#GUC-ICU-VALIDATION-LEVEL" class="id_link">#</a></dt><dd><p>
 <span class="original">
         When ICU locale validation problems are encountered, controls which
@@ -1222,7 +1215,7 @@ SET XML OPTION { DOCUMENT | CONTENT };
         &lt;literal&gt;WARNING&lt;/literal&gt;, &lt;literal&gt;ERROR&lt;/literal&gt;, and
         &lt;literal&gt;LOG&lt;/literal&gt;.
 </span>
-《機械翻訳》ICUロケール検証の問題が発生した場合、問題を報告するために使用される<a class="link" href="runtime-config-logging.html#RUNTIME-CONFIG-SEVERITY-LEVELS" title="表20.2 メッセージ深刻度レベル">メッセージレベル</a>を制御します。
+ICUロケール検証の問題が発生した場合、問題を報告するために使用される<a class="link" href="runtime-config-logging.html#RUNTIME-CONFIG-SEVERITY-LEVELS" title="表20.2 メッセージ深刻度レベル">メッセージレベル</a>を制御します。
 有効な値は、<code class="literal">DISABLED</code>、<code class="literal">DEBUG5</code>、<code class="literal">DEBUG4</code>、<code class="literal">DEBUG3</code>、<code class="literal">DEBUG2</code>、<code class="literal">DEBUG1</code>、<code class="literal">INFO</code>、<code class="literal">NOTICE</code>、<code class="literal">WARNING</code>、<code class="literal">ERROR</code>、および <code class="literal">LOG</code>です。
        </p><p>
 <span class="original">
@@ -1230,9 +1223,9 @@ SET XML OPTION { DOCUMENT | CONTENT };
         problems at all. Otherwise reports problems at the given message
         level. The default is &lt;literal&gt;WARNING&lt;/literal&gt;.
 </span>
-《機械翻訳》<code class="literal">DISABLED</code>に設定すると、レポートバリデーションの問題はまったく発生しません。
+<code class="literal">DISABLED</code>に設定すると、検証で見つかった問題は全く報告されません。
 それ以外の場合は、指定したメッセージレベルの問題が報告されます。
-デフォルトは<code class="literal">ワーニング</code>です。
+デフォルトは<code class="literal">WARNING</code>です。
        </p></dd><dt id="GUC-DEFAULT-TEXT-SEARCH-CONFIG"><span class="term"><code class="varname">default_text_search_config</code> (<code class="type">string</code>)
       <a id="id-1.6.7.15.3.2.12.1.3" class="indexterm"></a>
       <a id="id-1.6.7.15.3.2.12.1.4" class="indexterm"></a>

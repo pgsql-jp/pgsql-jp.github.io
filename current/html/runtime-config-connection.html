@@ -73,6 +73,7 @@
 スタンバイサーバを運用している場合、このパラメータはプライマリサーバでの設定と同じ、もしくはより高い値に設定しなければなりません。そうしないと問い合わせがスタンバイサーバ内で受け入れられません。
        </p></dd><dt id="GUC-RESERVED-CONNECTIONS"><span class="term"><code class="varname">reserved_connections</code> (<code class="type">integer</code>)
       <a id="id-1.6.7.7.2.2.4.1.3" class="indexterm"></a>
+      <a id="id-1.6.7.7.2.2.4.1.4" class="indexterm"></a>
       </span> <a href="#GUC-RESERVED-CONNECTIONS" class="id_link">#</a></dt><dd><p>
 <span class="original">
         Determines the number of connection &lt;quote&gt;slots&lt;/quote&gt; that are
@@ -88,9 +89,9 @@
         slots are available, new connections will be accepted only for
         superusers.
 </span>
-《機械翻訳》<a class="link" href="predefined-roles.html#PREDEFINED-ROLES-TABLE" title="表22.1 定義済みロール"><code class="literal">pg_use_予約_connections</code></a>コネクションの権限を持つロールによる接続の予約となるロール<span class="quote">「<span class="quote">スロット</span>」</span>の数を決定します。
-フリーコネクションスロットの数がより大きい<a class="xref" href="runtime-config-connection.html#GUC-SUPERUSER-RESERVED-CONNECTIONS">superuser_reserved_connections</a>であるが、以下から総和<code class="varname">スーパーユーザ_予約_connections</code>および<code class="varname">予約_connections</code>までの場合、新しい接続は<code class="literal">pg_use_予約_connections</code>の権限を持つスーパーユーザおよびロールに対してのみ受け入れられます。
-<code class="varname">スーパーユーザ_予約_connections</code>以下のコネクションスロットが利用可能な場合、新しい接続はスーパーユーザに対してのみ受け入れられます。
+<a class="link" href="predefined-roles.html#PREDEFINED-ROLES-TABLE" title="表22.1 定義済みロール"><code class="literal">pg_use_reserved_connections</code></a>権限を持つロールによる接続のために予約される接続<span class="quote">「<span class="quote">スロット</span>」</span>の数を決定します。
+空き接続スロットの数が<a class="xref" href="runtime-config-connection.html#GUC-SUPERUSER-RESERVED-CONNECTIONS">superuser_reserved_connections</a>より大きく、かつ<code class="varname">superuser_reserved_connections</code>と<code class="varname">reserved_connections</code>の合計以下の場合は常に、新しい接続はスーパーユーザあるいは<code class="literal">pg_use_reserved_connections</code>権限を持つロールに対してのみ受け入れられます。
+<code class="varname">superuser_reserved_connections</code>以下の接続スロットが利用可能な場合、新しい接続はスーパーユーザに対してのみ受け入れられます。
        </p><p>
 <span class="original">
         The default value is zero connections.  The value must be less than
@@ -98,12 +99,9 @@
         &lt;varname&gt;superuser_reserved_connections&lt;/varname&gt;.  This parameter can
         only be set at server start.
 </span>
-《マッチ度[63.106796]》デフォルトの値は3接続です。
-この値は <code class="varname">max_connections</code>より小さくなくてはなりません。
+デフォルトの値は0接続です。
+この値は <code class="varname">max_connections</code> - <code class="varname">superuser_reserved_connections</code>より小さくなくてはなりません。
 このパラメータはサーバ起動時のみ設定可能です。
-《機械翻訳》デフォルト値はゼロ接続です。
-値はより小さい<code class="varname">最大_connections</code>マイナス<code class="varname">スーパーユーザ_予約_connections</code>である必要があります。
-このパラメータはサーバスタートでのみ設定できます。
        </p></dd><dt id="GUC-SUPERUSER-RESERVED-CONNECTIONS"><span class="term"><code class="varname">superuser_reserved_connections</code>
       (<code class="type">integer</code>)
       <a id="id-1.6.7.7.2.2.5.1.3" class="indexterm"></a>
@@ -122,14 +120,10 @@
         use after the slots reserved by
         &lt;xref linkend="guc-reserved-connections"/&gt; have been exhausted.
 </span>
-《マッチ度[66.456693]》<span class="productname">PostgreSQL</span>のスーパーユーザによる接続のために予約されている接続<span class="quote">「<span class="quote">開口部（スロット）</span>」</span>の数を決定します。
+<span class="productname">PostgreSQL</span>のスーパーユーザによる接続のために予約されている接続<span class="quote">「<span class="quote">スロット</span>」</span>の数を決定します。
 最大、<a class="xref" href="runtime-config-connection.html#GUC-MAX-CONNECTIONS">max_connections</a>の数までの接続を同時に有効にすることができます。
-有効な接続数が<code class="varname">max_connections</code>から<code class="varname">superuser_reserved_connections</code>を差し引いた数以上のときは、新規接続はスーパーユーザのみが許可され、新たなレプリケーション接続は受け入れられません。
-《機械翻訳》スーパーユーザによる接続のためのコネクションである予約<span class="quote">「<span class="quote">スロット</span>」</span>の数を決定します。
-多くの場合、アクティブ接続は同時にアクティブになることができます。
-マイナス同時接続の数が少なくとも<code class="varname">max_connections</code><code class="varname">superuser_reserved_connections</code>である場合、新しい接続はスーパーユーザに対してのみ受け入れられます。
-このパラメータによるコネクションスロット予約は、<a class="xref" href="runtime-config-connection.html#GUC-RESERVED-CONNECTIONS">reserved_connections</a>によるスロット予約が使い果たされた後の緊急使用のための最終予約として意図されています。
-<span class="productname">PostgreSQL</span><a class="xref" href="runtime-config-connection.html#GUC-MAX-CONNECTIONS">max_connections</a>
+有効な同時接続数が<code class="varname">max_connections</code>から<code class="varname">superuser_reserved_connections</code>を差し引いた数以上のときは、新規接続はスーパーユーザのみが許可されます。
+このパラメータによる接続スロット予約は、<a class="xref" href="runtime-config-connection.html#GUC-RESERVED-CONNECTIONS">reserved_connections</a>によるスロット予約が使い果たされた後の緊急使用のための最終的な予備を意図しています。
        </p><p>
 <span class="original">
         The default value is three connections. The value must be less
@@ -138,7 +132,7 @@
         This parameter can only be set at server start.
 </span>
 デフォルトの値は3接続です。
-この値は <code class="varname">max_connections</code>より小さくなくてはなりません。
+この値は <code class="varname">max_connections</code>から<code class="varname">reserved_connections</code>を引いたものより小さくなくてはなりません。
 このパラメータはサーバ起動時のみ設定可能です。
        </p></dd><dt id="GUC-UNIX-SOCKET-DIRECTORIES"><span class="term"><code class="varname">unix_socket_directories</code> (<code class="type">string</code>)
       <a id="id-1.6.7.7.2.2.6.1.3" class="indexterm"></a>
@@ -326,20 +320,13 @@ Unixドメインソケットは通常のUnixファイルシステムパーミッ
         In sessions connected via a Unix-domain socket, this parameter is
         ignored and always reads as zero.
 </span>
-《マッチ度[71.029412]》クライアントとのやり取りがなくなった後、オペレーティングシステムがTCPのkeepaliveパケットをクライアントに送信するまでの時間を指定します。
+クライアントとのやり取りがなくなった後、オペレーティングシステムがTCPのkeepaliveパケットをクライアントに送信するまでの時間を指定します。
 この値が単位なしで指定された場合は、秒単位であるとみなします。
 0（デフォルトです）の場合はオペレーティングシステムのデフォルト値を使用します。
+Windowsでは、システムのデフォルト値を読み取る方法がないため、値0を設定すると、このパラメータは2時間に設定されます。
 このパラメータは<code class="symbol">TCP_KEEPIDLE</code>または同等のソケットオプションをサポートするシステムと、Windowsでのみサポートされます。
 その他のシステムではゼロでなければなりません。
 Unixドメインソケット経由で接続されたセッションでは、このパラメータは無視され、常にゼロとして読み取られます。
-《機械翻訳》ネットワークがTCPオペレーティングシステムをクライアントに送信するまでの、キープアライブメッセージアクティビティがない時間を指定します。
-この値をユニットなしで指定すると、秒として解釈されます。
-値0(デフォルト)では、オペレーティングシステムのデフォルトが選択されます。
-Windowsでは、システムのデフォルト値を読み取る方法がないため、値0を設定すると、このパラメータは2時間に設定されます。
-このパラメータは、サポート<code class="symbol">TCP_KEEPIDLE</code>または同等のソケットオプション、およびWindowsのシステムでのみサポートされています。
-他のシステムではゼロである必要があります。
-Unix-ドメインソケット経由で接続されたセッションでは、このパラメータは無視され、常にゼロとして読み取られます。
-Windows
        </p></dd><dt id="GUC-TCP-KEEPALIVES-INTERVAL"><span class="term"><code class="varname">tcp_keepalives_interval</code> (<code class="type">integer</code>)
       <a id="id-1.6.7.7.3.2.2.1.3" class="indexterm"></a>
       <a id="id-1.6.7.7.3.2.2.1.4" class="indexterm"></a>
@@ -357,20 +344,13 @@ Windows
         In sessions connected via a Unix-domain socket, this parameter is
         ignored and always reads as zero.
 </span>
-《マッチ度[70.839470]》TCPのkeepaliveメッセージに対してクライアントから応答がない場合に、再送を行うまでの時間を指定します。
+TCPのkeepaliveメッセージに対してクライアントから応答がない場合に、再送を行うまでの時間を指定します。
 この値が単位なしで指定された場合は、秒単位であるとみなします。
 0（デフォルトです）の場合はシステムのデフォルト値を使用します。
+Windowsでは、システムのデフォルト値を読み取る方法がないため、値0を設定すると、このパラメータが1秒に設定されます。
 このパラメータは<code class="symbol">TCP_KEEPINTVL</code>または同等のソケットオプションをサポートするシステムと、Windowsでのみサポートされます。
 その他のシステムではゼロでなければなりません。
 Unixドメインソケット経由で接続されたセッションでは、このパラメータは無視され、常にゼロとして読み取られます。
-《機械翻訳》キープアライブメッセージによって確認応答されなかったTCPクライアントが再送信されるまでの時間を指定します。
-この値がユニットなしで指定された場合、秒として解釈されます。
-値0(デフォルト)はオペレーティングシステムのデフォルトを選択します。
-Windowsでは、システムのデフォルト値を読み取る方法がないため、値0を設定すると、このパラメータが1秒に設定されます。
-このパラメータは、サポート<code class="symbol">TCP_KEEPINTVL</code>または同等のソケットオプションを持つシステム、およびWindowsでのみサポートされます。
-他のシステムでは、ゼロである必要があります。
-Unix-ドメインソケット経由で接続されたセッションでは、このパラメータは無視され、常にゼロとして読み取られます。
-Windows
        </p></dd><dt id="GUC-TCP-KEEPALIVES-COUNT"><span class="term"><code class="varname">tcp_keepalives_count</code> (<code class="type">integer</code>)
       <a id="id-1.6.7.7.3.2.3.1.3" class="indexterm"></a>
       <a id="id-1.6.7.7.3.2.3.1.4" class="indexterm"></a>
@@ -385,17 +365,11 @@ Windows
         In sessions connected via a Unix-domain socket, this parameter is
         ignored and always reads as zero.
 </span>
-《マッチ度[82.120582]》サーバのクライアントへの接続が切れたと判断されるまでのTCP keepaliveメッセージの数を指定します。
+サーバのクライアントへの接続が切れたと判断されるまでのTCP keepaliveメッセージの数を指定します。
 0（デフォルトです）の場合はオペレーティングシステムのデフォルト値を使用します。
-このパラメータは<code class="symbol">TCP_KEEPCNT</code>または同等のソケットオプションをサポートするシステムでのみサポートされます。
+このパラメータは<code class="symbol">TCP_KEEPCNT</code>または同等のソケットオプションをサポートするシステムでのみサポートされます（Windowsは含みません）。
 その他のシステムではゼロでなければなりません。
 Unixドメインソケット経由で接続されたセッションでは、このパラメータは無視され、常にゼロとして読み取られます。
-《機械翻訳》前で失われる可能性のあるTCPキープアライブメッセージの数を指定します。
-サーバのコネクションからクライアントまではデッドと見なされます。
-値0(デフォルト)は、オペレーティングシステムのデフォルトを選択します。
-このパラメータは、サポート<code class="symbol">TCP_KEEPCNT</code>または同等のソケットオプションinclude Windowsではありません)のシステムでのみサポートされます。
-他のシステムでは、ゼロである必要があります。
-Unix-ドメインソケット経由で接続されたセッションでは、このパラメータは無視され、常にゼロとして読み取られます。
        </p></dd><dt id="GUC-TCP-USER-TIMEOUT"><span class="term"><code class="varname">tcp_user_timeout</code> (<code class="type">integer</code>)
       <a id="id-1.6.7.7.3.2.4.1.3" class="indexterm"></a>
       <a id="id-1.6.7.7.3.2.4.1.4" class="indexterm"></a>
@@ -410,18 +384,11 @@ Unix-ドメインソケット経由で接続されたセッションでは、こ
         In sessions connected via a Unix-domain socket, this parameter is
         ignored and always reads as zero.
 </span>
-《マッチ度[81.346154]》未確認のデータが残ったままの接続が強制的に閉じられるまでの時間を指定します。
+未応答の送信データが残ったままの接続が強制的に閉じられるまでの時間を指定します。
 この値が単位なしで指定された場合は、ミリ秒単位であるとみなします。
 0（デフォルトです）の場合はオペレーティングシステムのデフォルト値を使用します。
-このパラメータは、<code class="symbol">TCP_USER_TIMEOUT</code>をサポートするシステムでのみ使用できます。他のシステムでは、0にする必要があります。
+このパラメータは、<code class="symbol">TCP_USER_TIMEOUT</code>をサポートするシステム（Windowsは含みません）でのみ使用できます。他のシステムでは、0にする必要があります。
 UNIXドメインソケットで接続しているセッションではこのパラメータは無視され、常に0として扱われます。
-《機械翻訳》送信されたデータが確認応答されない前のままになる時間を指定します。
-TCPコネクションは強制的に閉じたになります。
-この値がユニットなしで指定された場合、ミリ秒として取得されます。
-値0(デフォルト)はオペレーティングシステムのデフォルトを選択します。
-このパラメータはサポート<code class="symbol">TCP_ユーザ_タイムアウト</code>のシステムでのみサポートされています(include Windowsではありません)。
-他のシステムではゼロである必要があります。
-Unix-ドメインソケット経由で接続されたセッションでは、このパラメータは無視され、常にゼロとして読み取られます。
        </p></dd><dt id="GUC-CLIENT-CONNECTION-CHECK-INTERVAL"><span class="term"><code class="varname">client_connection_check_interval</code> (<code class="type">integer</code>)
       <a id="id-1.6.7.7.3.2.5.1.3" class="indexterm"></a>
       <a id="id-1.6.7.7.3.2.5.1.4" class="indexterm"></a>
@@ -514,6 +481,7 @@ Unix-ドメインソケット経由で接続されたセッションでは、こ
 さらなる詳細については<a class="xref" href="auth-password.html" title="21.5. パスワード認証">21.5</a>をご覧ください。
        </p></dd><dt id="GUC-SCRAM-ITERATIONS"><span class="term"><code class="varname">scram_iterations</code> (<code class="type">integer</code>)
       <a id="id-1.6.7.7.4.2.3.1.3" class="indexterm"></a>
+      <a id="id-1.6.7.7.4.2.3.1.4" class="indexterm"></a>
       </span> <a href="#GUC-SCRAM-ITERATIONS" class="id_link">#</a></dt><dd><p>
 <span class="original">
         The number of computational iterations to be performed when encrypting
@@ -525,11 +493,11 @@ Unix-ドメインソケット経由で接続されたセッションでは、こ
         time of encryption. In order to make use of a changed value, a new
         password must be set.
 </span>
-《機械翻訳》SCRAM-SHA-256を使用してパスワードを暗号化するときに実行される計算の反復回数。
+SCRAM-SHA-256を使用してパスワードを暗号化するときに実行される計算の反復回数です。
 デフォルトは<code class="literal">4096</code>です。
 反復回数が多いほど、格納されたパスワードに対するブルートフォース攻撃に対する保護が強化されますが、認証の速度は低下します。
 反復カウントは暗号化時に固定されるため、値を変更してもSCRAM-SHA-256で暗号化された既存のパスワードには影響しません。
-変更された値をオーダーからmakeで使用する場合は、新しいパスワードを設定する必要があります。
+変更された値を有効にするには、新しいパスワードを設定する必要があります。
        </p></dd><dt id="GUC-KRB-SERVER-KEYFILE"><span class="term"><code class="varname">krb_server_keyfile</code> (<code class="type">string</code>)
       <a id="id-1.6.7.7.4.2.4.1.3" class="indexterm"></a>
       <a id="id-1.6.7.7.4.2.4.1.4" class="indexterm"></a>
@@ -568,6 +536,7 @@ GSSAPIユーザ名を大文字小文字の区別なく取り扱うかどうか�
 このパラメータは<code class="filename">postgresql.conf</code>ファイル、またはサーバのコマンドラインでのみ設定可能です。
        </p></dd><dt id="GUC-GSS-ACCEPT-DELEGATION"><span class="term"><code class="varname">gss_accept_delegation</code> (<code class="type">boolean</code>)
       <a id="id-1.6.7.7.4.2.6.1.3" class="indexterm"></a>
+      <a id="id-1.6.7.7.4.2.6.1.4" class="indexterm"></a>
       </span> <a href="#GUC-GSS-ACCEPT-DELEGATION" class="id_link">#</a></dt><dd><p>
 <span class="original">
         Sets whether GSSAPI delegation should be accepted from the client.
@@ -576,11 +545,11 @@ GSSAPIユーザ名を大文字小文字の区別なく取り扱うかどうか�
         accept credentials delegated to it from the client. This parameter can only be
         set in the &lt;filename&gt;postgresql.conf&lt;/filename&gt; file or on the server command line.
 </span>
-《機械翻訳》クライアントからGSSAPI委任を受け入れるかどうかを設定します。
-デフォルトは<code class="literal">オフ</code>です。
-これは、クライアントからの資格証明が受け入れられる<span class="emphasis"><em>受け入れられない</em></span>ことを意味します。
-これを<code class="literal">オン</code>に変更すると、makeサーバは、クライアントから委任された資格証明を受け入れます。
-このパラメータは、<code class="filename">PostgreSQL.conf</code>ファイルまたはサーバコマンドラインでのみ設定できます。
+クライアントからのGSSAPI委任を受け入れるかどうかを設定します。
+デフォルトは<code class="literal">off</code>です。
+これは、クライアントからの資格証明が受け入れ<span class="emphasis"><em>られない</em></span>ことを意味します。
+これを<code class="literal">on</code>に変更すると、サーバは、クライアントから委任された資格証明を受け入れます。
+このパラメータは、<code class="filename">postgresql.conf</code>ファイルまたはサーバコマンドラインでのみ設定できます。
        </p></dd><dt id="GUC-DB-USER-NAMESPACE"><span class="term"><code class="varname">db_user_namespace</code> (<code class="type">boolean</code>)
       <a id="id-1.6.7.7.4.2.7.1.3" class="indexterm"></a>
       <a id="id-1.6.7.7.4.2.7.1.4" class="indexterm"></a>
