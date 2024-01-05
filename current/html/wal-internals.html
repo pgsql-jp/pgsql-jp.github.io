@@ -10,8 +10,8 @@
    and that any necessary tuning is done (see &lt;xref
    linkend="wal-configuration"/&gt;).
 </span>
-《マッチ度[92.936803]》<acronym class="acronym">WAL</acronym>は自動的に有効になります。
-<acronym class="acronym">WAL</acronym>ログが必要とするディスク容量の確保することと、必要なチューニングを実施すること以外は（<a class="xref" href="wal-configuration.html" title="30.5. WALの設定">30.5</a>を参照）、管理者は何もする必要はありません。
+<acronym class="acronym">WAL</acronym>は自動的に有効になります。
+<acronym class="acronym">WAL</acronym>ファイルが必要とするディスク容量を確保することと、必要なチューニングを実施すること（<a class="xref" href="wal-configuration.html" title="30.5. WALの設定">30.5</a>を参照）以外は、管理者は何もする必要はありません。
   </p><p>
 <span class="original">
    &lt;acronym&gt;WAL&lt;/acronym&gt; records are appended to the &lt;acronym&gt;WAL&lt;/acronym&gt;
@@ -24,8 +24,8 @@
    separates them, so they are used to measure the progress of replication
    and recovery.
 </span>
-《マッチ度[94.148936]》新しいレコードが作成されるごとに、<acronym class="acronym">WAL</acronym>レコードが<acronym class="acronym">WAL</acronym>ログに追加されます。
-挿入位置はログシーケンス番号(<acronym class="acronym">LSN</acronym>)によって記録されます。LSNはログのバイトオフセットで、新しいレコードごとに単調増加します。
+新しいレコードが作成されるごとに、<acronym class="acronym">WAL</acronym>レコードが<acronym class="acronym">WAL</acronym>ファイルに追加されます。
+挿入位置はログシーケンス番号(<acronym class="acronym">LSN</acronym>)によって記録されます。LSNはWALのバイトオフセットで、新しいレコードごとに単調増加します。
 <acronym class="acronym">LSN</acronym>値は、<a class="link" href="datatype-pg-lsn.html" title="8.20. pg_lsn型"><code class="type">pg_lsn</code></a>データ型として返されます。
 2つの<acronym class="acronym">LSN</acronym>値を比較することで<acronym class="acronym">WAL</acronym>データの差分量を計算することができるので、レプリケーションやリカバリの進捗状況を測定できます。
   </p><p>
@@ -43,9 +43,9 @@
    but it will take a very, very long time to exhaust the
    available stock of numbers.
 </span>
-《マッチ度[94.211823]》<acronym class="acronym">WAL</acronym>ログは、データディレクトリ以下の<code class="filename">pg_wal</code>ディレクトリに、通常16メガバイトのサイズを持つセグメントファイルの集合として格納されています(ただし、このサイズは<span class="application">initdb</span>の<code class="option">--wal-segsize</code>オプションで変更できます)。
+<acronym class="acronym">WAL</acronym>ファイルは、データディレクトリ以下の<code class="filename">pg_wal</code>ディレクトリに、通常16メガバイトのサイズを持つセグメントファイルの集合として格納されています(ただし、このサイズは<span class="application">initdb</span>の<code class="option">--wal-segsize</code>オプションで変更できます)。
 各セグメントは通常8キロバイトのページに分割されます(このサイズは<code class="option">--with-wal-blocksize</code>というconfigureオプションで変更できます)。
-ログレコード用のヘッダは<code class="filename">access/xlogrecord.h</code>に記述されています。レコードの内容は、ログの対象となるイベントの種類によって異なります。
+WALレコード用のヘッダは<code class="filename">access/xlogrecord.h</code>に記述されています。レコードの内容は、ログの対象となるイベントの種類によって異なります。
 セグメントファイルは名前として<code class="filename">000000010000000000000001</code>から始まる、常に増加する数が与えられています。
 数字は巡回しませんが、利用可能な数字を使い尽くすには非常に長い時間がかかるはずです。
   </p><p>
@@ -56,7 +56,7 @@
    is shut down, of course) and creating a symbolic link from the
    original location in the main data directory to the new location.
 </span>
-《マッチ度[94.242424]》主要なデータベースファイルが置いてあるディスクとは別のディスクにログを置くと利点があります。
+主要なデータベースファイルが置いてあるディスクとは別のディスクにWALを置くと利点があります。
 これは<code class="filename">pg_wal</code>ディレクトリを別の場所に（もちろんサーバを終了しておいてから）移動し、主データディレクトリ以下の元々の場所から新しい場所へのシンボリックリンクを張ることによって可能となります。
   </p><p>
 <span class="original">
@@ -71,9 +71,9 @@
    &lt;acronym&gt;WAL&lt;/acronym&gt; files do not make such false reports.
    (See &lt;xref linkend="wal-reliability"/&gt;.)
 </span>
-《マッチ度[94.108020]》<acronym class="acronym">WAL</acronym>の目的である、確実にデータベースレコードが変更される前にログが書き出されることは、実際にはキャッシュにしかデータがなく、ディスクには格納されていない時にディスクドライブ<a id="id-1.6.17.8.7.2" class="indexterm"></a>が格納に成功したとカーネルに虚偽の報告を行うことによって失われる可能性があります。
+<acronym class="acronym">WAL</acronym>の目的である、確実にデータベースレコードが変更される前にログが書き出されることは、実際にはキャッシュにしかデータがなく、ディスクには格納されていない時にディスクドライブ<a id="id-1.6.17.8.7.2" class="indexterm"></a>が格納に成功したとカーネルに虚偽の報告を行うことによって失われる可能性があります。
 そのような状況では、電源が落ちた際に、復旧不可能なデータ破損が起こることがあります。
-管理者は、<span class="productname">PostgreSQL</span>の<acronym class="acronym">WAL</acronym>ログを保持しているディスク装置がそのような嘘の報告をしないように保証するべきです。(<a class="xref" href="wal-reliability.html" title="30.1. 信頼性">30.1</a>を参照して下さい。)
+管理者は、<span class="productname">PostgreSQL</span>の<acronym class="acronym">WAL</acronym>ファイルを保持しているディスク装置がそのような嘘の報告をしないように保証するべきです。(<a class="xref" href="wal-reliability.html" title="30.1. 信頼性">30.1</a>を参照して下さい。)
   </p><p>
 <span class="original">
    After a checkpoint has been made and the WAL flushed, the
@@ -88,10 +88,10 @@
    changed since the checkpoint will be restored to a consistent
    state.
 </span>
-《マッチ度[93.152866]》チェックポイントが実行され、ログがフラッシュされた後、チェックポイントの位置は<code class="filename">pg_control</code>に保存されます。
+チェックポイントが実行され、WALがフラッシュされた後、チェックポイントの位置は<code class="filename">pg_control</code>に保存されます。
 したがって、リカバリの開始時は、サーバはまず<code class="filename">pg_control</code>を読み、次にチェックポイントレコードを読みます。
-そして、チェックポイントレコード内で示されたログの位置から前方にスキャンしてREDO処理を行います。
-データページの内容全体は、チェックポイント後の最初のページ変更時にログ内に保存されますので(<a class="xref" href="runtime-config-wal.html#GUC-FULL-PAGE-WRITES">full_page_writes</a>パラメータが無効にされていないという前提です)、そのチェックポイント以降に変更された全てのページは一貫した状態に復旧されます。
+そして、チェックポイントレコード内で示されたWALの位置から前方にスキャンしてREDO処理を行います。
+データページの内容全体は、チェックポイント後の最初のページ変更時にWAL内に保存されますので(<a class="xref" href="runtime-config-wal.html#GUC-FULL-PAGE-WRITES">full_page_writes</a>パラメータが無効にされていないという前提です)、そのチェックポイント以降に変更された全てのページは一貫した状態に復旧されます。
   </p><p>
 <span class="original">
    To deal with the case where &lt;filename&gt;pg_control&lt;/filename&gt; is
@@ -105,7 +105,7 @@
    theoretically a weak spot, &lt;filename&gt;pg_control&lt;/filename&gt; does not
    seem to be a problem in practice.
 </span>
-《マッチ度[94.631902]》<code class="filename">pg_control</code>が壊れた場合に備え、ログセグメントを逆順に読み（すなわち新しいものから古いものへと）、最終チェックポイントを見つける方法を実際には実装した方が良いと思われます。
+<code class="filename">pg_control</code>が壊れた場合に備え、既存のWALセグメントを逆順に読み（すなわち新しいものから古いものへと）、最終チェックポイントを見つける方法を実際には実装した方が良いと思われます。
 まだこれはできていません。
 <code class="filename">pg_control</code>はかなり小さなもの（1ディスクページ未満）ですので、一部のみ書き込みされるという問題は起こりません。
 またこの書き込みの時点では、<code class="filename">pg_control</code>自体の読み込みができないことによるデータベースエラーという報告はありません。
