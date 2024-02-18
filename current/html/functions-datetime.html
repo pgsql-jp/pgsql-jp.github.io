@@ -447,8 +447,8 @@
          The form with two arguments is equivalent to the &lt;type&gt;timestamp with
          time zone&lt;/type&gt; &lt;literal&gt;+&lt;/literal&gt; &lt;type&gt;interval&lt;/type&gt; operator.
 </span>
-《機械翻訳》<code class="type">インターバル</code>を<code class="type">タイムスタンプとタイムゾーン</code>に加算し、3番目の記名的によるタイムゾーンの引数、または省略されている場合は現在の<a class="xref" href="runtime-config-client.html#GUC-TIMEZONE">TimeZone</a>設定に従って、時刻と夏時間の調整を計算します。
-2つの引数を持つフォームは、<code class="type">タイムスタンプとタイムゾーン</code><code class="literal">+</code><code class="type">インターバル</code>演算子と同じです。
+<code class="type">interval</code>を<code class="type">timestamp with timezone</code>に加算し、3番目の引数が指定する名前を持つタイムゾーン、または省略されている場合は現在の<a class="xref" href="runtime-config-client.html#GUC-TIMEZONE">TimeZone</a>設定に従って、時刻と夏時間の調整を計算します。
+2つの引数を持つ形式は、<code class="type">timestamp with timezone</code><code class="literal">+</code><code class="type">interval</code>演算子と同じです。
         </p>
         <p>
          <code class="literal">date_add('2021-10-31 00:00:00+02'::timestamptz, '1 day'::interval, 'Europe/Warsaw')</code>
@@ -509,8 +509,8 @@
          The form with two arguments is equivalent to the &lt;type&gt;timestamp with
          time zone&lt;/type&gt; &lt;literal&gt;-&lt;/literal&gt; &lt;type&gt;interval&lt;/type&gt; operator.
 </span>
-《機械翻訳》<code class="type">インターバル付きタイムスタンプ</code>から<code class="type">タイムゾーン</code>を引くと、3番目の記名的によるタイムゾーンの引数、または省略されている場合は現在の<a class="xref" href="runtime-config-client.html#GUC-TIMEZONE">TimeZone</a>設定に従って、時刻と夏時間の調整が計算されます。
-2つの引数を持つフォームは、<code class="type">タイムゾーン付きタイムスタンプ</code><code class="literal">-</code><code class="type">インターバル</code>演算子と同じです。
+<code class="type">interval</code>を<code class="type">timestamp with timezone</code>から減算し、3番目の引数が指定する名前を持つタイムゾーン、または省略されている場合は現在の<a class="xref" href="runtime-config-client.html#GUC-TIMEZONE">TimeZone</a>設定に従って、時刻と夏時間の調整を計算します。
+2つの引数を持つ形式は、<code class="type">timestamp with timezone</code><code class="literal">-</code><code class="type">interval</code>演算子と同じです。
         </p>
         <p>
          <code class="literal">date_subtract('2021-11-01 00:00:00+01'::timestamptz, '1 day'::interval, 'Europe/Warsaw')</code>
@@ -973,8 +973,13 @@ SELECT (DATE '2001-10-30', DATE '2001-10-30') OVERLAPS
    For example, with the session time zone set
    to &lt;literal&gt;America/Denver&lt;/literal&gt;:
 </span>
-《マッチ度[]》<code class="type">timestamp with time zone</code>の値に<code class="type">interval</code>の値を加える時（または<code class="type">interval</code>の値を引く時）、日にちの部分は、<code class="type">timestamp with time zone</code>の日付を指定された日数だけ先に進める、もしくは後に戻し、時刻は同じに保ちます。
-（セッションの時間帯がDSTを認識する設定の場合）夏時間の移行に跨っての変化に関しては、<code class="literal">interval '1 day'</code>が<code class="literal">interval '24 hours'</code>に等しいとは限りません。
+<code class="type">timestamp with time zone</code>の値に<code class="type">interval</code>の値を加える際には（あるいは<code class="type">interval</code>の値を引く際には）、<code class="type">interval</code>値の月、日、マイクロ秒のフィールドが順に適用されます。
+まず、非ゼロの月フィールドが示す日数の分だけtimestampの日付を先に進める、もしくは後に戻し、新しい月の最終日を超えてしまわない限り月内の日付を同じに保ちます。月の最後の日を超えてしまうようなら、その月の最終日が使われます。
+（たちえば、3月31日に1ヶ月を加えると4月30日になりますが、3月31日に2ヶ月を加えると5月31日になります。）
+次に、日フィールド分だけtimestampの日付を先に進める、もしくは後に戻します。
+この両方の処理において、現地時刻は同じに保ちます。
+最後に、非ゼロのマイクロ秒フィールドがあれば、そのまま加算、もしくは減算します。
+DSTと認識される時間帯における<code class="type">timestamp with time zone</code>値の演算を行う際には、（たとえば）<code class="literal">interval '1 day'</code>を加算、もしくは減算することは、<code class="literal">interval '24 hours'</code>を加算、もしくは減算するのと同じ結果になるとは限りません。
 例えば、セッションの時間帯が <code class="literal">America/Denver</code>に設定されている時には以下のようになります。
 </p><pre class="screen">
 SELECT timestamp with time zone '2005-04-02 12:00:00-07' + interval '1 day';
