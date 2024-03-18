@@ -164,12 +164,6 @@ nextval('foo')              <em class="lineannotation"><span class="lineannotati
      want &lt;quote&gt;late binding&lt;/quote&gt; where the object reference is resolved
      at run time.  To get late-binding behavior, force the constant to be
      stored as a &lt;type&gt;text&lt;/type&gt; constant instead of &lt;type&gt;regclass&lt;/type&gt;:
-&lt;programlisting&gt;
-nextval('foo'::text)      &lt;lineannotation&gt;&lt;literal&gt;foo&lt;/literal&gt; is looked up at runtime&lt;/lineannotation&gt;
-&lt;/programlisting&gt;
-     The &lt;function&gt;to_regclass()&lt;/function&gt; function and its siblings
-     can also be used to perform run-time lookups.  See
-     &lt;xref linkend="functions-info-catalog-table"/&gt;.
 </span>
 そのような関数の引数を装飾のない文字列として記載した場合、それは<code class="type">regclass</code>型(もしくは適切な型)の定数になります。
 これは実際には単にOIDなので、スキーマの再割り当てなどで後からリネームされたとしても最初に識別されたオブジェクトを追跡します。
@@ -177,8 +171,13 @@ nextval('foo'::text)      &lt;lineannotation&gt;&lt;literal&gt;foo&lt;/literal&g
 しかし、オブジェクトの参照を実行時に行う<span class="quote">「<span class="quote">遅延バインディング(late binding)</span>」</span>が望ましいこともあります。
 遅延バインディングの動作とするためには、定数は<code class="type">regclass</code>の代わりに<code class="type">text</code>の定数として配置してください。
 </p><pre class="programlisting">
-nextval('foo'::text)      <em class="lineannotation"><span class="lineannotation"><code class="literal">foo</code>は実行時に参照されます。</span></em>
+nextval('foo'::text)      <em class="lineannotation"><span class="lineannotation"><code class="literal">foo</code> is looked up at runtime</span></em>
 </pre><p>
+<span class="original">
+     The &lt;function&gt;to_regclass()&lt;/function&gt; function and its siblings
+     can also be used to perform run-time lookups.  See
+     &lt;xref linkend="functions-info-catalog-table"/&gt;.
+</span>
 <code class="function">to_regclass()</code>関数とその兄弟は実行時に参照させるために使用することもできます。
 詳細は<a class="xref" href="functions-info.html#FUNCTIONS-INFO-CATALOG-TABLE" title="表9.72 システムカタログ情報関数">表 9.72</a>を参照ください。
     </p></div><p>
@@ -190,23 +189,6 @@ nextval('foo'::text)      <em class="lineannotation"><span class="lineannotation
     the &lt;function&gt;pg_relation_size()&lt;/function&gt; function, which requires
     the table OID.  Taking the above rules into account, the correct way
     to do that is
-&lt;programlisting&gt;
-SELECT table_schema, table_name,
-       pg_relation_size((quote_ident(table_schema) || '.' ||
-                         quote_ident(table_name))::regclass)
-FROM information_schema.tables
-WHERE ...
-&lt;/programlisting&gt;
-    The &lt;function&gt;quote_ident()&lt;/function&gt; function will take care of
-    double-quoting the identifiers where needed.  The seemingly easier
-&lt;programlisting&gt;
-SELECT pg_relation_size(table_name)
-FROM information_schema.tables
-WHERE ...
-&lt;/programlisting&gt;
-    is &lt;emphasis&gt;not recommended&lt;/emphasis&gt;, because it will fail for
-    tables that are outside your search path or have names that require
-    quoting.
 </span>
 <code class="type">regclass</code>のもう一つの実用的な使用例はそのようなOIDを直接提供しない<code class="literal">information_schema</code>ビューにリストされたテーブルのOIDを参照することです。
 例えば、テーブルのOIDを必要とする<code class="function">pg_relation_size()</code>関数を呼び出したい場合を考えます。
@@ -218,6 +200,10 @@ SELECT table_schema, table_name,
 FROM information_schema.tables
 WHERE ...
 </pre><p>
+<span class="original">
+    The &lt;function&gt;quote_ident()&lt;/function&gt; function will take care of
+    double-quoting the identifiers where needed.  The seemingly easier
+</span>
 <code class="function">quote_ident()</code>関数は必要に応じて二重引用符をつけます。
 より簡単そうに思われる
 </p><pre class="programlisting">
@@ -225,6 +211,11 @@ SELECT pg_relation_size(table_name)
 FROM information_schema.tables
 WHERE ...
 </pre><p>
+<span class="original">
+    is &lt;emphasis&gt;not recommended&lt;/emphasis&gt;, because it will fail for
+    tables that are outside your search path or have names that require
+    quoting.
+</span>
 という方法は<span class="emphasis"><em>推奨されません</em></span>。
 テーブルがサーチパスの範囲外にあったり、引用符付けを必要とする名前であった場合に失敗するためです。
    </p><p>

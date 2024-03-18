@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>20.5. ログ先行書き込み（WAL）</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="runtime-config-resource.html" title="20.4. 資源の消費" /><link rel="next" href="runtime-config-replication.html" title="20.6. レプリケーション" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 16.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="runtime-config.html" title="第20章 サーバの設定">第20章 サーバの設定</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 16.0 : runtime-config-wal.html">誤訳等の報告
-                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="runtime-config-resource.html" title="20.4. 資源の消費">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="runtime-config.html" title="第20章 サーバの設定">上へ</a></td><td width="60%" align="center">20.5. ログ先行書き込み（WAL）</td><td width="20%" align="right"> <a accesskey="n" href="runtime-config-replication.html" title="20.6. レプリケーション">次へ</a></td></tr></table><hr /></div><div class="sect1" id="RUNTIME-CONFIG-WAL"><div class="titlepage"><div><div><h2 class="title" style="clear: both">20.5. ログ先行書き込み（WAL） <a href="#RUNTIME-CONFIG-WAL" class="id_link">#</a></h2></div></div></div><span class="original">
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>20.5. ログ先行書き込み（WAL）</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="runtime-config-resource.html" title="20.4. 資源の消費" /><link rel="next" href="runtime-config-replication.html" title="20.6. レプリケーション" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 16.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="runtime-config.html" title="第20章 サーバ設定">第20章 サーバ設定</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 16.0 : runtime-config-wal.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="runtime-config-resource.html" title="20.4. 資源の消費">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="runtime-config.html" title="第20章 サーバ設定">上へ</a></td><td width="60%" align="center">20.5. ログ先行書き込み（WAL）</td><td width="20%" align="right"> <a accesskey="n" href="runtime-config-replication.html" title="20.6. レプリケーション">次へ</a></td></tr></table><hr /></div><div class="sect1" id="RUNTIME-CONFIG-WAL"><div class="titlepage"><div><div><h2 class="title" style="clear: both">20.5. ログ先行書き込み（WAL） <a href="#RUNTIME-CONFIG-WAL" class="id_link">#</a></h2></div></div></div><span class="original">
     &lt;title&gt;Write Ahead Log&lt;/title&gt;
 </span><p>
 <span class="original">
@@ -1111,7 +1111,15 @@ restore_command = 'copy "C:\\server\\archivedir\\%f" "%p"'  # Windows
         The &lt;xref linkend="pgarchivecleanup"/&gt; module
         is often used in &lt;varname&gt;archive_cleanup_command&lt;/varname&gt; for
         single-standby configurations, for example:
-&lt;programlisting&gt;archive_cleanup_command = 'pg_archivecleanup /mnt/server/archivedir %r'&lt;/programlisting&gt;
+</span>
+オプションのパラメータは、すべてのリスタートポイントで実行されるシェルコマンドを指定します。
+<code class="varname">archive_cleanup_command</code>の目的は、スタンバイサーバにとって必要とされない古いアーカイブWALファイルをクリーンアップする仕組みを提供することです。
+<code class="literal">%r</code>は最後の有効なリスタートポイントを含むファイル名に置換されます。
+これはリストアが再開可能であるために<span class="emphasis"><em>保持</em></span>しなければならない最古のファイルで、<code class="literal">%r</code>よりも前のすべてのファイルは安全に削除できます。
+これは現在のリストアからの再開をサポートするのに最小限必要なアーカイブを残して切り詰めるのに必要な情報として利用できます。
+単一のスタンバイ構成用の<code class="varname">archive_cleanup_command</code>で、たとえば以下のように、しばしば<a class="xref" href="pgarchivecleanup.html" title="pg_archivecleanup"><span class="refentrytitle"><span class="application">pg_archivecleanup</span></span></a>モジュールが使われます。
+</p><pre class="programlisting">archive_cleanup_command = 'pg_archivecleanup /mnt/server/archivedir %r'</pre><p>
+<span class="original">
         Note however that if multiple standby servers are restoring from the
         same archive directory, you will need to ensure that you do not delete
         WAL files until they are no longer needed by any of the servers.
@@ -1120,12 +1128,6 @@ restore_command = 'copy "C:\\server\\archivedir\\%f" "%p"'  # Windows
         Write &lt;literal&gt;%%&lt;/literal&gt; to embed an actual &lt;literal&gt;%&lt;/literal&gt; character in the
         command.
 </span>
-オプションのパラメータは、すべてのリスタートポイントで実行されるシェルコマンドを指定します。
-<code class="varname">archive_cleanup_command</code>の目的は、スタンバイサーバにとって必要とされない古いアーカイブWALファイルをクリーンアップする仕組みを提供することです。
-<code class="literal">%r</code>は最後の有効なリスタートポイントを含むファイル名に置換されます。
-これはリストアが再開可能であるために<span class="emphasis"><em>保持</em></span>しなければならない最古のファイルで、<code class="literal">%r</code>よりも前のすべてのファイルは安全に削除できます。
-これは現在のリストアからの再開をサポートするのに最小限必要なアーカイブを残して切り詰めるのに必要な情報として利用できます。
-単一のスタンバイ構成用の<code class="varname">archive_cleanup_command</code>で、たとえば</p><pre class="programlisting">archive_cleanup_command = 'pg_archivecleanup /mnt/server/archivedir %r'</pre><p>のようにして、しばしば<a class="xref" href="pgarchivecleanup.html" title="pg_archivecleanup"><span class="refentrytitle"><span class="application">pg_archivecleanup</span></span></a>モジュールが使われます。
 だたし、複数のスタンバイサーバが同じアーカイブディレクトリからリストアしている場合は、どのサーバにおいてももはや必要がなくなるまでWALファイルが削除されることのないようにする必要があることに留意してください。
 <code class="varname">archive_cleanup_command</code>は通常ウォームスタンバイ構成で使用されます。
 （<a class="xref" href="warm-standby.html" title="27.2. ログシッピングスタンバイサーバ">27.2</a>参照。）
@@ -1411,4 +1413,4 @@ restore_command = 'copy "C:\\server\\archivedir\\%f" "%p"'  # Windows
         with a fatal error.
 </span>
 どのような場合でも、リカバリ対象が設定されていて、アーカイブリカバリがそのリカバリ対象に到達する前に終了すると、サーバはフェイタルエラーで停止します。
-       </p></dd></dl></div></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="runtime-config-resource.html" title="20.4. 資源の消費">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="runtime-config.html" title="第20章 サーバの設定">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="runtime-config-replication.html" title="20.6. レプリケーション">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">20.4. 資源の消費 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 16.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 20.6. レプリケーション</td></tr></table></div></body></html>
+       </p></dd></dl></div></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="runtime-config-resource.html" title="20.4. 資源の消費">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="runtime-config.html" title="第20章 サーバ設定">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="runtime-config-replication.html" title="20.6. レプリケーション">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">20.4. 資源の消費 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 16.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 20.6. レプリケーション</td></tr></table></div></body></html>
