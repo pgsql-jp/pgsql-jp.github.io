@@ -450,10 +450,10 @@ WALに記録された操作はすでにプライマリで発生したもので�
     primary.  So it is possible that cleanup on the primary will remove row
     versions that are still visible to a transaction on the standby.
 </span>
-スタンバイ側の問い合わせとWAL再生の間でもっともよくあるコンフリクト理由は<span class="quote">「<span class="quote">早すぎる消去</span>」</span>です。
-通常<span class="productname">PostgreSQL</span>はMVCC規則にしたがって正確なデータの可視性を確実にするために、古い行バージョンを参照するトランザクションが存在しない場合それらを消去することが許されています。
+スタンバイ側の問い合わせとWAL再生の間でもっともよくあるコンフリクト理由は<span class="quote">「<span class="quote">早すぎるクリーンアップ</span>」</span>です。
+通常<span class="productname">PostgreSQL</span>はMVCC規則にしたがって正確なデータの可視性を確実にするために、古い行バージョンを参照するトランザクションが存在しない場合それらをクリーンアップすることが許されています。
 しかし、この規則はプライマリ上で実行するトランザクションのみに適用させることができます。
-したがって、スタンバイ上のトランザクションでまだ可視である行バージョンを、プライマリ上の消去処理が削除してしまう可能性があります。
+したがって、スタンバイ上のトランザクションでまだ可視である行バージョンを、プライマリ上のクリーンアップ処理が削除してしまう可能性があります。
    </p><p>
 <span class="original">
     Row version cleanup isn't the only potential cause of conflicts with
@@ -467,11 +467,10 @@ WALに記録された操作はすでにプライマリで発生したもので�
     &lt;command&gt;VACUUM&lt;/command&gt; against a table with no updated or deleted rows
     requiring cleanup might lead to conflicts.
 </span>
-《機械翻訳》スタンバイクエリとの競合の原因として、行バージョンのクリーンアップだけではありません。
-すべてのインデックスのみのスキャン(スタンバイで実行されるものも含む)は、<acronym class="acronym">MVCC</acronym>スナップショットを使用しなければなりません。
-これは、<span class="quote">「<span class="quote">同意</span>」</span>ビューと一致するものです。
-したがって、すべてのスタンバイクエリに対して<code class="command">VACUUM</code>が1行以上の<span class="emphasis"><em>非</em></span>可視性マップにある行を含むページを<code class="command">VACUUM</code>で<a class="link" href="routine-vacuuming.html#VACUUM-FOR-VISIBILITY-MAP" title="25.1.4. 可視性マップの更新">設定</a>するときは、競合が必要になります。
-したがって、更新や削除された行を含まないテーブルに対して<code class="command">VACUUM</code>を実行しても競合が発生する可能性があります。
+スタンバイ問い合わせとの競合の潜在的な原因は、行バージョンのクリーンアップだけではありません。
+すべてのインデックスオンリースキャン（スタンバイで実行されるものも含む）は、可視性マップに<span class="quote">「<span class="quote">同意する</span>」</span><acronym class="acronym">MVCC</acronym>スナップショットを使用しなければなりません。
+したがって、<code class="command">VACUUM</code>が、すべてのスタンバイの問い合わせに対して1行以上の<span class="emphasis"><em>非</em></span>可視行を含み、<a class="link" href="routine-vacuuming.html#VACUUM-FOR-VISIBILITY-MAP" title="25.1.4. 可視性マップの更新">一つのページがすべて可視であるような可視性マップを設定する時</a>には、必ず競合が必要になります。
+ですから、クリーンアップが必要で、更新や削除された行を含まないテーブルに対して<code class="command">VACUUM</code>を実行しても競合が発生する可能性があります。
    </p><p>
 <span class="original">
     Users should be clear that tables that are regularly and heavily updated
@@ -506,9 +505,9 @@ WALに記録された操作はすでにプライマリで発生したもので�
 </span>
 スタンバイにおける問い合わせの中断が受け入れがたいほど多い場合、この問題を改善する方法が用意されています。
 １つ目の選択肢は、<code class="varname">hot_standby_feedback</code>パラメータを設定することです。
-これは<code class="command">VACUUM</code>による最近不要になった行の削除を防止しますので、消去によるコンフリクトが発生しません。
-これを行う場合、プライマリで不要になった行の消去が遅延することに注意が必要です。望まないテーブルの膨張が発生してしまうかもしれません。
-しかし、スタンバイ側で行うべき問い合わせをプライマリサーバ上で直接実行することと比べ、こうした消去に関する問題を優先する価値はありません。
+これは<code class="command">VACUUM</code>による最近不要になった行の削除を防止しますので、クリーンアップによるコンフリクトが発生しません。
+これを行う場合、プライマリで不要になった行のクリーンアップが遅延することに注意が必要です。望まないテーブルの膨張が発生してしまうかもしれません。
+しかし、スタンバイ側で行うべき問い合わせをプライマリサーバ上で直接実行することと比べ、こうしたクリーンアップに関する問題を優先する価値はありません。
 また、スタンバイに実行負荷を分散できるという利点があります。
 スタンバイサーバが接続、切断を頻繁に繰り返す場合、<code class="varname">hot_standby_feedback</code>によるフィードバックが提供されていなければ、その値を調整したいと思うでしょう。
 例えば、<code class="varname">max_standby_archive_delay</code>が増大し、切断している期間WALアーカイブのコンフリクト発生による問い合わせの中断が速やかに行われないことを考えてみてください。また、再接続後に速やかに問い合わせが中断されることを避けるために<code class="varname">max_standby_streaming_delay</code>を大きくすることを考えてみてください。
@@ -934,17 +933,15 @@ WALの再実行はトリガに基づいたものではありません。
     &lt;xref linkend="guc-max-standby-streaming-delay"/&gt; have no effect if set on
     the primary.
 </span>
-《マッチ度[65.887850]》プライマリサーバでは、<a class="xref" href="runtime-config-wal.html#GUC-WAL-LEVEL">wal_level</a>のパラメータを使用できます。
+プライマリサーバでは、<a class="xref" href="runtime-config-wal.html#GUC-WAL-LEVEL">wal_level</a>のパラメータを使用できます。
 プライマリサーバに<a class="xref" href="runtime-config-replication.html#GUC-MAX-STANDBY-ARCHIVE-DELAY">max_standby_archive_delay</a>および<a class="xref" href="runtime-config-replication.html#GUC-MAX-STANDBY-STREAMING-DELAY">max_standby_streaming_delay</a>を設定しても無効です。
-《機械翻訳》プライマリでは、<a class="xref" href="runtime-config-wal.html#GUC-WAL-LEVEL">wal_level</a>パラメータを使用できます。
- <a class="xref" href="runtime-config-replication.html#GUC-MAX-STANDBY-ARCHIVE-DELAY">max_standby_archive_delay</a>と<a class="xref" href="runtime-config-replication.html#GUC-MAX-STANDBY-STREAMING-DELAY">max_standby_streaming_delay</a>は、プライマリで設定されている場合には効果がありません。
    </p><p>
 <span class="original">
     On the standby, parameters &lt;xref linkend="guc-hot-standby"/&gt;,
     &lt;xref linkend="guc-max-standby-archive-delay"/&gt; and
     &lt;xref linkend="guc-max-standby-streaming-delay"/&gt; can be used.
 </span>
-《機械翻訳》スタンバイでは、パラメータ<a class="xref" href="runtime-config-replication.html#GUC-HOT-STANDBY">hot_standby</a>、<a class="xref" href="runtime-config-replication.html#GUC-MAX-STANDBY-ARCHIVE-DELAY">max_standby_archive_delay</a>、<a class="xref" href="runtime-config-replication.html#GUC-MAX-STANDBY-STREAMING-DELAY">max_standby_streaming_delay</a>を使用できます。
+スタンバイでは、パラメータ<a class="xref" href="runtime-config-replication.html#GUC-HOT-STANDBY">hot_standby</a>、<a class="xref" href="runtime-config-replication.html#GUC-MAX-STANDBY-ARCHIVE-DELAY">max_standby_archive_delay</a>、<a class="xref" href="runtime-config-replication.html#GUC-MAX-STANDBY-STREAMING-DELAY">max_standby_streaming_delay</a>を使用できます。
    </p></div><div class="sect2" id="HOT-STANDBY-CAVEATS"><div class="titlepage"><div><div><h3 class="title">27.4.5. 警告 <a href="#HOT-STANDBY-CAVEATS" class="id_link">#</a></h3></div></div></div><span class="original">
    &lt;title&gt;Caveats&lt;/title&gt;
 </span><p>
