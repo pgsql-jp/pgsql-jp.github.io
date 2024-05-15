@@ -1,0 +1,1300 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>E.1. リリース16.3</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="release.html" title="付録E リリースノート" /><link rel="next" href="release-16-2.html" title="E.2. リリース16.2" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 16.3文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="release.html" title="付録E リリースノート">付録E リリースノート</a></td><td width="20%" align="right"></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="release.html" title="付録E リリースノート">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="release.html" title="付録E リリースノート">上へ</a></td><td width="60%" align="center">E.1. リリース16.3</td><td width="20%" align="right"> <a accesskey="n" href="release-16-2.html" title="E.2. リリース16.2">次へ</a></td></tr></table><hr /></div><div class="sect1" id="RELEASE-16-3"><div class="titlepage"><div><div><h2 class="title" style="clear: both">E.1. リリース16.3 <a href="#RELEASE-16-3" class="id_link">#</a></h2></div></div></div><!--
+  <title>Release 16.3</title>
+--><p><!--
+  <title>Release date:</title>
+--><strong>リリース日: </strong>2024-05-09</p><p>
+<!--
+   This release contains a variety of fixes from 16.2.
+   For information about new features in major release 16, see
+   <xref linkend="release-16"/>.
+-->
+《機械翻訳》このリリースはさまざまな修正を含んでいます。
+メジャーリリース16の新機能については<a class="xref" href="release-16.html" title="E.4. リリース16">E.4</a>を参照してください。
+  </p><div class="sect2" id="RELEASE-16-3-MIGRATION"><div class="titlepage"><div><div><h3 class="title">E.1.1. バージョン16.3への移行 <a href="#RELEASE-16-3-MIGRATION" class="id_link">#</a></h3></div></div></div><!--
+   <title>Migration to Version 16.3</title>
+--><p>
+<!--
+    A dump/restore is not required for those running 16.X.
+-->
+《機械翻訳》16.X を実行している場合は、ダンプ/リストアは必要ありません。
+   </p><p>
+<!--
+    However, a security vulnerability was found in the system
+    views <structname>pg_stats_ext</structname>
+    and <structname>pg_stats_ext_exprs</structname>, potentially allowing
+    authenticated database users to see data they shouldn't.  If this is
+    of concern in your installation, follow the steps in the first
+    changelog entry below to rectify it.
+-->
+《機械翻訳》しかし、システムビュー<code class="structname">pg_stats_ext</code>と<code class="structname">pg_stats_ext_exprs</code>にセキュリティ上の脆弱性が見つかり、認証されたデータベースユーザが、本来見るべきでないデータを見ることができる可能性があります。
+これがインストール環境で問題となる場合は、次の最初の変更ログの項目に従って修正してください。
+   </p><p>
+<!--
+    Also, if you are upgrading from a version earlier than 16.2,
+    see <xref linkend="release-16-2"/>.
+-->
+《機械翻訳》また、16.2より前のバージョンからアップグレードする場合は<a class="xref" href="release-16-2.html" title="E.2. リリース16.2">E.2</a>を参照してください。
+   </p></div><div class="sect2" id="RELEASE-16-3-CHANGES"><div class="titlepage"><div><div><h3 class="title">E.1.2. 変更点 <a href="#RELEASE-16-3-CHANGES" class="id_link">#</a></h3></div></div></div><!--
+   <title>Changes</title>
+--><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><!--
+Author: Nathan Bossart <nathan@postgresql.org>
+Branch: master [521a7156a] 2024-05-06 09:00:00 -0500
+Branch: REL_16_STABLE [2485a85e9] 2024-05-06 09:00:07 -0500
+Branch: REL_15_STABLE [9cc2b6289] 2024-05-06 09:00:13 -0500
+Branch: REL_14_STABLE [c3425383b] 2024-05-06 09:00:19 -0500
+--><p>
+<!--
+      Restrict visibility of <structname>pg_stats_ext</structname> and
+      <structname>pg_stats_ext_exprs</structname> entries to the table
+      owner (Nathan Bossart)
+-->
+《機械翻訳》<code class="structname">pg_stats_ext</code>および<code class="structname">pg_stats_ext_exprs</code>エントリのテーブル所有者への可視性を制限しました。
+(Nathan Bossart)
+     </p><p>
+<!--
+      These views failed to hide statistics for expressions that involve
+      columns the accessing user does not have permission to read.  View
+      columns such as <structfield>most_common_vals</structfield> might
+      expose security-relevant data.  The potential interactions here are
+      not fully clear, so in the interest of erring on the side of safety,
+      make rows in these views visible only to the owner of the associated
+      table.
+-->
+《機械翻訳》これらのビューは、アクセスするユーザーが読み取る権限を持たない列を含む式の統計を隠すことができませんでした。
+<code class="structfield">most_common_vals</code>などの列を表示すると、セキュリティに関連するデータが公開される可能性があります。
+ここでの潜在的な相互作用は完全には明らかではありません。
+したがって、安全性を確保するために、これらのビューの行を、関連するテーブルの所有者のみに表示します。
+     </p><p>
+<!--
+      The <productname>PostgreSQL</productname> Project thanks
+      Lukas Fittl for reporting this problem.
+      (CVE-2024-4317)
+-->
+《機械翻訳》<span class="productname">PostgreSQL</span>プロジェクトは、この問題を報告してくれたLukas Fittl氏に感謝します(CVE-2024-4317)。
+     </p><p>
+<!--
+      By itself, this fix will only fix the behavior in newly initdb'd
+      database clusters.  If you wish to apply this change in an existing
+      cluster, you will need to do the following:
+-->
+《機械翻訳》この修正は、新しく initdb されたデータベースクラスタでのみ動作します。
+既存のクラスタでこの変更を適用したい場合は、以下を実行する必要があります。
+     </p><div class="procedure"><ol class="procedure" type="1"><li class="step"><p>
+<!--
+        Find the SQL script <filename>fix-CVE-2024-4317.sql</filename> in
+        the <replaceable>share</replaceable> directory of
+        the <productname>PostgreSQL</productname> installation (typically
+        located someplace like <filename>/usr/share/postgresql/</filename>).
+        Be sure to use the script appropriate to
+        your <productname>PostgreSQL</productname> major version.
+        If you do not see this file, either your version is not vulnerable
+        (only v14&ndash;v16 are affected) or your minor version is too
+        old to have the fix.
+-->
+《機械翻訳》<span class="productname">PostgreSQL</span>インストールの<em class="replaceable"><code>share</code></em>ディレクトリ（<code class="filename">/usr/share/postgresql/</code>など）にあるSQLスクリプト<code class="filename">fix-CVE-2024-4317.sql</code>を見つけます。
+必ず、<span class="productname">PostgreSQL</span>のメジャーバージョンに適したスクリプトを使用してください。
+このファイルが見つからない場合は、あなたのバージョンが脆弱ではない（v14–v16だけが影響を受ける）か、あなたのマイナーバージョンが修正するには古すぎます。
+       </p></li><li class="step"><p>
+<!--
+        In <emphasis>each</emphasis> database of the cluster, run
+        the <filename>fix-CVE-2024-4317.sql</filename> script as superuser.
+        In <application>psql</application> this would look like
+-->
+《機械翻訳》クラスタの各データベースで、スーパーユーザとして<code class="filename">fix-CVE-2024-4317.sql</code>スクリプトを実行します。
+<span class="application">psql</span>では以下のようになります。
+</p><pre class="programlisting">
+\i /usr/share/postgresql/fix-CVE-2024-4317.sql
+</pre><p>
+<!--
+        (adjust the file path as appropriate).  Any error probably indicates
+        that you've used the wrong script version.  It will not hurt to run
+        the script more than once.
+-->
+《機械翻訳》（適宜ファイルパスを調整してください）。
+エラーは、おそらくスクリプトのバージョンが間違っていることを示しています。
+スクリプトを複数回実行しても問題ありません。
+       </p></li><li class="step"><p>
+<!--
+        Do not forget to include the <literal>template0</literal>
+        and <literal>template1</literal> databases, or the vulnerability
+        will still exist in databases you create later.  To
+        fix <literal>template0</literal>, you'll need to temporarily make
+        it accept connections.  Do that with
+-->
+《機械翻訳》<code class="literal">template0</code>と<code class="literal">template1</code>のデータベースを含めることを忘れないでください。
+そうしないと、後で作成するデータベースに脆弱性が残ったままになります。
+<code class="literal">template0</code>を修正するには、一時的に接続を受け付けるようにする必要があります。
+これは、で行います。
+</p><pre class="programlisting">
+ALTER DATABASE template0 WITH ALLOW_CONNECTIONS true;
+</pre><p>
+<!--
+        and then after fixing <literal>template0</literal>, undo it with
+-->
+《機械翻訳》そして<code class="literal">template0</code>を修正した後、それを元に戻します。
+</p><pre class="programlisting">
+ALTER DATABASE template0 WITH ALLOW_CONNECTIONS false;
+</pre><p>
+       </p></li></ol></div></li><li class="listitem"><!--
+Author: Tom Lane <tgl@sss.pgh.pa.us>
+Branch: master [b4a71cf65] 2024-03-14 14:57:16 -0400
+Branch: REL_16_STABLE [52898c63e] 2024-03-14 14:57:16 -0400
+Branch: REL_15_STABLE [7c61d2342] 2024-03-14 14:57:16 -0400
+Branch: REL_14_STABLE [3621ffd9f] 2024-03-14 14:57:16 -0400
+Branch: REL_13_STABLE [0200398dd] 2024-03-14 14:57:16 -0400
+Branch: REL_12_STABLE [82c87af7a] 2024-03-14 14:57:16 -0400
+--><p>
+<!--
+      Fix <command>INSERT</command> from
+      multiple <command>VALUES</command> rows into a target column that is
+      a domain over an array or composite type (Tom Lane)
+-->
+《機械翻訳》複数の<code class="command">VALUES</code>行から、配列または複合型のドメインであるターゲット列への<code class="command">INSERT</code>を修正しました。
+(Tom Lane)
+     </p><p>
+<!--
+      Such cases would either fail with surprising complaints about
+      mismatched datatypes, or insert unexpected coercions that could lead
+      to odd results.
+-->
+《機械翻訳》このようなケースでは、データ型の不一致に関する驚くべき苦情で失敗するか、予期しない強制を挿入して奇妙な結果をもたらす可能性があります。
+     </p></li><li class="listitem"><!--
+Author: Alvaro Herrera <alvherre@alvh.no-ip.org>
+Branch: master [4989ce726] 2024-02-21 17:18:52 +0100
+Branch: REL_16_STABLE [a3f5d2056] 2024-02-21 17:18:52 +0100
+Branch: REL_15_STABLE [90ad85db6] 2024-02-21 17:18:52 +0100
+--><p>
+<!--
+      Require <literal>SELECT</literal> privilege on the target table
+      for <command>MERGE</command> with a <literal>DO NOTHING</literal>
+      clause (&Aacute;lvaro Herrera)
+-->
+《機械翻訳》<code class="literal">DO NOTHING</code>句を持つ<code class="command">MERGE</code>に対する対象テーブルに対する<code class="literal">SELECT</code>権限を要求します。
+(Álvaro Herrera)
+     </p><p>
+<!--
+      <literal>SELECT</literal> privilege would be required in all
+      practical cases anyway, but require it even if the query reads no
+      columns of the target table.  This avoids an edge case in
+      which <command>MERGE</command> would require no privileges whatever,
+      which seems undesirable even when it's a do-nothing command.
+-->
+《機械翻訳》<code class="literal">SELECT</code>権限は、すべての実用的なケースで必要になりますが、ターゲットテーブルの列を読み取らないクエリの場合でも必要です。
+これにより、<code class="command">MERGE</code>が何の権限も必要としないというエッジケースを回避します。
+これは、何もしないコマンドであっても望ましくないようです。
+     </p></li><li class="listitem"><!--
+Author: Dean Rasheed <dean.a.rasheed@gmail.com>
+Branch: master [29ef1dd19] 2024-03-07 09:57:02 +0000
+Branch: REL_16_STABLE [dd73d10ad] 2024-03-07 09:55:39 +0000
+Branch: REL_15_STABLE [b5c645d2a] 2024-03-07 09:53:31 +0000
+--><p>
+<!--
+      Fix handling of self-modified tuples in <command>MERGE</command>
+      (Dean Rasheed)
+-->
+《機械翻訳》<code class="command">MERGE</code>における自己修正タプルの処理を修正しました。
+(Dean Rasheed)
+     </p><p>
+<!--
+      Throw an error if a target row joins to more than one source row, as
+      required by the SQL standard.  (The previous coding could silently
+      ignore this condition if a concurrent update was involved.)  Also,
+      throw a non-misleading error if a target row is already updated by a
+      later command in the current transaction, thanks to
+      a <literal>BEFORE</literal> trigger or a volatile function used in
+      the query.
+-->
+《機械翻訳》標準SQLで要求されているように、ターゲット行が複数のソース行に結合される場合はエラーをスローします。
+（以前のコーディングでは、同時更新が含まれる場合、この条件を黙って無視することができました。
+また、<code class="literal">BEFORE</code>トリガまたは問い合わせで使用される揮発性ファンクションのおかげで、ターゲット行が現在のトランザクション内の後のコマンドによってすでに更新されている場合は、誤解を招かないエラーをスローします。
+     </p></li><li class="listitem"><!--
+Author: David Rowley <drowley@postgresql.org>
+Branch: master [4c2369ac5] 2024-02-20 12:49:37 +1300
+Branch: REL_16_STABLE [fb95cc72b] 2024-02-20 12:50:09 +1300
+Branch: REL_15_STABLE [1b3495e29] 2024-02-20 12:50:34 +1300
+Branch: REL_14_STABLE [f9c8f7ccd] 2024-02-20 12:50:57 +1300
+Branch: REL_13_STABLE [3850fcca6] 2024-02-20 12:51:17 +1300
+Branch: REL_12_STABLE [3ffcd24c2] 2024-02-20 12:51:38 +1300
+--><p>
+<!--
+      Fix incorrect pruning of NULL partition when a table is partitioned
+      on a boolean column and the query has a boolean <literal>IS
+      NOT</literal> clause (David Rowley)
+-->
+《機械翻訳》テーブルがブール列で分割され、クエリにブール<code class="literal">IS NOT</code>句がある場合に、NULLパーティションの不正な枝刈りを修正しました。
+(David Rowley)
+     </p><p>
+<!--
+      A NULL value satisfies a clause such
+      as <literal><replaceable>boolcol</replaceable> IS NOT
+      FALSE</literal>, so pruning away a partition containing NULLs
+      yielded incorrect answers.
+-->
+《機械翻訳》NULL値は<code class="literal"><em class="replaceable"><code>boolcol</code></em> IS NOT FALSE</code>のような句を満たすので、NULLを含むパーティションを枝刈りすると誤った答えが得られた。
+     </p></li><li class="listitem"><!--
+Author: Tom Lane <tgl@sss.pgh.pa.us>
+Branch: master [fad3b5b5a] 2024-03-26 15:28:31 -0400
+Branch: REL_16_STABLE [7445f0928] 2024-03-26 15:28:16 -0400
+Branch: REL_15_STABLE [b48eda4e5] 2024-03-26 15:28:16 -0400
+Branch: REL_14_STABLE [66bbad581] 2024-03-26 15:28:16 -0400
+Branch: REL_13_STABLE [97de2a159] 2024-03-26 15:28:16 -0400
+Branch: REL_12_STABLE [a8b740868] 2024-03-26 15:28:16 -0400
+--><p>
+<!--
+      Make <command>ALTER FOREIGN TABLE SET SCHEMA</command> move any
+      owned sequences into the new schema (Tom Lane)
+-->
+《機械翻訳》<code class="command">ALTER FOREIGN TABLE SET SCHEMA</code>を使用して、所有するシーケンスを新しいスキーマに移動します。
+(Tom Lane)
+     </p><p>
+<!--
+      Moving a regular table to a new schema causes any sequences owned by
+      the table to be moved to that schema too (along with indexes and
+      constraints).  This was overlooked for foreign tables, however.
+-->
+《機械翻訳》通常のテーブルを新しいスキーマに移動すると、テーブルが所有するシーケンスもそのスキーマに移動されます（インデックスと制約も一緒に）。
+しかし、外部テーブルではこれが見落とされていました。
+     </p></li><li class="listitem"><!--
+Author: Peter Eisentraut <peter@eisentraut.org>
+Branch: master [6743c5ae6] 2024-02-09 08:09:22 +0100
+Branch: REL_16_STABLE [86d2b434c] 2024-02-09 08:09:59 +0100
+Branch: REL_15_STABLE [d17a3a4c6] 2024-02-09 08:15:27 +0100
+--><p>
+<!--
+      Make <command>ALTER TABLE ... ADD COLUMN</command> create
+      identity/serial sequences with the same persistence as their owning
+      tables (Peter Eisentraut)
+-->
+《機械翻訳》<code class="command">ALTER TABLE ... ADD COLUMN</code>で、所有するテーブルと同じ永続性を持つ識別子/連番を作成できるようにしました。
+(Peter Eisentraut)
+     </p><p>
+<!--
+      <command>CREATE UNLOGGED TABLE</command> will make any owned
+      sequences be unlogged too.  <command>ALTER TABLE</command> missed
+      that consideration, so that an added identity column would have a
+      logged sequence, which seems pointless.
+-->
+《機械翻訳》<code class="command">CREATE UNLOGGED TABLE</code>は所有するシーケンスもログなしにするでしょう。
+<code class="command">ALTER TABLE</code>はそのことを考慮しなかったので、追加された識別列はログなしのシーケンスを持つことになり、それは無意味なことです。
+     </p></li><li class="listitem"><!--
+Author: Tom Lane <tgl@sss.pgh.pa.us>
+Branch: master [91e7115b1] 2024-05-02 17:36:31 -0400
+Branch: REL_16_STABLE [11d40a44b] 2024-05-02 17:36:31 -0400
+Branch: REL_15_STABLE [5f4a1a0a7] 2024-05-02 17:36:31 -0400
+Branch: master [42b041243] 2024-04-28 14:34:21 -0400
+Branch: REL_16_STABLE [b19255ca6] 2024-04-28 14:34:21 -0400
+Branch: REL_15_STABLE [9b41d1d63] 2024-04-28 14:34:21 -0400
+Branch: REL_14_STABLE [617a23927] 2024-04-28 14:34:21 -0400
+--><p>
+<!--
+      Improve <command>ALTER TABLE ... ALTER COLUMN TYPE</command>'s error
+      message when there is a dependent function or publication (Tom Lane)
+-->
+《機械翻訳》依存する関数またはパブリケーションがある場合の<code class="command">ALTER TABLE ... ALTER COLUMN TYPE</code>のエラーメッセージを改善しました。
+(Tom Lane)
+     </p></li><li class="listitem"><!--
+Author: Tomas Vondra <tomas.vondra@postgresql.org>
+Branch: master [8c239ee15] 2024-04-21 21:21:26 +0200
+Branch: REL_16_STABLE [9e6faeb32] 2024-04-21 21:21:55 +0200
+Branch: REL_15_STABLE [276b7888f] 2024-04-21 21:22:11 +0200
+--><p>
+<!--
+      In <command>CREATE DATABASE</command>, recognize strategy keywords
+      case-insensitively for consistency with other options (Tomas Vondra)
+-->
+《機械翻訳》<code class="command">CREATE DATABASE</code>において、他のオプションとの整合性を保つために、ストラテジキーワードを大文字と小文字を区別しないで認識するようにしました。
+(Tomas Vondra)
+     </p></li><li class="listitem"><!--
+Author: Heikki Linnakangas <heikki.linnakangas@iki.fi>
+Branch: master [0960ae196] 2024-03-18 14:03:58 +0200
+Branch: REL_16_STABLE [1f4eb7342] 2024-03-18 14:04:13 +0200
+Branch: REL_15_STABLE [d3d95f583] 2024-03-18 14:04:17 +0200
+Branch: REL_14_STABLE [262757b73] 2024-03-18 14:04:19 +0200
+Branch: REL_13_STABLE [992189a3e] 2024-03-18 14:04:24 +0200
+Branch: REL_12_STABLE [f3e4581ac] 2024-03-18 14:04:28 +0200
+--><p>
+<!--
+      Fix <command>EXPLAIN</command>'s counting of heap pages accessed by
+      a bitmap heap scan (Melanie Plageman)
+-->
+《機械翻訳》ビットマップヒープスキャンによってアクセスされたヒープページの数を<code class="command">EXPLAIN</code>がカウントするのを修正しました。
+(Melanie Plageman)
+     </p><p>
+<!--
+      Previously, heap pages that contain no visible tuples were not
+      counted; but it seems more consistent to count all pages returned by
+      the bitmap index scan.
+-->
+《機械翻訳》以前は、可視タプルを含まないヒープページはカウントされませんでしたが、ビットマップ索引スキャンによって返されるすべてのページをカウントする方が一貫性があります。
+     </p></li><li class="listitem"><!--
+Author: Dean Rasheed <dean.a.rasheed@gmail.com>
+Branch: master [33e729c51] 2024-03-17 10:17:11 +0000
+Branch: REL_16_STABLE [34c854b93] 2024-03-17 10:19:31 +0000
+Branch: REL_15_STABLE [89ee14a2f] 2024-03-17 10:20:20 +0000
+--><p>
+<!--
+      Fix <command>EXPLAIN</command>'s output for subplans
+      in <command>MERGE</command> (Dean Rasheed)
+-->
+《機械翻訳》<code class="command">MERGE</code>におけるサブプランの<code class="command">EXPLAIN</code>の出力を修正しました。
+(Dean Rasheed)
+     </p><p>
+<!--
+      <command>EXPLAIN</command> would sometimes fail to properly display
+      subplan Params referencing variables in other parts of the plan tree.
+-->
+《機械翻訳》<code class="command">EXPLAIN</code>は、プランツリーの他の部分で変数を参照するサブプランパラメータを正しく表示できないことがありました。
+     </p></li><li class="listitem"><!--
+Author: Tom Lane <tgl@sss.pgh.pa.us>
+Branch: master [6faca9ae2] 2024-04-02 14:59:32 -0400
+Branch: REL_16_STABLE [cbfbb14bd] 2024-04-02 14:59:04 -0400
+Branch: REL_15_STABLE [4fb56a734] 2024-04-02 14:59:04 -0400
+Branch: REL_14_STABLE [ca392df8d] 2024-04-02 14:59:04 -0400
+Branch: REL_13_STABLE [4afc2c219] 2024-04-02 14:59:04 -0400
+Branch: REL_12_STABLE [f5d9212e5] 2024-04-02 14:59:04 -0400
+--><p>
+<!--
+      Avoid deadlock during removal of orphaned temporary tables
+      (Mikhail Zhilin)
+-->
+《機械翻訳》孤立した一時テーブルの削除中のデッドロックを回避する (Mikhail Zhilin)
+     </p><p>
+<!--
+      If the session that creates a temporary table crashes without
+      removing the table, autovacuum will eventually try to remove the
+      orphaned table.  However, an incoming session that's been assigned
+      the same temporary namespace will do that too.  If a temporary table
+      has a dependency (such as an owned sequence) then a deadlock could
+      result between these two cleanup attempts.
+-->
+《機械翻訳》一時テーブルを作成するセッションが、テーブルを削除せずにクラッシュした場合、autovacuumは最終的に孤立したテーブルを削除しようとします。
+しかし、同じ一時ネームスペースを割り当てられた着信セッションも同様に削除します。
+一時テーブルに依存関係（所有されたシーケンスなど）がある場合、これら2つのクリーンアップの試みの間にデッドロックが発生する可能性があります。
+     </p></li><li class="listitem"><!--
+Author: Heikki Linnakangas <heikki.linnakangas@iki.fi>
+Branch: master [674e49c73] 2024-03-11 09:28:09 +0200
+Branch: REL_16_STABLE [407cb6c65] 2024-03-11 09:28:21 +0200
+--><p>
+<!--
+      Fix updating of visibility map state in <command>VACUUM</command>
+      with the <literal>DISABLE_PAGE_SKIPPING</literal> option (Heikki
+      Linnakangas)
+-->
+《機械翻訳》<code class="literal">DISABLE_PAGE_SKIPPING</code>オプションを使用して、<code class="command">VACUUM</code>の可視性マップ状態の更新を修正しました。
+(Heikki Linnakangas)
+     </p><p>
+<!--
+      Due to an oversight, this mode caused all heap pages to be dirtied,
+      resulting in excess I/O.  Also, visibility map bits that were
+      incorrectly set would not get cleared.
+-->
+《機械翻訳》このモードでは、見落としにより、すべてのヒープページがダーティー状態になり、I/Oが過剰になりました。
+また、誤って設定された可視性マップビットはクリアされませんでした。
+     </p></li><li class="listitem"><!--
+Author: Noah Misch <noah@leadboat.com>
+Branch: master [f65ab862e] 2024-04-29 10:24:56 -0700
+Branch: REL_16_STABLE [92685c389] 2024-04-29 10:24:59 -0700
+Branch: REL_15_STABLE [7c5915c4b] 2024-04-29 10:24:59 -0700
+Branch: REL_14_STABLE [2ca19aa81] 2024-04-29 10:25:00 -0700
+Branch: REL_13_STABLE [70cadfba0] 2024-04-29 10:25:00 -0700
+Branch: REL_12_STABLE [f222349c4] 2024-04-29 10:25:00 -0700
+--><p>
+<!--
+      Avoid race condition while examining per-relation frozen-XID values
+      (Noah Misch)
+-->
+《機械翻訳》リレーションごとのfrozen-XID値を調べる際に競合状態を回避する。
+(Noah Misch)
+     </p><p>
+<!--
+      <command>VACUUM</command>'s computation of per-database frozen-XID
+      values from per-relation values could get confused by a concurrent
+      update of those values by another <command>VACUUM</command>.
+-->
+《機械翻訳》他の<code class="command">VACUUM</code>による値の同時更新によって、<code class="command">VACUUM</code>がデータベース単位のfrozen-XID値をリレーション単位の値から計算すると混乱する可能性があります。
+     </p></li><li class="listitem"><!--
+Author: Masahiko Sawada <msawada@postgresql.org>
+Branch: master [5cd72cc0c] 2024-05-01 12:34:06 +0900
+Branch: REL_16_STABLE [f199436c1] 2024-05-01 12:34:04 +0900
+Branch: REL_15_STABLE [faba2f8f3] 2024-05-01 12:34:01 +0900
+--><p>
+<!--
+      Fix buffer usage reporting for parallel vacuuming (Anthonin Bonnefoy)
+-->
+《機械翻訳》並列バキュームのためのバッファ使用率レポートを修正しました。
+(Antonin Bonnefoy)
+     </p><p>
+<!--
+      Buffer accesses performed by parallel workers were not getting
+      counted in the statistics reported in <literal>VERBOSE</literal>
+      mode.
+-->
+《機械翻訳》並列ワーカーによって実行されたバッファアクセスは、<code class="literal">VERBOSE</code>モードで報告される統計に含まれなくなりました。
+     </p></li><li class="listitem"><!--
+Author: Tom Lane <tgl@sss.pgh.pa.us>
+Branch: master [03107b4ed] 2024-04-16 11:22:51 -0400
+Branch: REL_16_STABLE [91800af13] 2024-04-16 11:03:43 -0400
+Branch: REL_15_STABLE [5aacfa64e] 2024-04-16 11:22:39 -0400
+Branch: REL_14_STABLE [ab2402268] 2024-04-16 11:22:39 -0400
+Branch: REL_13_STABLE [d9e4ee74f] 2024-04-16 11:22:39 -0400
+Branch: REL_12_STABLE [f502849d4] 2024-04-16 11:22:39 -0400
+--><p>
+<!--
+      Ensure that join conditions generated from equivalence classes are
+      applied at the correct plan level (Tom Lane)
+-->
+《機械翻訳》等価クラスから生成された結合条件が正しい計画レベルで適用されることを確認する (Tom Lane)
+     </p><p>
+<!--
+      In versions before <productname>PostgreSQL</productname> 16, it was
+      possible for generated conditions to be evaluated below outer joins
+      when they should be evaluated above (after) the outer join, leading
+      to incorrect query results.  All versions have a similar hazard when
+      considering joins to <command>UNION ALL</command> trees that have
+      constant outputs for the join column in
+      some <command>SELECT </command> arms.
+-->
+《機械翻訳》<span class="productname">PostgreSQL</span>16より前のバージョンでは、生成された条件が外部結合の上で評価されるべきところを下で評価される可能性があり、不正な問い合わせ結果をもたらしていました。
+すべてのバージョンは、<code class="command">SELECT</code>アームの中に出力が一定の<code class="command">UNION ALL</code>ツリーに対して結合を考える場合、同様の危険性を持っています。
+     </p></li><li class="listitem"><!--
+Author: David Rowley <drowley@postgresql.org>
+Branch: master [4169850f0] 2024-03-15 11:54:36 +1300
+Branch: REL_16_STABLE [4e1ff2aad] 2024-03-15 11:55:50 +1300
+--><p>
+<!--
+      Fix <quote>could not find pathkey item to sort</quote> errors
+      occurring while planning aggregate functions with <literal>ORDER
+      BY</literal> or <literal>DISTINCT</literal> options (David Rowley)
+-->
+《機械翻訳》<code class="literal">ORDER BY</code>または<code class="literal">DISTINCT</code>オプションを指定して集約関数を計画する際に発生する<span class="quote">「<span class="quote">pathkey項目を検索できませんでした</span>」</span>エラーを修正しました。
+(David Rowley)
+     </p><p>
+<!--
+      This is similar to a fix applied in 16.1, but it solves the problem
+      for parallel plans.
+-->
+《機械翻訳》これは、16.1で適用された修正と同様ですが、パラレル・プランの問題を解決します。
+     </p></li><li class="listitem"><!--
+Author: David Rowley <drowley@postgresql.org>
+Branch: REL_16_STABLE [9d36b883b] 2024-05-01 16:35:05 +1200
+Branch: REL_15_STABLE [7e5d20bbd] 2024-05-01 16:35:37 +1200
+--><p>
+<!--
+      Prevent potentially-incorrect optimization of some window functions
+      (David Rowley)
+-->
+《機械翻訳》一部のウィンドウ関数の最適化が不正確になる可能性を防止しました。
+(David Rowley)
+     </p><p>
+<!--
+      Disable <quote>run condition</quote> optimization
+      of <function>ntile()</function> and <function>count()</function>
+      with non-constant arguments.  This avoids possible misbehavior with
+      sub-selects, typically leading to errors like <quote>WindowFunc not
+      found in subplan target lists</quote>.
+-->
+《機械翻訳》非定数引数を持つ<code class="function">ntile()</code>と<code class="function">count()</code>の<span class="quote">「<span class="quote">実行条件</span>」</span>最適化を無効にします。
+これはサブ選択で誤動作する可能性を防ぎ、通常は<span class="quote">「<span class="quote">WindowFunc not found in subplan target lists</span>」</span>のようなエラーを引き起こします。
+     </p></li><li class="listitem"><!--
+Author: Tom Lane <tgl@sss.pgh.pa.us>
+Branch: master [a767cdc84] 2024-03-27 13:39:03 -0400
+Branch: REL_16_STABLE [a94f51a7b] 2024-03-27 13:39:03 -0400
+Branch: REL_15_STABLE [03561a6c7] 2024-03-27 13:39:03 -0400
+Branch: REL_14_STABLE [0d30e48c2] 2024-03-27 13:39:03 -0400
+Branch: REL_13_STABLE [de3c5b187] 2024-03-27 13:39:03 -0400
+Branch: REL_12_STABLE [25675c474] 2024-03-27 13:39:03 -0400
+--><p>
+<!--
+      Avoid unnecessary use of moving-aggregate mode with a non-moving
+      window frame (Vallimaharajan G)
+-->
+《機械翻訳》移動しないウィンドウフレームを使用した移動集約モードの不必要な使用を避ける。
+(Vallimaharajan G)
+     </p><p>
+<!--
+      When a plain aggregate is used as a window function, and the window
+      frame start is specified as <literal>UNBOUNDED PRECEDING</literal>,
+      the frame's head cannot move so we do not need to use the special
+      (and more expensive) moving-aggregate mode.  This optimization was
+      intended all along, but due to a coding error it never triggered.
+-->
+《機械翻訳》プレーン集約をウィンドウ関数として使用し、ウィンドウフレームの開始が<code class="literal">UNBOUNDED PRECEDING</code>に指定されている場合、フレームの先頭は移動できないため、特別な（より高価な）移動集約モードを使用する必要はありません。
+この最適化は常に意図されていましたが、コーディングエラーのためにトリガーされませんでした。
+     </p></li><li class="listitem"><!--
+Author: Tom Lane <tgl@sss.pgh.pa.us>
+Branch: master [a6b2a51e1] 2024-02-23 15:21:53 -0500
+Branch: REL_16_STABLE [ef0333e67] 2024-02-23 15:21:53 -0500
+Branch: REL_15_STABLE [37bbe3d3a] 2024-02-23 15:21:53 -0500
+Branch: REL_14_STABLE [cbeb45527] 2024-02-23 15:21:53 -0500
+Branch: REL_13_STABLE [9061fd23c] 2024-02-23 15:21:53 -0500
+Branch: REL_12_STABLE [cf807eba5] 2024-02-23 15:21:53 -0500
+--><p>
+<!--
+      Avoid use of already-freed data while planning partition-wise joins
+      under GEQO (Tom Lane)
+-->
+《機械翻訳》GEQOの下でパーティションワイズ結合を計画する際に、すでに解放されているデータの使用を避ける(Tom Lane)
+     </p><p>
+<!--
+      This would typically end in a crash or unexpected error message.
+-->
+《機械翻訳》これは通常、クラッシュまたは予期しないエラーメッセージで終了します。
+     </p></li><li class="listitem"><!--
+Author: David Rowley <drowley@postgresql.org>
+Branch: master [e62984647] 2024-03-11 18:19:56 +1300
+Branch: REL_16_STABLE [348233cb1] 2024-03-11 18:20:39 +1300
+Branch: REL_15_STABLE [74530804f] 2024-03-11 18:21:23 +1300
+Branch: REL_14_STABLE [72b8507db] 2024-03-11 18:21:48 +1300
+--><p>
+<!--
+      Avoid freeing still-in-use data in Memoize (Tender Wang, Andrei
+      Lepikhov)
+-->
+《機械翻訳》使用中のデータをメモリから解放しないようにする。
+(Tender Wang, Andrei Lepikhov)
+     </p><p>
+<!--
+      In production builds this error frequently didn't cause any
+      problems, as the freed data would most likely not get overwritten
+      before it was used.
+-->
+《機械翻訳》製品ビルドでは、このエラーは問題を起こさないことが多かった。
+解放されたデータは、使用される前に上書きされることはほとんどないからだ。
+     </p></li><li class="listitem"><!--
+Author: David Rowley <drowley@postgresql.org>
+Branch: master [a37a3e2b3] 2024-03-05 16:17:02 +1300
+Branch: REL_16_STABLE [ac7e6a01c] 2024-03-05 16:17:53 +1300
+Branch: REL_15_STABLE [164fe7a6e] 2024-03-05 16:18:19 +1300
+Branch: REL_14_STABLE [0c2dda109] 2024-03-05 16:18:42 +1300
+Branch: REL_13_STABLE [421dfb41a] 2024-03-05 16:19:05 +1300
+Branch: REL_12_STABLE [94246405d] 2024-03-05 16:19:26 +1300
+--><p>
+<!--
+      Fix incorrectly-reported statistics kind codes in <quote>requested
+      statistics kind <replaceable>X</replaceable> is not yet
+      built</quote> error messages (David Rowley)
+-->
+《機械翻訳》<span class="quote">「<span class="quote">要求された統計型<em class="replaceable"><code>X</code></em>はまだ作成されていません</span>」</span>エラーメッセージの誤ったレポートされた統計型を修正しました。
+(David Rowley)
+     </p></li><li class="listitem"><!--
+Author: Tom Lane <tgl@sss.pgh.pa.us>
+Branch: master [473182c95] 2024-03-22 17:13:53 -0400
+Branch: REL_16_STABLE [14e991db8] 2024-03-22 17:13:53 -0400
+--><p>
+<!--
+      Use a hash table instead of linear search for <quote>catcache
+      list</quote> objects (Tom Lane)
+-->
+《機械翻訳》<span class="quote">「<span class="quote">catcache list</span>」</span>オブジェクトに対して、線形探索ではなくハッシュテーブルを使用するようにしました。
+(Tom Lane)
+     </p><p>
+<!--
+      This change solves performance problems that were reported for
+      certain operations in installations with many thousands of roles.
+-->
+《機械翻訳》この変更により、数千の役割を持つインストールで特定の操作に関して報告されていたパフォーマンスの問題が解決されます。
+     </p></li><li class="listitem"><!--
+Author: Tom Lane <tgl@sss.pgh.pa.us>
+Branch: master [e0df80828] 2024-04-15 12:56:56 -0400
+Branch: REL_16_STABLE [cc1eb6a3c] 2024-04-15 12:56:56 -0400
+Branch: REL_15_STABLE [09989ba84] 2024-04-15 12:56:56 -0400
+Branch: REL_14_STABLE [78e81e14d] 2024-04-15 12:56:56 -0400
+Branch: REL_13_STABLE [b6e21cef7] 2024-04-15 12:56:56 -0400
+Branch: REL_12_STABLE [e0970862e] 2024-04-15 12:56:56 -0400
+Branch: master [2ed8f9a01] 2024-03-06 14:41:13 -0500
+Branch: REL_16_STABLE [1b3029be5] 2024-03-06 14:41:13 -0500
+Branch: REL_15_STABLE [3b671dcf5] 2024-03-06 14:41:13 -0500
+Branch: REL_14_STABLE [a595c3075] 2024-03-06 14:41:13 -0500
+Branch: REL_13_STABLE [d769f9d97] 2024-03-06 14:41:13 -0500
+Branch: REL_12_STABLE [466376c9f] 2024-03-06 14:41:13 -0500
+--><p>
+<!--
+      Be more careful with <type>RECORD</type>-returning functions
+      in <literal>FROM</literal> (Tom Lane)
+-->
+《機械翻訳》<code class="literal">FROM</code>内の<code class="type">RECORD</code>リターン関数に対してより注意を払うようにしました。
+(Tom Lane)
+     </p><p>
+<!--
+      The output columns of such a function call must be defined by
+      an <literal>AS</literal> clause that specifies the column names and
+      data types.  If the actual function output value doesn't match that,
+      an error is supposed to be thrown at runtime.  However, some code
+      paths would examine the actual value prematurely, and potentially
+      issue strange errors or suffer assertion failures if it doesn't
+      match expectations.
+-->
+《機械翻訳》このような関数呼び出しの出力列は、列名とデータ型を指定する<code class="literal">AS</code>句で定義する必要があります。
+実際の関数の出力値がこれに一致しない場合、実行時にエラーがスローされることになっています。
+しかし、一部のコードパスでは、実際の値を早めに調べてしまい、期待通りでない場合に奇妙なエラーを発生させたり、アサーションの失敗を引き起こしたりする可能性があります。
+     </p></li><li class="listitem"><!--
+Author: Tom Lane <tgl@sss.pgh.pa.us>
+Branch: master [6ee3261e9] 2024-03-12 18:16:25 -0400
+Branch: REL_16_STABLE [40d1bdeb7] 2024-03-12 18:16:10 -0400
+Branch: REL_15_STABLE [6f66fadad] 2024-03-12 18:16:10 -0400
+Branch: REL_14_STABLE [649bbba11] 2024-03-12 18:16:10 -0400
+Branch: REL_13_STABLE [28184f039] 2024-03-12 18:16:10 -0400
+Branch: REL_12_STABLE [dc1503d5b] 2024-03-12 18:16:10 -0400
+--><p>
+<!--
+      Fix confusion about the return rowtype of SQL-language procedures
+      (Tom Lane)
+-->
+《機械翻訳》SQL言語プロシージャの戻り行型に関する混乱を修正しました。
+(Tom Lane)
+     </p><p>
+<!--
+      A procedure implemented in SQL language that returns a single
+      composite-type column would cause an assertion failure or core dump.
+-->
+《機械翻訳》単一の複合型の列を返すSQL言語で実装されたプロシージャは、アサーション障害またはコアダンプを引き起こします。
+     </p></li><li class="listitem"><!--
+Author: Alexander Korotkov <akorotkov@postgresql.org>
+Branch: master [d57b7cc33] 2024-02-16 16:02:00 +0200
+Branch: master [75bcba6cb] 2024-02-21 02:51:41 +0200
+Branch: REL_16_STABLE [760767182] 2024-03-11 03:06:55 +0200
+Branch: REL_15_STABLE [84788ee5b] 2024-03-11 03:06:45 +0200
+Branch: REL_14_STABLE [84cc1a552] 2024-03-11 03:06:15 +0200
+Branch: REL_13_STABLE [445c7e38f] 2024-03-11 03:06:10 +0200
+Branch: REL_12_STABLE [98bfb7558] 2024-03-11 02:53:07 +0200
+--><p>
+<!--
+      Add protective stack depth checks to some recursive functions
+      (Egor Chindyaskin)
+-->
+《機械翻訳》一部の再帰関数に保護スタック深度チェックを追加しました。
+(Egor Chindyaskin)
+     </p></li><li class="listitem"><!--
+Author: Tom Lane <tgl@sss.pgh.pa.us>
+Branch: master [d163fdbfe] 2024-02-28 14:00:30 -0500
+Branch: REL_16_STABLE [17db5436e] 2024-02-28 14:00:30 -0500
+Branch: REL_15_STABLE [db8855b66] 2024-02-28 14:00:30 -0500
+Branch: REL_14_STABLE [fe3b1b575] 2024-02-28 14:00:30 -0500
+--><p>
+<!--
+      Fix mis-rounding and overflow hazards
+      in <function>date_bin()</function> (Moaaz Assali)
+-->
+《機械翻訳》<code class="function">date_bin()</code>の不正な丸めとオーバーフローの危険性を修正しました。
+(Moaaz Assali)
+     </p><p>
+<!--
+      In the case where the source timestamp is before the origin
+      timestamp and their difference is already an exact multiple of the
+      stride, the code incorrectly subtracted the stride anyway.  Also,
+      detect some integer-overflow cases that would have produced
+      incorrect results.
+-->
+《機械翻訳》ソース・タイムスタンプがオリジン・タイムスタンプより前で、その差がすでにストライドの整数倍である場合、コードは誤ってストライドを減算していました。
+また、不正な結果を生じる可能性のある整数オーバーフローのケースも検出しました。
+     </p></li><li class="listitem"><!--
+Author: Tom Lane <tgl@sss.pgh.pa.us>
+Branch: master [4019285c0] 2024-04-28 13:42:13 -0400
+Branch: REL_16_STABLE [3752e3d21] 2024-04-28 13:42:13 -0400
+Branch: REL_15_STABLE [e6e3ee5b7] 2024-04-28 13:42:13 -0400
+Branch: REL_14_STABLE [1748379b6] 2024-04-28 13:42:13 -0400
+Branch: REL_13_STABLE [440b6251b] 2024-04-28 13:42:13 -0400
+Branch: REL_12_STABLE [cb0ccefa0] 2024-04-28 13:42:13 -0400
+--><p>
+<!--
+      Detect integer overflow when adding or subtracting
+      an <type>interval</type> to/from a <type>timestamp</type>
+      (Joseph Koshakow)
+-->
+《機械翻訳》<code class="type">timestamp</code>に<code class="type">interval</code>を加算または減算する際に、整数オーバーフローを検出するようにしました。
+(Joseph Koshakow)
+     </p><p>
+<!--
+      Some cases that should cause an out-of-range error produced an
+      incorrect result instead.
+-->
+《機械翻訳》範囲外エラーを生成するはずの一部のケースでは、代わりに誤った結果が生成されていました。
+     </p></li><li class="listitem"><!--
+Author: Tom Lane <tgl@sss.pgh.pa.us>
+Branch: master [ce571434a] 2024-02-09 12:29:41 -0500
+Branch: REL_16_STABLE [4eb261165] 2024-02-09 12:29:41 -0500
+Branch: REL_15_STABLE [26c89d105] 2024-02-09 12:29:41 -0500
+Branch: REL_14_STABLE [d21690edb] 2024-02-09 12:29:41 -0500
+Branch: REL_13_STABLE [ceb224b62] 2024-02-09 12:29:41 -0500
+Branch: REL_12_STABLE [f38903d1e] 2024-02-09 12:29:41 -0500
+--><p>
+<!--
+      Avoid race condition in <function>pg_get_expr()</function>
+      (Tom Lane)
+-->
+《機械翻訳》<code class="function">pg_get_expr()</code>における競合状態を回避しました。
+(Tom Lane)
+     </p><p>
+<!--
+      If the relation referenced by the argument is dropped concurrently,
+      the function's intention is to return NULL, but sometimes it failed
+      instead.
+-->
+《機械翻訳》引数が参照するリレーションが同時に削除された場合、関数の意図はNULLを返すことですが、失敗することもあります。
+     </p></li><li class="listitem"><!--
+Author: Alexander Korotkov <akorotkov@postgresql.org>
+Branch: master [165d921c9] 2024-02-08 12:45:26 +0200
+Branch: REL_16_STABLE [e3e05adde] 2024-02-09 12:37:21 +0200
+Branch: REL_15_STABLE [503299b7f] 2024-02-09 12:38:32 +0200
+Branch: REL_14_STABLE [18388291a] 2024-02-09 12:39:42 +0200
+Branch: REL_13_STABLE [4efaf4b09] 2024-02-09 12:39:54 +0200
+Branch: REL_12_STABLE [d44060cfc] 2024-02-09 12:55:43 +0200
+--><p>
+<!--
+      Fix detection of old transaction IDs in XID status functions
+      (Karina Litskevich)
+-->
+《機械翻訳》XIDステータス関数における古いトランザクションIDの検出を修正しました。
+(Karina Litskevich)
+     </p><p>
+<!--
+      Transaction IDs more than 2<superscript>31</superscript>
+      transactions in the past could be misidentified as recent,
+      leading to misbehavior of <function>pg_xact_status()</function>
+      or <function>txid_status()</function>.
+-->
+《機械翻訳》過去2<sup>31</sup>回を超えるトランザクションIDは、最近のものと誤って識別される可能性があり、<code class="function">pg_xact_status()</code>または<code class="function">txid_status()</code>の誤動作を引き起こす可能性があります。
+     </p></li><li class="listitem"><!--
+Author: Noah Misch <noah@leadboat.com>
+Branch: master [935829743] 2024-04-13 08:34:20 -0700
+Branch: REL_16_STABLE [4e62ba21a] 2024-04-13 08:35:06 -0700
+Branch: REL_15_STABLE [7c490a18b] 2024-04-13 08:35:20 -0700
+Branch: REL_14_STABLE [08059fc04] 2024-04-13 08:35:32 -0700
+--><p>
+<!--
+      Ensure that a table's freespace map won't return a page that's past
+      the end of the table (Ronan Dunklau)
+-->
+《機械翻訳》テーブルの空き領域マップがテーブルの終わりを越えたページを返さないようにする (Ronan Dunklau)
+     </p><p>
+<!--
+      Because the freespace map isn't WAL-logged, this was possible in
+      edge cases involving an OS crash, a replica promote, or a PITR
+      restore.  The result would be a <quote>could not read block</quote>
+      error.
+-->
+《機械翻訳》空き領域マップはWALに記録されないため、OSのクラッシュ、レプリカの昇格、PITRのリストアなどの場合に発生する可能性があります。
+結果は<span class="quote">「<span class="quote">ブロックを読み込めません</span>」</span>エラーになります。
+     </p></li><li class="listitem"><!--
+Author: Etsuro Fujita <efujita@postgresql.org>
+Branch: REL_16_STABLE [e79ceafe9] 2024-04-11 19:05:00 +0900
+Branch: REL_15_STABLE [b82dca2a5] 2024-04-11 19:05:02 +0900
+Branch: REL_14_STABLE [b714bc40c] 2024-04-11 19:05:04 +0900
+Branch: REL_13_STABLE [01b01a77f] 2024-04-11 19:05:05 +0900
+Branch: REL_12_STABLE [0341d4b10] 2024-04-11 19:05:07 +0900
+--><p>
+<!--
+      Fix file descriptor leakage when an error is thrown while waiting
+      in <function>WaitEventSetWait</function> (Etsuro Fujita)
+-->
+《機械翻訳》<code class="function">WaitEventSetWait</code>で待機中にエラーが発生した場合のファイルディスクリプタリークを修正しました。
+(Etsuro Fujita)
+     </p></li><li class="listitem"><!--
+Author: Etsuro Fujita <efujita@postgresql.org>
+Branch: REL_16_STABLE [f6f61a4bd] 2024-04-04 17:25:00 +0900
+Branch: REL_15_STABLE [3f96d113f] 2024-04-04 17:25:02 +0900
+Branch: REL_14_STABLE [e10ca95ff] 2024-04-04 17:25:04 +0900
+--><p>
+<!--
+      Avoid corrupting exception stack if an FDW implements async append
+      but doesn't configure any wait conditions for the Append plan node
+      to wait for (Alexander Pyhalov)
+-->
+《機械翻訳》FDWが非同期追加を実装しているが、追加プランノードが待機する待機条件を設定していない場合、例外スタックの破損を回避する。
+(Alexander Pyhalov)
+     </p></li><li class="listitem"><!--
+Author: Tom Lane <tgl@sss.pgh.pa.us>
+Branch: master [f5a465f1a] 2024-02-25 16:15:07 -0500
+Branch: REL_16_STABLE [8c785d354] 2024-02-25 16:15:07 -0500
+Branch: REL_15_STABLE [940489b46] 2024-02-25 16:15:07 -0500
+Branch: REL_14_STABLE [09f09884c] 2024-02-25 16:15:07 -0500
+Branch: REL_13_STABLE [43cca9de9] 2024-02-25 16:15:07 -0500
+Branch: REL_12_STABLE [c0b4dad38] 2024-02-25 16:15:07 -0500
+--><p>
+<!--
+      Throw an error if an index is accessed while it is being reindexed
+      (Tom Lane)
+-->
+《機械翻訳》インデックスが再インデックス中にアクセスされた場合にエラーをスローするようにしました。
+(Tom Lane)
+     </p><p>
+<!--
+      Previously this was just an assertion check, but promote it into a
+      regular runtime error.  This will provide a more on-point error
+      message when reindexing a user-defined index expression that
+      attempts to access its own table.
+-->
+《機械翻訳》これまでは単なるアサーションチェックだったが、これを通常のランタイムエラーに昇格させる。
+これにより、ユーザ定義のインデックス式を再インデックスする際に、より適切なエラーメッセージが提供されるようになる。
+     </p></li><li class="listitem"><!--
+Author: David Rowley <drowley@postgresql.org>
+Branch: master [a63224be4] 2024-05-01 13:21:21 +1200
+Branch: REL_16_STABLE [68d358545] 2024-05-01 13:21:50 +1200
+Branch: REL_15_STABLE [52f21f928] 2024-05-01 13:22:16 +1200
+Branch: REL_14_STABLE [e6b0efc65] 2024-05-01 13:22:41 +1200
+Branch: REL_13_STABLE [0a34bcd0c] 2024-05-01 13:23:05 +1200
+Branch: REL_12_STABLE [e3f9dcabd] 2024-05-01 13:23:25 +1200
+--><p>
+<!--
+      Ensure that index-only scans on <type>name</type> columns return a
+      fully-padded value (David Rowley)
+-->
+《機械翻訳》<code class="type">name</code>列のインデックス専用スキャンが完全にパディングされた値を返すことを確実にします。
+(David Rowley)
+     </p><p>
+<!--
+      The value physically stored in the index is truncated, and
+      previously a pointer to that value was returned to callers.  This
+      provoked complaints when testing under valgrind.  In theory it could
+      result in crashes, though none have been reported.
+-->
+《機械翻訳》インデックスに物理的に格納された値は切り捨てられ、以前はその値へのポインタが呼び出し元に返されていた。
+これにより、valgrindでテストするときに苦情が寄せられた。
+理論的にはクラッシュを引き起こす可能性があるが、報告されていない。
+     </p></li><li class="listitem"><!--
+Author: Michael Paquier <michael@paquier.xyz>
+Branch: master [818fefd8f] 2024-02-20 13:43:51 +0900
+Branch: REL_16_STABLE [59cea09f0] 2024-02-20 13:43:56 +0900
+--><p>
+<!--
+      Fix race condition that could lead to reporting an incorrect
+      conflict cause when invalidating a replication slot (Bertrand
+      Drouvot)
+-->
+《機械翻訳》レプリケーションスロットを無効化するときに不正な競合原因を報告する可能性がある競合状態を修正しました。
+(Bertrand Drouvot)
+     </p></li><li class="listitem"><!--
+Author: Amit Kapila <akapila@postgresql.org>
+Branch: master [aa79bde72] 2024-04-25 10:40:52 +0530
+Branch: REL_16_STABLE [a9155efc7] 2024-04-25 10:52:34 +0530
+Branch: REL_15_STABLE [28a8cc457] 2024-04-25 10:33:04 +0530
+--><p>
+<!--
+      Fix race condition in deciding whether a table sync operation is
+      needed in logical replication (Vignesh C)
+-->
+《機械翻訳》論理レプリケーションでテーブル同期操作が必要かどうかを判断する際の競合状態を修正しました。
+(Vignesh C)
+     </p><p>
+<!--
+      An invalidation event arriving while a subscriber identifies which
+      tables need to be synced would be forgotten about, so that any
+      tables newly in need of syncing might not get processed in a timely
+      fashion.
+-->
+《機械翻訳》サブスクライバが同期化が必要なテーブルを識別している間に無効化イベントが到着すると、そのことを忘れてしまうため、同期化が必要な新しいテーブルが適時に処理されない可能性があります。
+     </p></li><li class="listitem"><!--
+Author: Heikki Linnakangas <heikki.linnakangas@iki.fi>
+Branch: master [fbf9a7ac4] 2024-02-13 21:23:41 +0200
+Branch: REL_16_STABLE [f2f09b825] 2024-02-13 21:24:45 +0200
+Branch: REL_15_STABLE [d46c26961] 2024-02-13 21:25:27 +0200
+Branch: REL_14_STABLE [9b8550fbd] 2024-02-13 21:25:39 +0200
+Branch: REL_13_STABLE [e92375692] 2024-02-13 21:25:48 +0200
+Branch: REL_12_STABLE [95cc48ca0] 2024-02-13 21:25:59 +0200
+--><p>
+<!--
+      Fix crash with DSM allocations larger than 4GB (Heikki Linnakangas)
+-->
+《機械翻訳》DSM の割り当てが 4GB を超える場合のクラッシュを修正しました。
+(Heikki Linnakangas)
+     </p></li><li class="listitem"><!--
+Author: Heikki Linnakangas <heikki.linnakangas@iki.fi>
+Branch: master [f8c5317d0] 2024-03-12 10:18:32 +0200
+Branch: REL_16_STABLE [539e328b1] 2024-03-12 10:18:44 +0200
+Branch: REL_15_STABLE [4fce5f970] 2024-03-12 10:18:50 +0200
+Branch: REL_14_STABLE [bf1f593e8] 2024-03-12 10:18:51 +0200
+Branch: REL_13_STABLE [ad5cd55e6] 2024-03-12 10:18:53 +0200
+Branch: REL_12_STABLE [df27d76d3] 2024-03-12 10:18:54 +0200
+--><p>
+<!--
+      Disconnect if a new server session's client socket cannot be put
+      into non-blocking mode (Heikki Linnakangas)
+-->
+《機械翻訳》新しいサーバ・セッションのクライアント・ソケットが非ブロック・モードに入れない場合は切断する (Heikki Linnakangas)
+     </p><p>
+<!--
+      It was once theoretically possible for us to operate with a socket
+      that's in blocking mode; but that hasn't worked fully in a long
+      time, so fail at connection start rather than misbehave later.
+-->
+《機械翻訳》以前は、ブロッキングモードのソケットで動作することが理論的に可能でしたが、長い間完全には機能しなかったため、後で誤動作するのではなく、接続開始時に失敗します。
+     </p></li><li class="listitem"><!--
+Author: Tom Lane <tgl@sss.pgh.pa.us>
+Branch: master [453c46873] 2024-03-07 19:38:17 -0500
+Branch: REL_16_STABLE [6a2c80e95] 2024-03-07 19:37:51 -0500
+Branch: REL_15_STABLE [0fe82e45c] 2024-03-07 19:37:51 -0500
+Branch: REL_14_STABLE [473babd42] 2024-03-07 19:37:51 -0500
+Branch: REL_13_STABLE [9fbe07275] 2024-03-07 19:37:51 -0500
+Branch: REL_12_STABLE [c42e5fdcf] 2024-03-07 19:37:51 -0500
+--><p>
+<!--
+      Fix inadequate error reporting
+      with <application>OpenSSL</application> 3.0.0 and later (Heikki
+      Linnakangas, Tom Lane)
+-->
+《機械翻訳》<span class="application">OpenSSL</span> 3.0.0以降での不適切なエラー報告を修正しました。
+(Heikki Linnakangas, Tom Lane)
+     </p><p>
+<!--
+      System-reported errors passed through by OpenSSL were reported with
+      a numeric error code rather than anything readable.
+-->
+《機械翻訳》OpenSSL によって渡されたシステム報告エラーは、読み取り可能なものではなく、数値エラーコードで報告されました。
+     </p></li><li class="listitem"><!--
+Author: Thomas Munro <tmunro@postgresql.org>
+Branch: master [65f438471] 2024-02-12 11:14:21 +1300
+Branch: REL_16_STABLE [0460e4ecc] 2024-02-12 11:14:42 +1300
+--><p>
+<!--
+      Fix thread-safety of error reporting
+      for <function>getaddrinfo()</function> on Windows (Thomas Munro)
+-->
+《機械翻訳》Windows上の<code class="function">getaddrinfo()</code>のエラー報告のスレッドセーフを修正しました。
+(Thomas Munro)
+     </p><p>
+<!--
+      A multi-threaded <application>libpq</application> client program
+      could get an incorrect or corrupted error message after a network
+      lookup failure.
+-->
+《機械翻訳》マルチスレッドの<span class="application">libpq</span>クライアントプログラムは、ネットワーク検索が失敗した後に、誤ったエラーメッセージや壊れたエラーメッセージを受け取る可能性があります。
+     </p></li><li class="listitem"><!--
+Author: Tom Lane <tgl@sss.pgh.pa.us>
+Branch: master [a584d03ce] 2024-02-09 11:21:08 -0500
+Branch: REL_16_STABLE [52afe5632] 2024-02-09 11:21:08 -0500
+Branch: REL_15_STABLE [806f98951] 2024-02-09 11:21:08 -0500
+Branch: REL_14_STABLE [8ead39e38] 2024-02-09 11:21:08 -0500
+Branch: REL_13_STABLE [8c5da20db] 2024-02-09 11:21:08 -0500
+Branch: REL_12_STABLE [9fb1396a9] 2024-02-09 11:21:08 -0500
+Branch: master [0028b55bc] 2024-02-09 11:11:39 -0500
+Branch: REL_16_STABLE [9440d23a0] 2024-02-09 11:11:39 -0500
+Branch: REL_15_STABLE [9f041b041] 2024-02-09 11:11:39 -0500
+Branch: REL_14_STABLE [7d7cc7fd6] 2024-02-09 11:11:39 -0500
+Branch: REL_13_STABLE [67f8cf0f0] 2024-02-09 11:11:39 -0500
+Branch: REL_12_STABLE [95e960e81] 2024-02-09 11:11:39 -0500
+--><p>
+<!--
+      Avoid concurrent calls to <function>bindtextdomain()</function>
+      in <application>libpq</application>
+      and <application>ecpglib</application> (Tom Lane)
+-->
+《機械翻訳》<span class="application">libpq</span>と<span class="application">ecpglib</span>で<code class="function">bindtextdomain()</code>を同時に呼び出さないようにしました。
+(Tom Lane)
+     </p><p>
+<!--
+      Although GNU <application>gettext</application>'s implementation
+      seems to be fine with concurrent calls, the version available on
+      Windows is not.
+-->
+《機械翻訳》GNU <span class="application">gettext</span>の実装は並行呼び出しに対しては問題ないように見えますが、Windowsで利用できるバージョンはそうではありません。
+     </p></li><li class="listitem"><!--
+Author: Tom Lane <tgl@sss.pgh.pa.us>
+Branch: master [6f0cef935] 2024-04-16 12:31:42 -0400
+Branch: REL_16_STABLE [392e6e9e6] 2024-04-16 12:31:32 -0400
+Branch: REL_15_STABLE [25f937217] 2024-04-16 12:31:32 -0400
+Branch: REL_14_STABLE [463164639] 2024-04-16 12:31:32 -0400
+Branch: REL_13_STABLE [02531e8ca] 2024-04-16 12:31:32 -0400
+Branch: REL_12_STABLE [2b6a74afe] 2024-04-16 12:31:32 -0400
+Branch: REL_16_STABLE [0018f0af5] 2024-04-18 20:47:37 -0400
+Branch: REL_15_STABLE [1e7b1b026] 2024-04-18 20:47:37 -0400
+Branch: REL_14_STABLE [df66319f7] 2024-04-18 20:47:37 -0400
+Branch: REL_13_STABLE [481597fc6] 2024-04-18 20:47:37 -0400
+Branch: REL_12_STABLE [61dd815e0] 2024-04-18 20:47:37 -0400
+Branch: REL_16_STABLE [dd3fddc85] 2024-04-19 01:07:16 -0400
+Branch: REL_15_STABLE [f7e891748] 2024-04-19 01:07:32 -0400
+Branch: REL_14_STABLE [de84608e2] 2024-04-19 01:07:41 -0400
+Branch: REL_13_STABLE [c6bfeab42] 2024-04-19 01:07:47 -0400
+Branch: REL_12_STABLE [cd26f08e4] 2024-04-19 01:07:52 -0400
+--><p>
+<!--
+      Fix crash in <application>ecpg</application>'s preprocessor if
+      the program tries to redefine a macro that was defined on the
+      preprocessor command line (Tom Lane)
+-->
+《機械翻訳》<span class="application">ecpg</span>のプリプロセッサで、プログラムがプリプロセッサコマンドラインで定義されたマクロを再定義しようとした場合のクラッシュを修正しました。
+(Tom Lane)
+     </p></li><li class="listitem"><!--
+Author: Tom Lane <tgl@sss.pgh.pa.us>
+Branch: master [096a761d6] 2024-04-04 15:31:53 -0400
+Branch: REL_16_STABLE [118558e6d] 2024-04-04 15:31:53 -0400
+Branch: REL_15_STABLE [f159f1814] 2024-04-04 15:31:53 -0400
+Branch: REL_14_STABLE [d3167ed3f] 2024-04-04 15:31:53 -0400
+Branch: REL_13_STABLE [5ba29e945] 2024-04-04 15:31:53 -0400
+Branch: REL_12_STABLE [360d007e3] 2024-04-04 15:31:53 -0400
+--><p>
+<!--
+      In <application>ecpg</application>, avoid issuing
+      false <quote>unsupported feature will be passed to server</quote>
+      warnings (Tom Lane)
+-->
+《機械翻訳》<span class="application">ecpg</span>において、偽の<span class="quote">「<span class="quote">サポートされていない機能はサーバに渡されます</span>」</span>警告を発行しないようにしました。
+(Tom Lane)
+     </p></li><li class="listitem"><!--
+Author: Michael Paquier <michael@paquier.xyz>
+Branch: master [e77a1c58e] 2024-02-19 11:38:18 +0900
+Branch: REL_16_STABLE [88e03d055] 2024-02-19 11:38:44 +0900
+Branch: REL_15_STABLE [b5cb6022b] 2024-02-19 11:38:47 +0900
+Branch: REL_14_STABLE [a05bb9add] 2024-02-19 11:38:49 +0900
+Branch: REL_13_STABLE [c031ce97b] 2024-02-19 11:38:52 +0900
+Branch: REL_12_STABLE [771240f97] 2024-02-19 11:38:54 +0900
+--><p>
+<!--
+      Ensure that the string result
+      of <application>ecpg</application>'s <function>intoasc()</function>
+      function is correctly zero-terminated (Oleg Tselebrovskiy)
+-->
+《機械翻訳》<span class="application">ecpg</span>の<code class="function">intoasc()</code>関数の文字列結果が正しくゼロで終了するようにしました。
+(Oleg Tselebrovskiy)
+     </p></li><li class="listitem"><!--
+Author: Tom Lane <tgl@sss.pgh.pa.us>
+Branch: master [fce2ce797] 2024-03-04 12:00:48 -0500
+Branch: REL_16_STABLE [b78f4d22b] 2024-03-04 12:00:39 -0500
+--><p>
+<!--
+      In <application>initdb</application>'s <option>-c</option> option,
+      match parameter names case-insensitively (Tom Lane)
+-->
+《機械翻訳》<span class="application">initdb</span>の<code class="option">-c</code>オプションで、パラメータ名を大文字小文字を区別しないでマッチさせます。
+(Tom Lane)
+     </p><p>
+<!--
+      The server treats parameter names case-insensitively, so this code
+      should too.  This avoids putting redundant entries into the
+      generated <filename>postgresql.conf</filename> file.
+-->
+《機械翻訳》サーバはパラメータ名を大文字小文字を区別せずに扱うので、このコードも同様にするべきです。
+これにより、生成された<code class="filename">postgresql.conf</code>ファイルに冗長なエントリが入らなくなります。
+     </p></li><li class="listitem"><!--
+Author: Tom Lane <tgl@sss.pgh.pa.us>
+Branch: master [f463de59d] 2024-04-08 17:00:07 -0400
+Branch: REL_16_STABLE [a85e3ba1c] 2024-04-08 17:00:07 -0400
+Branch: REL_15_STABLE [4f1d33d70] 2024-04-08 17:00:07 -0400
+--><p>
+<!--
+      In <application>psql</application>, avoid leaking a query result
+      after the query is cancelled (Tom Lane)
+-->
+《機械翻訳》<span class="application">psql</span>で、クエリがキャンセルされた後にクエリ結果を漏らさないようにしました。
+(Tom Lane)
+     </p><p>
+<!--
+      This happened only when cancelling a non-last query in a query
+      string made with <literal>\;</literal> separators.
+-->
+《機械翻訳》これは、<code class="literal">\</code>区切り文字を使用して作成されたクエリ文字列で最後でないクエリをキャンセルした場合にのみ発生しました。
+     </p></li><li class="listitem"><!--
+Author: Daniel Gustafsson <dgustafsson@postgresql.org>
+Branch: master [7e65ad197] 2024-03-21 23:31:57 +0100
+Branch: REL_16_STABLE [5863bacb8] 2024-03-21 23:31:57 +0100
+Branch: REL_15_STABLE [12128be62] 2024-03-21 23:31:57 +0100
+Branch: REL_14_STABLE [be01c8c34] 2024-03-21 23:31:57 +0100
+Branch: REL_13_STABLE [affc46b76] 2024-03-21 23:31:57 +0100
+Branch: REL_12_STABLE [d82cb467b] 2024-03-21 23:31:57 +0100
+Branch: REL_14_STABLE [6ebd43725] 2024-03-22 01:01:30 +0100
+Branch: REL_13_STABLE [d5c6affb8] 2024-03-22 01:01:30 +0100
+Branch: REL_12_STABLE [82c2192d9] 2024-03-22 01:01:30 +0100
+--><p>
+<!--
+      Fix <application>pg_dumpall</application> so that role comments, if
+      present, will be dumped regardless of the setting
+      of <option>&#45;-no-role-passwords</option> (Daniel Gustafsson,
+      &Aacute;lvaro Herrera)
+-->
+《機械翻訳》<span class="application">pg_dumpall</span>を修正して、ロールコメントが存在する場合、<code class="option">--no-role-passwords</code>の設定に関わらず、ロールコメントがダンプされるようにしました。
+(Daniel Gustafsson, Álvaro Herrera)
+     </p></li><li class="listitem"><!--
+Author: Daniel Gustafsson <dgustafsson@postgresql.org>
+Branch: master [c1fc502f5] 2024-02-13 13:47:12 +0100
+Branch: REL_16_STABLE [103235888] 2024-02-13 13:47:12 +0100
+Branch: REL_15_STABLE [29f005238] 2024-02-13 13:47:12 +0100
+--><p>
+<!--
+      Skip files named <filename>.DS_Store</filename>
+      in <application>pg_basebackup</application>,
+      <application>pg_checksums</application>,
+      and <application>pg_rewind</application> (Daniel Gustafsson)
+-->
+《機械翻訳》<span class="application">pg_basebackup</span>、<span class="application">pg_checksums</span>、<span class="application">pg_rewind</span>で<code class="filename">.DS_Store</code>という名前のファイルをスキップするようにしました。
+(Daniel Gustafsson)
+     </p><p>
+<!--
+      This avoids problems on macOS, where the Finder may create such
+      files.
+-->
+《機械翻訳》これにより、Finderがそのようなファイルを作成する可能性があるmacOSでの問題を回避できます。
+     </p></li><li class="listitem"><!--
+Author: Tom Lane <tgl@sss.pgh.pa.us>
+Branch: master [5392dd3d2] 2024-04-10 15:45:58 -0400
+Branch: REL_16_STABLE [48f216dc6] 2024-04-10 15:45:58 -0400
+Branch: REL_15_STABLE [d85db0a8e] 2024-04-10 15:45:59 -0400
+Branch: REL_14_STABLE [dc5824a06] 2024-04-10 15:45:59 -0400
+Branch: REL_13_STABLE [f5cee411a] 2024-04-10 15:45:59 -0400
+Branch: REL_12_STABLE [5e9d8bed0] 2024-04-10 15:45:59 -0400
+--><p>
+<!--
+      Fix <application>PL/pgSQL</application>'s parsing of single-line
+      comments (<literal>&#45;-</literal>-style comments) following
+      expressions (Erik Wienhold, Tom Lane)
+-->
+《機械翻訳》式の後に続く単一行コメント（<code class="literal">--</code>-スタイルのコメント）の<span class="application">PL/pgSQL</span>の解析を修正しました。
+(Erik Wienhold, Tom Lane)
+     </p><p>
+<!--
+      This mistake caused parse errors if such a comment followed
+      a <literal>WHEN</literal> expression in
+      a <application>PL/pgSQL</application> <command>CASE</command>
+      statement.
+-->
+《機械翻訳》このエラーは、<span class="application">PL/pgSQL</span> <code class="command">CASE</code>文の<code class="literal">WHEN</code>式の後にこのようなコメントがあると、解析エラーを引き起こします。
+     </p></li><li class="listitem"><!--
+Author: Alexander Korotkov <akorotkov@postgresql.org>
+Branch: master [b1fe8efdf] 2024-03-24 00:09:24 +0200
+Branch: REL_16_STABLE [3676b846b] 2024-03-23 23:02:30 +0200
+Branch: REL_15_STABLE [0d466bce9] 2024-03-23 23:02:43 +0200
+Branch: REL_14_STABLE [4e8529da4] 2024-03-23 23:03:10 +0200
+Branch: REL_13_STABLE [5cc1f2626] 2024-03-23 23:03:12 +0200
+Branch: REL_12_STABLE [d603e6744] 2024-03-24 00:08:13 +0200
+Branch: master [ab65dfb0f] 2024-03-24 00:09:24 +0200
+Branch: REL_16_STABLE [a6ddb8ad0] 2024-03-23 23:02:30 +0200
+Branch: REL_15_STABLE [54e6184db] 2024-03-23 23:02:43 +0200
+Branch: REL_14_STABLE [5df5d9cd7] 2024-03-23 23:03:10 +0200
+Branch: REL_13_STABLE [e2c241416] 2024-03-23 23:03:12 +0200
+Branch: REL_12_STABLE [50f8611d0] 2024-03-23 23:03:14 +0200
+--><p>
+<!--
+      In <filename>contrib/amcheck</filename>, don't report false match
+      failures due to short- versus long-header values (Andrey Borodin,
+      Michael Zhilin)
+-->
+《機械翻訳》<code class="filename">contrib/amcheck</code>において、短いヘッダと長いヘッダの値による偽の一致失敗を報告しないようにしました。
+(Andrey Borodin, Michael Zhilin)
+     </p><p>
+<!--
+      A variable-length datum in a heap tuple or index tuple could have
+      either a short or a long header, depending on compression parameters
+      that applied when it was made.  Treat these cases as equivalent
+      rather than complaining if there's a difference.
+-->
+《機械翻訳》ヒープタプルまたはインデックスタプル内の可変長データは、作成時に適用された圧縮パラメータに応じて、短いヘッダーまたは長いヘッダーを持つことができます。
+違いがあると文句を言うのではなく、これらのケースを同等として扱ってください。
+     </p></li><li class="listitem"><!--
+Author: Tomas Vondra <tomas.vondra@postgresql.org>
+Branch: master [bb616ed3e] 2024-04-14 18:19:58 +0200
+Branch: REL_16_STABLE [8cea358b1] 2024-04-14 18:24:38 +0200
+Branch: master [2f20ced1e] 2024-04-14 18:07:15 +0200
+Branch: REL_16_STABLE [ccd8f0fa1] 2024-04-14 18:17:09 +0200
+Branch: REL_15_STABLE [3cd413511] 2024-04-14 18:17:29 +0200
+Branch: REL_14_STABLE [ad23af83d] 2024-04-14 18:18:07 +0200
+--><p>
+<!--
+      Fix bugs in BRIN output functions (Tomas Vondra)
+-->
+《機械翻訳》BRIN出力関数のバグを修正しました。
+(Tomas Vondra)
+     </p><p>
+<!--
+      These output functions are only used for displaying index entries
+      in <filename>contrib/pageinspect</filename>, so the errors are of
+      limited practical concern.
+-->
+《機械翻訳》これらの出力関数は<code class="filename">contrib/pageinspect</code>内のインデックスエントリを表示するためだけに使用されるため、エラーは実用上の問題にはなりません。
+     </p></li><li class="listitem"><!--
+Author: David Rowley <drowley@postgresql.org>
+Branch: master [c399248b3] 2024-03-11 12:27:11 +1300
+Branch: REL_16_STABLE [6a9e2cb2b] 2024-03-11 12:27:46 +1300
+Branch: REL_15_STABLE [ab64b275a] 2024-03-11 12:28:11 +1300
+Branch: REL_14_STABLE [628c3f2e1] 2024-03-11 12:28:40 +1300
+Branch: REL_13_STABLE [20b85b3da] 2024-03-11 12:29:03 +1300
+Branch: REL_12_STABLE [9301e0f41] 2024-03-11 12:29:24 +1300
+--><p>
+<!--
+      In <filename>contrib/postgres_fdw</filename>, avoid emitting
+      requests to sort by a constant (David Rowley)
+-->
+《機械翻訳》<code class="filename">contrib/postgres_fdw</code>では、定数によるソートの要求を出さないようにしました。
+(David Rowley)
+     </p><p>
+<!--
+      This could occur in cases involving <literal>UNION ALL</literal>
+      with constant-emitting subqueries.  Sorting by a constant is useless
+      of course, but it also risks being misinterpreted by the remote
+      server, leading to <quote>ORDER BY
+      position <replaceable>N</replaceable> is not in select list</quote>
+      errors.
+-->
+《機械翻訳》これは、定数を発行する副問い合わせを含む<code class="literal">UNION ALL</code>の場合に発生する可能性があります。
+もちろん、定数でソートすることは無意味ですが、リモートサーバが誤って解釈して<span class="quote">「<span class="quote">ORDER BY position <em class="replaceable"><code>N</code></em> is not in select list</span>」</span>というエラーを出す危険性もあります。
+     </p></li><li class="listitem"><!--
+Author: Tom Lane <tgl@sss.pgh.pa.us>
+Branch: master [a3021aafc] 2024-04-21 13:46:20 -0400
+Branch: REL_16_STABLE [75929b6cf] 2024-04-21 13:46:20 -0400
+Branch: REL_15_STABLE [6c85e3359] 2024-04-21 13:46:20 -0400
+Branch: REL_14_STABLE [3ed6e1698] 2024-04-21 13:46:20 -0400
+Branch: REL_13_STABLE [0e56b2b94] 2024-04-21 13:46:20 -0400
+Branch: REL_12_STABLE [ce1c30ece] 2024-04-21 13:46:20 -0400
+--><p>
+<!--
+      Make <filename>contrib/postgres_fdw</filename> set the remote
+      session's time zone to <literal>GMT</literal>
+      not <literal>UTC</literal> (Tom Lane)
+-->
+《機械翻訳》<code class="filename">contrib/postgres_fdw</code>にリモートセッションのタイムゾーンを<code class="literal">UTC</code>ではなく<code class="literal">GMT</code>に設定するようにしました。
+(Tom Lane)
+     </p><p>
+<!--
+      This should have the same results for practical purposes.
+      However, <literal>GMT</literal> is recognized by hard-wired code in
+      the server, while <literal>UTC</literal> is looked up in the
+      timezone database.  So the old code could fail in the unlikely event
+      that the remote server's timezone database is missing entries.
+-->
+《機械翻訳》これは、実用上は同じ結果をもたらすはずです。
+しかし、<code class="literal">GMT</code>はサーバのハードコードされたコードによって認識され、<code class="literal">UTC</code>はタイムゾーンデータベースで検索されます。
+したがって、リモートサーバのタイムゾーンデータベースにエントリがないというまれなケースでは、古いコードが失敗する可能性があります。
+     </p></li><li class="listitem"><!--
+Author: Michael Paquier <michael@paquier.xyz>
+Branch: REL_16_STABLE [7c93f31de] 2024-04-16 12:25:48 +0900
+Branch: REL_15_STABLE [689ba4f1c] 2024-04-16 12:26:10 +0900
+Branch: REL_14_STABLE [6fa5e67e8] 2024-04-16 12:26:15 +0900
+Branch: REL_13_STABLE [bb418aeee] 2024-04-16 12:26:17 +0900
+Branch: REL_12_STABLE [4b0e5d601] 2024-04-16 12:26:21 +0900
+--><p>
+<!--
+      In <filename>contrib/xml2</filename>, avoid use of library functions
+      that have been deprecated in recent versions
+      of <application>libxml2</application> (Dmitry Koval)
+-->
+《機械翻訳》<code class="filename">contrib/xml2</code>では、<span class="application">libxml2</span>の最近のバージョンで非推奨となったライブラリ関数の使用を避けてください。
+(Dmitry Koval)
+     </p></li><li class="listitem"><!--
+Author: Thomas Munro <tmunro@postgresql.org>
+Branch: master [53c8d6c9f] 2024-04-10 12:13:46 +1200
+Branch: REL_16_STABLE [bf1cfe77e] 2024-04-10 10:46:15 +1200
+Branch: REL_15_STABLE [74992929a] 2024-04-10 12:14:04 +1200
+Branch: REL_14_STABLE [7fe32eaa4] 2024-04-10 12:15:07 +1200
+Branch: REL_13_STABLE [4f90750b5] 2024-04-10 12:15:41 +1200
+Branch: REL_12_STABLE [01b55203a] 2024-04-10 12:15:59 +1200
+--><p>
+<!--
+      Fix incompatibility with LLVM 18 (Thomas Munro, Dmitry Dolgov)
+-->
+《機械翻訳》LLVM 18との非互換性を修正しました。
+(Thomas Munro, Dmitry Dolgov)
+     </p></li><li class="listitem"><!--
+Author: Tom Lane <tgl@sss.pgh.pa.us>
+Branch: master [8a92b70c1] 2024-03-26 11:44:49 -0400
+Branch: REL_16_STABLE [7651fd387] 2024-03-26 11:44:49 -0400
+Branch: REL_15_STABLE [3c3f4fd74] 2024-03-26 11:44:49 -0400
+Branch: REL_14_STABLE [d82605bcd] 2024-03-26 11:44:49 -0400
+Branch: REL_13_STABLE [243e99532] 2024-03-26 11:44:49 -0400
+Branch: REL_12_STABLE [7124e7d52] 2024-03-26 11:44:49 -0400
+--><p>
+<!--
+      Allow <literal>make check</literal> to work with
+      the <application>musl</application> C library (Thomas Munro, Bruce
+      Momjian, Tom Lane)
+-->
+《機械翻訳》<span class="application">musl</span> Cライブラリで<code class="literal">make check</code>を動作させられるようにしました。
+(Thomas Munro, Bruce Momjian, Tom Lane)
+     </p></li></ul></div></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="release.html" title="付録E リリースノート">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="release.html" title="付録E リリースノート">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="release-16-2.html" title="E.2. リリース16.2">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">付録E リリースノート </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 16.3文書">ホーム</a></td><td width="40%" align="right" valign="top"> E.2. リリース16.2</td></tr></table></div></body></html>

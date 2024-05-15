@@ -5,13 +5,25 @@ layout: default
 
 [正式版](https://www.postgresql.jp/document/)
 
-### 最新
+### 最新 master
+
+| HTML （オンライン）           | PDF                        |
+|:---------------------------|:-------------------:|
+| [html](master/html) | [PDF](master/postgres-A4.pdf) |
+
+### 最新 PostgreSQL 16
 
 last-updated: 2024-05-15 04:20:29 JST
 
 | HTML （オンライン）           | PDF                        |
 |:---------------------------|:-------------------:|
 | [html](current/html) | [PDF](current/postgres-A4.pdf) |
+
+### PostgreSQL 16
+
+| HTML （オンライン）           | PDF                                           | EPUB                                         | man | 更新日     |
+|:---------------------------|:---------------------------------------------:|:--------------------------------------------:|:---:|:----------:|
+| [16.0](jpug-doc/16.0/html/) | [PDF](jpug-doc/16.0/postgresql-16.0-A4.pdf) | [EPUB](jpug-doc/16.0/postgresql-16.0.epub) | [man.tar.gz](jpug-doc/16.0/man.tar.gz) | 2024-05-15 |
 
 ### PostgreSQL 15
 
@@ -47,10 +59,6 @@ last-updated: 2024-05-15 04:20:29 JST
 | HTML （オンライン）           | PDF                                           | EPUB                                         | man | 更新日     |
 |:---------------------------|:---------------------------------------------:|:--------------------------------------------:|:---:|:----------:|
 | [11.5](jpug-doc/11.5/html/) | [PDF](jpug-doc/11.5/postgresql-11.5-A4.pdf) | [EPUB](jpug-doc/11.5/postgresql-11.5.epub) | [man.tar.gz](jpug-doc/11.5/man.tar.gz) | 2019-10-05 |
-| [11.4](jpug-doc/11.4/html/) | [PDF](jpug-doc/11.4/postgresql-11.4-A4.pdf) | [EPUB](jpug-doc/11.4/postgresql-11.4.epub) | [man.tar.gz](jpug-doc/11.4/man.tar.gz) | 2019-07-22 |
-| [11.3](jpug-doc/11.3/html/) | [PDF](jpug-doc/11.3/postgresql-11.3-A4.pdf) | [EPUB](jpug-doc/11.3/postgresql-11.3.epub) | [man.tar.gz](jpug-doc/11.3/man.tar.gz) | 2019-07-08 |
-| [11.1](jpug-doc/11.1/html/) | [PDF](jpug-doc/11.1/postgresql-11.1-A4.pdf) | [EPUB](jpug-doc/11.1/postgresql-11.1.epub) | [man.tar.gz](jpug-doc/11.1/man.tar.gz) | 2019-04-30 |
-
 
 ### PostgreSQL 10
 
