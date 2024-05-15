@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>25.1. 定常的なバキューム作業</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="maintenance.html" title="第25章 定常的なデータベース保守作業" /><link rel="next" href="routine-reindex.html" title="25.2. 定常的なインデックスの再作成" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 16.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="maintenance.html" title="第25章 定常的なデータベース保守作業">第25章 定常的なデータベース保守作業</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 16.0 : routine-vacuuming.html">誤訳等の報告
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>25.1. 定常的なバキューム作業</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="maintenance.html" title="第25章 定常的なデータベース保守作業" /><link rel="next" href="routine-reindex.html" title="25.2. 定常的なインデックスの再作成" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 16.3文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="maintenance.html" title="第25章 定常的なデータベース保守作業">第25章 定常的なデータベース保守作業</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 16.3 : routine-vacuuming.html">誤訳等の報告
                     </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="maintenance.html" title="第25章 定常的なデータベース保守作業">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="maintenance.html" title="第25章 定常的なデータベース保守作業">上へ</a></td><td width="60%" align="center">25.1. 定常的なバキューム作業</td><td width="20%" align="right"> <a accesskey="n" href="routine-reindex.html" title="25.2. 定常的なインデックスの再作成">次へ</a></td></tr></table><hr /></div><div class="sect1" id="ROUTINE-VACUUMING"><div class="titlepage"><div><div><h2 class="title" style="clear: both">25.1. 定常的なバキューム作業 <a href="#ROUTINE-VACUUMING" class="id_link">#</a></h2></div></div></div><span class="original">
   &lt;title&gt;Routine Vacuuming&lt;/title&gt;
 </span><a id="id-1.6.12.12.2" class="indexterm"></a><a id="id-1.6.12.12.3" class="indexterm"></a><p>
@@ -731,18 +731,19 @@ HINT:  To avoid a database shutdown, execute a database-wide VACUUM in that data
 
 <span class="original">
     (A manual &lt;command&gt;VACUUM&lt;/command&gt; should fix the problem, as suggested by the
-    hint; but note that the &lt;command&gt;VACUUM&lt;/command&gt; must be performed by a
-    superuser, else it will fail to process system catalogs and thus not
-    be able to advance the database's &lt;structfield&gt;datfrozenxid&lt;/structfield&gt;.)
-    If these warnings are
-    ignored, the system will shut down and refuse to start any new
-    transactions once there are fewer than three million transactions left
-    until wraparound:
+    hint; but note that the &lt;command&gt;VACUUM&lt;/command&gt; should be performed by a
+    superuser, else it will fail to process system catalogs, which prevent it from
+    being able to advance the database's &lt;structfield&gt;datfrozenxid&lt;/structfield&gt;.)
+    If these warnings are ignored, the system will refuse to assign new XIDs once
+    there are fewer than three million transactions left until wraparound:
 </span>
-（ヒントで示唆されたように手動<code class="command">VACUUM</code>はこの問題を解決します。
+《マッチ度[81.127983]》（ヒントで示唆されたように手動<code class="command">VACUUM</code>はこの問題を解決します。
 しかし、<code class="command">VACUUM</code>はスーパーユーザで実行されなければなりません。
 さもないとシステムカタログの処理に失敗し、このためデータベースの<code class="structfield">datfrozenxid</code>を繰り上げることができません。）
 こうした警告も無視し続け、周回するまでのトランザクションが300万より少なくなると、システムは停止し、新しいトランザクションの起動を拒絶します。
+《機械翻訳》（手動の<code class="command">VACUUM</code>はヒントで示されているように問題を修正するはずですが、<code class="command">VACUUM</code>はスーパーユーザによって実行される必要があることに注意してください。
+そうしないと、データベースの<code class="structfield">datfrozenxid</code>を進めることができないシステムカタログの処理に失敗します。
+これらの警告が無視されると、ラップアラウンドまでのトランザクション数が300万未満になると、新しいXIDの割り当てが拒否されます。
 
 </p><pre class="programlisting">
 ERROR:  database is not accepting commands to avoid wraparound data loss in database "mydb"
@@ -750,22 +751,87 @@ HINT:  Stop the postmaster and vacuum that database in single-user mode.
 </pre><p>
 
 <span class="original">
-    The three-million-transaction safety margin exists to let the
-    administrator recover without data loss, by manually executing the
-    required &lt;command&gt;VACUUM&lt;/command&gt; commands.  However, since the system will not
-    execute commands once it has gone into the safety shutdown mode,
-    the only way to do this is to stop the server and start the server in single-user
-    mode to execute &lt;command&gt;VACUUM&lt;/command&gt;.  The shutdown mode is not enforced
-    in single-user mode.  See the &lt;xref linkend="app-postgres"/&gt; reference
-    page for details about using single-user mode.
+    In this condition any transactions already in progress can continue,
+    but only read-only transactions can be started. Operations that
+    modify database records or truncate relations will fail.
+    The &lt;command&gt;VACUUM&lt;/command&gt; command can still be run normally.
+    Contrary to what the hint states, it is not necessary or desirable to stop the
+    postmaster or enter single user-mode in order to restore normal operation.
+    Instead, follow these steps:
 </span>
-この300万トランザクションという安全マージンは、管理者が必要な<code class="command">VACUUM</code>コマンドを手作業で実行することで、データを失うことなくリカバリすることができるようにするために存在します。
-しかし、システムがこの安全のための停止モードになると、コマンドを実行しませんので、実行するためには、サーバを停止し、シングルユーザモードでサーバを起動して<code class="command">VACUUM</code>を行う他ありません。
-この停止モードはシングルユーザモードでは強制されません。
-シングルユーザモードの使用に関する詳細は<a class="xref" href="app-postgres.html" title="postgres"><span class="refentrytitle"><span class="application">postgres</span></span></a>マニュアルページを参照してください。
-   </p><div class="sect3" id="VACUUM-FOR-MULTIXACT-WRAPAROUND"><div class="titlepage"><div><div><h4 class="title">25.1.5.1. マルチトランザクションと周回 <a href="#VACUUM-FOR-MULTIXACT-WRAPAROUND" class="id_link">#</a></h4></div></div></div><span class="original">
+《機械翻訳》この状態では、すでに進行中のトランザクションは継続できますが、読み込み専用トランザクションのみを開始できます。
+データベースレコードを変更したり、リレーションを切り捨てたりする操作は失敗します。
+<code class="command">VACUUM</code>コマンドは通常どおりに実行できます。
+ヒントに記載されているように、通常の操作を復元するために、postmasterを停止したりシングルユーザモードに入ったりする必要はありません。
+代わりに、次の手順を実行してください。
+
+    </p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><span class="original">
+      &lt;simpara&gt;Resolve old prepared transactions. You can find these by checking
+       &lt;link linkend="view-pg-prepared-xacts"&gt;pg_prepared_xacts&lt;/link&gt; for rows where
+       &lt;literal&gt;age(transactionid)&lt;/literal&gt; is large. Such transactions should be
+       committed or rolled back.&lt;/simpara&gt;
+</span>《機械翻訳》古い準備されたトランザクションを解決します。
+<a class="link" href="view-pg-prepared-xacts.html" title="54.16. pg_prepared_xacts">pg_prepared_xacts</a>の<code class="literal">age(transactionid)</code>が大きい行をチェックして見つけることができます。
+このようなトランザクションはコミットまたはロールバックされるべきです。</li><li class="listitem"><span class="original">
+      &lt;simpara&gt;End long-running open transactions. You can find these by checking
+       &lt;link linkend="monitoring-pg-stat-activity-view"&gt;pg_stat_activity&lt;/link&gt; for rows where
+       &lt;literal&gt;age(backend_xid)&lt;/literal&gt; or &lt;literal&gt;age(backend_xmin)&lt;/literal&gt; is
+       large. Such transactions should be committed or rolled back, or the session
+       can be terminated using &lt;literal&gt;pg_terminate_backend&lt;/literal&gt;.&lt;/simpara&gt;
+</span>《機械翻訳》長時間実行されているオープントランザクションを終了します。
+<a class="link" href="monitoring-stats.html#MONITORING-PG-STAT-ACTIVITY-VIEW" title="28.2.3. pg_stat_activity">pg_stat_activity</a>で<code class="literal">age(backend_xid)</code>または<code class="literal">age(backend_xmin)</code>が大きい行を見つけて、これらを確認する必要があります。
+このようなトランザクションはコミットまたはロールバックするか、<code class="literal">pg_terminate_backend</code>を使用してセッションを終了できます。</li><li class="listitem"><span class="original">
+      &lt;simpara&gt;Drop any old replication slots. Use
+       &lt;link linkend="monitoring-pg-stat-replication-view"&gt;pg_stat_replication&lt;/link&gt; to
+       find slots where &lt;literal&gt;age(xmin)&lt;/literal&gt; or &lt;literal&gt;age(catalog_xmin)&lt;/literal&gt;
+       is large. In many cases, such slots were created for replication to servers that no
+       longer exist, or that have been down for a long time. If you drop a slot for a server
+       that still exists and might still try to connect to that slot, that replica may
+       need to be rebuilt.&lt;/simpara&gt;
+</span>《機械翻訳》古いレプリケーションスロットを削除します。
+<a class="link" href="monitoring-stats.html#MONITORING-PG-STAT-REPLICATION-VIEW" title="28.2.4. pg_stat_replication">pg_stat_replication</a>を使用して<code class="literal">age(xmin)</code>または<code class="literal">age(catalog_xmin)</code>が大きいスロットを見つけます。
+多くの場合、そのようなスロットは、もはや存在しないサーバへのレプリケーションのために作成されたもので、長い間ダウンしています。
+存在するサーバに対してスロットを削除しても、そのスロットに接続しようとする可能性がある場合、そのレプリカは再構築する必要があります。</li><li class="listitem"><span class="original">
+      &lt;simpara&gt;Execute &lt;command&gt;VACUUM&lt;/command&gt; in the target database. A database-wide
+       &lt;literal&gt;VACUUM&lt;/literal&gt; is simplest; to reduce the time required, it as also possible
+       to issue manual &lt;command&gt;VACUUM&lt;/command&gt; commands on the tables where
+       &lt;structfield&gt;relminxid&lt;/structfield&gt; is oldest. Do not use &lt;literal&gt;VACUUM FULL&lt;/literal&gt;
+       in this scenario, because it requires an XID and will therefore fail, except in super-user
+       mode, where it will instead consume an XID and thus increase the risk of transaction ID
+       wraparound. Do not use &lt;literal&gt;VACUUM FREEZE&lt;/literal&gt; either, because it will do
+       more than the minimum amount of work required to restore normal operation.&lt;/simpara&gt;
+</span>《機械翻訳》対象データベースで<code class="command">VACUUM</code>を実行します。
+データベース全体の<code class="literal">VACUUM</code>は最も簡単です。
+必要な時間を短縮するために、<code class="structfield">relminxid</code>が最も古いテーブルに対して手動<code class="command">VACUUM</code>コマンドを発行することも可能です。
+このシナリオでは<code class="literal">VACUUM FULL</code>を使用しないでください。
+これにはXIDが必要であり、スーパーユーザモード以外では失敗します。
+その代わりにXIDを消費してトランザクションIDのラップアラウンドのリスクを高めるからです。
+また、<code class="literal">VACUUM FREEZE</code>も使用しないでください。
+通常の操作を回復するために必要な最小限の作業以上の作業を行うからです。</li><li class="listitem"><span class="original">
+      &lt;simpara&gt;Once normal operation is restored, ensure that autovacuum is properly configured
+       in the target database in order to avoid future problems.&lt;/simpara&gt;
+</span>《機械翻訳》通常の動作が回復したら、将来の問題を回避するために、ターゲットデータベースで自動バキュームが正しく設定されていることを確認してください。</li></ol></div><p>
+   </p><div class="note"><h3 class="title">注記</h3><p>
+<span class="original">
+     In earlier versions, it was sometimes necessary to stop the postmaster and
+     &lt;command&gt;VACUUM&lt;/command&gt; the database in a single-user mode. In typical scenarios, this
+     is no longer necessary, and should be avoided whenever possible, since it involves taking
+     the system down. It is also riskier, since it disables transaction ID wraparound safeguards
+     that are designed to prevent data loss.  The only reason to use single-user mode in this
+     scenario is if you wish to &lt;command&gt;TRUNCATE&lt;/command&gt; or &lt;command&gt;DROP&lt;/command&gt; unneeded
+     tables to avoid needing to &lt;command&gt;VACUUM&lt;/command&gt; them.  The three-million-transaction
+     safety margin exists to let the administrator do this. See the
+     &lt;xref linkend="app-postgres"/&gt; reference page for details about using single-user mode.
+</span>
+《機械翻訳》以前のバージョンでは、postmasterを停止して<code class="command">VACUUM</code>をシングルユーザモードで実行する必要がありました。
+一般的なシナリオでは、これはもはや必要ではなく、システムを停止させることを伴うため、可能な限り回避する必要があります。
+また、データ損失を防ぐために設計されたトランザクションIDラップアラウンド保護を無効にするため、よりリスクが高くなります。
+このシナリオでシングルユーザモードを使用する唯一の理由は、<code class="command">VACUUM</code>を必要としない<code class="command">TRUNCATE</code>または<code class="command">DROP</code>のテーブルを避けるためです。
+管理者がこのようなことを行えるようにするために、300万トランザクションの安全マージンが存在します。
+シングルユーザモードの使用の詳細については、<a class="xref" href="app-postgres.html" title="postgres"><span class="refentrytitle"><span class="application">postgres</span></span></a>のリファレンスページを参照してください。
+    </p></div><div class="sect3" id="VACUUM-FOR-MULTIXACT-WRAPAROUND"><div class="titlepage"><div><div><h4 class="title">25.1.5.1. マルチトランザクションと周回 <a href="#VACUUM-FOR-MULTIXACT-WRAPAROUND" class="id_link">#</a></h4></div></div></div><span class="original">
     &lt;title&gt;Multixacts and Wraparound&lt;/title&gt;
-</span><a id="id-1.6.12.12.9.20.2" class="indexterm"></a><a id="id-1.6.12.12.9.20.3" class="indexterm"></a><a id="id-1.6.12.12.9.20.4" class="indexterm"></a><p>
+</span><a id="id-1.6.12.12.9.21.2" class="indexterm"></a><a id="id-1.6.12.12.9.21.3" class="indexterm"></a><a id="id-1.6.12.12.9.21.4" class="indexterm"></a><p>
 <span class="original">
      &lt;firstterm&gt;Multixact IDs&lt;/firstterm&gt; are used to support row locking by
      multiple transactions.  Since there is only limited space in a tuple
@@ -834,7 +900,38 @@ HINT:  Stop the postmaster and vacuum that database in single-user mode.
 安全装置として、<a class="xref" href="runtime-config-autovacuum.html#GUC-AUTOVACUUM-MULTIXACT-FREEZE-MAX-AGE">autovacuum_multixact_freeze_max_age</a>よりもそのマルチトランザクション年代が大きいどのテーブルに対しても、積極的なバキューム走査が起こります。
 また、マルチトランザクションメンバによるストレージの占有が2GBを超えた場合にも、積極的なバキューム走査は、マルチトランザクション年代の一番古いものから始めて、すべてのテーブルに対してより頻繁に起こります。
 この種の積極的走査はどちらも、自動バキュームが名目上は無効にされていても発生します。
-    </p></div></div><div class="sect2" id="AUTOVACUUM"><div class="titlepage"><div><div><h3 class="title">25.1.6. 自動バキュームデーモン <a href="#AUTOVACUUM" class="id_link">#</a></h3></div></div></div><span class="original">
+    </p><p>
+<span class="original">
+     Similar to the XID case, if autovacuum fails to clear old MXIDs from a table, the
+     system will begin to emit warning messages when the database's oldest MXIDs reach forty
+     million transactions from the wraparound point.  And, just as an the XID case, if these
+     warnings are ignored, the system will refuse to generate new MXIDs once there are fewer
+     than three million left until wraparound.
+</span>
+《機械翻訳》XIDの場合と同様に、テーブルから古いMXIDをクリアできない場合、データベースの最も古いMXIDがラップアラウンドポイントから4000万トランザクションに達すると、システムは警告メッセージの出力を開始します。
+そして、XIDの場合と同様に、これらの警告が無視されると、ラップアラウンドポイントまで3000万個以下のMXIDが残っているときに新しいMXIDを生成することを拒否します。
+    </p><p>
+<span class="original">
+     Normal operation when MXIDs are exhausted can be restored in much the same way as
+     when XIDs are exhausted. Follow the same steps in the previous section, but with the
+     following differences:
+</span>
+《機械翻訳》MXIDが枯渇したときの通常の動作は、XIDが枯渇したときとほぼ同じ方法で復元できます。
+前のセクションと同じ手順に従いますが、次の点が異なります。
+
+    </p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><span class="original">
+      &lt;simpara&gt;Running transactions and prepared transactions can be ignored if there
+       is no chance that they might appear in a multixact.&lt;/simpara&gt;
+</span>《機械翻訳》実行中のトランザクションと準備されたトランザクションは、マルチトランザクションに現れる可能性がない場合は無視できます。</li><li class="listitem"><span class="original">
+      &lt;simpara&gt;MXID information is not directly visible in system views such as
+       &lt;literal&gt;pg_stat_activity&lt;/literal&gt;; however, looking for old XIDs is still a good
+       way of determining which transactions are causing MXID wraparound problems.&lt;/simpara&gt;
+</span>《機械翻訳》<code class="literal">pg_stat_activity</code>などのシステムビューではMXID情報は直接表示されませんが、古いXIDを探すことはMXIDのラップアラウンド問題の原因となっているトランザクションを判断する良い方法です。</li><li class="listitem"><span class="original">
+      &lt;simpara&gt;XID exhaustion will block all write transactions, but MXID exhaustion will
+       only block a subset of write transactions, specifically those that involve
+       row locks that require an MXID.&lt;/simpara&gt;
+</span>《機械翻訳》XID の枯渇はすべての書き込みトランザクションをブロックしますが、MXID の枯渇は、特に MXID を必要とするロー・ロックを含む書き込みトランザクションのサブセットのみをブロックします。</li></ol></div><p>
+   </p></div></div><div class="sect2" id="AUTOVACUUM"><div class="titlepage"><div><div><h3 class="title">25.1.6. 自動バキュームデーモン <a href="#AUTOVACUUM" class="id_link">#</a></h3></div></div></div><span class="original">
    &lt;title&gt;The Autovacuum Daemon&lt;/title&gt;
 </span><a id="id-1.6.12.12.10.2" class="indexterm"></a><a id="id-1.6.12.12.10.3" class="indexterm"></a><p>
 <span class="original">
@@ -991,13 +1088,20 @@ analyze threshold = analyze base threshold + analyze scale factor * number of tu
 前回の<code class="command">ANALYZE</code>の後に挿入、更新、削除されたタプル数と比較されます。
    </p><p>
 <span class="original">
-    Partitioned tables are not processed by autovacuum.  Statistics
-    should be collected by running a manual &lt;command&gt;ANALYZE&lt;/command&gt; when it is
-    first populated, and again whenever the distribution of data in its
-    partitions changes significantly.
+    Partitioned tables do not directly store tuples and consequently
+    are not processed by autovacuum.  (Autovacuum does process table
+    partitions just like other tables.)  Unfortunately, this means that
+    autovacuum does  not run &lt;command&gt;ANALYZE&lt;/command&gt; on partitioned
+    tables, and this can cause suboptimal plans for queries that reference
+    partitioned table statistics.  You can work around this problem by
+    manually running &lt;command&gt;ANALYZE&lt;/command&gt; on partitioned tables
+    when they are first populated, and again whenever the distribution
+    of data in their partitions changes significantly.
 </span>
-パーティション化テーブルは自動バキュームでは処理されません。
-統計情報は、データが初めて投入された時や、パーティション内のデータ分布が顕著に変化した時にも必ず手動で<code class="command">ANALYZE</code>を実行することにより収集しないといけません。
+《機械翻訳》パーティション化されたテーブルはタプルを直接格納しないため、autovacuumによって処理されません。
+(自動バキュームは他のテーブルと同様にプロセステーブルパーティションを処理します。
+残念ながら、これは自動バキュームがパーティション化されたテーブルで<code class="command">ANALYZE</code>を実行しないことを意味し、これはパーティションテーブルの統計を参照する問い合わせに対して最適でない計画を生成する可能性があります。
+この問題を回避するには、パーティション化されたテーブルに最初にデータが移入されたときに<code class="command">ANALYZE</code>を手動で実行し、パーティション内のデータの分布が大きく変化した場合には必ず再度実行します。
    </p><p>
 <span class="original">
     Temporary tables cannot be accessed by autovacuum.  Therefore,
@@ -1059,4 +1163,4 @@ analyze threshold = analyze base threshold + analyze scale factor * number of tu
      effectively prevent autovacuums from ever completing.
 </span>
 <code class="literal">SHARE UPDATE EXCLUSIVE</code>ロックと衝突するロックを獲得する、定期的に動作するコマンド(例えばANALYZE)により、自動バキュームが実質的に終わらなくなることがあります。
-    </p></div></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="maintenance.html" title="第25章 定常的なデータベース保守作業">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="maintenance.html" title="第25章 定常的なデータベース保守作業">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="routine-reindex.html" title="25.2. 定常的なインデックスの再作成">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">第25章 定常的なデータベース保守作業 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 16.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 25.2. 定常的なインデックスの再作成</td></tr></table></div></body></html>
+    </p></div></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="maintenance.html" title="第25章 定常的なデータベース保守作業">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="maintenance.html" title="第25章 定常的なデータベース保守作業">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="routine-reindex.html" title="25.2. 定常的なインデックスの再作成">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">第25章 定常的なデータベース保守作業 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 16.3文書">ホーム</a></td><td width="40%" align="right" valign="top"> 25.2. 定常的なインデックスの再作成</td></tr></table></div></body></html>

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>73.7. ヒープ専用タプル(HOT)</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="storage-page-layout.html" title="73.6. データベースページのレイアウト" /><link rel="next" href="transactions.html" title="第74章 トランザクション処理" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 16.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="storage.html" title="第73章 データベースの物理的な格納">第73章 データベースの物理的な格納</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 16.0 : storage-hot.html">誤訳等の報告
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>73.7. ヒープ専用タプル(HOT)</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="storage-page-layout.html" title="73.6. データベースページのレイアウト" /><link rel="next" href="transactions.html" title="第74章 トランザクション処理" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 16.3文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="storage.html" title="第73章 データベースの物理的な格納">第73章 データベースの物理的な格納</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 16.3 : storage-hot.html">誤訳等の報告
                     </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="storage-page-layout.html" title="73.6. データベースページのレイアウト">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="storage.html" title="第73章 データベースの物理的な格納">上へ</a></td><td width="60%" align="center">73.7. ヒープ専用タプル(<acronym class="acronym">HOT</acronym>)</td><td width="20%" align="right"> <a accesskey="n" href="transactions.html" title="第74章 トランザクション処理">次へ</a></td></tr></table><hr /></div><div class="sect1" id="STORAGE-HOT"><div class="titlepage"><div><div><h2 class="title" style="clear: both">73.7. ヒープ専用タプル(<acronym class="acronym">HOT</acronym>) <a href="#STORAGE-HOT" class="id_link">#</a></h2></div></div></div><span class="original">
  &lt;title&gt;Heap-Only Tuples (&lt;acronym&gt;HOT&lt;/acronym&gt;)&lt;/title&gt;
 </span><p>
@@ -29,10 +29,14 @@
 
   </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>
 <span class="original">
-     The update does not modify any columns referenced by the table's
-     indexes, including expression and partial indexes.
+     The update does not modify any columns referenced by the table's indexes,
+     not including summarizing indexes.  The only summarizing index method in
+     the core &lt;productname&gt;PostgreSQL&lt;/productname&gt; distribution is &lt;link
+     linkend="brin"&gt;BRIN&lt;/link&gt;.
 </span>
-更新は、式や部分インデックスを含むテーブルのインデックスによって参照されるカラムを変更しません。
+《機械翻訳》更新は、テーブルのインデックスが参照する列を変更しません。
+集約インデックスを除きます。
+コアの<span class="productname">PostgreSQL</span>配布で唯一の集約インデックスメソッドは<a class="link" href="brin.html" title="第71章 BRINインデックス">BRIN</a>です。
      </p></li><li class="listitem"><p>
 <span class="original">
      There is sufficient free space on the page containing the old row
@@ -48,9 +52,10 @@
 
   </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>
 <span class="original">
-     New index entries are not needed to represent updated rows.
+     New index entries are not needed to represent updated rows, however,
+     summary indexes may still need to be updated.
 </span>
-更新された行を表すために新しいインデックスエントリは必要ありません。
+《機械翻訳》更新された行を表すために新しいインデックス・エントリは必要ありませんが、サマリー・インデックスは更新する必要があります。
     </p></li><li class="listitem"><p>
 <span class="original">
      Old versions of updated rows can be completely removed during normal
@@ -64,20 +69,21 @@
     </p></li></ul></div><p>
  </p><p>
 <span class="original">
-  In summary, heap-only tuple updates can only be created
-  if columns used by indexes are not updated.  You can
-  increase the likelihood of sufficient page space for
+  You can increase the likelihood of sufficient page space for
   &lt;acronym&gt;HOT&lt;/acronym&gt; updates by decreasing a table's &lt;link
-  linkend="reloption-fillfactor"&gt;&lt;literal&gt;fillfactor&lt;/literal&gt;&lt;/link&gt;.
-  If you don't, &lt;acronym&gt;HOT&lt;/acronym&gt; updates will still happen because
-  new rows will naturally migrate to new pages and existing pages with
-  sufficient free space for new row versions.  The system view &lt;link
+  linkend="reloption-fillfactor"&gt;&lt;literal&gt;fillfactor&lt;/literal&gt;&lt;/link&gt;.  If you
+  don't, &lt;acronym&gt;HOT&lt;/acronym&gt; updates will still happen because new rows
+  will naturally migrate to new pages and existing pages with sufficient free
+  space for new row versions.  The system view &lt;link
   linkend="monitoring-pg-stat-all-tables-view"&gt;pg_stat_all_tables&lt;/link&gt;
   allows monitoring of the occurrence of HOT and non-HOT updates.
 </span>
-要約すると、ヒープ専用タプル更新は、インデックスで使用されるカラムが更新されない場合にのみ作成できます。
+《マッチ度[77.024482]》要約すると、ヒープ専用タプル更新は、インデックスで使用されるカラムが更新されない場合にのみ作成できます。
 テーブルの<a class="link" href="sql-createtable.html#RELOPTION-FILLFACTOR"><code class="literal">fillfactor</code></a>を減らすことで、<acronym class="acronym">HOT</acronym>更新のための十分なページ領域の可能性を高めることができます。
 そうしない場合でも、<acronym class="acronym">HOT</acronym>更新は発生します。
 なぜなら、新しい行は新しいページや、新しい行バージョンのために十分な空き領域を持つ既存のページに自然に移動するからです。
 システムビュー<a class="link" href="monitoring-stats.html#MONITORING-PG-STAT-ALL-TABLES-VIEW" title="28.2.18. pg_stat_all_tables">pg_stat_all_tables</a>は、HOTおよび非HOT更新の発生を監視することができます。
- </p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="storage-page-layout.html" title="73.6. データベースページのレイアウト">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="storage.html" title="第73章 データベースの物理的な格納">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="transactions.html" title="第74章 トランザクション処理">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">73.6. データベースページのレイアウト </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 16.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 第74章 トランザクション処理</td></tr></table></div></body></html>
+《機械翻訳》<acronym class="acronym">HOT</acronym>更新に十分なページスペースを確保するには、テーブルの<a class="link" href="sql-createtable.html#RELOPTION-FILLFACTOR"><code class="literal">fillfactor</code></a>を小さくします。
+もしそうしないと、<acronym class="acronym">HOT</acronym>更新は新しいページに自然に移動し、新しい行バージョン用の十分な空き領域を持つ既存のページに移動するため、更新が発生します。
+システムビュー<a class="link" href="monitoring-stats.html#MONITORING-PG-STAT-ALL-TABLES-VIEW" title="28.2.18. pg_stat_all_tables">pg_stat_all_tables</a>は、HOTと非HOT更新の発生を監視できるようにします。
+ </p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="storage-page-layout.html" title="73.6. データベースページのレイアウト">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="storage.html" title="第73章 データベースの物理的な格納">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="transactions.html" title="第74章 トランザクション処理">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">73.6. データベースページのレイアウト </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 16.3文書">ホーム</a></td><td width="40%" align="right" valign="top"> 第74章 トランザクション処理</td></tr></table></div></body></html>

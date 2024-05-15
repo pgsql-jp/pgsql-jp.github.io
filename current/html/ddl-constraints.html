@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>5.4. 制約</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="ddl-generated-columns.html" title="5.3. 生成列" /><link rel="next" href="ddl-system-columns.html" title="5.5. システム列" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 16.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="ddl.html" title="第5章 データ定義">第5章 データ定義</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 16.0 : ddl-constraints.html">誤訳等の報告
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>5.4. 制約</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="ddl-generated-columns.html" title="5.3. 生成列" /><link rel="next" href="ddl-system-columns.html" title="5.5. システム列" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 16.3文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="ddl.html" title="第5章 データ定義">第5章 データ定義</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 16.3 : ddl-constraints.html">誤訳等の報告
                     </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="ddl-generated-columns.html" title="5.3. 生成列">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="ddl.html" title="第5章 データ定義">上へ</a></td><td width="60%" align="center">5.4. 制約</td><td width="20%" align="right"> <a accesskey="n" href="ddl-system-columns.html" title="5.5. システム列">次へ</a></td></tr></table><hr /></div><div class="sect1" id="DDL-CONSTRAINTS"><div class="titlepage"><div><div><h2 class="title" style="clear: both">5.4. 制約 <a href="#DDL-CONSTRAINTS" class="id_link">#</a></h2></div></div></div><span class="original">
   &lt;title&gt;Constraints&lt;/title&gt;
 </span><a id="id-1.5.4.6.2" class="indexterm"></a><a id="id-1.5.4.6.3" class="indexterm"></a><p>
@@ -881,22 +881,27 @@ CREATE TABLE posts (
    </p><p>
 <span class="original">
     A foreign key must reference columns that either are a primary key or
-    form a unique constraint.  This means that the referenced columns always
-    have an index (the one underlying the primary key or unique constraint);
-    so checks on whether a referencing row has a match will be efficient.
-    Since a &lt;command&gt;DELETE&lt;/command&gt; of a row from the referenced table
-    or an &lt;command&gt;UPDATE&lt;/command&gt; of a referenced column will require
-    a scan of the referencing table for rows matching the old value, it
-    is often a good idea to index the referencing columns too.  Because this
-    is not always needed, and there are many choices available on how
-    to index, declaration of a foreign key constraint does not
-    automatically create an index on the referencing columns.
+    form a unique constraint, or are columns from a non-partial unique index.
+    This means that the referenced columns always have an index to allow
+    efficient lookups on whether a referencing row has a match.  Since a
+    &lt;command&gt;DELETE&lt;/command&gt; of a row from the referenced table or an
+    &lt;command&gt;UPDATE&lt;/command&gt; of a referenced column will require a scan of
+    the referencing table for rows matching the old value, it is often a good
+    idea to index the referencing columns too.  Because this is not always
+    needed, and there are many choices available on how to index, the
+    declaration of a foreign key constraint does not automatically create an
+    index on the referencing columns.
 </span>
-外部キーは主キーであるかまたは一意性制約を構成する列を参照しなければなりません。
+《マッチ度[77.038043]》外部キーは主キーであるかまたは一意性制約を構成する列を参照しなければなりません。
 これは、被参照列は常に（主キーまたは一意性制約の基礎となる）インデックスを持つことを意味します。
 このため、参照行に一致する行があるかどうかのチェックは効率的です。
 被参照テーブルからの行の<code class="command">DELETE</code>や被参照行の<code class="command">UPDATE</code>は、古い値と一致する行に対して参照テーブルのスキャンが必要となるので、参照行にもインデックスを付けるのは大抵は良い考えです。
 これは常に必要という訳ではなく、また、インデックスの方法には多くの選択肢がありますので、外部キー制約の宣言では参照列のインデックスが自動的に作られるということはありません。
+《機械翻訳》外部キーは、主キーまたは一意性制約を形成する列、または部分一意性インデックスの列を参照する必要があります。
+これは、参照されるカラムには常にインデックスがあり、参照する行に一致があるかどうかを効率的に検索できることを意味します。
+参照先テーブルから行を<code class="command">DELETE</code>したり、参照先列を<code class="command">UPDATE</code>したりすると、古い値に一致する行を参照するテーブルのスキャンが必要になるため、参照する列にもインデックスを付けることをお勧めします。
+これは必ずしも必要ではないため、インデックスの作成方法には多くの選択肢があります。
+ 外部キー制約の宣言は、参照する列に自動的にインデックスを作成するわけではありません。
    </p><p>
 <span class="original">
     More information about updating and deleting data is in &lt;xref
@@ -936,4 +941,4 @@ TABLE ... CONSTRAINT ... EXCLUDE</code></a>を参照してください。
     of the type specified in the constraint declaration.
 </span>
 排他制約を追加すると、制約宣言で指定された種類のインデックスが自動的に作られます。
-   </p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ddl-generated-columns.html" title="5.3. 生成列">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="ddl.html" title="第5章 データ定義">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="ddl-system-columns.html" title="5.5. システム列">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">5.3. 生成列 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 16.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 5.5. システム列</td></tr></table></div></body></html>
+   </p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ddl-generated-columns.html" title="5.3. 生成列">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="ddl.html" title="第5章 データ定義">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="ddl-system-columns.html" title="5.5. システム列">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">5.3. 生成列 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 16.3文書">ホーム</a></td><td width="40%" align="right" valign="top"> 5.5. システム列</td></tr></table></div></body></html>
