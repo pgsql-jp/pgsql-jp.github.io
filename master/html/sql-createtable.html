@@ -66,10 +66,10 @@ CREATE [ [ GLOBAL | LOCAL ] { TEMPORARY | TEMP } | UNLOGGED ] TABLE [ IF NOT EXI
 [ CONSTRAINT <em class="replaceable"><code>constraint_name</code></em> ]
 { CHECK ( <em class="replaceable"><code>expression</code></em> ) [ NO INHERIT ] |
   NOT NULL <em class="replaceable"><code>column_name</code></em> [ NO INHERIT ] |
-  UNIQUE [ NULLS [ NOT ] DISTINCT ] ( <em class="replaceable"><code>column_name</code></em> [, ... ] [, <em class="replaceable"><code>column_name</code></em> WITHOUT OVERLAPS ] ) <em class="replaceable"><code>index_parameters</code></em> |
-  PRIMARY KEY ( <em class="replaceable"><code>column_name</code></em> [, ... ] [, <em class="replaceable"><code>column_name</code></em> WITHOUT OVERLAPS ] ) <em class="replaceable"><code>index_parameters</code></em> |
+  UNIQUE [ NULLS [ NOT ] DISTINCT ] ( <em class="replaceable"><code>column_name</code></em> [, ... ] ) <em class="replaceable"><code>index_parameters</code></em> |
+  PRIMARY KEY ( <em class="replaceable"><code>column_name</code></em> [, ... ] ) <em class="replaceable"><code>index_parameters</code></em> |
   EXCLUDE [ USING <em class="replaceable"><code>index_method</code></em> ] ( <em class="replaceable"><code>exclude_element</code></em> WITH <em class="replaceable"><code>operator</code></em> [, ... ] ) <em class="replaceable"><code>index_parameters</code></em> [ WHERE ( <em class="replaceable"><code>predicate</code></em> ) ] |
-  FOREIGN KEY ( <em class="replaceable"><code>column_name</code></em> [, ... ] [, PERIOD <em class="replaceable"><code>column_name</code></em> ] ) REFERENCES <em class="replaceable"><code>reftable</code></em> [ ( <em class="replaceable"><code>refcolumn</code></em> [, ... ] [, PERIOD <em class="replaceable"><code>column_name</code></em> ] ) ]
+  FOREIGN KEY ( <em class="replaceable"><code>column_name</code></em> [, ... ] ) REFERENCES <em class="replaceable"><code>reftable</code></em> [ ( <em class="replaceable"><code>refcolumn</code></em> [, ... ] ) ]
     [ MATCH FULL | MATCH PARTIAL | MATCH SIMPLE ] [ ON DELETE <em class="replaceable"><code>referential_action</code></em> ] [ ON UPDATE <em class="replaceable"><code>referential_action</code></em> ] }
 [ DEFERRABLE | NOT DEFERRABLE ] [ INITIALLY DEFERRED | INITIALLY IMMEDIATE ]
 
@@ -1033,7 +1033,7 @@ TRUEまたはUNKNOWNと評価される式は成功します。
 </span>
 オプションで<em class="replaceable"><code>sequence_options</code></em>句を指定することにより、シーケンスのオプションを変更できます。
 詳しくは<a class="xref" href="sql-createsequence.html" title="CREATE SEQUENCE"><span class="refentrytitle">CREATE SEQUENCE</span></a>を参照してください。
-     </p></dd><dt id="SQL-CREATETABLE-PARMS-UNIQUE"><span class="term"><code class="literal">UNIQUE [ NULLS [ NOT ] DISTINCT ]</code> (column constraint)<br /></span><span class="term"><code class="literal">UNIQUE [ NULLS [ NOT ] DISTINCT ] ( <em class="replaceable"><code>column_name</code></em> [, ... ] [, <em class="replaceable"><code>column_name</code></em> WITHOUT OVERLAPS ] )</code>
+     </p></dd><dt id="SQL-CREATETABLE-PARMS-UNIQUE"><span class="term"><code class="literal">UNIQUE [ NULLS [ NOT ] DISTINCT ]</code> (column constraint)<br /></span><span class="term"><code class="literal">UNIQUE [ NULLS [ NOT ] DISTINCT ] ( <em class="replaceable"><code>column_name</code></em> [, ... ] )</code>
 <span class="original">
     &lt;optional&gt; &lt;literal&gt;INCLUDE ( &lt;replaceable class="parameter"&gt;column_name&lt;/replaceable&gt; [, ...])&lt;/literal&gt; &lt;/optional&gt; (table constraint)&lt;/term&gt;
 </span>
@@ -1050,40 +1050,6 @@ TRUEまたはUNKNOWNと評価される式は成功します。
 <code class="literal">UNIQUE</code>制約は、テーブルの1つまたは複数の列からなるグループが、一意な値のみを持つことができることを指定します。
 一意性テーブル制約の動作は一意性列制約と同じですが、さらに複数列にまたがる機能を持ちます。
 それゆえ、制約は2つの行はその列の少なくとも1つが異なることを強制します。
-     </p><p>
-<span class="original">
-      If the &lt;literal&gt;WITHOUT OVERLAPS&lt;/literal&gt; option is specified for the
-      last column, then that column is checked for overlaps instead of
-      equality.  In that case, the other columns of the constraint will allow
-      duplicates so long as the duplicates don't overlap in the
-      &lt;literal&gt;WITHOUT OVERLAPS&lt;/literal&gt; column.  (This is sometimes called a
-      temporal key, if the column is a range of dates or timestamps, but
-      PostgreSQL allows ranges over any base type.)  In effect, such a
-      constraint is enforced with an &lt;literal&gt;EXCLUDE&lt;/literal&gt; constraint
-      rather than a &lt;literal&gt;UNIQUE&lt;/literal&gt; constraint.  So for example
-      &lt;literal&gt;UNIQUE (id, valid_at WITHOUT OVERLAPS)&lt;/literal&gt; behaves like
-      &lt;literal&gt;EXCLUDE USING GIST (id WITH =, valid_at WITH
-      &amp;amp;&amp;amp;)&lt;/literal&gt;.  The &lt;literal&gt;WITHOUT OVERLAPS&lt;/literal&gt; column
-      must have a range or multirange type.  (Technically, any type is allowed
-      whose default GiST opclass includes an overlaps operator.  See the
-      &lt;literal&gt;stratnum&lt;/literal&gt; support function under &lt;xref
-      linkend="gist-extensibility"/&gt; for details.)  The non-&lt;literal&gt;WITHOUT
-      OVERLAPS&lt;/literal&gt; columns of the constraint can be any type that can be
-      compared for equality in a GiST index.  By default, only range types are
-      supported, but you can use other types by adding the &lt;xref
-      linkend="btree-gist"/&gt; extension (which is the expected way to use this
-      feature).
-</span>
-《機械翻訳》最後の列に<code class="literal">WITHOUT OVERLAPS</code>オプションが指定されている場合、その列は等値ではなく重複をチェックされます。
-その場合、制約の他の列は、<code class="literal">WITHOUT OVERLAPS</code>列で重複が重ならない限り、重複を許します。
-（これは、カラムが日付またはタイムスタンプの範囲である場合、時間的キーと呼ばれることがありますが、PostgreSQLでは任意の基本型に対して範囲を許可します。）
-実際には、このような制約は<code class="literal">UNIQUE</code>制約ではなく<code class="literal">EXCLUDE</code>制約で実行されます。
-例えば<code class="literal">UNIQUE (id, valid_at WITHOUT OVERLAPS)</code>は<code class="literal">EXCLUDE USING GIST (id WITH =, valid_at WITH &amp;&amp;)</code>と同じ動作をします。
-<code class="literal">WITHOUT OVERLAPS</code>列は範囲型または複数範囲型でなければなりません。
-（厳密には、デフォルトのGiST opclassにオーバーラップ演算子が含まれる任意の型が許可されます。
-詳細は<a class="xref" href="gist.html#GIST-EXTENSIBILITY" title="64.2.3. 拡張性">64.2.3</a>の<code class="literal">stratnum</code>サポート関数を参照してください。
-制約の<code class="literal">WITHOUT OVERLAPS</code>以外の列は、GiSTインデックスで等価性を比較できる任意の型にすることができます。
-デフォルトでは範囲型のみがサポートされていますが、<a class="xref" href="btree-gist.html" title="F.8. btree_gist — GiST演算子クラスとB-tree動作">btree_gist</a>拡張を追加することで他の型も使用できます(これはこの機能を使用するための想定される方法です）。
      </p><p>
 <span class="original">
       For the purpose of a unique constraint, null values are not
@@ -1110,15 +1076,12 @@ TRUEまたはUNKNOWNと評価される式は成功します。
 複数レベルのパーティション階層に一意性制約を設定するとき、対象パーティションテーブル、および全ての子孫のパーティションテーブルの、パーティションキー内の全ての列が制約定義に含まれなくてはなりません。
      </p><p>
 <span class="original">
-      Adding a unique constraint will automatically create a unique B-tree
-      index on the column or group of columns used in the constraint.  But if
-      the constraint includes a &lt;literal&gt;WITHOUT OVERLAPS&lt;/literal&gt; clause, it
-      will use a GiST index.  The created index has the same name as the unique
-      constraint.
+      Adding a unique constraint will automatically create a unique btree
+      index on the column or group of columns used in the constraint.  The
+      created index has the same name as the unique constraint.
 </span>
-《機械翻訳》一意性制約を追加すると、制約で使用される列または列のグループに対して一意性B-treeインデックスが自動的に作成されます。
-ただし、制約に<code class="literal">WITHOUT OVERLAPS</code>句が含まれている場合は、GiSTインデックスが使用されます。
-作成されたインデックスは、一意性制約と同じ名前を持ちます。
+《機械翻訳》一意性制約を追加すると、制約で使用される柱のカラムまたはグループに、ユニークBtreeインデックスが自動的に作成されます。
+作成されたインデックスには、一意性制約と同じ名前があります。
      </p><p>
 <span class="original">
       The optional &lt;literal&gt;INCLUDE&lt;/literal&gt; clause adds to that index
@@ -1134,7 +1097,7 @@ TRUEまたはUNKNOWNと評価される式は成功します。
 しかしながら、インデックスオンリースキャンでは取り出すことができます。
 含めた（INCLUDEした）列に制約は強制されませんが、依存はしていることに注意してください。
 このため、これらの列に対する一部の操作（例えば<code class="literal">DROP COLUMN</code>）は制約の連鎖とインデックスの削除をひき起こすことがあります。
-     </p></dd><dt id="SQL-CREATETABLE-PARMS-PRIMARY-KEY"><span class="term"><code class="literal">PRIMARY KEY</code> (column constraint)<br /></span><span class="term"><code class="literal">PRIMARY KEY ( <em class="replaceable"><code>column_name</code></em> [, ... ] [, <em class="replaceable"><code>column_name</code></em> WITHOUT OVERLAPS ] )</code>
+     </p></dd><dt id="SQL-CREATETABLE-PARMS-PRIMARY-KEY"><span class="term"><code class="literal">PRIMARY KEY</code> (column constraint)<br /></span><span class="term"><code class="literal">PRIMARY KEY ( <em class="replaceable"><code>column_name</code></em> [, ... ] )</code>
 <span class="original">
     &lt;optional&gt; &lt;literal&gt;INCLUDE ( &lt;replaceable class="parameter"&gt;column_name&lt;/replaceable&gt; [, ...])&lt;/literal&gt; &lt;/optional&gt; (table constraint)&lt;/term&gt;
 </span>
@@ -1177,14 +1140,13 @@ TRUEまたはUNKNOWNと評価される式は成功します。
 パーティションテーブルに設定すると、<code class="literal">PRIMARY KEY</code>制約は、以前述べた制限を<code class="literal">UNIQUE</code>制約と共有します。
      </p><p>
 <span class="original">
-      As with a &lt;literal&gt;UNIQUE&lt;/literal&gt; constraint, adding a
-      &lt;literal&gt;PRIMARY KEY&lt;/literal&gt; constraint will automatically create a
-      unique B-tree index, or GiST if &lt;literal&gt;WITHOUT OVERLAPS&lt;/literal&gt; was
-      specified, on the column or group of columns used in the constraint.
-      That index has the same name as the primary key constraint.
+      Adding a &lt;literal&gt;PRIMARY KEY&lt;/literal&gt; constraint will automatically
+      create a unique btree index on the column or group of columns used in
+      the constraint.  That index has the same name as the primary key
+      constraint.
 </span>
-《機械翻訳》<code class="literal">PRIMARY KEY</code>制約と同様に、<code class="literal">UNIQUE</code>制約を追加すると、制約で使用される列または列のグループに対して、一意のB-treeインデックス、または<code class="literal">WITHOUT OVERLAPS</code>が指定された場合はGiSTインデックスが自動的に作成されます。
-このインデックスは、主キー制約と同じ名前を持ちます。
+《機械翻訳》<code class="literal">主キー</code>制約を追加すると、制約で使用されている列のカラムまたはグループにユニークBtreeインデックスが自動的に作成されます。
+そのインデックスには主キー制約と同じ名前があります。
      </p><p>
 <span class="original">
       The optional &lt;literal&gt;INCLUDE&lt;/literal&gt; clause adds to that index
@@ -1269,8 +1231,8 @@ B-treeやHashインデックスを排他制約で使用することは許容さ�
 <em class="replaceable"><code>predicate</code></em>により、排他制約をテーブルの部分集合に指定することができます。
 内部的には、これは部分インデックスを作成します。
 predicateの前後に括弧が必要であることに注意して下さい。
-     </p></dd><dt id="SQL-CREATETABLE-PARMS-REFERENCES"><span class="term"><code class="literal">REFERENCES <em class="replaceable"><code>reftable</code></em> [ ( <em class="replaceable"><code>refcolumn</code></em> ) ] [ MATCH <em class="replaceable"><code>matchtype</code></em> ] [ ON DELETE <em class="replaceable"><code>action</code></em> ] [ ON UPDATE <em class="replaceable"><code>action</code></em> ]</code> （列制約）<br /></span><span class="term"><code class="literal">FOREIGN KEY ( <em class="replaceable"><code>column_name</code></em> [, ... ] [, PERIOD <em class="replaceable"><code>column_name</code></em> ] )
-    REFERENCES <em class="replaceable"><code>reftable</code></em> [ ( <em class="replaceable"><code>refcolumn</code></em> [, ... ] [, PERIOD <em class="replaceable"><code>column_name</code></em> ] ) ]
+     </p></dd><dt id="SQL-CREATETABLE-PARMS-REFERENCES"><span class="term"><code class="literal">REFERENCES <em class="replaceable"><code>reftable</code></em> [ ( <em class="replaceable"><code>refcolumn</code></em> ) ] [ MATCH <em class="replaceable"><code>matchtype</code></em> ] [ ON DELETE <em class="replaceable"><code>action</code></em> ] [ ON UPDATE <em class="replaceable"><code>action</code></em> ]</code> （列制約）<br /></span><span class="term"><code class="literal">FOREIGN KEY ( <em class="replaceable"><code>column_name</code></em> [, ... ] )
+    REFERENCES <em class="replaceable"><code>reftable</code></em> [ ( <em class="replaceable"><code>refcolumn</code></em> [, ... ] ) ]
     [ MATCH <em class="replaceable"><code>matchtype</code></em> ]
     [ ON DELETE <em class="replaceable"><code>referential_action</code></em> ]
     [ ON UPDATE <em class="replaceable"><code>referential_action</code></em> ]</code>
@@ -1287,44 +1249,7 @@ predicateの前後に括弧が必要であることに注意して下さい。
       primary key of the &lt;replaceable class="parameter"&gt;reftable&lt;/replaceable&gt;
       is used.  Otherwise, the &lt;replaceable class="parameter"&gt;refcolumn&lt;/replaceable&gt;
       list must refer to the columns of a non-deferrable unique or primary key
-      constraint or be the columns of a non-partial unique index.
-</span>
-《機械翻訳》これらの句は、外部キー制約を指定します。
-これは、新しいテーブルの 1 つ以上のカラムのグループが、参照されるテーブルのいくつかの行の参照されるカラムの値と一致する値のみを含む必要があることを要求します。
-<em class="replaceable"><code>refcolumn</code></em>リストを省略した場合、<em class="replaceable"><code>reftable</code></em>の主キーが使用されます。
-そうでない場合、<em class="replaceable"><code>refcolumn</code></em>リストは、遅延不可能な一意キー制約または主キー制約の列、あるいは部分的に一意でないインデックスの列を参照しなければなりません。
-     </p><p>
-<span class="original">
-      If the last column is marked with &lt;literal&gt;PERIOD&lt;/literal&gt;, it is
-      treated in a special way.  While the non-&lt;literal&gt;PERIOD&lt;/literal&gt;
-      columns are compared for equality (and there must be at least one of
-      them), the &lt;literal&gt;PERIOD&lt;/literal&gt; column is not.  Instead, the
-      constraint is considered satisfied if the referenced table has matching
-      records (based on the non-&lt;literal&gt;PERIOD&lt;/literal&gt; parts of the key)
-      whose combined &lt;literal&gt;PERIOD&lt;/literal&gt; values completely cover the
-      referencing record's.  In other words, the reference must have a
-      referent for its entire duration.  This column must be a range or
-      multirange type.  In addition, the referenced table must have a primary
-      key or unique constraint declared with &lt;literal&gt;WITHOUT
-      OVERLAPS&lt;/literal&gt;. Finally, if the foreign key has a PERIOD
-      &lt;replaceable class="parameter"&gt;column_name&lt;/replaceable&gt; specification
-      the corresponding &lt;replaceable class="parameter"&gt;refcolumn&lt;/replaceable&gt;,
-      if present, must also be marked &lt;literal&gt;PERIOD&lt;/literal&gt;.  If the
-      &lt;replaceable class="parameter"&gt;refcolumn&lt;/replaceable&gt; clause is omitted,
-      and thus the reftable's primary key constraint chosen, the primary key
-      must have its final column marked &lt;literal&gt;WITHOUT OVERLAPS&lt;/literal&gt;.
-</span>
-《機械翻訳》最後の列が<code class="literal">PERIOD</code>でマークされている場合、特別な扱いが行われます。
-非<code class="literal">PERIOD</code>列は等価性のために比較されます（少なくとも1つは必要です）が、<code class="literal">PERIOD</code>列は比較されません。
-その代わりに、参照テーブルが一致するレコード（キーの<code class="literal">PERIOD</code>以外の部分に基づく）を持ち、その結合された<code class="literal">PERIOD</code>値が参照レコードの<code class="literal">PERIOD</code>値を完全にカバーする場合、制約は満たされていると見なされます。
-言い換えると、参照はその全期間にわたって参照先を持たなければならない。
-この列は、範囲または複数範囲のタイプでなければなりません。
-さらに、参照されるテーブルは<code class="literal">WITHOUT OVERLAPS</code>で宣言された主キーまたは一意性制約を持たなければなりません。
-最後に、外部キーがPERIOD <em class="replaceable"><code>column_name</code></em>指定を持つ場合、対応する<em class="replaceable"><code>refcolumn</code></em>も<code class="literal">PERIOD</code>にマークする必要があります。
-<em class="replaceable"><code>refcolumn</code></em>句が省略され、reftableの主キー制約が選択された場合、主キーは最終列に<code class="literal">WITHOUT OVERLAPS</code>を付ける必要があります。
-     </p><p>
-<span class="original">
-      The user
+      constraint or be the columns of a non-partial unique index.  The user
       must have &lt;literal&gt;REFERENCES&lt;/literal&gt; permission on the referenced
       table (either the whole table, or the specific referenced columns).  The
       addition of a foreign key constraint requires a
@@ -1332,9 +1257,13 @@ predicateの前後に括弧が必要であることに注意して下さい。
       Note that foreign key constraints cannot be defined between temporary
       tables and permanent tables.
 </span>
-《機械翻訳》ユーザは参照されるテーブル（テーブル全体、または参照される特定の列）に対する<code class="literal">REFERENCES</code>パーミッションを持っている必要があります。
-外部キー制約を追加するには、参照されるテーブルに対する<code class="literal">SHARE ROW EXCLUSIVE</code>ロックが必要です。
-外部キー制約は一時テーブルと永続テーブルの間に定義できないことに注意してください。
+《機械翻訳》これらの句は、外部キー制約を指定します。
+この句を使用すると、新しいテーブルの1つ以上のカラムのグループには、マッチが被参照テーブルの一部の行の被参照カラムで評価する値だけを含める必要があります。
+<em class="replaceable"><code>refcolumn</code></em>リストが省略された場合、<em class="replaceable"><code>reftable</code></em>の主キーが使用されます。
+それ以外の場合、<em class="replaceable"><code>refcolumn</code></em>リストは、非deferrableユニークまたは主キー制約の列を参照するか、非部分一意インデックスの列である必要があります。
+ユーザには、被参照テーブル<code class="literal">テーブル全体または特定の被参照列のいずれか)にREFERENCES</code>パーミッションが必要です。
+外部キー制約を追加するには、被参照テーブルに<code class="literal">SHARE行EXCLUSIVE</code>ロックが必要です。
+ノートテーブルと標準テーブルの間に外部キー拘束を定義できない一時的。
      </p><p>
 <span class="original">
       A value inserted into the referencing column(s) is matched against the
@@ -1410,11 +1339,6 @@ predicateの前後に括弧が必要であることに注意して下さい。
           referenced columns, respectively.
 </span>
 削除された行を参照している行は全て削除します。また、参照している列の値を、被参照列の新しい値にします。
-         </p><p>
-<span class="original">
-          In a temporal foreign key, this option is not supported.
-</span>
-《機械翻訳》一時的な外部キーでは、このオプションはサポートされません。
          </p></dd><dt id="SQL-CREATETABLE-PARMS-REFERENCES-REFACT-SET-NULL"><span class="term"><code class="literal">SET NULL [ ( <em class="replaceable"><code>column_name</code></em> [, ... ] ) ]</code></span> <a href="#SQL-CREATETABLE-PARMS-REFERENCES-REFACT-SET-NULL" class="id_link">#</a></dt><dd><p>
 <span class="original">
           Set all of the referencing columns, or a specified subset of the
@@ -1423,11 +1347,6 @@ predicateの前後に括弧が必要であることに注意して下さい。
 </span>
 すべての参照列または参照列の指定したサブセットをNULLに設定します。
 列のサブセットは、<code class="literal">ON DELETE</code>アクションに対してのみ指定できます。
-         </p><p>
-<span class="original">
-          In a temporal foreign key, this option is not supported.
-</span>
-《機械翻訳》一時的な外部キーでは、このオプションはサポートされません。
          </p></dd><dt id="SQL-CREATETABLE-PARMS-REFERENCES-REFACT-SET-DEFAULT"><span class="term"><code class="literal">SET DEFAULT [ ( <em class="replaceable"><code>column_name</code></em> [, ... ] ) ]</code></span> <a href="#SQL-CREATETABLE-PARMS-REFERENCES-REFACT-SET-DEFAULT" class="id_link">#</a></dt><dd><p>
 <span class="original">
           Set all of the referencing columns, or a specified subset of the
@@ -1439,11 +1358,6 @@ predicateの前後に括弧が必要であることに注意して下さい。
 すべての参照列または参照列の指定したサブセットをそのデフォルト値に設定します。
 列のサブセットは、<code class="literal">ON DELETE</code>アクションに対してのみ指定できます。
 （デフォルト値がNULLでない場合は被参照テーブルの中にデフォルト値に一致する行が存在しなければなりません。さもないと操作が失敗します。）
-         </p><p>
-<span class="original">
-          In a temporal foreign key, this option is not supported.
-</span>
-《機械翻訳》一時的な外部キーでは、このオプションはサポートされません。
          </p></dd></dl></div><p>
      </p><p>
 <span class="original">
