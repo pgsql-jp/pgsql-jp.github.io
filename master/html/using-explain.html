@@ -160,11 +160,11 @@ EXPLAIN SELECT * FROM tenk1;
 とりわけ、結果の行をクライアントに転送するコストは、実際の処理時間の重要な要因となる可能性があるにもかかわらず、考慮されません。
 プランナは、計画をいかに変更しようと、転送コストを変えることはできないため、これを無視します。
 （正しい計画はどんなものであれ、すべて同じ行を結果として出力すると信じています。）
-《機械翻訳》上位レベルのノードのコストには、そのすべての子ノードのコストが含まれることを理解することが重要です。
-また、コストはプランナーが気にするものだけを反映していることを認識することも重要です。
-特に、コストは、出力値をテキスト形式に変換したり、それらをクライアントに送信したりするために費やされる時間を考慮していない。
-これは、実際の経過時間において重要な要素である可能性があるが、プランナは、プランを変更することによってそれらのコストを変更することができないため、それらのコストを無視する。
-（正しい計画はすべて同じ行セットを出力すると信じています）。
+《機械翻訳》上部コストノードのレベルには、そのすべての子ノードのコストが含まれることを理解することが重要です。
+また、コストはプランナが気にかけていることだけを反映していることを認識することも重要です。
+特に、コストでは、出力値をテキストフォームに変換したり、クライアントに送信したりするために費やされる時間は考慮されていない。
+これは、実際の経過時間の重要な要素となる可能性があるが、プランナでは、プランを変更しても出力値を変更できないため、これらのコストは無視される。
+（正しいプランはすべて、同じ行セットを出力します。）
    </p><p>
 <span class="original">
     The &lt;literal&gt;rows&lt;/literal&gt; value is a little tricky because it is
@@ -397,12 +397,6 @@ EXPLAIN SELECT * FROM tenk1 ORDER BY hundred, ten LIMIT 100;
          Sort Key: hundred, ten
          Presorted Key: hundred
          -&gt;  Index Scan using tenk1_hundred on tenk1  (cost=0.29..1574.20 rows=10000 width=244)
--------------------------------------------------------------------​-----------------------------------
- Limit  (cost=521.06..538.05 rows=100 width=244)
-   -&gt;  Incremental Sort  (cost=521.06..2220.95 rows=10000 width=244)
-         Sort Key: four, ten
-         Presorted Key: four
-         -&gt;  Index Scan using index_tenk1_on_four on tenk1  (cost=0.29..1510.08 rows=10000 width=244)
 </pre><p>
 
 <span class="original">
@@ -430,7 +424,6 @@ EXPLAIN SELECT * FROM tenk1 WHERE unique1 &lt; 100 AND unique2 &gt; 9000;
                                      QUERY PLAN
 -------------------------------------------------------------------​------------------
  Bitmap Heap Scan on tenk1  (cost=25.07..60.11 rows=10 width=244)
- Bitmap Heap Scan on tenk1  (cost=25.08..60.21 rows=10 width=244)
    Recheck Cond: ((unique1 &lt; 100) AND (unique2 &gt; 9000))
    -&gt;  BitmapAnd  (cost=25.07..25.07 rows=10 width=0)
          -&gt;  Bitmap Index Scan on tenk1_unique1  (cost=0.00..5.04 rows=100 width=0)
@@ -461,8 +454,6 @@ EXPLAIN SELECT * FROM tenk1 WHERE unique1 &lt; 100 AND unique2 &gt; 9000 LIMIT 2
 -------------------------------------------------------------------​------------------
  Limit  (cost=0.29..14.28 rows=2 width=244)
    -&gt;  Index Scan using tenk1_unique2 on tenk1  (cost=0.29..70.27 rows=10 width=244)
- Limit  (cost=0.29..14.48 rows=2 width=244)
-   -&gt;  Index Scan using tenk1_unique2 on tenk1  (cost=0.29..71.27 rows=10 width=244)
          Index Cond: (unique2 &gt; 9000)
          Filter: (unique1 &lt; 100)
 </pre><p>
@@ -501,8 +492,6 @@ WHERE t1.unique1 &lt; 10 AND t1.unique2 = t2.unique2;
 -------------------------------------------------------------------​-------------------
  Nested Loop  (cost=4.65..118.50 rows=10 width=488)
    -&gt;  Bitmap Heap Scan on tenk1 t1  (cost=4.36..39.38 rows=10 width=244)
- Nested Loop  (cost=4.65..118.62 rows=10 width=488)
-   -&gt;  Bitmap Heap Scan on tenk1 t1  (cost=4.36..39.47 rows=10 width=244)
          Recheck Cond: (unique1 &lt; 10)
          -&gt;  Bitmap Index Scan on tenk1_unique1  (cost=0.00..4.36 rows=10 width=0)
                Index Cond: (unique1 &lt; 10)
@@ -564,7 +553,6 @@ WHERE t1.unique1 &lt; 10 AND t2.unique2 &lt; 10 AND t1.hundred &lt; t2.hundred;
                                          QUERY PLAN
 -------------------------------------------------------------------​--------------------------
  Nested Loop  (cost=4.65..49.36 rows=33 width=488)
- Nested Loop  (cost=4.65..49.46 rows=33 width=488)
    Join Filter: (t1.hundred &lt; t2.hundred)
    -&gt;  Bitmap Heap Scan on tenk1 t1  (cost=4.36..39.38 rows=10 width=244)
          Recheck Cond: (unique1 &lt; 10)
@@ -626,7 +614,6 @@ WHERE t1.unique1 &lt; 100 AND t1.unique2 = t2.unique2;
                                         QUERY PLAN
 -------------------------------------------------------------------​-----------------------
  Hash Join  (cost=226.23..709.73 rows=100 width=488)
- Hash Join  (cost=230.47..713.98 rows=101 width=488)
    Hash Cond: (t2.unique2 = t1.unique2)
    -&gt;  Seq Scan on tenk2 t2  (cost=0.00..445.00 rows=10000 width=244)
    -&gt;  Hash  (cost=224.98..224.98 rows=100 width=244)
@@ -664,7 +651,6 @@ WHERE t1.unique1 &lt; 100 AND t1.unique2 = t2.unique2;
                                         QUERY PLAN
 -------------------------------------------------------------------​-----------------------
  Merge Join  (cost=0.56..233.49 rows=10 width=488)
- Merge Join  (cost=198.11..268.19 rows=10 width=488)
    Merge Cond: (t1.unique2 = t2.unique2)
    -&gt;  Index Scan using tenk1_unique2 on tenk1 t1  (cost=0.29..643.28 rows=100 width=244)
          Filter: (unique1 &lt; 100)
@@ -682,8 +668,9 @@ WHERE t1.unique1 &lt; 100 AND t1.unique2 = t2.unique2;
 この計画では、正確な順序で行をアクセスするために<code class="literal">tenk1</code>データがインデックススキャンを用いてソートされます。
 しかし、このテーブルの中でより多くの行がアクセスされるため、<code class="literal">onek</code>ではシーケンシャルスキャンとソートが好まれています。
 （多くの行をソートする場合、インデックススキャンでは非シーケンシャルなディスクアクセスが必要となるため、シーケンシャルスキャンとソートの方がインデックススキャンより優れています。）
-《機械翻訳》マージ結合では、結合キーでソートする入力データが必要です。
-この例では、各入力はインデックス・スキャンを使用して適切な順序で行われますが、シーケンシャル・スキャンとソートも使用できます（シーケンシャル・スキャンとソートは、多くの行をソートするためにインデックス・スキャンに必要なディスク・アクセスが非シーケンシャルであるため、しばしばインデックス・スキャンより優れています）。
+《機械翻訳》マージ結合では、入力されたデータを結合キーでソートする必要があります。
+この例では、各入力はインデックススキャンを使用して正しいオーダーの行にアクセスすることによってソートされますが、シーケンシャルスキャンとソートも使用できます（シーケンシャル-スキャン-and-ソートは、並べ替えの多くの行でインデックススキャンよりも頻繁に優先されます。
+これは、インデックススキャンで必要とされるディスク・アクセスが連続していないためです）。
    </p><p>
 <span class="original">
     One way to look at variant plans is to force the planner to disregard
@@ -698,14 +685,12 @@ WHERE t1.unique1 &lt; 100 AND t1.unique2 = t2.unique2;
 （非常に原始的なツールですが、利用価値があります。
 <a class="xref" href="explicit-joins.html" title="14.3. 明示的なJOIN句でプランナを制御する">14.3</a>も参照してください。）
 例えば、前の例にて<code class="literal">onek</code>テーブルを扱う最善の方法がシーケンシャルスキャンとソートであると納得できなければ、以下を試みることができます。
-《機械翻訳》バリアント計画を見る一つの方法は、<a class="xref" href="runtime-config-query.html#RUNTIME-CONFIG-QUERY-ENABLE" title="19.7.1. プランナメソッド設定">19.7.1</a>で説明したイネーブル/ディスエーブルフラグを使用して、プランナに最も安価と思われる戦略を無視させることです。
-（これは粗雑なツールですが、有用です。
-<a class="xref" href="explicit-joins.html" title="14.3. 明示的なJOIN句でプランナを制御する">14.3</a>も参照してください。
-例えば、前の例でマージ結合が最良の結合タイプであると確信できない場合は、試してみることができます。
+《機械翻訳》バリエーションプランを見る1つの方法は、<a class="xref" href="runtime-config-query.html#RUNTIME-CONFIG-QUERY-ENABLE" title="19.7.1. プランナメソッド設定">19.7.1</a>で説明されている有効/無効フラグを使用して、プランナが最も安いと思ったストラテジを無視するように強制することです（これは粗雑なツールですが、便利です。
+<a class="xref" href="explicit-joins.html" title="14.3. 明示的なJOIN句でプランナを制御する">14.3</a>も参照してください）。
+例の場合、マージ結合が前の例のベスト結合タイプであると確信できない場合は、トライを使用できます。
 
 </p><pre class="screen">
 SET enable_mergejoin = off;
-SET enable_sort = off;
 
 EXPLAIN SELECT *
 FROM tenk1 t1, onek t2
@@ -721,11 +706,6 @@ WHERE t1.unique1 &lt; 100 AND t1.unique2 = t2.unique2;
                Recheck Cond: (unique1 &lt; 100)
                -&gt;  Bitmap Index Scan on tenk1_unique1  (cost=0.00..5.04 rows=100 width=0)
                      Index Cond: (unique1 &lt; 100)
- Merge Join  (cost=0.56..292.65 rows=10 width=488)
-   Merge Cond: (t1.unique2 = t2.unique2)
-   -&gt;  Index Scan using tenk1_unique2 on tenk1 t1  (cost=0.29..656.28 rows=101 width=244)
-         Filter: (unique1 &lt; 100)
-   -&gt;  Index Scan using onek_unique2 on onek t2  (cost=0.28..224.79 rows=1000 width=244)
 </pre><p>
 
 <span class="original">
@@ -735,9 +715,12 @@ WHERE t1.unique1 &lt; 100 AND t1.unique2 = t2.unique2;
     We can investigate that using &lt;command&gt;EXPLAIN ANALYZE&lt;/command&gt;, as
     discussed &lt;link linkend="using-explain-analyze"&gt;below&lt;/link&gt;.
 </span>
-《機械翻訳》これは、プランナが、この場合のハッシュ結合はマージ結合よりも50%近く高価であると考えていることを示しています。
-もちろん、次の疑問は、それが正しいかどうかです。
-<a class="link" href="using-explain.html#USING-EXPLAIN-ANALYZE" title="14.1.2. EXPLAIN ANALYZE">下記</a>で説明するように、<code class="command">EXPLAIN ANALYZE</code>を使用して調査できます。
+《マッチ度[57.096774]》これは、プランナが、シーケンシャルスキャンとソートよりインデックススキャンによる<code class="literal">onek</code>のソート処理がおよそ12%程高価であるとみなしたことを示します。
+当然ながら、次の疑問はこれが正しいかどうかでしょう。
+後で説明する<code class="command">EXPLAIN ANALYZE</code>を使用することで調査することができます。
+《機械翻訳》これは、このケースではハッシュ結合がマージ結合よりも50%近く高くなるとプランナが考えていることを示しています。
+もちろん、次の問題は、それが正しいかどうかということです。
+<a class="link" href="using-explain.html#USING-EXPLAIN-ANALYZE" title="14.1.2. EXPLAIN ANALYZE">以下で</a>説明するように、<code class="command">EXPLAIN ANALYZE</code>を使って調べることができます。
    </p><p>
     <a id="id-1.5.13.5.8.29.1" class="indexterm"></a>
 <span class="original">
@@ -746,8 +729,8 @@ WHERE t1.unique1 &lt; 100 AND t1.unique2 = t2.unique2;
     queries can sometimes be transformed into ordinary join plans, but
     when they cannot be, we get plans like:
 </span>
-《機械翻訳》いくつかの問い合わせ計画は、元の問い合わせの<code class="literal">SELECT</code>の副問い合わせから生じる<em class="firstterm">副計画</em>を含みます。
-このような問い合わせは、時々通常の結合計画に変換できますが、変換できない場合、次のような計画になります。
+《機械翻訳》一部のクエリ・プランには、オリジナルクエリのサブ<code class="literal">セレクト</code>から発生する<em class="firstterm">サブプラン</em>が含まれています。
+このようなクエリは、通常の結合プランに変換できる場合もありますが、変換できない場合は、次のようなプランが生成されます。
 
 </p><pre class="screen">
 EXPLAIN VERBOSE SELECT unique1
@@ -776,10 +759,10 @@ WHERE t.ten &lt; ALL (SELECT o.ten FROM onek o WHERE o.four = t.four);
     which refers to the &lt;replaceable&gt;N&lt;/replaceable&gt;'th output column of
     the sub-&lt;literal&gt;SELECT&lt;/literal&gt;.
 </span>
-《機械翻訳》この人工的な例は、いくつかの点を説明するのに役立ちます。
-外部プランレベルからの値は、サブプラン（<code class="literal">t.four</code>がここで渡されます）に渡すことができ、サブ選択の結果は外部プランで使用できます。
-これらの結果値は<code class="literal">((<em class="replaceable"><code>subplan_name</code></em>)</code>のような表記で<code class="command">EXPLAIN</code>に示されます。
-これは<em class="replaceable"><code>N</code></em>番目の出力列を参照します。
+《機械翻訳》このかなり人工的な例は、いくつかの点を説明するのに役立ちます。
+外側のプランレベルからの値はダウンをサブプランに渡すことができ（ここでは、<code class="literal">t.four</code>はダウンを渡します）、サブ-セレクトの結果は外側のプランで利用できます。
+これらの結果値は、<code class="literal"><em class="replaceable"><code>サブプラン_名前</code></em>).col<em class="replaceable"><code>N</code></em></code>のような表記で<code class="command">EXPLAIN</code>によって表示されます。
+これは、サブ<code class="literal">セレクト</code>の<em class="replaceable"><code>N</code></em>番目の出力カラムを参照します。
    </p><p>
     <a id="id-1.5.13.5.8.30.1" class="indexterm"></a>
 <span class="original">
@@ -788,8 +771,8 @@ WHERE t.ten &lt; ALL (SELECT o.ten FROM onek o WHERE o.four = t.four);
     high estimated cost).  Some queries can use a &lt;firstterm&gt;hashed
     subplan&lt;/firstterm&gt; to avoid that:
 </span>
-《機械翻訳》上の例では、<code class="literal">ALL</code>演算子は外部問い合わせの各行に対して再度副計画を実行します（これが高い見積りコストの原因です）。
-いくつかの問い合わせでは、<em class="firstterm">ハッシュ化された副計画</em>を使用して、以下を回避できます。
+《機械翻訳》上の例では、<code class="literal">ALL</code>演算子は、外側のクエリの各行に対してサブプランを再び実行します（外側のコストは、高い推定値を占めます）。
+一部のクエリーでは、それを回避するために<em class="firstterm">ハッシュされたサブプラン</em>を使用できます:。
 
 </p><pre class="screen">
 EXPLAIN SELECT *
@@ -813,8 +796,8 @@ WHERE t.unique1 NOT IN (SELECT o.unique1 FROM onek o);
     query, and that the &lt;literal&gt;ANY&lt;/literal&gt;'s comparison operator be
     amenable to hashing.
 </span>
-《機械翻訳》ここでは、サブプランは1回だけ実行され、その出力はインメモリのハッシュテーブルにロードされ、その後、外部の<code class="literal">ANY</code>演算子によってプローブされます。
-これには、サブ<code class="literal">SELECT</code>が外部クエリの変数を参照しないことと、<code class="literal">ANY</code>の比較演算子がハッシュ可能であることが必要です。
+《機械翻訳》ここでは、サブプランが1回実行され、その出力がメモリ内のハッシュテーブルにロードされ、次に外部<code class="literal">ANY</code>演算子によってプローブされます。
+これには、サブ-<code class="literal">セレクト</code>が外部クエリの変数をリファレンスしないこと、および<code class="literal">ANY</code>の比較演算子がハッシュに従うことが必要です。
    </p><p>
     <a id="id-1.5.13.5.8.31.1" class="indexterm"></a>
 <span class="original">
@@ -822,7 +805,7 @@ WHERE t.unique1 NOT IN (SELECT o.unique1 FROM onek o);
     the sub-&lt;literal&gt;SELECT&lt;/literal&gt; cannot return more than one row,
     it may instead be implemented as an &lt;firstterm&gt;initplan&lt;/firstterm&gt;:
 </span>
-《機械翻訳》外部問い合わせの変数を参照しないことに加えて、副<code class="literal">SELECT</code>が複数行を返せない場合、代わりに<em class="firstterm">initplan</em>として実装されるかもしれません。
+《機械翻訳》外部参照の変数をクエリしないことに加えて、サブ<code class="literal">セレクト</code>が複数の行を結果できない場合は、代わりに<em class="firstterm">initplan</em>:として実装できます。
 
 </p><pre class="screen">
 EXPLAIN VERBOSE SELECT unique1
@@ -846,9 +829,9 @@ FROM tenk1 t1 WHERE t1.ten = (SELECT (random() * 10)::integer);
     randomly-chosen integer.  That's quite different from what would
     happen without the sub-&lt;literal&gt;SELECT&lt;/literal&gt; construct.
 </span>
-《機械翻訳》初期計画は外部計画の実行ごとに一度だけ実行され、その結果は後の外部計画の行で再利用するために保存されます。
-したがって、この例では<code class="literal">random()</code>は一度だけ評価され、<code class="literal">t1.ten</code>のすべての値は同じランダムに選択された整数と比較されます。
-これは、副<code class="literal">SELECT</code>構文がない場合とはまったく異なります。
+《機械翻訳》initplanは外部プランの実行ごとに1回だけ実行され、その結果は外部プランの後の行で再利用するために保存されます。
+したがって、この例では<code class="literal">ランダム)</code>は1回だけ評価され、<code class="literal">t1.10</code>のすべての値がランダムに選択された同じ整数と比較されます。
+これは、サブ<code class="literal">セレクト</code>コンストラクトがない場合とは大きく異なります。
    </p></div><div class="sect2" id="USING-EXPLAIN-ANALYZE"><div class="titlepage"><div><div><h3 class="title">14.1.2. <code class="command">EXPLAIN ANALYZE</code> <a href="#USING-EXPLAIN-ANALYZE" class="id_link">#</a></h3></div></div></div><p>
 <span class="original">
     It is possible to check the accuracy of the planner's estimates
@@ -871,8 +854,6 @@ WHERE t1.unique1 &lt; 10 AND t1.unique2 = t2.unique2;
 -------------------------------------------------------------------​--------------------------------------------------------------
  Nested Loop  (cost=4.65..118.50 rows=10 width=488) (actual time=0.017..0.051 rows=10 loops=1)
    -&gt;  Bitmap Heap Scan on tenk1 t1  (cost=4.36..39.38 rows=10 width=244) (actual time=0.009..0.017 rows=10 loops=1)
- Nested Loop  (cost=4.65..118.62 rows=10 width=488) (actual time=0.128..0.377 rows=10 loops=1)
-   -&gt;  Bitmap Heap Scan on tenk1 t1  (cost=4.36..39.47 rows=10 width=244) (actual time=0.057..0.121 rows=10 loops=1)
          Recheck Cond: (unique1 &lt; 10)
          Heap Blocks: exact=10
          -&gt;  Bitmap Index Scan on tenk1_unique1  (cost=0.00..4.36 rows=10 width=0) (actual time=0.004..0.004 rows=10 loops=1)
@@ -931,7 +912,6 @@ WHERE t1.unique1 &lt; 100 AND t1.unique2 = t2.unique2 ORDER BY t1.fivethous;
                                                                  QUERY PLAN
 -------------------------------------------------------------------​-------------------------------------------------------------------​------
  Sort  (cost=713.05..713.30 rows=100 width=488) (actual time=2.995..3.002 rows=100 loops=1)
- Sort  (cost=717.34..717.59 rows=101 width=488) (actual time=7.761..7.774 rows=100 loops=1)
    Sort Key: t1.fivethous
    Sort Method: quicksort  Memory: 74kB
    -&gt;  Hash Join  (cost=226.23..709.73 rows=100 width=488) (actual time=0.515..2.920 rows=100 loops=1)
@@ -943,7 +923,6 @@ WHERE t1.unique1 &lt; 100 AND t1.unique2 = t2.unique2 ORDER BY t1.fivethous;
                      Recheck Cond: (unique1 &lt; 100)
                      Heap Blocks: exact=90
                      -&gt;  Bitmap Index Scan on tenk1_unique1  (cost=0.00..5.04 rows=100 width=0) (actual time=0.013..0.013 rows=100 loops=1)
-                     -&gt;  Bitmap Index Scan on tenk1_unique1  (cost=0.00..5.04 rows=101 width=0) (actual time=0.049..0.049 rows=100 loops=1)
                            Index Cond: (unique1 &lt; 100)
  Planning Time: 0.187 ms
  Execution Time: 3.036 ms
@@ -973,7 +952,6 @@ EXPLAIN ANALYZE SELECT * FROM tenk1 WHERE ten &lt; 7;
                                                QUERY PLAN
 -------------------------------------------------------------------​--------------------------------------
  Seq Scan on tenk1  (cost=0.00..470.00 rows=7000 width=244) (actual time=0.030..1.995 rows=7000 loops=1)
- Seq Scan on tenk1  (cost=0.00..483.00 rows=7000 width=244) (actual time=0.016..5.107 rows=7000 loops=1)
    Filter: (ten &lt; 7)
    Rows Removed by Filter: 3000
  Planning Time: 0.102 ms
@@ -1003,7 +981,6 @@ EXPLAIN ANALYZE SELECT * FROM polygon_tbl WHERE f1 @&gt; polygon '(0.5,2.0)';
                                               QUERY PLAN
 -------------------------------------------------------------------​-----------------------------------
  Seq Scan on polygon_tbl  (cost=0.00..1.09 rows=1 width=85) (actual time=0.023..0.023 rows=0 loops=1)
- Seq Scan on polygon_tbl  (cost=0.00..1.05 rows=1 width=32) (actual time=0.044..0.044 rows=0 loops=1)
    Filter: (f1 @&gt; '((0.5,2))'::polygon)
    Rows Removed by Filter: 7
  Planning Time: 0.039 ms
@@ -1028,7 +1005,6 @@ EXPLAIN ANALYZE SELECT * FROM polygon_tbl WHERE f1 @&gt; polygon '(0.5,2.0)';
                                                         QUERY PLAN
 -------------------------------------------------------------------​-------------------------------------------------------
  Index Scan using gpolygonind on polygon_tbl  (cost=0.13..8.15 rows=1 width=85) (actual time=0.074..0.074 rows=0 loops=1)
- Index Scan using gpolygonind on polygon_tbl  (cost=0.13..8.15 rows=1 width=32) (actual time=0.062..0.062 rows=0 loops=1)
    Index Cond: (f1 @&gt; '((0.5,2))'::polygon)
    Rows Removed by Index Recheck: 1
  Planning Time: 0.039 ms
@@ -1058,7 +1034,6 @@ EXPLAIN (ANALYZE, BUFFERS) SELECT * FROM tenk1 WHERE unique1 &lt; 100 AND unique
                                                            QUERY PLAN
 -------------------------------------------------------------------​--------------------------------------------------------------
  Bitmap Heap Scan on tenk1  (cost=25.07..60.11 rows=10 width=244) (actual time=0.105..0.114 rows=10 loops=1)
- Bitmap Heap Scan on tenk1  (cost=25.08..60.21 rows=10 width=244) (actual time=0.323..0.342 rows=10 loops=1)
    Recheck Cond: ((unique1 &lt; 100) AND (unique2 &gt; 9000))
    Heap Blocks: exact=10
    Buffers: shared hit=14 read=3
@@ -1074,9 +1049,6 @@ EXPLAIN (ANALYZE, BUFFERS) SELECT * FROM tenk1 WHERE unique1 &lt; 100 AND unique
    Buffers: shared hit=3
  Planning Time: 0.162 ms
  Execution Time: 0.143 ms
-               Buffers: shared hit=5
- Planning time: 0.088 ms
- Execution time: 0.423 ms
 </pre><p>
 
 <span class="original">
@@ -1105,8 +1077,6 @@ EXPLAIN ANALYZE UPDATE tenk1 SET hundred = hundred + 1 WHERE unique1 &lt; 100;
 -------------------------------------------------------------------​-------------------------------------------------------------
  Update on tenk1  (cost=5.06..225.23 rows=0 width=0) (actual time=1.634..1.635 rows=0 loops=1)
    -&gt;  Bitmap Heap Scan on tenk1  (cost=5.06..225.23 rows=100 width=10) (actual time=0.065..0.141 rows=100 loops=1)
- Update on tenk1  (cost=5.08..230.08 rows=0 width=0) (actual time=3.791..3.792 rows=0 loops=1)
-   -&gt;  Bitmap Heap Scan on tenk1  (cost=5.08..230.08 rows=102 width=10) (actual time=0.069..0.513 rows=100 loops=1)
          Recheck Cond: (unique1 &lt; 100)
          Heap Blocks: exact=90
          -&gt;  Bitmap Index Scan on tenk1_unique1  (cost=0.00..5.04 rows=100 width=0) (actual time=0.031..0.031 rows=100 loops=1)
@@ -1145,7 +1115,7 @@ ROLLBACK;
     inheritance hierarchy, the output might look like this:
 </span>
 《マッチ度[85.869565]》<code class="command">UPDATE</code>、<code class="command">DELETE</code>、<code class="command">MERGE</code>コマンドが継承階層に影響する場合には、出力は以下のようになるでしょう。
-《機械翻訳》<code class="command">UPDATE</code>、<code class="command">DELETE</code>、または<code class="command">MERGE</code>コマンドがパーティションテーブルや継承階層に影響を与える場合、出力は次のようになります。
+《機械翻訳》<code class="command">更新</code>、<code class="command">削除</code>、または<code class="command">マージ</code>コマンドが、分割されたテーブルまたは継承の階層に影響を与える場合、出力は次のようになります。
 
 </p><pre class="screen">
 EXPLAIN UPDATE gtest_parent SET f1 = CURRENT_DATE WHERE f2 = 101;
@@ -1163,24 +1133,6 @@ EXPLAIN UPDATE gtest_parent SET f1 = CURRENT_DATE WHERE f2 = 101;
                Filter: (f2 = 101)
          -&gt;  Seq Scan on gtest_child3 gtest_parent_3  (cost=0.00..1.01 rows=1 width=14)
                Filter: (f2 = 101)
-EXPLAIN UPDATE parent SET f2 = f2 + 1 WHERE f1 = 101;
-                                              QUERY PLAN
--------------------------------------------------------------------​-----------------------------------
- Update on parent  (cost=0.00..24.59 rows=0 width=0)
-   Update on parent parent_1
-   Update on child1 parent_2
-   Update on child2 parent_3
-   Update on child3 parent_4
-   -&gt;  Result  (cost=0.00..24.59 rows=4 width=14)
-         -&gt;  Append  (cost=0.00..24.54 rows=4 width=14)
-               -&gt;  Seq Scan on parent parent_1  (cost=0.00..0.00 rows=1 width=14)
-                     Filter: (f1 = 101)
-               -&gt;  Index Scan using child1_pkey on child1 parent_2  (cost=0.15..8.17 rows=1 width=14)
-                     Index Cond: (f1 = 101)
-               -&gt;  Index Scan using child2_pkey on child2 parent_3  (cost=0.15..8.17 rows=1 width=14)
-                     Index Cond: (f1 = 101)
-               -&gt;  Index Scan using child3_pkey on child3 parent_4  (cost=0.15..8.17 rows=1 width=14)
-                     Index Cond: (f1 = 101)
 </pre><p>
 
 <span class="original">
@@ -1194,9 +1146,9 @@ EXPLAIN UPDATE parent SET f2 = f2 + 1 WHERE f1 = 101;
 《マッチ度[78.512397]》この例では、Updateノードは元々言及されている親テーブルに加えて3つの子テーブルを考慮することが必要です。
 そのため、テーブル毎に1つ、4つの入力スキャン副計画があります。
 明確にするため、Updateノードには対応する副計画と同じ順に更新される特定の対象テーブルを示す注釈が付けられています。
-《機械翻訳》この例では、更新ノードは3つの子表を考慮する必要がありますが、最初に言及したパーティション表（データを格納しないため）は考慮する必要がありません。
-したがって、3つの入力スキャン・サブプランがあり、各表に1つずつあります。
-明確にするために、更新ノードには、対応するサブプランと同じ順序で更新される特定のターゲット表が表示されます。
+《機械翻訳》この例では、更新ノードニーズは3つの子テーブルを考慮しますが、最初に説明したパーティション化されたテーブルは考慮しません（データを格納しないため）。
+したがって、テーブルごとに1つずつ、3つの入力スキャンサブプランがあります。
+明確にするために、更新ノードには、対応するサブプランと同じオーダーで、更新される特定のターゲットテーブルを示す注釈が付けられています。
    </p><p>
 <span class="original">
     The &lt;literal&gt;Planning time&lt;/literal&gt; shown by &lt;command&gt;EXPLAIN
@@ -1237,9 +1189,9 @@ EXPLAIN UPDATE parent SET f2 = f2 + 1 WHERE f1 = 101;
     be shown separately, and it's also included in the
     total &lt;literal&gt;Execution time&lt;/literal&gt;.
 </span>
-《機械翻訳》最上位ノードに対して表示される時間には、問合せの出力データを表示可能な形式に変換したり、クライアントに送信したりするために必要な時間は含まれません。
-<code class="command">EXPLAIN ANALYZE</code>はデータをクライアントに送信することはありませんが、<code class="literal">SERIALIZE</code>オプションを指定することで、問い合わせの出力データを表示可能な形式に変換し、そのために必要な時間を測定するように指示することができます。
-その時間は別々に表示され、<code class="literal">Execution time</code>の合計にも含まれます。
+《機械翻訳》トップ-レベルノードに表示される時間は、クエリの出力データを表示可能なフォームに変換したり、クライアントに送信したりするために必要な時間ではありません。
+include<code class="command">EXPLAIN ANALYZE</code>はデータをクライアントに送信することはありませんが、<code class="literal">SERIALIZE</code>オプションを指定することで、クエリの出力データを表示可能なフォームに変換し、そのために必要な時間を測定するように指示できます。
+その時間は別に表示され、合計<code class="literal">実行時間</code>にも含まれます。
    </p></div><div class="sect2" id="USING-EXPLAIN-CAVEATS"><div class="titlepage"><div><div><h3 class="title">14.1.3. 警告 <a href="#USING-EXPLAIN-CAVEATS" class="id_link">#</a></h3></div></div></div><span class="original">
    &lt;title&gt;Caveats&lt;/title&gt;
 </span><p>
@@ -1259,11 +1211,11 @@ EXPLAIN UPDATE parent SET f2 = f2 + 1 WHERE f1 = 101;
 １つ目は、出力行がクライアントに配信されませんので、ネットワーク転送コストとI/O変換に関するコストが含まれないことです。
 ２つ目は、<code class="command">EXPLAIN ANALYZE</code>によって加わる測定オーバーヘッドが大きくなることが、特に<code class="function">gettimeofday()</code>オペレーティングシステムコールが低速なマシンであり得ることです。
 <a class="xref" href="pgtesttiming.html" title="pg_test_timing"><span class="refentrytitle"><span class="application">pg_test_timing</span></span></a>を用いて、使用中のシステムの時間測定にかかるオーバーヘッドを測ることができます。
-《機械翻訳》<code class="command">EXPLAIN ANALYZE</code>で測定される実行時間が、同じ問い合わせの通常の実行と異なる2つの重要な方法があります。
-まず、出力行がクライアントに配信されないため、ネットワーク転送コストが含まれません。
-<code class="literal">SERIALIZE</code>が指定されていない場合、入出力変換コストは含まれません。
-第二に、<code class="command">EXPLAIN ANALYZE</code>によって追加される測定オーバーヘッドは、特に<code class="function">gettimeofday()</code>オペレーティングシステムコールが遅いマシンでは、かなり大きくなる可能性があります。
-システム上のタイミングのオーバーヘッドを測定するには、<a class="xref" href="pgtesttiming.html" title="pg_test_timing"><span class="refentrytitle"><span class="application">pg_test_timing</span></span></a>ツールを使用します。
+《機械翻訳》<code class="command">EXPLAIN ANALYZE</code>によって測定される実行時間が、同じクエリの通常の実行から逸脱する可能性がある重要な方法が2つあります。
+第1に、出力行はクライアントに配信されないため、ネットワークの伝送コストは含まれない。
+<code class="literal">SERIALIZE</code>が指定されていない限り、入出力変換コストも含まれません。
+第2に、<code class="command">EXPLAINオーバーヘッド</code>によって追加された計測ANALYZEは、特に<code class="function">gettimeofday()</code>操作システム呼び出しが遅いマシンでは重要になります。
+<a class="xref" href="pgtesttiming.html" title="pg_test_timing"><span class="refentrytitle"><span class="application">pg_test_timing</span></span></a>ツールを使用して、システムのタイミングのオーバーヘッドを計測できます。
    </p><p>
 <span class="original">
     &lt;command&gt;EXPLAIN&lt;/command&gt; results should not be extrapolated to situations
@@ -1302,8 +1254,6 @@ EXPLAIN ANALYZE SELECT * FROM tenk1 WHERE unique1 &lt; 100 AND unique2 &gt; 9000
 -------------------------------------------------------------------​------------------------------------------------------------
  Limit  (cost=0.29..14.33 rows=2 width=244) (actual time=0.051..0.071 rows=2 loops=1)
    -&gt;  Index Scan using tenk1_unique2 on tenk1  (cost=0.29..70.50 rows=10 width=244) (actual time=0.051..0.070 rows=2 loops=1)
- Limit  (cost=0.29..14.71 rows=2 width=244) (actual time=0.177..0.249 rows=2 loops=1)
-   -&gt;  Index Scan using tenk1_unique2 on tenk1  (cost=0.29..72.42 rows=10 width=244) (actual time=0.174..0.244 rows=2 loops=1)
          Index Cond: (unique2 &gt; 9000)
          Filter: (unique1 &lt; 100)
          Rows Removed by Filter: 287
