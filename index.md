@@ -13,7 +13,7 @@ layout: default
 
 ### 最新 PostgreSQL 16
 
-last-updated: 2024-08-06 04:24:38 JST
+last-updated: 2024-08-09 04:21:55 JST
 
 | HTML （オンライン）           | PDF                        |
 |:---------------------------|:-------------------:|
