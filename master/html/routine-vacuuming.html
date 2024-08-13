@@ -737,13 +737,10 @@ HINT:  To avoid XID assignment failures, execute a database-wide VACUUM in that 
     If these warnings are ignored, the system will refuse to assign new XIDs once
     there are fewer than three million transactions left until wraparound:
 </span>
-《マッチ度[81.127983]》（ヒントで示唆されたように手動<code class="command">VACUUM</code>はこの問題を解決します。
-しかし、<code class="command">VACUUM</code>はスーパーユーザで実行されなければなりません。
+（ヒントで示唆されたように手動<code class="command">VACUUM</code>はこの問題を解決します。
+しかし、<code class="command">VACUUM</code>はスーパーユーザで実行されるべきであること注意してください。
 さもないとシステムカタログの処理に失敗し、このためデータベースの<code class="structfield">datfrozenxid</code>を繰り上げることができません。）
-こうした警告も無視し続け、周回するまでのトランザクションが300万より少なくなると、システムは停止し、新しいトランザクションの起動を拒絶します。
-《機械翻訳》（手動の<code class="command">VACUUM</code>はヒントで示されているように問題を修正するはずですが、<code class="command">VACUUM</code>はスーパーユーザによって実行される必要があることに注意してください。
-そうしないと、データベースの<code class="structfield">datfrozenxid</code>を進めることができないシステムカタログの処理に失敗します。
-これらの警告が無視されると、ラップアラウンドまでのトランザクション数が300万未満になると、新しいXIDの割り当てが拒否されます。
+こうした警告も無視し続け、周回するまでのトランザクションが300万より少なくなると、システムは新しいXIDの割り当てを拒絶します。
 
 </p><pre class="programlisting">
 ERROR:  database is not accepting commands that assign new XIDs to avoid wraparound data loss in database "mydb"
@@ -771,16 +768,16 @@ HINT:  Execute a database-wide VACUUM in that database.
        &lt;link linkend="view-pg-prepared-xacts"&gt;pg_prepared_xacts&lt;/link&gt; for rows where
        &lt;literal&gt;age(transactionid)&lt;/literal&gt; is large. Such transactions should be
        committed or rolled back.&lt;/simpara&gt;
-</span>《機械翻訳》古い準備されたトランザクションを解決します。
-<a class="link" href="view-pg-prepared-xacts.html" title="52.16. pg_prepared_xacts">pg_prepared_xacts</a>の<code class="literal">age(transactionid)</code>が大きい行をチェックして見つけることができます。
+</span>古いプリペアドトランザクションを解決します。
+<a class="link" href="view-pg-prepared-xacts.html" title="52.16. pg_prepared_xacts">pg_prepared_xacts</a>の<code class="literal">age(transactionid)</code>が大きい行を確認して見つけることができます。
 このようなトランザクションはコミットまたはロールバックされるべきです。</li><li class="listitem"><span class="original">
       &lt;simpara&gt;End long-running open transactions. You can find these by checking
        &lt;link linkend="monitoring-pg-stat-activity-view"&gt;pg_stat_activity&lt;/link&gt; for rows where
        &lt;literal&gt;age(backend_xid)&lt;/literal&gt; or &lt;literal&gt;age(backend_xmin)&lt;/literal&gt; is
        large. Such transactions should be committed or rolled back, or the session
        can be terminated using &lt;literal&gt;pg_terminate_backend&lt;/literal&gt;.&lt;/simpara&gt;
-</span>《機械翻訳》長時間実行されているオープントランザクションを終了します。
-<a class="link" href="monitoring-stats.html#MONITORING-PG-STAT-ACTIVITY-VIEW" title="27.2.3. pg_stat_activity">pg_stat_activity</a>で<code class="literal">age(backend_xid)</code>または<code class="literal">age(backend_xmin)</code>が大きい行を見つけて、これらを確認する必要があります。
+</span>長時間実行されているオープントランザクションを終了します。
+<a class="link" href="monitoring-stats.html#MONITORING-PG-STAT-ACTIVITY-VIEW" title="27.2.3. pg_stat_activity">pg_stat_activity</a>で<code class="literal">age(backend_xid)</code>または<code class="literal">age(backend_xmin)</code>が大きい行を確認して、これらを見つけることができます。
 このようなトランザクションはコミットまたはロールバックするか、<code class="literal">pg_terminate_backend</code>を使用してセッションを終了できます。</li><li class="listitem"><span class="original">
       &lt;simpara&gt;Drop any old replication slots. Use
        &lt;link linkend="monitoring-pg-stat-replication-view"&gt;pg_stat_replication&lt;/link&gt; to
@@ -789,10 +786,10 @@ HINT:  Execute a database-wide VACUUM in that database.
        longer exist, or that have been down for a long time. If you drop a slot for a server
        that still exists and might still try to connect to that slot, that replica may
        need to be rebuilt.&lt;/simpara&gt;
-</span>《機械翻訳》古いレプリケーションスロットを削除します。
+</span>古いレプリケーションスロットを削除します。
 <a class="link" href="monitoring-stats.html#MONITORING-PG-STAT-REPLICATION-VIEW" title="27.2.4. pg_stat_replication">pg_stat_replication</a>を使用して<code class="literal">age(xmin)</code>または<code class="literal">age(catalog_xmin)</code>が大きいスロットを見つけます。
-多くの場合、そのようなスロットは、もはや存在しないサーバへのレプリケーションのために作成されたもので、長い間ダウンしています。
-存在するサーバに対してスロットを削除しても、そのスロットに接続しようとする可能性がある場合、そのレプリカは再構築する必要があります。</li><li class="listitem"><span class="original">
+多くの場合、そのようなスロットは、もはや存在しないか長い間ダウンしているサーバへのレプリケーションのために作成されたものです。
+存在するサーバに対してスロットを削除しても、そのスロットに接続しようとする可能性がある場合、そのレプリカは再構築する必要があるでしょう。</li><li class="listitem"><span class="original">
       &lt;simpara&gt;Execute &lt;command&gt;VACUUM&lt;/command&gt; in the target database. A database-wide
        &lt;literal&gt;VACUUM&lt;/literal&gt; is simplest; to reduce the time required, it as also possible
        to issue manual &lt;command&gt;VACUUM&lt;/command&gt; commands on the tables where
@@ -801,17 +798,16 @@ HINT:  Execute a database-wide VACUUM in that database.
        mode, where it will instead consume an XID and thus increase the risk of transaction ID
        wraparound. Do not use &lt;literal&gt;VACUUM FREEZE&lt;/literal&gt; either, because it will do
        more than the minimum amount of work required to restore normal operation.&lt;/simpara&gt;
-</span>《機械翻訳》対象データベースで<code class="command">VACUUM</code>を実行します。
-データベース全体の<code class="literal">VACUUM</code>は最も簡単です。
+</span>対象のデータベースで<code class="command">VACUUM</code>を実行します。
+データベース全体の<code class="literal">VACUUM</code>が最も簡単です。
 必要な時間を短縮するために、<code class="structfield">relminxid</code>が最も古いテーブルに対して手動<code class="command">VACUUM</code>コマンドを発行することも可能です。
-このシナリオでは<code class="literal">VACUUM FULL</code>を使用しないでください。
-これにはXIDが必要であり、スーパーユーザモード以外では失敗します。
+このシナリオでは<code class="literal">VACUUM FULL</code>を使用しないでください。これにはXIDが必要であり、スーパーユーザモード以外では失敗します。
 その代わりにXIDを消費してトランザクションIDのラップアラウンドのリスクを高めるからです。
 また、<code class="literal">VACUUM FREEZE</code>も使用しないでください。
 通常の操作を回復するために必要な最小限の作業以上の作業を行うからです。</li><li class="listitem"><span class="original">
       &lt;simpara&gt;Once normal operation is restored, ensure that autovacuum is properly configured
        in the target database in order to avoid future problems.&lt;/simpara&gt;
-</span>《機械翻訳》通常の動作が回復したら、将来の問題を回避するために、ターゲットデータベースで自動バキュームが正しく設定されていることを確認してください。</li></ol></div><p>
+</span>通常の動作が回復したら、将来の問題を回避するために、対象のデータベースで自動バキュームが正しく設定されていることを確認してください。</li></ol></div><p>
    </p><div class="note"><h3 class="title">注記</h3><p>
 <span class="original">
      In earlier versions, it was sometimes necessary to stop the postmaster and
@@ -824,10 +820,10 @@ HINT:  Execute a database-wide VACUUM in that database.
      safety margin exists to let the administrator do this. See the
      &lt;xref linkend="app-postgres"/&gt; reference page for details about using single-user mode.
 </span>
-《機械翻訳》以前のバージョンでは、postmasterを停止して<code class="command">VACUUM</code>をシングルユーザモードで実行する必要がありました。
+以前のバージョンでは、postmasterを停止して<code class="command">VACUUM</code>をシングルユーザモードで実行する必要な場合がありました。
 一般的なシナリオでは、これはもはや必要ではなく、システムを停止させることを伴うため、可能な限り回避する必要があります。
 また、データ損失を防ぐために設計されたトランザクションIDラップアラウンド保護を無効にするため、よりリスクが高くなります。
-このシナリオでシングルユーザモードを使用する唯一の理由は、<code class="command">VACUUM</code>を必要としない<code class="command">TRUNCATE</code>または<code class="command">DROP</code>のテーブルを避けるためです。
+このシナリオでシングルユーザモードを使用する唯一の理由は、不必要なテーブルを<code class="command">TRUNCATE</code>または<code class="command">DROP</code>し、それらの<code class="command">VACUUM</code>をする必要を避けたい場合です。
 管理者がこのようなことを行えるようにするために、300万トランザクションの安全マージンが存在します。
 シングルユーザモードの使用の詳細については、<a class="xref" href="app-postgres.html" title="postgres"><span class="refentrytitle"><span class="application">postgres</span></span></a>のリファレンスページを参照してください。
     </p></div><div class="sect3" id="VACUUM-FOR-MULTIXACT-WRAPAROUND"><div class="titlepage"><div><div><h4 class="title">24.1.5.1. マルチトランザクションと周回 <a href="#VACUUM-FOR-MULTIXACT-WRAPAROUND" class="id_link">#</a></h4></div></div></div><span class="original">
@@ -917,21 +913,21 @@ HINT:  Execute a database-wide VACUUM in that database.
      when XIDs are exhausted. Follow the same steps in the previous section, but with the
      following differences:
 </span>
-《機械翻訳》MXIDが枯渇したときの通常の動作は、XIDが枯渇したときとほぼ同じ方法で復元できます。
+MXIDが枯渇したときの通常の動作は、XIDが枯渇したときとほぼ同じ方法で復元できます。
 前のセクションと同じ手順に従いますが、次の点が異なります。
 
     </p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><span class="original">
       &lt;simpara&gt;Running transactions and prepared transactions can be ignored if there
        is no chance that they might appear in a multixact.&lt;/simpara&gt;
-</span>《機械翻訳》実行中のトランザクションと準備されたトランザクションは、マルチトランザクションに現れる可能性がない場合は無視できます。</li><li class="listitem"><span class="original">
+</span>実行中のトランザクションとプリペアドトランザクションは、マルチトランザクションに現れる可能性がない場合は無視できます。</li><li class="listitem"><span class="original">
       &lt;simpara&gt;MXID information is not directly visible in system views such as
        &lt;literal&gt;pg_stat_activity&lt;/literal&gt;; however, looking for old XIDs is still a good
        way of determining which transactions are causing MXID wraparound problems.&lt;/simpara&gt;
-</span>《機械翻訳》<code class="literal">pg_stat_activity</code>などのシステムビューではMXID情報は直接表示されませんが、古いXIDを探すことはMXIDのラップアラウンド問題の原因となっているトランザクションを判断する良い方法です。</li><li class="listitem"><span class="original">
+</span><code class="literal">pg_stat_activity</code>などのシステムビューではMXID情報は直接表示されませんが、古いXIDを探すことはMXIDの周回問題の原因となっているトランザクションを判断する良い方法です。</li><li class="listitem"><span class="original">
       &lt;simpara&gt;XID exhaustion will block all write transactions, but MXID exhaustion will
        only block a subset of write transactions, specifically those that involve
        row locks that require an MXID.&lt;/simpara&gt;
-</span>《機械翻訳》XID の枯渇はすべての書き込みトランザクションをブロックしますが、MXID の枯渇は、特に MXID を必要とするロー・ロックを含む書き込みトランザクションのサブセットのみをブロックします。</li></ol></div><p>
+</span>XIDの枯渇はすべての書き込みトランザクションをブロックしますが、MXIDの枯渇は、特に MXIDを必要とする行ロックを含む書き込みトランザクションのサブセットのみをブロックします。</li></ol></div><p>
    </p></div></div><div class="sect2" id="AUTOVACUUM"><div class="titlepage"><div><div><h3 class="title">24.1.6. 自動バキュームデーモン <a href="#AUTOVACUUM" class="id_link">#</a></h3></div></div></div><span class="original">
    &lt;title&gt;The Autovacuum Daemon&lt;/title&gt;
 </span><a id="id-1.6.11.12.10.2" class="indexterm"></a><a id="id-1.6.11.12.10.3" class="indexterm"></a><p>
@@ -1106,10 +1102,10 @@ analyze threshold = analyze base threshold + analyze scale factor * number of tu
     when they are first populated, and again whenever the distribution
     of data in their partitions changes significantly.
 </span>
-《機械翻訳》パーティション化されたテーブルはタプルを直接格納しないため、autovacuumによって処理されません。
-(自動バキュームは他のテーブルと同様にプロセステーブルパーティションを処理します。
-残念ながら、これは自動バキュームがパーティション化されたテーブルで<code class="command">ANALYZE</code>を実行しないことを意味し、これはパーティションテーブルの統計を参照する問い合わせに対して最適でない計画を生成する可能性があります。
-この問題を回避するには、パーティション化されたテーブルに最初にデータが移入されたときに<code class="command">ANALYZE</code>を手動で実行し、パーティション内のデータの分布が大きく変化した場合には必ず再度実行します。
+パーティション化テーブルはタプルを直接格納しないため、自動バキュームによって処理されません。
+(自動バキュームは他のテーブルと同様にテーブルパーティションを処理します。)
+残念ながら、これは自動バキュームがパーティション化テーブルで<code class="command">ANALYZE</code>を実行しないことを意味し、これによりパーティション化テーブルの統計を参照する問い合わせに対して最適でない計画を生成する可能性があります。
+この問題を回避するには、パーティション化テーブルに最初にデータが移入されたときに<code class="command">ANALYZE</code>を手動で実行し、パーティション内のデータの分布が大きく変化した場合には必ず再度実行します。
    </p><p>
 <span class="original">
     Temporary tables cannot be accessed by autovacuum.  Therefore,

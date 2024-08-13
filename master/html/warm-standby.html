@@ -85,7 +85,7 @@ WALファイル(16MB)は隣り合うシステム、同じサイトの別シス�
 結果としてこれは、高可用性を提供するウォームスタンバイ構成と呼ばれます。
 保管されたベースバックアップからサーバをリストアし、ロールフォワードを行うことはおそらく長時間かかりますので、これは高可用性のための解法とはいえず、災害からのリカバリのための解法です。
 スタンバイサーバは読み取り専用の問い合わせに使用することもできます。
-この場合<em class="firstterm">ホットスタンバイy</em>サーバと呼ばれます。
+この場合<em class="firstterm">ホットスタンバイ</em>サーバと呼ばれます。
 詳細については<a class="xref" href="hot-standby.html" title="26.4. ホットスタンバイ">26.4</a>を参照してください。
   </p><a id="id-1.6.13.22.7" class="indexterm"></a><a id="id-1.6.13.22.8" class="indexterm"></a><a id="id-1.6.13.22.9" class="indexterm"></a><a id="id-1.6.13.22.10" class="indexterm"></a><a id="id-1.6.13.22.11" class="indexterm"></a><a id="id-1.6.13.22.12" class="indexterm"></a><a id="id-1.6.13.22.13" class="indexterm"></a><a id="id-1.6.13.22.14" class="indexterm"></a><a id="id-1.6.13.22.15" class="indexterm"></a><a id="id-1.6.13.22.16" class="indexterm"></a><a id="id-1.6.13.22.17" class="indexterm"></a><div class="sect2" id="STANDBY-PLANNING"><div class="titlepage"><div><div><h3 class="title">26.2.1. 計画 <a href="#STANDBY-PLANNING" class="id_link">#</a></h3></div></div></div><span class="original">
    &lt;title&gt;Planning&lt;/title&gt;
@@ -178,11 +178,11 @@ WALファイル(16MB)は隣り合うシステム、同じサイトの別シス�
     archive, &lt;filename&gt;pg_wal&lt;/filename&gt;, and via streaming replication goes on until the server
     is stopped or is promoted.
 </span>
-《マッチ度[90.559441]》起動時、スタンバイサーバは<code class="varname">restore_command</code>を呼び出して、アーカイブ場所にある利用可能なすべてのWALをリストアすることから始めます。
+起動時、スタンバイサーバは<code class="varname">restore_command</code>を呼び出して、アーカイブ場所にある利用可能なすべてのWALをリストアすることから始めます。
 そこで利用可能なWALの終端に達し、<code class="varname">restore_command</code>が失敗すると、<code class="filename">pg_wal</code>ディレクトリにある利用可能な任意のWALのリストアを試みます。
 ストリーミングレプリケーションが設定されている場合、これに失敗すると、スタンバイはプライマリサーバへの接続を試み、アーカイブまたは<code class="filename">pg_wal</code>内に存在した最終の有効レコードからWALのストリーミングを開始します。
 ストリーミングレプリケーションが未設定時にこれに失敗する場合、または、接続が後で切断される場合、スタンバイは最初に戻り、アーカイブからのファイルのリストアを繰り返し行います。
-このアーカイブ、<code class="filename">pg_wal</code>、ストリーミングレプリケーションからという再試行の繰り返しはサーバが停止する、あるいはトリガファイルによるフェイルオーバーが発行されるまで続きます。
+このアーカイブ、<code class="filename">pg_wal</code>、ストリーミングレプリケーションからという再試行の繰り返しはサーバが停止する、あるいは昇格するまで続きます。
    </p><p>
 <span class="original">
     Standby mode is exited and the server switches to normal operation
@@ -738,7 +738,7 @@ primary_slot_name = 'node_a_slot'
 </span>
 同期スタンバイは、物理レプリケーションのスタンバイでも、論理レプリケーションのサブスクライバーのどちらでも構いません。
 また同期スタンバイは、適切なフィードバックメッセージを送信する方法を知っている、物理あるいは論理WALレプリケーションストリームの消費者であっても構いません。
-組み込みの物理あるいは論理レプリケーションシステムを別にすると、<code class="command">pg_receivewal</code>と<code class="command">pg_recvlogical</code>、それにサードパーティーのレプリケーションシステムとカスタムプログラムが該当します。
+組み込みの物理あるいは論理レプリケーションシステムを別にすると、<code class="command">pg_receivewal</code>と<code class="command">pg_recvlogical</code>、それにサードパーティのレプリケーションシステムとカスタムプログラムが該当します。
 対応する同期レプリケーションのサポートの詳細に関するドキュメントを参照してください。
    </p><div class="sect3" id="SYNCHRONOUS-REPLICATION-CONFIG"><div class="titlepage"><div><div><h4 class="title">26.2.8.1. 基本設定 <a href="#SYNCHRONOUS-REPLICATION-CONFIG" class="id_link">#</a></h4></div></div></div><span class="original">
     &lt;title&gt;Basic Configuration&lt;/title&gt;
@@ -975,8 +975,8 @@ synchronous_standby_names = 'ANY 2 (s1, s2, s3)'
     responses from. Such transaction commits may never be completed
     if any one of the synchronous standbys should crash.
 </span>
-《マッチ度[93.052109]》<code class="varname">synchronous_commit</code>が、<code class="literal">on</code>、<code class="literal">remote_apply</code>、<code class="literal">remote_write</code>のいずれかに設定されている場合、<code class="varname">synchronous_standby_names</code>には、コミットされたトランザクションが応答を待つ同期スタンバイの数と名前を指定します。
-そのようなトランザクションのコミットは、同期スタンバイのどれかがクラッシュすると決して完了しないかもしれません。
+<code class="varname">synchronous_commit</code>が、<code class="literal">on</code>、<code class="literal">remote_apply</code>、<code class="literal">remote_write</code>のいずれかに設定されている場合、<code class="varname">synchronous_standby_names</code>には、コミットされたトランザクションが応答を待つ同期スタンバイの数と名前を指定します。
+もし同期スタンバイのどれかがクラッシュした場合、そのようなトランザクションのコミットは決して完了しないかもしれません。
    </p><p>
 <span class="original">
     The best solution for high availability is to ensure you keep as many

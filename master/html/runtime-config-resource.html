@@ -262,23 +262,16 @@ Linuxでは、これは<span class="quote">「<span class="quote">transparent hu
         Hash tables are used in hash joins, hash-based aggregation, memoize
         nodes and hash-based processing of &lt;literal&gt;IN&lt;/literal&gt; subqueries.
 </span>
-《マッチ度[81.504065]》一時ディスクファイルに書き込むようになる前に、問い合わせ操作（たとえば並べ替えとハッシュテーブル操作）が使用する基本的な最大のメモリ容量を指定します。
+一時ディスクファイルに書き込む前に、問い合わせ操作（ソートやハッシュなど）で使用される最大メモリ量を設定します。
 この値が単位なしで指定された場合は、キロバイト単位であるとみなします。
-デフォルト値は4メガバイト（<code class="literal">4MB</code>）です。
-複雑な問い合わせの場合、いくつかの並べ替えもしくはハッシュ操作が並行して実行されることに注意してください。
-一時ファイルへの書き込み開始の前に、それぞれの操作にこの値が指定するのと同じメモリ容量の使用が許容されます。
-さらに、いくつかの実行中のセッションはこれらの動作を同時に行います。
-したがって、使用されるメモリの合計は、<code class="varname">work_mem</code>の数倍になります。値を選択する時には、この事実に留意することが必要です。
-並べ替え操作は<code class="literal">ORDER BY</code>、<code class="literal">DISTINCT</code>、およびマージ結合に対して使われます。
-ハッシュテーブルはハッシュ結合、ハッシュに基づいた集約、メモ化（memoize）ノードおよび<code class="literal">IN</code>副問い合わせのハッシュに基づいた処理で使用されます。
-《機械翻訳》一時ディスクファイルに書き込む前に、問い合わせ操作（ソートやハッシュなど）で使用される最大メモリ量を設定します。
-この値を単位なしで指定すると、キロバイト単位で表されます。
 デフォルト値は4MB(<code class="literal">4MB</code>)です。
 複雑な問い合わせでは、同時に複数のソート操作とハッシュ操作が実行される可能性があります。
-各操作は通常、データを一時ディスクファイルに書き込む前にこの値で指定された量のメモリを使用できます。
+各操作は通常、データを一時ファイルに書き込む前にこの値で指定された量のメモリを使用できます。
 また、複数の実行中のセッションが同時にこのような操作を実行することもあります。
 したがって、使用されるメモリの合計量は<code class="varname">work_mem</code>の数倍になる可能性があります。
-この値は<code class="literal">ORDER BY</code>、<code class="literal">DISTINCT</code>、マージ結合、ハッシュ結合、ハッシュベースの集約、ハッシュベースの問い合わせの<code class="literal">IN</code>サブ問い合わせのメモリ化処理に使用されます。
+値を選択する時には、この事実に留意することが必要です。
+ソート操作は<code class="literal">ORDER BY</code>、<code class="literal">DISTINCT</code>、およびマージ結合に対して使われます。
+ハッシュテーブルはハッシュ結合、ハッシュに基づいた集約、メモ化（memoize）ノードおよび<code class="literal">IN</code>副問い合わせのハッシュに基づいた処理で使用されます。
        </p><p>
 <span class="original">
         Hash-based operations are generally more sensitive to memory
@@ -290,12 +283,9 @@ Linuxでは、これは<span class="quote">「<span class="quote">transparent hu
         that exceeds the usual &lt;varname&gt;work_mem&lt;/varname&gt; base
         amount.
 </span>
-《マッチ度[79.947917]》一般的に、ハッシュに基づく操作はソートに基づく操作よりも利用可能なメモリに敏感です。
-ハッシュテーブルが利用可能なメモリは<code class="varname">work_mem</code>に<code class="varname">hash_mem_multiplier</code>を掛けて計算します。
+一般的に、ハッシュに基づく操作はソートに基づく操作よりも利用可能なメモリに敏感です。
+ハッシュテーブルのメモリ制限は、<code class="varname">work_mem</code>に<code class="varname">hash_mem_multiplier</code>を乗算することで計算されます。
 これにより、ハッシュに基づく操作では通常の<code class="varname">work_mem</code>に基づく量を超える量のメモリが使用される可能性があります。
-《機械翻訳》ハッシュベースの操作は、通常、同等のソートベースの操作よりもメモリの可用性に敏感です。
- ハッシュテーブルのメモリ制限は、<code class="varname">work_mem</code>に<code class="varname">hash_mem_multiplier</code>を乗算することで計算されます。
- これにより、ハッシュベースの操作では、通常の<code class="varname">work_mem</code>の基本量を超える量のメモリを使用することが可能になります。
        </p></dd><dt id="GUC-HASH-MEM-MULTIPLIER"><span class="term"><code class="varname">hash_mem_multiplier</code> (<code class="type">floating point</code>)
       <a id="id-1.6.6.8.2.2.7.1.3" class="indexterm"></a>
       <a id="id-1.6.6.8.2.2.7.1.4" class="indexterm"></a>
@@ -1105,7 +1095,7 @@ vacuumが、先だって掃除したブロックを変更するのに必要な�
 磁気ディスクドライブにおいては、データベースに使用されるRAID 0ストライプ、RAID 1ミラーを構成する個々のドライブ数から始めると良いでしょう。（RAID 5ではパリティ用のドライブを数に含めません）
 しかし、同時実行セッションで発行される複数の問い合わせでデータベースが頻繁にビジーとなる場合、小さめの値で十分ディスクアレイがビジーになるかもしれません。
 ディスクをビジーにするのに必要な値より大きな値を設定しても、余計なCPUオーバーヘッドを発生させるだけです。
-SSDやそれ以外のメモリーベースの記憶装置は、多くの同時リクエストをこなすことができるので、最適な値は数百になるかもしれません。
+SSDやそれ以外のメモリベースの記憶装置は、多くの同時リクエストをこなすことができるので、最適な値は数百になるかもしれません。
         </p><p>
 <span class="original">
          Asynchronous I/O depends on an effective &lt;function&gt;posix_fadvise&lt;/function&gt;
@@ -1126,7 +1116,7 @@ SSDやそれ以外のメモリーベースの記憶装置は、多くの同時�
          &lt;xref linkend="sql-altertablespace"/&gt;).
 </span>
 デフォルトは、サポートされているシステムでは1、そうでなければ0です。
-この値は、テーブルスペースパラメータの同じ名前のパラメータを設定することで、特定のテーブルスペース内のテーブルに対して上書きできます。
+この値は、テーブル空間パラメータの同じ名前のパラメータを設定することで、特定のテーブル空間内のテーブルに対して上書きできます。
 (<a class="xref" href="sql-altertablespace.html" title="ALTER TABLESPACE"><span class="refentrytitle">ALTER TABLESPACE</span></a>を参照ください)。
         </p></dd><dt id="GUC-MAINTENANCE-IO-CONCURRENCY"><span class="term"><code class="varname">maintenance_io_concurrency</code> (<code class="type">integer</code>)
        <a id="id-1.6.6.8.7.2.3.1.3" class="indexterm"></a>
