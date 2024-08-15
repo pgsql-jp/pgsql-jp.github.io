@@ -5,7 +5,7 @@ layout: default
 
 [正式版](https://www.postgresql.jp/document/)
 
-### 最新 master
+### 最新 PostgreSQL 17（Beta）
 
 | HTML （オンライン）           | PDF                        |
 |:---------------------------|:-------------------:|
@@ -23,6 +23,7 @@ last-updated: 2024-08-12 04:23:27 JST
 
 | HTML （オンライン）           | PDF                                           | EPUB                                         | man | 更新日     |
 |:---------------------------|:---------------------------------------------:|:--------------------------------------------:|:---:|:----------:|
+| [16.3](jpug-doc/16.0/html/) | [PDF](jpug-doc/16.3/postgresql-16.3-A4.pdf) | [EPUB](jpug-doc/16.3/postgresql-16.0.epub) | [man.tar.gz](jpug-doc/16.3/man.tar.gz) | 2024-08-15 |
 | [16.0](jpug-doc/16.0/html/) | [PDF](jpug-doc/16.0/postgresql-16.0-A4.pdf) | [EPUB](jpug-doc/16.0/postgresql-16.0.epub) | [man.tar.gz](jpug-doc/16.0/man.tar.gz) | 2024-05-15 |
 
 ### PostgreSQL 15
