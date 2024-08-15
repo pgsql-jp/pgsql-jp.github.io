@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>20.7. 問い合わせ計画</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="runtime-config-replication.html" title="20.6. レプリケーション" /><link rel="next" href="runtime-config-logging.html" title="20.8. エラー報告とログ取得" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 16.3文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="runtime-config.html" title="第20章 サーバ設定">第20章 サーバ設定</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 16.3 : runtime-config-query.html">誤訳等の報告
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>20.7. 問い合わせ計画</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="runtime-config-replication.html" title="20.6. レプリケーション" /><link rel="next" href="runtime-config-logging.html" title="20.8. エラー報告とログ取得" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 16.4文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="runtime-config.html" title="第20章 サーバ設定">第20章 サーバ設定</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 16.4 : runtime-config-query.html">誤訳等の報告
                     </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="runtime-config-replication.html" title="20.6. レプリケーション">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="runtime-config.html" title="第20章 サーバ設定">上へ</a></td><td width="60%" align="center">20.7. 問い合わせ計画</td><td width="20%" align="right"> <a accesskey="n" href="runtime-config-logging.html" title="20.8. エラー報告とログ取得">次へ</a></td></tr></table><hr /></div><div class="sect1" id="RUNTIME-CONFIG-QUERY"><div class="titlepage"><div><div><h2 class="title" style="clear: both">20.7. 問い合わせ計画 <a href="#RUNTIME-CONFIG-QUERY" class="id_link">#</a></h2></div></div></div><span class="original">
     &lt;title&gt;Query Planning&lt;/title&gt;
 </span><div class="sect2" id="RUNTIME-CONFIG-QUERY-ENABLE"><div class="titlepage"><div><div><h3 class="title">20.7.1. プランナメソッド設定 <a href="#RUNTIME-CONFIG-QUERY-ENABLE" class="id_link">#</a></h3></div></div></div><span class="original">
@@ -208,14 +208,26 @@
         joining the matching partitions.  Partitionwise join currently applies
         only when the join conditions include all the partition keys, which
         must be of the same data type and have one-to-one matching sets of
-        child partitions.  Because partitionwise join planning can use
-        significantly more CPU time and memory during planning, the default is
-        &lt;literal&gt;off&lt;/literal&gt;.
+        child partitions.  With this setting enabled, the number of nodes
+        whose memory usage is restricted by &lt;varname&gt;work_mem&lt;/varname&gt;
+        appearing in the final plan can increase linearly according to the
+        number of partitions being scanned.  This can result in a large
+        increase in overall memory consumption during the execution of the
+        query.  Query planning also becomes significantly more expensive in
+        terms of memory and CPU.  The default value is &lt;literal&gt;off&lt;/literal&gt;.
 </span>
-パーティション同士の結合(partitionwise join)を問い合わせプランナが使用するのを有効あるいは無効にします。
+《マッチ度[52.750000]》パーティション同士の結合(partitionwise join)を問い合わせプランナが使用するのを有効あるいは無効にします。
 パーティション同士の結合は、適合するパーティションを結合することによって実行される、パーティション化テーブルにまたがる結合を可能にします。
 今の所、パーティション同士の結合は、すべてのパーティションキーを含んでいて、かつパーティションキーの型が同じで、一対一で一致する子パーティションの集合を持つ結合条件のときだけに適用されます。
 パーティション同士の結合のプランニングには大量のCPU時間とメモリが使用されることがあるので、デフォルトは<code class="literal">off</code>です。
+《機械翻訳》クエリプランナでのパーティションワイズ結合の使用を有効または無効にします。
+これにより、テーブルパーティションパーティションを結合することによってマッチング間の結合を実行できます。
+現在、パーティション単位の結合が適用されるのは、結合条件によってすべてのパーティションキーがincludeされる場合だけです。
+これらのキーは、同じデータタイプで、1対1のマッチングセットの子パーティションを持つ必要があります。
+この設定を有効にすると、最終プランに表示される<code class="varname">work_mem</code>によってメモリ使用が制限されるノードの数は、スキャンされるパーティションの数に応じて直線的に増加します。
+これは、ラージの実行中に全体的なメモリ消費のクエリ増加をもたらす可能性がある。
+また、クエリ・プランニングは、メモリとCPU使用率の点でも非常に高価になります。
+デフォルト値は<code class="literal">オフ</code>です。
        </p></dd><dt id="GUC-ENABLE-PARTITIONWISE-AGGREGATE"><span class="term"><code class="varname">enable_partitionwise_aggregate</code> (<code class="type">boolean</code>)
       <a id="id-1.6.7.11.2.3.17.1.3" class="indexterm"></a>
       <a id="id-1.6.7.11.2.3.17.1.4" class="indexterm"></a>
@@ -226,14 +238,25 @@
         tables to be performed separately for each partition.  If the
         &lt;literal&gt;GROUP BY&lt;/literal&gt; clause does not include the partition
         keys, only partial aggregation can be performed on a per-partition
-        basis, and finalization must be performed later.  Because
-        partitionwise grouping or aggregation can use significantly more CPU
-        time and memory during planning, the default is
+        basis, and finalization must be performed later.  With this setting
+        enabled, the number of nodes whose memory usage is restricted by
+        &lt;varname&gt;work_mem&lt;/varname&gt; appearing in the final plan can increase
+        linearly according to the number of partitions being scanned.  This
+        can result in a large increase in overall memory consumption during
+        the execution of the query.  Query planning also becomes significantly
+        more expensive in terms of memory and CPU.  The default value is
         &lt;literal&gt;off&lt;/literal&gt;.
 </span>
-パーティション化されたテーブルに対してグループ化または集約を個別に実行できるように、問い合わせプランナのパーティションごと（partitionwise）のグループ化または集約の使用を有効または無効にします。
+《マッチ度[54.666667]》パーティション化されたテーブルに対してグループ化または集約を個別に実行できるように、問い合わせプランナのパーティションごと（partitionwise）のグループ化または集約の使用を有効または無効にします。
 <code class="literal">GROUP BY</code>句がパーティションキーを含まない場合は、パーティション単位で部分集約だけが実行でき、最終結果の算出は後で行われます。
 パーティション同士のグループ化あるいは集約には大量のCPU時間とメモリが使用されることがあるので、デフォルトは<code class="literal">off</code>です。
+《機械翻訳》クエリープランナによる区分ごとのグループ化または集約の使用を有効または無効にします。
+これにより、テーブルパーティションでのグループ化または集約をパーティションごとに個別に実行できます。
+<code class="literal">GROUP BY</code>句がパーティションキーをincludeしない場合は、パーティションごとに部分集約だけを実行でき、後でファイナライズを実行する必要があります。
+この設定を有効にすると、最終プランに表示される<code class="varname">work_mem</code>によってメモリ使用が制限されるノードの数は、スキャンされるパーティションの数に応じて直線的に増加します。
+これは、ラージの実行中に全体的なメモリ消費のクエリ増加をもたらす可能性がある。
+また、クエリ・プランニングは、メモリとCPU使用率の点でも非常に高価になります。
+デフォルト値は<code class="literal">オフ</code>です。
        </p></dd><dt id="GUC-ENABLE-PRESORTED-AGGREGATE"><span class="term"><code class="varname">enable_presorted_aggregate</code> (<code class="type">boolean</code>)
       <a id="id-1.6.7.11.2.3.18.1.3" class="indexterm"></a>
       <a id="id-1.6.7.11.2.3.18.1.4" class="indexterm"></a>
@@ -956,4 +979,4 @@ SELECT * FROM parent WHERE key = 2400;
 デフォルト値は<code class="literal">10.0</code>です。
 <code class="literal">1.0</code>などの小さい値は、最短パス問合せなど、あるステップから次のステップへの再帰が低い<span class="quote">「<span class="quote">広がり方(fanout)</span>」</span>の場合に役立ちます。
 グラフ分析の問合せでは、デフォルト値より大きい値が有効な場合があります。
-       </p></dd></dl></div></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="runtime-config-replication.html" title="20.6. レプリケーション">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="runtime-config.html" title="第20章 サーバ設定">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="runtime-config-logging.html" title="20.8. エラー報告とログ取得">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">20.6. レプリケーション </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 16.3文書">ホーム</a></td><td width="40%" align="right" valign="top"> 20.8. エラー報告とログ取得</td></tr></table></div></body></html>
+       </p></dd></dl></div></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="runtime-config-replication.html" title="20.6. レプリケーション">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="runtime-config.html" title="第20章 サーバ設定">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="runtime-config-logging.html" title="20.8. エラー報告とログ取得">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">20.6. レプリケーション </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 16.4文書">ホーム</a></td><td width="40%" align="right" valign="top"> 20.8. エラー報告とログ取得</td></tr></table></div></body></html>
