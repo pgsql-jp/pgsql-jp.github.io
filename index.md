@@ -5,7 +5,7 @@ layout: default
 
 [正式版](https://www.postgresql.jp/document/)
 
-### 最新 PostgreSQL 17（Beta）
+### 最新 PostgreSQL 17（リリース前）
 
 last-updated: 2024-09-04 04:22:55 JST
 
@@ -25,7 +25,7 @@ last-updated: 2024-09-04 04:22:55 JST
 
 | HTML （オンライン）           | PDF                                           | EPUB                                         | man | 更新日     |
 |:---------------------------|:---------------------------------------------:|:--------------------------------------------:|:---:|:----------:|
-| [16.4](jpug-doc/16.4/html/) | [PDF](jpug-doc/16.3/postgresql-16.4-A4.pdf) | [EPUB](jpug-doc/16.4/postgresql-16.4.epub) | [man.tar.gz](jpug-doc/16.3/man.tar.gz) | 2024-09-03 |
+| [16.4](jpug-doc/16.4/html/) | [PDF](jpug-doc/16.3/postgresql-16.4-A4.pdf) | [EPUB](jpug-doc/16.4/postgresql-16.4.epub) | [man.tar.gz](jpug-doc/16.4/man.tar.gz) | 2024-09-03 |
 | [16.3](jpug-doc/16.3/html/) | [PDF](jpug-doc/16.3/postgresql-16.3-A4.pdf) | [EPUB](jpug-doc/16.3/postgresql-16.3.epub) | [man.tar.gz](jpug-doc/16.3/man.tar.gz) | 2024-08-15 |
 | [16.0](jpug-doc/16.0/html/) | [PDF](jpug-doc/16.0/postgresql-16.0-A4.pdf) | [EPUB](jpug-doc/16.0/postgresql-16.0.epub) | [man.tar.gz](jpug-doc/16.0/man.tar.gz) | 2024-05-15 |
 
