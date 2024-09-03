@@ -7,7 +7,7 @@ layout: default
 
 ### 最新 PostgreSQL 17（Beta）
 
-last-updated: 2024-09-03 10:30:00 JST
+last-updated: 2024-09-04 04:22:55 JST
 
 | HTML （オンライン）           | PDF                        |
 |:---------------------------|:-------------------:|
@@ -15,7 +15,7 @@ last-updated: 2024-09-03 10:30:00 JST
 
 ### 最新 PostgreSQL 16
 
-last-updated: 2024-09-03 04:22:24 JST
+last-updated: 2024-09-04 04:22:55 JST
 
 | HTML （オンライン）           | PDF                        |
 |:---------------------------|:-------------------:|
