@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>49.2. アーカイブモジュールコールバック</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="archive-module-init.html" title="49.1. 初期化関数" /><link rel="next" href="reference.html" title="パート VI. リファレンス" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 17beta3文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="archive-modules.html" title="第49章 アーカイブモジュール">第49章 アーカイブモジュール</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 17beta3 : archive-module-callbacks.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="archive-module-init.html" title="49.1. 初期化関数">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="archive-modules.html" title="第49章 アーカイブモジュール">上へ</a></td><td width="60%" align="center">49.2. アーカイブモジュールコールバック</td><td width="20%" align="right"> <a accesskey="n" href="reference.html" title="パート VI. リファレンス">次へ</a></td></tr></table><hr /></div><div class="sect1" id="ARCHIVE-MODULE-CALLBACKS"><div class="titlepage"><div><div><h2 class="title" style="clear: both">49.2. アーカイブモジュールコールバック <a href="#ARCHIVE-MODULE-CALLBACKS" class="id_link">#</a></h2></div></div></div><span class="original">
+  &lt;title&gt;Archive Module Callbacks&lt;/title&gt;
+</span><p>
+<span class="original">
+   The archive callbacks define the actual archiving behavior of the module.
+   The server will call them as required to process each individual WAL file.
+</span>
+アーカイブコールバックは、モジュールの実際のアーカイブ動作を定義します。
+サーバは、個々のWALファイルを処理するために必要に応じてこれらを呼び出します。
+  </p><div class="sect2" id="ARCHIVE-MODULE-STARTUP"><div class="titlepage"><div><div><h3 class="title">49.2.1. スタートアップコールバック <a href="#ARCHIVE-MODULE-STARTUP" class="id_link">#</a></h3></div></div></div><span class="original">
+   &lt;title&gt;Startup Callback&lt;/title&gt;
+</span><p>
+<span class="original">
+    The &lt;function&gt;startup_cb&lt;/function&gt; callback is called shortly after the
+    module is loaded.  This callback can be used to perform any additional
+    initialization required.  If the archive module has any state, it can use
+    &lt;structfield&gt;state-&gt;private_data&lt;/structfield&gt; to store it.
+</span>
+<code class="function">startup_cb</code>コールバックは、モジュールがロードされた直後に呼び出されます。
+このコールバックは、必要な追加の初期化を実行するために使用できます。
+アーカイブモジュールに状態がある場合は、<code class="structfield">state-&gt;private_data</code>を使用して保存できます。
+
+</p><pre class="programlisting">
+typedef void (*ArchiveStartupCB) (ArchiveModuleState *state);
+</pre><p>
+   </p></div><div class="sect2" id="ARCHIVE-MODULE-CHECK"><div class="titlepage"><div><div><h3 class="title">49.2.2. チェックコールバック <a href="#ARCHIVE-MODULE-CHECK" class="id_link">#</a></h3></div></div></div><span class="original">
+   &lt;title&gt;Check Callback&lt;/title&gt;
+</span><p>
+<span class="original">
+    The &lt;function&gt;check_configured_cb&lt;/function&gt; callback is called to determine
+    whether the module is fully configured and ready to accept WAL files (e.g.,
+    its configuration parameters are set to valid values).  If no
+    &lt;function&gt;check_configured_cb&lt;/function&gt; is defined, the server always
+    assumes the module is configured.
+</span>
+<code class="function">check_configured_cb</code>コールバックは、モジュールが完全に設定されていて、WALファイルを受け入れる準備ができているかどうかを判断するために呼び出されます（たとえば、構成パラメータが適切な値に設定されているかどうかを判断します）。
+<code class="function">check_configured_cb</code>が定義されていない場合、サーバは常にモジュールが設定されていると想定します。
+
+</p><pre class="programlisting">
+typedef bool (*ArchiveCheckConfiguredCB) (ArchiveModuleState *state);
+</pre><p>
+
+<span class="original">
+    If &lt;literal&gt;true&lt;/literal&gt; is returned, the server will proceed with
+    archiving the file by calling the &lt;function&gt;archive_file_cb&lt;/function&gt;
+    callback.  If &lt;literal&gt;false&lt;/literal&gt; is returned, archiving will not
+    proceed, and the archiver will emit the following message to the server log:
+</span>
+<code class="literal">true</code>が返された場合、サーバは<code class="function">archive_file_cb</code>コールバックを呼び出してファイルのアーカイブを続行します。
+<code class="literal">false</code>が返された場合、アーカイブは続行されず、アーカイバはサーバログに次のメッセージを出力します:
+</p><pre class="screen">
+WARNING:  archive_mode enabled, yet archiving is not configured
+</pre><p>
+<span class="original">
+    In the latter case, the server will periodically call this function, and
+    archiving will proceed only when it returns &lt;literal&gt;true&lt;/literal&gt;.
+</span>
+後者の場合、サーバは定期的にこの関数を呼び出し、<code class="literal">true</code>が返された場合のみアーカイブが続行されます。
+   </p><div class="note"><h3 class="title">注記</h3><p>
+<span class="original">
+     When returning &lt;literal&gt;false&lt;/literal&gt;, it may be useful to append some
+     additional information to the generic warning message.  To do that, provide
+     a message to the &lt;function&gt;arch_module_check_errdetail&lt;/function&gt; macro
+     before returning &lt;literal&gt;false&lt;/literal&gt;.  Like
+     &lt;function&gt;errdetail()&lt;/function&gt;, this macro accepts a format string
+     followed by an optional list of arguments.  The resulting string will be
+     emitted as the &lt;literal&gt;DETAIL&lt;/literal&gt; line of the warning message.
+</span>
+《機械翻訳》<code class="literal">偽</code>を返すときに、一般的ワーニングメッセージに追加情報を追加すると便利な場合があります。
+そのためには、<code class="function">arch_module_チェック_errdetail</code>マクロ前にメッセージを指定して<code class="literal">偽</code>を返します。
+<code class="function">errdetail()</code>と同様に、このマクロはフォーマット文字列とそれに続くオプショナルリストの引数を受け入れます。
+結果として得られる文字列は、の<code class="literal">DETAIL</code>として放出されます。
+直線ワーニングメッセージ
+    </p></div></div><div class="sect2" id="ARCHIVE-MODULE-ARCHIVE"><div class="titlepage"><div><div><h3 class="title">49.2.3. アーカイブコールバック <a href="#ARCHIVE-MODULE-ARCHIVE" class="id_link">#</a></h3></div></div></div><span class="original">
+   &lt;title&gt;Archive Callback&lt;/title&gt;
+</span><p>
+<span class="original">
+    The &lt;function&gt;archive_file_cb&lt;/function&gt; callback is called to archive a
+    single WAL file.
+</span>
+<code class="function">archive_file_cb</code>コールバックは、単一のWALファイルをアーカイブするために呼び出されます。
+
+</p><pre class="programlisting">
+typedef bool (*ArchiveFileCB) (ArchiveModuleState *state, const char *file, const char *path);
+</pre><p>
+
+<span class="original">
+    If &lt;literal&gt;true&lt;/literal&gt; is returned, the server proceeds as if the file
+    was successfully archived, which may include recycling or removing the
+    original WAL file.  If &lt;literal&gt;false&lt;/literal&gt; is returned or an error is thrown, the server will
+    keep the original WAL file and retry archiving later.
+    &lt;replaceable&gt;file&lt;/replaceable&gt; will contain just the file name of the WAL
+    file to archive, while &lt;replaceable&gt;path&lt;/replaceable&gt; contains the full
+    path of the WAL file (including the file name).
+</span>
+《マッチ度[89.655172]》<code class="literal">true</code>が返された場合、サーバはファイルが正常にアーカイブされたかのように処理を進めます。
+これには元のWALファイルのリサイクルまたは削除が含まれる場合があります。
+<code class="literal">false</code>が返された場合、サーバは元のWALファイルを保持し、後でアーカイブを再試行します。
+<em class="replaceable"><code>file</code></em>にはアーカイブするWALファイルのファイル名だけが含まれ、<em class="replaceable"><code>path</code></em>にはWALファイルのフルパス（ファイル名を含む）が含まれます。
+《機械翻訳》<code class="literal">真</code>が返された場合、サーバはファイルが正常にアーカイブされたかのように処理され、includeはオリジナルWALファイルをリサイクルまたは削除する可能性があります。
+<code class="literal">偽</code>が返された場合、またはエラーがスローされた場合、サーバは後でオリジナルWALファイルとリトライアーカイビングを保持します。
+<em class="replaceable"><code>ファイル</code></em>には、（ファイル名を含む）WALのファイル名のみが含まれますが、<em class="replaceable"><code></code></em>には、（ファイル名を含む）WALの名前が含まれます。
+ファイルアーカイブパス包含フルパスファイル
+   </p><div class="note"><h3 class="title">注記</h3><p>
+<span class="original">
+     The &lt;function&gt;archive_file_cb&lt;/function&gt; callback is called in a
+     short-lived memory context that will be reset between invocations.  If you
+     need longer-lived storage, create a memory context in the module's
+     &lt;function&gt;startup_cb&lt;/function&gt; callback.
+</span>
+《機械翻訳》<code class="function">アーカイブ_ファイル_cb</code>コールバックは、呼び出し間のリセットとなる存続期間の短いメモリコンテキストで呼び出されます。
+存続期間の長いストレージが必要な場合は、モジュールの<code class="function">スタートアップ_cb</code>コールバックにメモリコンテキストを作成します。
+    </p></div></div><div class="sect2" id="ARCHIVE-MODULE-SHUTDOWN"><div class="titlepage"><div><div><h3 class="title">49.2.4. シャットダウンコールバック <a href="#ARCHIVE-MODULE-SHUTDOWN" class="id_link">#</a></h3></div></div></div><span class="original">
+   &lt;title&gt;Shutdown Callback&lt;/title&gt;
+</span><p>
+<span class="original">
+    The &lt;function&gt;shutdown_cb&lt;/function&gt; callback is called when the archiver
+    process exits (e.g., after an error) or the value of
+    &lt;xref linkend="guc-archive-library"/&gt; changes.  If no
+    &lt;function&gt;shutdown_cb&lt;/function&gt; is defined, no special action is taken in
+    these situations.  If the archive module has any state, this callback should
+    free it to avoid leaks.
+</span>
+<code class="function">shutdown_cb</code>コールバックは、アーカイバプロセスが終了するとき（たとえばエラー後など）、または<a class="xref" href="runtime-config-wal.html#GUC-ARCHIVE-LIBRARY">archive_library</a>の値が変更されたときに呼び出されます。
+<code class="function">shutdown_cb</code>が定義されていない場合、これらの状況では特別な処理は行われません。
+アーカイブモジュールが何らかの状態を持っている場合、このコールバックはメモリリークを防ぐためにそれを解放すべきです。
+
+</p><pre class="programlisting">
+typedef void (*ArchiveShutdownCB) (ArchiveModuleState *state);
+</pre><p>
+   </p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="archive-module-init.html" title="49.1. 初期化関数">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="archive-modules.html" title="第49章 アーカイブモジュール">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="reference.html" title="パート VI. リファレンス">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">49.1. 初期化関数 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 17beta3文書">ホーム</a></td><td width="40%" align="right" valign="top"> パート VI. リファレンス</td></tr></table></div></body></html>
