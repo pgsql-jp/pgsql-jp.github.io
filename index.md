@@ -5,9 +5,11 @@ layout: default
 
 [正式版](https://www.postgresql.jp/document/)
 
-### 最新 PostgreSQL 17（リリース前）
+## 最新
 
 last-updated: 2024-09-04 04:22:55 JST
+
+### 最新 PostgreSQL 17（リリース前）
 
 | HTML （オンライン）           | PDF                        |
 |:---------------------------|:-------------------:|
@@ -15,11 +17,11 @@ last-updated: 2024-09-04 04:22:55 JST
 
 ### 最新 PostgreSQL 16
 
-last-updated: 2024-09-04 04:22:55 JST
-
 | HTML （オンライン）           | PDF                        |
 |:---------------------------|:-------------------:|
 | [html](current/html) | [PDF](current/postgres-A4.pdf) |
+
+## 過去のリリース
 
 ### PostgreSQL 16
 
