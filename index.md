@@ -9,19 +9,17 @@ layout: default
 
 last-updated: 2024-09-21 04:27:43 JST
 
-### 最新 PostgreSQL 17（リリース前）
-
-| HTML （オンライン）           | PDF                        |
-|:---------------------------|:-------------------:|
-| [html](jpug-doc/17.0/html/) | [PDF](/jpug-doc/17.0/postgresql-17.0-A4.pdf) |
-
-### 最新 PostgreSQL 16
+### 最新 PostgreSQL
 
 | HTML （オンライン）           | PDF                        |
 |:---------------------------|:-------------------:|
 | [html](current/html) | [PDF](current/postgres-A4.pdf) |
 
-## 過去のリリース
+### PostgreSQL 17
+
+| HTML （オンライン）           | PDF                                           | EPUB                                         | man | 更新日     |
+|:---------------------------|:---------------------------------------------:|:--------------------------------------------:|:---:|:----------:|
+| [17.0](jpug-doc/17.0/html/) | [PDF](jpug-doc/17.0/postgresql-17.0-A4.pdf) | |  |  |
 
 ### PostgreSQL 16
 
