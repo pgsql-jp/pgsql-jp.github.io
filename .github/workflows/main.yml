@@ -40,25 +40,6 @@ jobs:
         rm -R current/*
         cp -aR tmp-jpug-doc/doc/src/sgml/html current/
         cp -a tmp-jpug-doc/doc/src/sgml/postgres-A4.pdf current/
-    - name: Fetch and switch branch
-      run: |
-        cd tmp-jpug-doc
-        git fetch origin doc_ja_17:doc_ja_17
-        git switch doc_ja_17
-    - name: build17
-      working-directory: tmp-jpug-doc
-      run: |
-        ./configure
-        cd doc/src/sgml
-        make clean
-        make ORIGINAL=1 html
-        make postgres-A4.pdf
-    - name: copy 17current
-      if: success()
-      run: |
-        rm -R jpug-doc/17.0/*
-        cp -aR tmp-jpug-doc/doc/src/sgml/html jpug-doc/17.0/
-        cp -a tmp-jpug-doc/doc/src/sgml/postgres-A4.pdf jpug-doc/17.0/postgresql-17.0-A4.pdf
     - name: setup git config
       run: |
           # setup the username and email. I tend to use 'GitHub Actions Bot' with no email by default
@@ -67,17 +48,13 @@ jobs:
     - name: commit push
       run: |
         git add -N current
-        git add -N jpug-doc/17.0/
         if ! git diff --name-only current|grep -E -v "bookindex.html|postgres-A4.pdf" ;
         then
-          if ! git diff --name-only jpug-doc/17.0/|grep -E -v "bookindex.html|postgresql-17.0-A4.pdf" ;
-          then
-            echo "Do not update"
-            exit 0
-          fi
+          echo "Do not update"
+          exit 0
         fi
         echo "Update because there is a difference"
         sed -i -e "s/last-updated:.*$/last-updated: $(TZ=Asia/Tokyo date "+%Y-%m-%d %T %Z")/" index.md
-        git add -A current jpug-doc/17.0/ index.md
+        git add -A current index.md
         git commit -m "by GitHub Actions [skip ci]"
         git push origin master
