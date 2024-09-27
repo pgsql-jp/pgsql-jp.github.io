@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>DELETE</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="sql-declare.html" title="DECLARE" /><link rel="next" href="sql-discard.html" title="DISCARD" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 16.4文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="sql-commands.html" title="SQLコマンド">SQLコマンド</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 16.4 : sql-delete.html">誤訳等の報告
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>DELETE</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="sql-declare.html" title="DECLARE" /><link rel="next" href="sql-discard.html" title="DISCARD" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 17.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="sql-commands.html" title="SQLコマンド">SQLコマンド</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 17.0 : sql-delete.html">誤訳等の報告
                     </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="sql-declare.html" title="DECLARE">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="sql-commands.html" title="SQLコマンド">上へ</a></td><td width="60%" align="center">DELETE</td><td width="20%" align="right"> <a accesskey="n" href="sql-discard.html" title="DISCARD">次へ</a></td></tr></table><hr /></div><div class="refentry" id="SQL-DELETE"><div class="titlepage"></div><a id="id-1.9.3.100.1" class="indexterm"></a><div class="refnamediv"><h2><span class="refentrytitle">DELETE</span></h2><p>DELETE<span class="original">
   &lt;refpurpose&gt;delete rows of a table&lt;/refpurpose&gt;
 </span> — テーブルから行を削除する</p></div><div class="refsynopsisdiv"><h2>概要</h2><pre class="synopsis">
@@ -249,7 +249,28 @@ DELETE FROM tasks WHERE status = 'DONE' RETURNING *;
 <code class="structname">tasks</code>において<code class="literal">c_tasks</code>カーソルが現在位置している行を削除します。
 </p><pre class="programlisting">
 DELETE FROM tasks WHERE CURRENT OF c_tasks;
-</pre></div><div class="refsect1" id="id-1.9.3.100.10"><h2>互換性</h2><span class="original">
+</pre><p>
+  </p><p>
+<span class="original">
+   While there is no &lt;literal&gt;LIMIT&lt;/literal&gt; clause
+   for &lt;command&gt;DELETE&lt;/command&gt;, it is possible to get a similar effect
+   using the same method described in &lt;link linkend="update-limit"&gt;the
+   documentation of &lt;command&gt;UPDATE&lt;/command&gt;&lt;/link&gt;:
+</span>
+《機械翻訳》<code class="command">DELETE</code>には<code class="literal">LIMIT</code>句はありませんが、<a class="link" href="sql-update.html#UPDATE-LIMIT"><code class="command">UPDATE</code>のドキュメント</a>で説明したのと同じ方法で同様の効果を得ることができます。
+</p><pre class="programlisting">
+WITH delete_batch AS (
+  SELECT l.ctid FROM user_logs AS l
+    WHERE l.status = 'archived'
+    ORDER BY l.creation_date
+    FOR UPDATE
+    LIMIT 10000
+)
+DELETE FROM user_logs AS dl
+  USING delete_batch AS del
+  WHERE dl.ctid = del.ctid;
+</pre><p>
+  </p></div><div class="refsect1" id="id-1.9.3.100.10"><h2>互換性</h2><span class="original">
   &lt;title&gt;Compatibility&lt;/title&gt;
 </span><p>
 <span class="original">
@@ -263,4 +284,4 @@ DELETE FROM tasks WHERE CURRENT OF c_tasks;
 <code class="command">DELETE</code>で<code class="literal">WITH</code>が使用可能であることも同様に拡張です。
   </p></div><div class="refsect1" id="id-1.9.3.100.11"><h2>関連項目</h2><span class="original">
   &lt;title&gt;See Also&lt;/title&gt;
-</span><span class="simplelist"><a class="xref" href="sql-truncate.html" title="TRUNCATE"><span class="refentrytitle">TRUNCATE</span></a></span></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="sql-declare.html" title="DECLARE">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="sql-commands.html" title="SQLコマンド">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="sql-discard.html" title="DISCARD">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">DECLARE </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 16.4文書">ホーム</a></td><td width="40%" align="right" valign="top"> DISCARD</td></tr></table></div></body></html>
+</span><span class="simplelist"><a class="xref" href="sql-truncate.html" title="TRUNCATE"><span class="refentrytitle">TRUNCATE</span></a></span></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="sql-declare.html" title="DECLARE">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="sql-commands.html" title="SQLコマンド">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="sql-discard.html" title="DISCARD">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">DECLARE </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 17.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> DISCARD</td></tr></table></div></body></html>

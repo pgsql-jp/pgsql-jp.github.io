@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>第48章 バックグラウンドワーカープロセス</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="spi-spi-start-transaction.html" title="SPI_start_transaction" /><link rel="next" href="logicaldecoding.html" title="第49章 ロジカルデコーディング" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 16.4文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="server-programming.html" title="パート V. サーバプログラミング">パート V. サーバプログラミング</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 16.4 : bgworker.html">誤訳等の報告
-                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="spi-spi-start-transaction.html" title="SPI_start_transaction">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="server-programming.html" title="パート V. サーバプログラミング">上へ</a></td><td width="60%" align="center">第48章 バックグラウンドワーカープロセス</td><td width="20%" align="right"> <a accesskey="n" href="logicaldecoding.html" title="第49章 ロジカルデコーディング">次へ</a></td></tr></table><hr /></div><div class="chapter" id="BGWORKER"><div class="titlepage"><div><div><h2 class="title">第48章 バックグラウンドワーカープロセス</h2></div></div></div><span class="original">
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>第46章 バックグラウンドワーカープロセス</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="spi-spi-start-transaction.html" title="SPI_start_transaction" /><link rel="next" href="logicaldecoding.html" title="第47章 ロジカルデコーディング" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 17.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="server-programming.html" title="パート V. サーバプログラミング">パート V. サーバプログラミング</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 17.0 : bgworker.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="spi-spi-start-transaction.html" title="SPI_start_transaction">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="server-programming.html" title="パート V. サーバプログラミング">上へ</a></td><td width="60%" align="center">第46章 バックグラウンドワーカープロセス</td><td width="20%" align="right"> <a accesskey="n" href="logicaldecoding.html" title="第47章 ロジカルデコーディング">次へ</a></td></tr></table><hr /></div><div class="chapter" id="BGWORKER"><div class="titlepage"><div><div><h2 class="title">第46章 バックグラウンドワーカープロセス</h2></div></div></div><span class="original">
  &lt;title&gt;Background Worker Processes&lt;/title&gt;
 </span><a id="id-1.8.13.2" class="indexterm"></a><a id="id-1.8.13.3" class="indexterm"></a><p>
 <span class="original">
@@ -67,7 +67,7 @@ typedef struct BackgroundWorker
     int         bgw_flags;
     BgWorkerStartTime bgw_start_time;
     int         bgw_restart_time;       /* in seconds, or BGW_NEVER_RESTART */
-    char        bgw_library_name[BGW_MAXLEN];
+    char        bgw_library_name[MAXPGPATH];
     char        bgw_function_name[BGW_MAXLEN];
     Datum       bgw_main_arg;
     char        bgw_extra[BGW_EXTRALEN];
@@ -234,17 +234,27 @@ Windowsの（どこか他の場所で<code class="literal">EXEC_BACKEND</code>�
    during &lt;command&gt;initdb&lt;/command&gt;. If &lt;literal&gt;BGWORKER_BYPASS_ALLOWCONN&lt;/literal&gt;
    is specified as &lt;varname&gt;flags&lt;/varname&gt; it is possible to bypass the restriction
    to connect to databases not allowing user connections.
+   If &lt;literal&gt;BGWORKER_BYPASS_ROLELOGINCHECK&lt;/literal&gt; is specified as
+   &lt;varname&gt;flags&lt;/varname&gt; it is possible to bypass the login check for the
+   role used to connect to databases.
    A background worker can only call one of these two functions, and only
    once.  It is not possible to switch databases.
-  &lt;/para&gt;
 </span><p>
-ひとたび実行すると、このプロセスは<code class="function">BackgroundWorkerInitializeConnection(<em class="parameter"><code>char *dbname</code></em>, <em class="parameter"><code>char *username</code></em>, <em class="parameter"><code>uint32 flags</code></em>)</code>または<code class="function">BackgroundWorkerInitializeConnectionByOid(<em class="parameter"><code>Oid dboid</code></em>, <em class="parameter"><code>Oid useroid</code></em>, <em class="parameter"><code>uint32 flags</code></em>)</code>を呼び出すことによって、データベースに接続できます。
+《マッチ度[83.491600]》ひとたび実行すると、このプロセスは<code class="function">BackgroundWorkerInitializeConnection(<em class="parameter"><code>char *dbname</code></em>, <em class="parameter"><code>char *username</code></em>, <em class="parameter"><code>uint32 flags</code></em>)</code>または<code class="function">BackgroundWorkerInitializeConnectionByOid(<em class="parameter"><code>Oid dboid</code></em>, <em class="parameter"><code>Oid useroid</code></em>, <em class="parameter"><code>uint32 flags</code></em>)</code>を呼び出すことによって、データベースに接続できます。
 これはプロセスに<code class="literal">SPI</code>インタフェースを使用してのトランザクションとクエリの実行を許します。
 もし、<code class="varname">dbname</code>がNULLであった場合、または<code class="varname">dboid</code>が<code class="literal">InvalidOid</code>であった場合には、そのセッションは特定のデータベースに接続しません。しかし、共有カタログにはアクセス出来ます。
 もし、<code class="varname">username</code>がNULLの場合、または<code class="varname">useroid</code>が<code class="literal">InvalidOid</code>の場合には、そのプロセスは<code class="command">initdb</code>時に作成されたスーパーユーザとして実行されます。
 <code class="varname">flags</code>として<code class="literal">BGWORKER_BYPASS_ALLOWCONN</code>が設定されている場合、データベースへ接続する際のユーザ接続を許可しない制約を回避することが出来ます。
 バックグラウンドワーカーはこれら２つの関数をどちらかを一度だけ呼ぶことが出来ます。
 データベースを切り替えることができません。
+《機械翻訳》実行後、プロセスは<code class="function">BackgroundWorkerInitializeConnection（<em class="parameter"><code>char*dbname</code></em>,<em class="parameter"><code>char*username</code></em>,<em class="parameter"><code>uint32 flags</code></em></code>または<code class="function">BackgroundWorkerInitializeConnectionByOid(<em class="parameter"><code>データベースdboid</code></em>,<em class="parameter"><code>oid useroid</code></em>,<em class="parameter"><code>uint32 flags</code></em>）</code>を呼び出すことで、oidに接続できます。
+これにより、プロセスは<code class="literal">SPI</code>インタフェースを使用してトランザクションとクエリを実行できるようになります。
+<code class="varname">dbname</code>がnull、または<code class="varname">dboid</code>が<code class="literal">InvalidOid</code>の場合、セッションは特定のデータベースに接続されていませんが、共有カタログにはアクセスできます。
+<code class="varname">username</code>がnullまたは<code class="varname">useroid</code>が<code class="literal">InvalidOid</code>の場合、プロセスは<code class="command">initdb</code>時に作成されたスーパーユーザとして実行されます。
+<code class="literal">BGWORKER_BYPASS_ALLOWCONN</code>sを<code class="varname">flags</code>として指定すると、制限をバイパスして、ユーザ接続を許可していないデータベースに接続できます。
+<code class="literal">BGWORKER_BYPASS_ROLELOGINCHECK</code>が<code class="varname">flags</code>として指定されている場合、データベースへの接続に使用されるログインのチェックをバイパスすることができます。
+ロールバックグラウンドワーカーは、これら2つの機能のうちの1つを1回だけ呼び出しできます。
+データベースをスイッチすることはできません。
   </p><p>
 <span class="original">
    Signals are initially blocked when control reaches the
@@ -373,4 +383,4 @@ postmasterがバックグラウンドワーカーを開始しようと試みた�
    &lt;xref linkend="guc-max-worker-processes"/&gt;.
 </span>
 登録できるバックグラウンドワーカーの最大数は<a class="xref" href="runtime-config-resource.html#GUC-MAX-WORKER-PROCESSES">max_worker_processes</a>によって制限されています。
-  </p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="spi-spi-start-transaction.html" title="SPI_start_transaction">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="server-programming.html" title="パート V. サーバプログラミング">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="logicaldecoding.html" title="第49章 ロジカルデコーディング">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">SPI_start_transaction </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 16.4文書">ホーム</a></td><td width="40%" align="right" valign="top"> 第49章 ロジカルデコーディング</td></tr></table></div></body></html>
+  </p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="spi-spi-start-transaction.html" title="SPI_start_transaction">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="server-programming.html" title="パート V. サーバプログラミング">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="logicaldecoding.html" title="第47章 ロジカルデコーディング">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">SPI_start_transaction </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 17.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 第47章 ロジカルデコーディング</td></tr></table></div></body></html>

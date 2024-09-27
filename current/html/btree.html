@@ -1,5 +1,1081 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>第67章 B-Treeインデックス</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="custom-rmgr.html" title="第66章 カスタムWALリソースマネージャ" /><link rel="next" href="btree-intro.html" title="67.1. はじめに" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 16.4文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="internals.html" title="パート VII. 内部情報">パート VII. 内部情報</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 16.4 : btree.html">誤訳等の報告
-                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="custom-rmgr.html" title="第66章 カスタムWALリソースマネージャ">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="internals.html" title="パート VII. 内部情報">上へ</a></td><td width="60%" align="center">第67章 B-Treeインデックス</td><td width="20%" align="right"> <a accesskey="n" href="btree-intro.html" title="67.1. はじめに">次へ</a></td></tr></table><hr /></div><div class="chapter" id="BTREE"><div class="titlepage"><div><div><h2 class="title">第67章 B-Treeインデックス</h2></div></div></div><div class="toc"><p><strong>目次</strong></p><dl class="toc"><dt><span class="sect1"><a href="btree-intro.html">67.1. はじめに</a></span></dt><dt><span class="sect1"><a href="btree-behavior.html">67.2. B-Tree演算子クラスの振る舞い</a></span></dt><dt><span class="sect1"><a href="btree-support-funcs.html">67.3. B-Treeサポート関数</a></span></dt><dt><span class="sect1"><a href="btree-implementation.html">67.4. 実装</a></span></dt><dd><dl><dt><span class="sect2"><a href="btree-implementation.html#BTREE-STRUCTURE">67.4.1. B-Treeの構造</a></span></dt><dt><span class="sect2"><a href="btree-implementation.html#BTREE-DELETION">67.4.2. ボトムアップインデックスの削除</a></span></dt><dt><span class="sect2"><a href="btree-implementation.html#BTREE-DEDUPLICATION">67.4.3. 重複排除</a></span></dt></dl></dd></dl></div><span class="original">
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>64.1. B-Treeインデックス</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="indextypes.html" title="第64章 Built-in Index Access Methods" /><link rel="next" href="gist.html" title="64.2. GiSTインデックス" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 17.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="indextypes.html" title="第64章 Built-in Index Access Methods">第64章 Built-in Index Access Methods</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 17.0 : btree.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="indextypes.html" title="第64章 Built-in Index Access Methods">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="indextypes.html" title="第64章 Built-in Index Access Methods">上へ</a></td><td width="60%" align="center">64.1. B-Treeインデックス</td><td width="20%" align="right"> <a accesskey="n" href="gist.html" title="64.2. GiSTインデックス">次へ</a></td></tr></table><hr /></div><div class="sect1" id="BTREE"><div class="titlepage"><div><div><h2 class="title" style="clear: both">64.1. B-Treeインデックス <a href="#BTREE" class="id_link">#</a></h2></div></div></div><span class="original">
 &lt;title&gt;B-Tree Indexes&lt;/title&gt;
-</span><a id="id-1.10.18.2" class="indexterm"></a><a id="id-1.10.18.3" class="indexterm"></a></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="custom-rmgr.html" title="第66章 カスタムWALリソースマネージャ">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="internals.html" title="パート VII. 内部情報">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="btree-intro.html" title="67.1. はじめに">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">第66章 カスタムWALリソースマネージャ </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 16.4文書">ホーム</a></td><td width="40%" align="right" valign="top"> 67.1. はじめに</td></tr></table></div></body></html>
+</span><a id="id-1.10.17.2.2" class="indexterm"></a><a id="id-1.10.17.2.3" class="indexterm"></a><div class="sect2" id="BTREE-INTRO"><div class="titlepage"><div><div><h3 class="title">64.1.1. はじめに <a href="#BTREE-INTRO" class="id_link">#</a></h3></div></div></div><span class="original">
+ &lt;title&gt;Introduction&lt;/title&gt;
+</span><p>
+<span class="original">
+  &lt;productname&gt;PostgreSQL&lt;/productname&gt; includes an implementation of the
+  standard &lt;acronym&gt;btree&lt;/acronym&gt; (multi-way balanced tree) index data
+  structure.  Any data type that can be sorted into a well-defined linear
+  order can be indexed by a btree index.  The only limitation is that an
+  index entry cannot exceed approximately one-third of a page (after TOAST
+  compression, if applicable).
+</span>
+<span class="productname">PostgreSQL</span>は、標準的な<acronym class="acronym">btree</acronym>（multi-way balanced tree）インデックスデータ構造を実装しています。
+明確に定義された線形順にソート可能なデータ型は、すべてbtreeインデックスで索引付できます。
+唯一の制限は、一つのインデックスエントリが（適用可能であれば、TOAST圧縮後）ページの約1/3を超えられないことです。
+ </p><p>
+<span class="original">
+  Because each btree operator class imposes a sort order on its data type,
+  btree operator classes (or, really, operator families) have come to be
+  used as &lt;productname&gt;PostgreSQL&lt;/productname&gt;'s general representation
+  and understanding of sorting semantics.  Therefore, they've acquired
+  some features that go beyond what would be needed just to support btree
+  indexes, and parts of the system that are quite distant from the
+  btree &lt;acronym&gt;AM&lt;/acronym&gt; make use of them.
+</span>
+《マッチ度[92.688172]》btree演算子クラスはそのデータ型がソート順を持つことが必要なので、btree演算子クラス（実際には演算子族）は、<span class="productname">PostgreSQL</span>の一般的表現として、およびソートセマンティクスを理解するものとして利用されてきました。
+ですから、単にbtreeインデックスをサポートするだけに必要なもの以上の機能と、btree AMが使用するものからはかけ離れたシステムの部品を備えなければなりません。
+ </p></div><div class="sect2" id="BTREE-BEHAVIOR"><div class="titlepage"><div><div><h3 class="title">64.1.2. B-Tree演算子クラスの振る舞い <a href="#BTREE-BEHAVIOR" class="id_link">#</a></h3></div></div></div><span class="original">
+ &lt;title&gt;Behavior of B-Tree Operator Classes&lt;/title&gt;
+</span><p>
+<span class="original">
+  As shown in &lt;xref linkend="xindex-btree-strat-table"/&gt;, a btree operator
+  class must provide five comparison operators,
+  &lt;literal&gt;&amp;lt;&lt;/literal&gt;,
+  &lt;literal&gt;&amp;lt;=&lt;/literal&gt;,
+  &lt;literal&gt;=&lt;/literal&gt;,
+  &lt;literal&gt;&amp;gt;=&lt;/literal&gt; and
+  &lt;literal&gt;&amp;gt;&lt;/literal&gt;.
+  One might expect that &lt;literal&gt;&amp;lt;&amp;gt;&lt;/literal&gt; should also be part of
+  the operator class, but it is not, because it would almost never be
+  useful to use a &lt;literal&gt;&amp;lt;&amp;gt;&lt;/literal&gt; WHERE clause in an index
+  search.  (For some purposes, the planner treats &lt;literal&gt;&amp;lt;&amp;gt;&lt;/literal&gt;
+  as associated with a btree operator class; but it finds that operator via
+  the &lt;literal&gt;=&lt;/literal&gt; operator's negator link, rather than
+  from &lt;structname&gt;pg_amop&lt;/structname&gt;.)
+</span>
+<a class="xref" href="xindex.html#XINDEX-BTREE-STRAT-TABLE" title="表36.3 B-treeストラテジ">表 36.3</a>で示すように、btree演算子クラスは次の5つの比較演算子を提供しなければなりません。
+<code class="literal">&lt;</code>、<code class="literal">&lt;=</code>、<code class="literal">=</code>、<code class="literal">&gt;=</code>、そして<code class="literal">&gt;</code>です。
+<code class="literal">&lt;&gt;</code>も演算子クラスの一部であると期待する方もいるかもしれませんが、そうではありません。
+インデックス検索のWHERE句で<code class="literal">&lt;&gt;</code>を使うのは、ほとんど常に役に立たないからです。
+（ある種の目的のためにプランナは<code class="literal">&lt;&gt;</code>をbtree演算子クラスに関連しているものとして扱います。
+しかし、プランナは<code class="structname">pg_amop</code>から検索するのではなく<code class="literal">=</code>の否定子リンクから検索します。）
+ </p><p>
+<span class="original">
+  When several data types share near-identical sorting semantics, their
+  operator classes can be grouped into an operator family.  Doing so is
+  advantageous because it allows the planner to make deductions about
+  cross-type comparisons.  Each operator class within the family should
+  contain the single-type operators (and associated support functions)
+  for its input data type, while cross-type comparison operators and
+  support functions are &lt;quote&gt;loose&lt;/quote&gt; in the family.  It is
+  recommendable that a complete set of cross-type operators be included
+  in the family, thus ensuring that the planner can represent any
+  comparison conditions that it deduces from transitivity.
+</span>
+複数のデータ型がほとんど同じソートセマンティクスを共有している場合、それらの演算子クラスは演算子族にまとめることができます。
+そうすることによりプランナが型をまたがる比較を推論できるので、これはメリットがあります。
+演算子族内の各演算子クラスは、入力データ型のための単一型演算子（および関連するサポート関数）を含むべきです。
+一方型をまたがる比較演算子とサポート関数は演算子族中で<span class="quote">「<span class="quote">ゆるやか</span>」</span>です。
+プランナが推移関係から推論するすべての比較条件を提示できるように、型をまたがる演算子の完全な集合を演算子族に入れておくことをお勧めします。
+ </p><p>
+<span class="original">
+  There are some basic assumptions that a btree operator family must
+  satisfy:
+</span>
+btree演算子族が満たさなければならない基本的な前提条件があります。
+ </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>
+<span class="original">
+    An &lt;literal&gt;=&lt;/literal&gt; operator must be an equivalence relation; that
+    is, for all non-null values &lt;replaceable&gt;A&lt;/replaceable&gt;,
+    &lt;replaceable&gt;B&lt;/replaceable&gt;, &lt;replaceable&gt;C&lt;/replaceable&gt; of the
+    data type:
+</span>
+<code class="literal">=</code>演算子は等号関係でなければなりません。
+つまり、そのデータ型のすべての非NULL値<em class="replaceable"><code>A</code></em>、<em class="replaceable"><code>B</code></em>、<em class="replaceable"><code>C</code></em>について、
+
+    </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: circle; "><li class="listitem"><p>
+<span class="original">
+       &lt;replaceable&gt;A&lt;/replaceable&gt; &lt;literal&gt;=&lt;/literal&gt;
+       &lt;replaceable&gt;A&lt;/replaceable&gt; is true
+       (&lt;firstterm&gt;reflexive law&lt;/firstterm&gt;)
+</span>
+<em class="replaceable"><code>A</code></em> <code class="literal">=</code> <em class="replaceable"><code>A</code></em>が真である（<em class="firstterm">反射律</em>）
+      </p></li><li class="listitem"><p>
+<span class="original">
+       if &lt;replaceable&gt;A&lt;/replaceable&gt; &lt;literal&gt;=&lt;/literal&gt;
+       &lt;replaceable&gt;B&lt;/replaceable&gt;,
+       then &lt;replaceable&gt;B&lt;/replaceable&gt; &lt;literal&gt;=&lt;/literal&gt;
+       &lt;replaceable&gt;A&lt;/replaceable&gt;
+       (&lt;firstterm&gt;symmetric law&lt;/firstterm&gt;)
+</span>
+<em class="replaceable"><code>A</code></em> <code class="literal">=</code> <em class="replaceable"><code>B</code></em>なら、<em class="replaceable"><code>B</code></em> <code class="literal">=</code> <em class="replaceable"><code>A</code></em>である（<em class="firstterm">対称律</em>）
+      </p></li><li class="listitem"><p>
+<span class="original">
+       if &lt;replaceable&gt;A&lt;/replaceable&gt; &lt;literal&gt;=&lt;/literal&gt;
+       &lt;replaceable&gt;B&lt;/replaceable&gt; and &lt;replaceable&gt;B&lt;/replaceable&gt;
+       &lt;literal&gt;=&lt;/literal&gt; &lt;replaceable&gt;C&lt;/replaceable&gt;,
+       then &lt;replaceable&gt;A&lt;/replaceable&gt; &lt;literal&gt;=&lt;/literal&gt;
+       &lt;replaceable&gt;C&lt;/replaceable&gt;
+       (&lt;firstterm&gt;transitive law&lt;/firstterm&gt;)
+</span>
+<em class="replaceable"><code>A</code></em> <code class="literal">=</code> <em class="replaceable"><code>B</code></em>かつ<em class="replaceable"><code>B</code></em><code class="literal">=</code> <em class="replaceable"><code>C</code></em>なら、<em class="replaceable"><code>A</code></em> <code class="literal">=</code> <em class="replaceable"><code>C</code></em>である（<em class="firstterm">推移律</em>）
+      </p></li></ul></div><p>
+   </p></li><li class="listitem"><p>
+<span class="original">
+    A &lt;literal&gt;&amp;lt;&lt;/literal&gt; operator must be a strong ordering relation;
+    that is, for all non-null values &lt;replaceable&gt;A&lt;/replaceable&gt;,
+    &lt;replaceable&gt;B&lt;/replaceable&gt;, &lt;replaceable&gt;C&lt;/replaceable&gt;:
+</span>
+<code class="literal">&lt;</code>は強順序関係でなければなりません。つまり、すべての非NULL値<em class="replaceable"><code>A</code></em>、<em class="replaceable"><code>B</code></em>、<em class="replaceable"><code>C</code></em>に対して、
+
+    </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: circle; "><li class="listitem"><p>
+<span class="original">
+       &lt;replaceable&gt;A&lt;/replaceable&gt; &lt;literal&gt;&amp;lt;&lt;/literal&gt;
+       &lt;replaceable&gt;A&lt;/replaceable&gt; is false
+       (&lt;firstterm&gt;irreflexive law&lt;/firstterm&gt;)
+</span>
+<em class="replaceable"><code>A</code></em> <code class="literal">&lt;</code> <em class="replaceable"><code>A</code></em>は偽である（<em class="firstterm">非反射律</em>）
+      </p></li><li class="listitem"><p>
+<span class="original">
+       if &lt;replaceable&gt;A&lt;/replaceable&gt; &lt;literal&gt;&amp;lt;&lt;/literal&gt;
+       &lt;replaceable&gt;B&lt;/replaceable&gt;
+       and &lt;replaceable&gt;B&lt;/replaceable&gt; &lt;literal&gt;&amp;lt;&lt;/literal&gt;
+       &lt;replaceable&gt;C&lt;/replaceable&gt;,
+       then &lt;replaceable&gt;A&lt;/replaceable&gt; &lt;literal&gt;&amp;lt;&lt;/literal&gt;
+       &lt;replaceable&gt;C&lt;/replaceable&gt;
+       (&lt;firstterm&gt;transitive law&lt;/firstterm&gt;)
+</span>
+<em class="replaceable"><code>A</code></em> <code class="literal">&lt;</code> <em class="replaceable"><code>B</code></em>かつ<em class="replaceable"><code>B</code></em> <code class="literal">&lt;</code> <em class="replaceable"><code>C</code></em>なら、<em class="replaceable"><code>A</code></em> <code class="literal">&lt;</code> <em class="replaceable"><code>C</code></em>である（<em class="firstterm">推移律</em>）
+      </p></li></ul></div><p>
+   </p></li><li class="listitem"><p>
+<span class="original">
+    Furthermore, the ordering is total; that is, for all non-null
+    values &lt;replaceable&gt;A&lt;/replaceable&gt;, &lt;replaceable&gt;B&lt;/replaceable&gt;:
+</span>
+更に、順序は全である。すなわち、すべての非NULL値<em class="replaceable"><code>A</code></em>、<em class="replaceable"><code>B</code></em>に対して、
+
+    </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: circle; "><li class="listitem"><p>
+<span class="original">
+       exactly one of &lt;replaceable&gt;A&lt;/replaceable&gt; &lt;literal&gt;&amp;lt;&lt;/literal&gt;
+       &lt;replaceable&gt;B&lt;/replaceable&gt;, &lt;replaceable&gt;A&lt;/replaceable&gt;
+       &lt;literal&gt;=&lt;/literal&gt; &lt;replaceable&gt;B&lt;/replaceable&gt;, and
+       &lt;replaceable&gt;B&lt;/replaceable&gt; &lt;literal&gt;&amp;lt;&lt;/literal&gt;
+       &lt;replaceable&gt;A&lt;/replaceable&gt; is true
+       (&lt;firstterm&gt;trichotomy law&lt;/firstterm&gt;)
+</span>
+厳密に<em class="replaceable"><code>A</code></em> <code class="literal">&lt;</code> <em class="replaceable"><code>B</code></em>、<em class="replaceable"><code>A</code></em> <code class="literal">=</code> <em class="replaceable"><code>B</code></em>、<em class="replaceable"><code>B</code></em> <code class="literal">&lt;</code> <em class="replaceable"><code>A</code></em>のうちどれか一つが真（<em class="firstterm">三分律</em>）
+      </p></li></ul></div><p>
+
+<span class="original">
+    (The trichotomy law justifies the definition of the comparison support
+    function, of course.)
+</span>
+（もちろん、三分律は比較サポート関数の定義を正当化します。）
+   </p></li></ul></div><p>
+<span class="original">
+  The other three operators are defined in terms of &lt;literal&gt;=&lt;/literal&gt;
+  and &lt;literal&gt;&amp;lt;&lt;/literal&gt; in the obvious way, and must act consistently
+  with them.
+</span>
+他の3つの演算子は<code class="literal">=</code>と<code class="literal">&lt;</code>に沿って自明に定義され、それらと一貫していなければなりません。
+ </p><p>
+<span class="original">
+  For an operator family supporting multiple data types, the above laws must
+  hold when &lt;replaceable&gt;A&lt;/replaceable&gt;, &lt;replaceable&gt;B&lt;/replaceable&gt;,
+  &lt;replaceable&gt;C&lt;/replaceable&gt; are taken from any data types in the family.
+  The transitive laws are the trickiest to ensure, as in cross-type
+  situations they represent statements that the behaviors of two or three
+  different operators are consistent.
+  As an example, it would not work to put &lt;type&gt;float8&lt;/type&gt;
+  and &lt;type&gt;numeric&lt;/type&gt; into the same operator family, at least not with
+  the current semantics that &lt;type&gt;numeric&lt;/type&gt; values are converted
+  to &lt;type&gt;float8&lt;/type&gt; for comparison to a &lt;type&gt;float8&lt;/type&gt;.  Because
+  of the limited accuracy of &lt;type&gt;float8&lt;/type&gt;, this means there are
+  distinct &lt;type&gt;numeric&lt;/type&gt; values that will compare equal to the
+  same &lt;type&gt;float8&lt;/type&gt; value, and thus the transitive law would fail.
+</span>
+複数のデータ型をサポートする演算子族について、演算子族中のデータ型であるどんな<em class="replaceable"><code>A</code></em>、<em class="replaceable"><code>B</code></em>、<em class="replaceable"><code>C</code></em>も上記の法則を満たさなければなりません。
+型をまたがる際に2つあるいは3つの異なる演算子が一貫していることを表明することになるので、推移律を満たすことはもっとも困難です。
+例をあげると、少なくとも<code class="type">float8</code>と比較するために<code class="type">numeric</code>値を<code class="type">float8</code>に変換する現在の意味論のもとでは、<code class="type">float8</code>と<code class="type">numeric</code>を同じ演算子族に加えるのはうまくいかないでしょう。
+<code class="type">float8</code>の精度に限りがあるからです。
+これは同じ<code class="type">float8</code>値に対して等号比較する複数の異なる<code class="type">numeric</code>値が存在することを意味し、したがって推移律は満たされません。
+ </p><p>
+<span class="original">
+  Another requirement for a multiple-data-type family is that any implicit
+  or binary-coercion casts that are defined between data types included in
+  the operator family must not change the associated sort ordering.
+</span>
+複数データ型族に関する別な要件は、演算子族に含まれるデータ型間に定義される暗黙的あるいは二値型強制(binary-coercion)キャストは、関係するソート順を変更してはならないことです。
+ </p><p>
+<span class="original">
+  It should be fairly clear why a btree index requires these laws to hold
+  within a single data type: without them there is no ordering to arrange
+  the keys with.  Also, index searches using a comparison key of a
+  different data type require comparisons to behave sanely across two
+  data types.  The extensions to three or more data types within a family
+  are not strictly required by the btree index mechanism itself, but the
+  planner relies on them for optimization purposes.
+</span>
+単一のデータ型において、btreeインデックスがこれらの法則を守ることを要求するのはかなり明確です。
+これらの法則なしにはキー並べる順序がなくなってしまうからです。
+また、異なるデータ型の比較キーを使うインデックス検索では、2つのデータ型またがる比較が正常に動作することが必要です。
+演算子族中で3つ以上のデータ型に対する拡張はbtreeインデックスの機構自体では要求されませんが、プランナは最適化の目的でそれらに依存します。
+ </p></div><div class="sect2" id="BTREE-SUPPORT-FUNCS"><div class="titlepage"><div><div><h3 class="title">64.1.3. B-Treeサポート関数 <a href="#BTREE-SUPPORT-FUNCS" class="id_link">#</a></h3></div></div></div><span class="original">
+ &lt;title&gt;B-Tree Support Functions&lt;/title&gt;
+</span><p>
+<span class="original">
+  As shown in &lt;xref linkend="xindex-btree-support-table"/&gt;, btree defines
+  one required and four optional support functions.  The five
+  user-defined methods are:
+</span>
+<a class="xref" href="xindex.html#XINDEX-BTREE-SUPPORT-TABLE" title="表36.9 B-treeサポート関数">表 36.9</a>で示すように、btreeでは一つの必須サポート関数と、4つの省略可能なサポート関数を定義します。
+5つのユーザ定義メソッドは以下の通りです。
+ </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="function">order</code></span></dt><dd><p>
+<span class="original">
+     For each combination of data types that a btree operator family
+     provides comparison operators for, it must provide a comparison
+     support function, registered in
+     &lt;structname&gt;pg_amproc&lt;/structname&gt; with support function number 1
+     and
+     &lt;structfield&gt;amproclefttype&lt;/structfield&gt;/&lt;structfield&gt;amprocrighttype&lt;/structfield&gt;
+     equal to the left and right data types for the comparison (i.e.,
+     the same data types that the matching operators are registered
+     with in &lt;structname&gt;pg_amop&lt;/structname&gt;).  The comparison
+     function must take two non-null values
+     &lt;replaceable&gt;A&lt;/replaceable&gt; and &lt;replaceable&gt;B&lt;/replaceable&gt; and
+     return an &lt;type&gt;int32&lt;/type&gt; value that is
+     &lt;literal&gt;&amp;lt;&lt;/literal&gt; &lt;literal&gt;0&lt;/literal&gt;,
+     &lt;literal&gt;0&lt;/literal&gt;, or &lt;literal&gt;&amp;gt;&lt;/literal&gt;
+     &lt;literal&gt;0&lt;/literal&gt; when &lt;replaceable&gt;A&lt;/replaceable&gt;
+     &lt;literal&gt;&amp;lt;&lt;/literal&gt; &lt;replaceable&gt;B&lt;/replaceable&gt;,
+     &lt;replaceable&gt;A&lt;/replaceable&gt; &lt;literal&gt;=&lt;/literal&gt;
+     &lt;replaceable&gt;B&lt;/replaceable&gt;, or &lt;replaceable&gt;A&lt;/replaceable&gt;
+     &lt;literal&gt;&amp;gt;&lt;/literal&gt; &lt;replaceable&gt;B&lt;/replaceable&gt;,
+     respectively.  A null result is disallowed: all values of the
+     data type must be comparable.  See
+     &lt;filename&gt;src/backend/access/nbtree/nbtcompare.c&lt;/filename&gt; for
+     examples.
+</span>
+btreeの演算子族が比較演算子を提供する各データ型の組み合わせに対して、比較サポート関数を提供しなければなりません。それらはサポート関数1番で<code class="structname">pg_amproc</code>に、また、比較での左右のデータ型と等しい<code class="structfield">amproclefttype</code>/<code class="structfield">amprocrighttype</code>に、登録されます（すなわち、<code class="structname">pg_amop</code>に登録されている演算子が対応するものと同じデータ型です）。
+比較関数は2つの非NULL値<em class="replaceable"><code>A</code></em>と<em class="replaceable"><code>B</code></em>を取り、
+<em class="replaceable"><code>A</code></em> <code class="literal">&lt;</code> <em class="replaceable"><code>B</code></em>、<em class="replaceable"><code>A</code></em> <code class="literal">=</code> <em class="replaceable"><code>B</code></em>、または、<em class="replaceable"><code>A</code></em> <code class="literal">&gt;</code> <em class="replaceable"><code>B</code></em>であるときにそれぞれ、<code class="literal">&lt;</code> <code class="literal">0</code>、<code class="literal">0</code>、または、<code class="literal">&gt;</code> <code class="literal">0</code>である<code class="type">int32</code>の値を返さなければなりません。
+NULLの結果は許されず、データ型の全ての値は比較可能でなければなりません。
+例として<code class="filename">src/backend/access/nbtree/nbtcompare.c</code>を参照してください。
+    </p><p>
+<span class="original">
+     If the compared values are of a collatable data type, the
+     appropriate collation OID will be passed to the comparison
+     support function, using the standard
+     &lt;function&gt;PG_GET_COLLATION()&lt;/function&gt; mechanism.
+</span>
+比較される値が照合順序が適用可能なデータ型のものである場合、比較サポート関数に適切な照合順序のOIDが渡され、標準の<code class="function">PG_GET_COLLATION()</code>機構が使用されます。
+    </p></dd><dt><span class="term"><code class="function">sortsupport</code></span></dt><dd><p>
+<span class="original">
+     Optionally, a btree operator family may provide &lt;firstterm&gt;sort
+      support&lt;/firstterm&gt; function(s), registered under support
+     function number 2.  These functions allow implementing
+     comparisons for sorting purposes in a more efficient way than
+     naively calling the comparison support function.  The APIs
+     involved in this are defined in
+     &lt;filename&gt;src/include/utils/sortsupport.h&lt;/filename&gt;.
+</span>
+任意で、btree演算子族は<em class="firstterm">ソートサポート</em>関数を提供してもよいです。これはサポート関数2番で登録されます。
+この関数は、素朴に比較サポート関数を呼び出すよりも、ソート目的により効果的な方法での比較の実装を可能にします。
+これに関するAPIは<code class="filename">src/include/utils/sortsupport.h</code>で定義されています。
+    </p></dd><dt><span class="term"><code class="function">in_range</code></span></dt><dd><a id="id-1.10.17.2.6.3.3.2.1" class="indexterm"></a><a id="id-1.10.17.2.6.3.3.2.2" class="indexterm"></a><a id="id-1.10.17.2.6.3.3.2.3" class="indexterm"></a><a id="id-1.10.17.2.6.3.3.2.4" class="indexterm"></a><p>
+<span class="original">
+     Optionally, a btree operator family may provide
+     &lt;firstterm&gt;in_range&lt;/firstterm&gt; support function(s), registered
+     under support function number 3.  These are not used during btree
+     index operations; rather, they extend the semantics of the
+     operator family so that it can support window clauses containing
+     the &lt;literal&gt;RANGE&lt;/literal&gt; &lt;replaceable&gt;offset&lt;/replaceable&gt;
+     &lt;literal&gt;PRECEDING&lt;/literal&gt; and &lt;literal&gt;RANGE&lt;/literal&gt;
+     &lt;replaceable&gt;offset&lt;/replaceable&gt; &lt;literal&gt;FOLLOWING&lt;/literal&gt;
+     frame bound types (see &lt;xref
+      linkend="syntax-window-functions"/&gt;).  Fundamentally, the extra
+     information provided is how to add or subtract an
+     &lt;replaceable&gt;offset&lt;/replaceable&gt; value in a way that is
+     compatible with the family's data ordering.
+</span>
+任意で、btree演算子族は<em class="firstterm">in_range</em>サポート関数を提供してもよいです。これはサポート関数3番に登録されます。
+これはbtreeインデックス操作中には使われません。そうではなく、演算子族のセマンティクスを<code class="literal">RANGE</code> <em class="replaceable"><code>offset</code></em> <code class="literal">PRECEDING</code>と<code class="literal">RANGE</code> <em class="replaceable"><code>offset</code></em> <code class="literal">FOLLOWING</code>フレーム境界タイプ（<a class="xref" href="sql-expressions.html#SYNTAX-WINDOW-FUNCTIONS" title="4.2.8. ウィンドウ関数呼び出し">4.2.8</a>を参照）を含むWINDOW句に対応できるように拡張します。
+基本的には、提供される拡張情報はどのように演算子族のデータ並び順と互換性のある方法で<em class="replaceable"><code>offset</code></em>値を足すか引くかです。
+    </p><p>
+<span class="original">
+     An &lt;function&gt;in_range&lt;/function&gt; function must have the signature
+</span>
+<code class="function">in_range</code>関数は以下のシグネチャを持たなければなりません。
+</p><pre class="synopsis">
+in_range(<em class="replaceable"><code>val</code></em> type1, <em class="replaceable"><code>base</code></em> type1, <em class="replaceable"><code>offset</code></em> type2, <em class="replaceable"><code>sub</code></em> bool, <em class="replaceable"><code>less</code></em> bool)
+returns bool
+</pre><p>
+<span class="original">
+     &lt;replaceable&gt;val&lt;/replaceable&gt; and
+     &lt;replaceable&gt;base&lt;/replaceable&gt; must be of the same type, which
+     is one of the types supported by the operator family (i.e., a
+     type for which it provides an ordering).  However,
+     &lt;replaceable&gt;offset&lt;/replaceable&gt; could be of a different type,
+     which might be one otherwise unsupported by the family.  An
+     example is that the built-in &lt;literal&gt;time_ops&lt;/literal&gt; family
+     provides an &lt;function&gt;in_range&lt;/function&gt; function that has
+     &lt;replaceable&gt;offset&lt;/replaceable&gt; of type &lt;type&gt;interval&lt;/type&gt;.
+     A family can provide &lt;function&gt;in_range&lt;/function&gt; functions for
+     any of its supported types and one or more
+     &lt;replaceable&gt;offset&lt;/replaceable&gt; types.  Each
+     &lt;function&gt;in_range&lt;/function&gt; function should be entered in
+     &lt;structname&gt;pg_amproc&lt;/structname&gt; with
+     &lt;structfield&gt;amproclefttype&lt;/structfield&gt; equal to
+     &lt;type&gt;type1&lt;/type&gt; and &lt;structfield&gt;amprocrighttype&lt;/structfield&gt;
+     equal to &lt;type&gt;type2&lt;/type&gt;.
+</span>
+<em class="replaceable"><code>val</code></em>と<em class="replaceable"><code>base</code></em>は同じ型でなければならず、これは演算子族でサポートされる型の一つ（すなわち、並び順を提供する対象の型）です。
+しかしながら、<em class="replaceable"><code>offset</code></em>は異なる型のものでも可能です。それは演算子族でサポートされないものでもよいです。
+例としては、組み込みの<code class="literal">time_ops</code>族が<code class="type">interval</code>型の<em class="replaceable"><code>offset</code></em>を持つ<code class="function">in_range</code>関数を提供しています。
+演算子族は、任意のサポートされる型と一つまたは複数の<em class="replaceable"><code>offset</code></em>型に対する<code class="function">in_range</code>関数を提供できます。
+各<code class="function">in_range</code>関数は、<code class="structname">pg_amproc</code>に<code class="type">type1</code>と等しい<code class="structfield">amproclefttype</code>と<code class="type">type2</code>に等しい<code class="structfield">amproclefttype</code>で登録されるべきです。
+    </p><p>
+<span class="original">
+     The essential semantics of an &lt;function&gt;in_range&lt;/function&gt;
+     function depend on the two Boolean flag parameters.  It should
+     add or subtract &lt;replaceable&gt;base&lt;/replaceable&gt; and
+     &lt;replaceable&gt;offset&lt;/replaceable&gt;, then compare
+     &lt;replaceable&gt;val&lt;/replaceable&gt; to the result, as follows:
+</span>
+<code class="function">in_range</code>関数の本質的なセマンティクスは2つのBooleanフラグパラメータに依存します。
+これは以下のように、<em class="replaceable"><code>base</code></em>に<em class="replaceable"><code>offset</code></em>を加算または減算して、それから<em class="replaceable"><code>val</code></em>を結果と比較すべきです。
+     </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>
+<span class="original">
+        if &lt;literal&gt;!&lt;/literal&gt;&lt;replaceable&gt;sub&lt;/replaceable&gt; and
+        &lt;literal&gt;!&lt;/literal&gt;&lt;replaceable&gt;less&lt;/replaceable&gt;, return
+        &lt;replaceable&gt;val&lt;/replaceable&gt; &lt;literal&gt;&amp;gt;=&lt;/literal&gt;
+        (&lt;replaceable&gt;base&lt;/replaceable&gt; &lt;literal&gt;+&lt;/literal&gt;
+        &lt;replaceable&gt;offset&lt;/replaceable&gt;)
+</span>
+        <code class="literal">!</code><em class="replaceable"><code>sub</code></em>かつ
+        <code class="literal">!</code><em class="replaceable"><code>less</code></em>であるなら、
+        <em class="replaceable"><code>val</code></em> <code class="literal">&gt;=</code>
+        (<em class="replaceable"><code>base</code></em> <code class="literal">+</code>
+        <em class="replaceable"><code>offset</code></em>)を返します
+       </p></li><li class="listitem"><p>
+<span class="original">
+        if &lt;literal&gt;!&lt;/literal&gt;&lt;replaceable&gt;sub&lt;/replaceable&gt; and
+        &lt;replaceable&gt;less&lt;/replaceable&gt;, return
+        &lt;replaceable&gt;val&lt;/replaceable&gt; &lt;literal&gt;&amp;lt;=&lt;/literal&gt;
+        (&lt;replaceable&gt;base&lt;/replaceable&gt; &lt;literal&gt;+&lt;/literal&gt;
+        &lt;replaceable&gt;offset&lt;/replaceable&gt;)
+</span>
+        <code class="literal">!</code><em class="replaceable"><code>sub</code></em>かつ
+        <em class="replaceable"><code>less</code></em>であるなら、
+        <em class="replaceable"><code>val</code></em> <code class="literal">&lt;=</code>
+        (<em class="replaceable"><code>base</code></em> <code class="literal">+</code>
+        <em class="replaceable"><code>offset</code></em>)を返します
+       </p></li><li class="listitem"><p>
+<span class="original">
+        if &lt;replaceable&gt;sub&lt;/replaceable&gt; and
+        &lt;literal&gt;!&lt;/literal&gt;&lt;replaceable&gt;less&lt;/replaceable&gt;, return
+        &lt;replaceable&gt;val&lt;/replaceable&gt; &lt;literal&gt;&amp;gt;=&lt;/literal&gt;
+        (&lt;replaceable&gt;base&lt;/replaceable&gt; &lt;literal&gt;-&lt;/literal&gt;
+        &lt;replaceable&gt;offset&lt;/replaceable&gt;)
+</span>
+        <em class="replaceable"><code>sub</code></em>かつ
+        <code class="literal">!</code><em class="replaceable"><code>less</code></em>であるなら、
+        <em class="replaceable"><code>val</code></em> <code class="literal">&gt;=</code>
+        (<em class="replaceable"><code>base</code></em> <code class="literal">-</code>
+        <em class="replaceable"><code>offset</code></em>)を返します
+       </p></li><li class="listitem"><p>
+<span class="original">
+        if &lt;replaceable&gt;sub&lt;/replaceable&gt; and
+        &lt;replaceable&gt;less&lt;/replaceable&gt;, return
+        &lt;replaceable&gt;val&lt;/replaceable&gt; &lt;literal&gt;&amp;lt;=&lt;/literal&gt;
+        (&lt;replaceable&gt;base&lt;/replaceable&gt; &lt;literal&gt;-&lt;/literal&gt;
+        &lt;replaceable&gt;offset&lt;/replaceable&gt;)
+</span>
+        <em class="replaceable"><code>sub</code></em>かつ
+        <em class="replaceable"><code>less</code></em>であるなら、
+        <em class="replaceable"><code>val</code></em> <code class="literal">&lt;=</code>
+        (<em class="replaceable"><code>base</code></em> <code class="literal">-</code>
+        <em class="replaceable"><code>offset</code></em>)を返します
+       </p></li></ul></div><p>
+<span class="original">
+     Before doing so, the function should check the sign of
+     &lt;replaceable&gt;offset&lt;/replaceable&gt;: if it is less than zero, raise
+     error
+     &lt;literal&gt;ERRCODE_INVALID_PRECEDING_OR_FOLLOWING_SIZE&lt;/literal&gt;
+     (22013) with error text like &lt;quote&gt;invalid preceding or
+      following size in window function&lt;/quote&gt;.  (This is required by
+     the SQL standard, although nonstandard operator families might
+     perhaps choose to ignore this restriction, since there seems to
+     be little semantic necessity for it.) This requirement is
+     delegated to the &lt;function&gt;in_range&lt;/function&gt; function so that
+     the core code needn't understand what &lt;quote&gt;less than
+      zero&lt;/quote&gt; means for a particular data type.
+</span>
+このように実行する前に、本関数は、<em class="replaceable"><code>offset</code></em>の符号を検査すべきです。
+すなわち、負であったなら、エラー<code class="literal">ERRCODE_INVALID_PRECEDING_OR_FOLLOWING_SIZE</code>(22013)、エラー文面としては<span class="quote">「<span class="quote">invalid preceding or following size in window function(ウィンドウ関数で先行または後続のサイズが不正です)</span>」</span>などを出すことです。
+（意味上の必要性が乏しいと見られることから非標準の演算子族はこの制限を無視することを選ぶかもしれませんが、これはSQL標準で必要とされています。）
+中核コードが特定のデータ型における<span class="quote">「<span class="quote">ゼロより小さい</span>」</span>ことの意味を理解しなくても良いように、この要件は<code class="function">in_range</code>関数に委託されます。
+    </p><p>
+<span class="original">
+     An additional expectation is that &lt;function&gt;in_range&lt;/function&gt;
+     functions should, if practical, avoid throwing an error if
+     &lt;replaceable&gt;base&lt;/replaceable&gt; &lt;literal&gt;+&lt;/literal&gt;
+     &lt;replaceable&gt;offset&lt;/replaceable&gt; or
+     &lt;replaceable&gt;base&lt;/replaceable&gt; &lt;literal&gt;-&lt;/literal&gt;
+     &lt;replaceable&gt;offset&lt;/replaceable&gt; would overflow.  The correct
+     comparison result can be determined even if that value would be
+     out of the data type's range.  Note that if the data type
+     includes concepts such as &lt;quote&gt;infinity&lt;/quote&gt; or
+     &lt;quote&gt;NaN&lt;/quote&gt;, extra care may be needed to ensure that
+     &lt;function&gt;in_range&lt;/function&gt;'s results agree with the normal
+     sort order of the operator family.
+</span>
+さらに期待されることは、<code class="function">in_range</code>関数は、実用的には、<em class="replaceable"><code>base</code></em> <code class="literal">+</code> <em class="replaceable"><code>offset</code></em>や<em class="replaceable"><code>base</code></em> <code class="literal">-</code> <em class="replaceable"><code>offset</code></em>がオーバーフローする場合にエラーを投げるのを避けるべきです。
+たとえ値がデータ型の範囲を超えたとしても正しい比較結果は決定できます。
+データ型が<span class="quote">「<span class="quote">infinity</span>」</span>や<span class="quote">「<span class="quote">NaN</span>」</span>などの概念を含む場合には、<code class="function">in_range</code>の結果が演算子族の通常のソート順序と一致するように特別な対応が必要となることに注意してください。
+    </p><p>
+<span class="original">
+     The results of the &lt;function&gt;in_range&lt;/function&gt; function must be
+     consistent with the sort ordering imposed by the operator family.
+     To be precise, given any fixed values of
+     &lt;replaceable&gt;offset&lt;/replaceable&gt; and
+     &lt;replaceable&gt;sub&lt;/replaceable&gt;, then:
+</span>
+<code class="function">in_range</code>関数の結果は、演算子族で規定されるソート順序と整合していなければなりません。
+正確には、与えらえれた任意の<em class="replaceable"><code>offset</code></em>と<em class="replaceable"><code>sub</code></em>の修正値は以下のようになります。
+     </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>
+<span class="original">
+        If &lt;function&gt;in_range&lt;/function&gt; with
+        &lt;replaceable&gt;less&lt;/replaceable&gt; = true is true for some
+        &lt;replaceable&gt;val1&lt;/replaceable&gt; and
+        &lt;replaceable&gt;base&lt;/replaceable&gt;, it must be true for every
+        &lt;replaceable&gt;val2&lt;/replaceable&gt; &lt;literal&gt;&amp;lt;=&lt;/literal&gt;
+        &lt;replaceable&gt;val1&lt;/replaceable&gt; with the same
+        &lt;replaceable&gt;base&lt;/replaceable&gt;.
+</span>
+<em class="replaceable"><code>less</code></em> = trueの<code class="function">in_range</code>がいくつかの<em class="replaceable"><code>val1</code></em>と<em class="replaceable"><code>base</code></em>に対して真であるなら、同じ<em class="replaceable"><code>base</code></em>の全ての<em class="replaceable"><code>val2</code></em> <code class="literal">&lt;=</code> <em class="replaceable"><code>val1</code></em>に対して真でなければなりません。
+       </p></li><li class="listitem"><p>
+<span class="original">
+        If &lt;function&gt;in_range&lt;/function&gt; with
+        &lt;replaceable&gt;less&lt;/replaceable&gt; = true is false for some
+        &lt;replaceable&gt;val1&lt;/replaceable&gt; and
+        &lt;replaceable&gt;base&lt;/replaceable&gt;, it must be false for every
+        &lt;replaceable&gt;val2&lt;/replaceable&gt; &lt;literal&gt;&amp;gt;=&lt;/literal&gt;
+        &lt;replaceable&gt;val1&lt;/replaceable&gt; with the same
+        &lt;replaceable&gt;base&lt;/replaceable&gt;.
+</span>
+<em class="replaceable"><code>less</code></em> = trueの<code class="function">in_range</code>が、いくつかの<em class="replaceable"><code>val1</code></em>と<em class="replaceable"><code>base</code></em>に対して偽であるなら、同じ<em class="replaceable"><code>base</code></em>の全ての<em class="replaceable"><code>val2</code></em> <code class="literal">&gt;=</code> <em class="replaceable"><code>val1</code></em>に対して偽でなければなりません。
+       </p></li><li class="listitem"><p>
+<span class="original">
+        If &lt;function&gt;in_range&lt;/function&gt; with
+        &lt;replaceable&gt;less&lt;/replaceable&gt; = true is true for some
+        &lt;replaceable&gt;val&lt;/replaceable&gt; and
+        &lt;replaceable&gt;base1&lt;/replaceable&gt;, it must be true for every
+        &lt;replaceable&gt;base2&lt;/replaceable&gt; &lt;literal&gt;&amp;gt;=&lt;/literal&gt;
+        &lt;replaceable&gt;base1&lt;/replaceable&gt; with the same
+        &lt;replaceable&gt;val&lt;/replaceable&gt;.
+</span>
+<em class="replaceable"><code>less</code></em> = trueの<code class="function">in_range</code>がいくつかの<em class="replaceable"><code>val</code></em>と<em class="replaceable"><code>base1</code></em>に対して真であるなら、同じ<em class="replaceable"><code>val</code></em>の全ての<em class="replaceable"><code>base2</code></em> <code class="literal">&gt;=</code> <em class="replaceable"><code>base1</code></em>に対して真でなければなりません。
+       </p></li><li class="listitem"><p>
+<span class="original">
+        If &lt;function&gt;in_range&lt;/function&gt; with
+        &lt;replaceable&gt;less&lt;/replaceable&gt; = true is false for some
+        &lt;replaceable&gt;val&lt;/replaceable&gt; and
+        &lt;replaceable&gt;base1&lt;/replaceable&gt;, it must be false for every
+        &lt;replaceable&gt;base2&lt;/replaceable&gt; &lt;literal&gt;&amp;lt;=&lt;/literal&gt;
+        &lt;replaceable&gt;base1&lt;/replaceable&gt; with the same
+        &lt;replaceable&gt;val&lt;/replaceable&gt;.
+</span>
+<em class="replaceable"><code>less</code></em> = trueの<code class="function">in_range</code>が一部の<em class="replaceable"><code>val</code></em>と<em class="replaceable"><code>base1</code></em>に対して偽であるなら、同じ<em class="replaceable"><code>val</code></em>の全ての<em class="replaceable"><code>base2</code></em> <code class="literal">&lt;=</code> <em class="replaceable"><code>base1</code></em>に対して偽でなければなりません。
+       </p></li></ul></div><p>
+<span class="original">
+     Analogous statements with inverted conditions hold when
+     &lt;replaceable&gt;less&lt;/replaceable&gt; = false.
+</span>
+<em class="replaceable"><code>less</code></em> = falseのときには、逆条件の類似した命題が適用できます。
+    </p><p>
+<span class="original">
+     If the type being ordered (&lt;type&gt;type1&lt;/type&gt;) is collatable, the
+     appropriate collation OID will be passed to the
+     &lt;function&gt;in_range&lt;/function&gt; function, using the standard
+     PG_GET_COLLATION() mechanism.
+</span>
+整列しようとしている型(<code class="type">type1</code>)が照合可能であるなら、標準のPG_GET_COLLATION()機構を使って、<code class="function">in_range</code>関数に適切な照合順序のOIDが渡されます。
+    </p><p>
+<span class="original">
+     &lt;function&gt;in_range&lt;/function&gt; functions need not handle NULL
+     inputs, and typically will be marked strict.
+</span>
+<code class="function">in_range</code>関数は、通例STRICTと印付けされ、NULL入力を処理する必要がありません。
+    </p></dd><dt><span class="term"><code class="function">equalimage</code></span></dt><dd><p>
+<span class="original">
+     Optionally, a btree operator family may provide
+     &lt;function&gt;equalimage&lt;/function&gt; (&lt;quote&gt;equality implies image
+      equality&lt;/quote&gt;) support functions, registered under support
+     function number 4.  These functions allow the core code to
+     determine when it is safe to apply the btree deduplication
+     optimization.  Currently, &lt;function&gt;equalimage&lt;/function&gt;
+     functions are only called when building or rebuilding an index.
+</span>
+省略可能ですが、btree演算子族は<code class="function">equalimage</code> (<span class="quote">「<span class="quote">イメージ等価を意味する等価</span>」</span>)サポート関数を提供してもよいです。これはサポート関数4番で登録されます。
+この関数は、中核コードがbtree重複排除の最適化を適用するのが安全かを決定できるようにします。
+今のところ、<code class="function">equalimage</code>関数はインデックスの構築または再構築時にのみ呼び出されます。
+    </p><p>
+<span class="original">
+     An &lt;function&gt;equalimage&lt;/function&gt; function must have the
+     signature
+</span>
+<code class="function">equalimage</code>関数は以下のシグネチャを持たなければなりません。
+</p><pre class="synopsis">
+equalimage(<em class="replaceable"><code>opcintype</code></em> <code class="type">oid</code>) returns bool
+</pre><p>
+<span class="original">
+     The return value is static information about an operator class
+     and collation.  Returning &lt;literal&gt;true&lt;/literal&gt; indicates that
+     the &lt;function&gt;order&lt;/function&gt; function for the operator class is
+     guaranteed to only return &lt;literal&gt;0&lt;/literal&gt; (&lt;quote&gt;arguments
+      are equal&lt;/quote&gt;) when its &lt;replaceable&gt;A&lt;/replaceable&gt; and
+     &lt;replaceable&gt;B&lt;/replaceable&gt; arguments are also interchangeable
+     without any loss of semantic information.  Not registering an
+     &lt;function&gt;equalimage&lt;/function&gt; function or returning
+     &lt;literal&gt;false&lt;/literal&gt; indicates that this condition cannot be
+     assumed to hold.
+</span>
+戻り値は演算子クラスと照合順序についての静的な情報です。
+<code class="literal">true</code>を返すことは、<em class="replaceable"><code>A</code></em>および<em class="replaceable"><code>B</code></em>引数が何らセマンティック情報を損失すること無しに交換可能でもあるとき、演算子クラスに対する<code class="function">order</code>関数が<code class="literal">0</code>（<span class="quote">「<span class="quote">引数が等しい</span>」</span>）だけを返すことが保証されていることを示します。
+<code class="function">equalimage</code>関数が登録されていなかったり、<code class="literal">false</code>を返すことは、この条件は守られないであろうことを示します。
+    </p><p>
+<span class="original">
+     The &lt;replaceable&gt;opcintype&lt;/replaceable&gt; argument is the
+     &lt;literal&gt;&lt;structname&gt;pg_type&lt;/structname&gt;.oid&lt;/literal&gt; of the
+     data type that the operator class indexes.  This is a convenience
+     that allows reuse of the same underlying
+     &lt;function&gt;equalimage&lt;/function&gt; function across operator classes.
+     If &lt;replaceable&gt;opcintype&lt;/replaceable&gt; is a collatable data
+     type, the appropriate collation OID will be passed to the
+     &lt;function&gt;equalimage&lt;/function&gt; function, using the standard
+     &lt;function&gt;PG_GET_COLLATION()&lt;/function&gt; mechanism.
+</span>
+<em class="replaceable"><code>opcintype</code></em>引数は演算子クラスタがインデックスを作るデータ型の<code class="literal"><code class="structname">pg_type</code>.oid</code>です。
+これは同じ基となる<code class="function">equalimage</code>関数を演算子クラスを横断して再利用できるようになる利便性があります。
+<em class="replaceable"><code>opcintype</code></em>が照合可能なデータ型である場合には、適切な照合順序のOIDが、標準の<code class="function">PG_GET_COLLATION()</code>機構を使って、<code class="function">equalimage</code>関数に渡されます。
+    </p><p>
+<span class="original">
+     As far as the operator class is concerned, returning
+     &lt;literal&gt;true&lt;/literal&gt; indicates that deduplication is safe (or
+     safe for the collation whose OID was passed to its
+     &lt;function&gt;equalimage&lt;/function&gt; function).  However, the core
+     code will only deem deduplication safe for an index when
+     &lt;emphasis&gt;every&lt;/emphasis&gt; indexed column uses an operator class
+     that registers an &lt;function&gt;equalimage&lt;/function&gt; function, and
+     each function actually returns &lt;literal&gt;true&lt;/literal&gt; when
+     called.
+</span>
+演算子クラスに関する限り、<code class="literal">true</code>を返すことは、重複排除が安全（あるいは<code class="function">equalimage</code>関数に渡されたOIDの照合順序について安全）であることを示します。
+しかしながら、コアコードは、<span class="emphasis"><em>全ての</em></span>インデックス列が<code class="function">equalimage</code>関数を登録する演算子クラスを使っていて、各関数が呼ばれたとき実際に<code class="literal">true</code>を返すときに、そのインデックスに対して重複排除を安全と見做すだけです。
+    </p><p>
+<span class="original">
+     Image equality is &lt;emphasis&gt;almost&lt;/emphasis&gt; the same condition
+     as simple bitwise equality.  There is one subtle difference: When
+     indexing a varlena data type, the on-disk representation of two
+     image equal datums may not be bitwise equal due to inconsistent
+     application of &lt;acronym&gt;TOAST&lt;/acronym&gt; compression on input.
+     Formally, when an operator class's
+     &lt;function&gt;equalimage&lt;/function&gt; function returns
+     &lt;literal&gt;true&lt;/literal&gt;, it is safe to assume that the
+     &lt;literal&gt;datum_image_eq()&lt;/literal&gt; C function will always agree
+     with the operator class's &lt;function&gt;order&lt;/function&gt; function
+     (provided that the same collation OID is passed to both the
+     &lt;function&gt;equalimage&lt;/function&gt; and &lt;function&gt;order&lt;/function&gt;
+     functions).
+</span>
+イメージ等価は単純にビット毎に等しいことと<span class="emphasis"><em>ほとんど</em></span>同じ条件です。
+一点微妙な違いがあります。varlenaデータ型にインデックス作成するとき、入力時の一貫性のない<acronym class="acronym">TOAST</acronym>圧縮の適用のために、同じdatumの二つのイメージのディスク上の表現はビット毎には等しくないかもしれません。
+これまでは、演算子クラスの<code class="function">equalimage</code>関数が<code class="literal">true</code>を返すときには、<code class="literal">datum_image_eq()</code> C関数が常に演算子クラスの<code class="function">order</code>関数と一致すると想定して安全でした（同じ照合順序のOIDが<code class="function">equalimage</code>と<code class="function">order</code>の両関数に渡されるとして）。
+    </p><p>
+<span class="original">
+     The core code is fundamentally unable to deduce anything about
+     the &lt;quote&gt;equality implies image equality&lt;/quote&gt; status of an
+     operator class within a multiple-data-type family based on
+     details from other operator classes in the same family.  Also, it
+     is not sensible for an operator family to register a cross-type
+     &lt;function&gt;equalimage&lt;/function&gt; function, and attempting to do so
+     will result in an error.  This is because &lt;quote&gt;equality implies
+      image equality&lt;/quote&gt; status does not just depend on
+     sorting/equality semantics, which are more or less defined at the
+     operator family level.  In general, the semantics that one
+     particular data type implements must be considered separately.
+</span>
+コアコードは基本的に、複数データ型の族の中の演算子クラスの<span class="quote">「<span class="quote">等価性がイメージ等価性を含む</span>」</span>状態について、同族の他の演算子クラスの詳細に基づいた、いかなる推測もできません。
+また、ある演算子族が型にまたがって<code class="function">equalimage</code>関数を登録していることを認識できず、そのような試みはエラーになります。
+これは<span class="quote">「<span class="quote">等価性がイメージ等価性を含む</span>」</span>状態は、演算子族の階層でおおむね定義されている、ソートと等価性のセマンティクスに依存しているだけでは無いためです。
+一般に、ある特定データ型の実装によるセマンティクスは別個に考慮されなければなりません。
+    </p><p>
+<span class="original">
+     The convention followed by the operator classes included with the
+     core &lt;productname&gt;PostgreSQL&lt;/productname&gt; distribution is to
+     register a stock, generic &lt;function&gt;equalimage&lt;/function&gt;
+     function.  Most operator classes register
+     &lt;function&gt;btequalimage()&lt;/function&gt;, which indicates that
+     deduplication is safe unconditionally.  Operator classes for
+     collatable data types such as &lt;type&gt;text&lt;/type&gt; register
+     &lt;function&gt;btvarstrequalimage()&lt;/function&gt;, which indicates that
+     deduplication is safe with deterministic collations.  Best
+     practice for third-party extensions is to register their own
+     custom function to retain control.
+</span>
+コア<span class="productname">PostgreSQL</span>配布物に含まれる演算子クラスが従う慣習は、標準品、すなわち、一般的な<code class="function">equalimage</code>関数を登録することです。
+大部分の演算子クラスタは<code class="function">btequalimage()</code>を登録しています。これは重複排除が無条件に安全であることを示しています。
+<code class="type">text</code>などの照合可能なデータ型に対する演算子クラスは<code class="function">btvarstrequalimage()</code>を登録します。これは決定的な照合順序では重複排除が安全であることを示します。
+サードパーティ拡張におけるベストプラクティスは制御を保つためにそれら自身のカスタム関数を登録することです。
+    </p></dd><dt><span class="term"><code class="function">options</code></span></dt><dd><p>
+<span class="original">
+     Optionally, a B-tree operator family may provide
+     &lt;function&gt;options&lt;/function&gt; (&lt;quote&gt;operator class specific
+     options&lt;/quote&gt;) support functions, registered under support
+     function number 5.  These functions define a set of user-visible
+     parameters that control operator class behavior.
+</span>
+省略可能ですが、B-treeの演算子族は<code class="function">options</code>（<span class="quote">「<span class="quote">演算子クラス固有オプション</span>」</span>）サポート関数を提供してもよいです。これはサポート関数5番に登録されます。
+この関数はユーザに見える演算子クラスの振る舞いを制御するパラメータの集合を定義します。
+    </p><p>
+<span class="original">
+     An &lt;function&gt;options&lt;/function&gt; support function must have the
+     signature
+</span>
+<code class="function">options</code>サポート関数は以下のシグネチャを持たなければなりません。
+</p><pre class="synopsis">
+options(<em class="replaceable"><code>relopts</code></em> <code class="type">local_relopts *</code>) returns void
+</pre><p>
+<span class="original">
+     The function is passed a pointer to a &lt;structname&gt;local_relopts&lt;/structname&gt;
+     struct, which needs to be filled with a set of operator class
+     specific options.  The options can be accessed from other support
+     functions using the &lt;literal&gt;PG_HAS_OPCLASS_OPTIONS()&lt;/literal&gt; and
+     &lt;literal&gt;PG_GET_OPCLASS_OPTIONS()&lt;/literal&gt; macros.
+</span>
+関数には<code class="structname">local_relopts</code>構造体へのポインタが渡されます。ここには演算子クラス固有のオプションの集合が書かれている必要があります。
+このオプションには<code class="literal">PG_HAS_OPCLASS_OPTIONS()</code>および<code class="literal">PG_GET_OPCLASS_OPTIONS()</code>マクロを使って他のサポート関数からアクセスが可能です。
+    </p><p>
+<span class="original">
+     Currently, no B-Tree operator class has an &lt;function&gt;options&lt;/function&gt;
+     support function.  B-tree doesn't allow flexible representation of keys
+     like GiST, SP-GiST, GIN and BRIN do.  So, &lt;function&gt;options&lt;/function&gt;
+     probably doesn't have much application in the current B-tree index
+     access method.  Nevertheless, this support function was added to B-tree
+     for uniformity, and will probably find uses during further
+     evolution of B-tree in &lt;productname&gt;PostgreSQL&lt;/productname&gt;.
+</span>
+今のところ、<code class="function">options</code>サポート関数を持ったB-Treeの演算子クラスはありません。
+B-treeはGiST、SP-GiST、GINおよびBRINで行われているような柔軟なキーの表現を許していません。
+そのため、おそらくは<code class="function">options</code>が現在のB-treeインデックスアクセスメソッドで多数適用されることはありません。
+それでも、統一性のためにサポート関数がB-treeに追加されました。おそらく<span class="productname">PostgreSQL</span>でのB-treeの更なる進化の過程で使用法を見つけ出すでしょう。
+    </p></dd></dl></div></div><div class="sect2" id="BTREE-IMPLEMENTATION"><div class="titlepage"><div><div><h3 class="title">64.1.4. 実装 <a href="#BTREE-IMPLEMENTATION" class="id_link">#</a></h3></div></div></div><span class="original">
+ &lt;title&gt;Implementation&lt;/title&gt;
+</span><p>
+<span class="original">
+  This section covers B-Tree index implementation details that may be
+  of use to advanced users.  See
+  &lt;filename&gt;src/backend/access/nbtree/README&lt;/filename&gt; in the source
+  distribution for a much more detailed, internals-focused description
+  of the B-Tree implementation.
+</span>
+本節では、上級ユーザに役立つかもしれない、B-Treeインデックスの実装の詳細について説明します。
+更なる詳細、B-Tree実装の内部に焦点をあてた記述については、ソース配布物の<code class="filename">src/backend/access/nbtree/README</code>を参照してください。
+ </p><div class="sect3" id="BTREE-STRUCTURE"><div class="titlepage"><div><div><h4 class="title">64.1.4.1. B-Treeの構造 <a href="#BTREE-STRUCTURE" class="id_link">#</a></h4></div></div></div><span class="original">
+  &lt;title&gt;B-Tree Structure&lt;/title&gt;
+</span><p>
+<span class="original">
+   &lt;productname&gt;PostgreSQL&lt;/productname&gt; B-Tree indexes are
+   multi-level tree structures, where each level of the tree can be
+   used as a doubly-linked list of pages.  A single metapage is stored
+   in a fixed position at the start of the first segment file of the
+   index.  All other pages are either leaf pages or internal pages.
+   Leaf pages are the pages on the lowest level of the tree.  All
+   other levels consist of internal pages.  Each leaf page contains
+   tuples that point to table rows.  Each internal page contains
+   tuples that point to the next level down in the tree.  Typically,
+   over 99% of all pages are leaf pages.  Both internal pages and leaf
+   pages use the standard page format described in &lt;xref
+    linkend="storage-page-layout"/&gt;.
+</span>
+<span class="productname">PostgreSQL</span>のB-Treeインデックスは複数階層のツリー構造で、ツリーの各階層はページの双方向連結リストとして使用できます。
+一つのメタページがインデックスの最初のセグメントファイルの固定位置に格納されます。
+それ以外の全てのページはリーフページか内部ページのいずれかです。
+リーフページはツリーの最下階層にあるページです。
+各リーフページはテーブルの行を指すタプルを含みます。
+各内部ページはツリーの次の下位層を指すタプルを含みます。
+典型的には、全ページの99％以上がリーフページです。
+内部ページとリーフページは共に、<a class="xref" href="storage-page-layout.html" title="65.6. データベースページのレイアウト">65.6</a>に記載されている標準のページ書式を使用します。
+  </p><p>
+<span class="original">
+   New leaf pages are added to a B-Tree index when an existing leaf
+   page cannot fit an incoming tuple.  A &lt;firstterm&gt;page
+    split&lt;/firstterm&gt; operation makes room for items that originally
+   belonged on the overflowing page by moving a portion of the items
+   to a new page.  Page splits must also insert a new
+   &lt;firstterm&gt;downlink&lt;/firstterm&gt; to the new page in the parent page,
+   which may cause the parent to split in turn.  Page splits
+   &lt;quote&gt;cascade upwards&lt;/quote&gt; in a recursive fashion.  When the
+   root page finally cannot fit a new downlink, a &lt;firstterm&gt;root page
+    split&lt;/firstterm&gt; operation takes place.  This adds a new level to
+   the tree structure by creating a new root page that is one level
+   above the original root page.
+</span>
+既存リーフページがやってくるタプルをはめ込むことができないとき、新たなリーフページがB-Treeインデックスに追加されます。
+<em class="firstterm">ページ分割</em>操作は一部のアイテムを新ページに動かすことで、当初は溢れているページに属していたアイテムのために空間を作ります。
+ページ分割は、また、新ページへの新たな<em class="firstterm">ダウンリンク</em>を親ページに挿入しなければなりません。これは親ページの分割を同様に引き起こすかもしれません。
+ページは分割は再帰的に<span class="quote">「<span class="quote">上向きに連鎖</span>」</span>します。
+最終的にルートページが新たなダウンリンクをはめ込みできないときには、<em class="firstterm">ルートページ分割</em>が実施されます。
+これは元のルートページの一つ上の階層に新たなルートページを作ることで、ツリー構造に新しい階層を加えます。
+  </p></div><div class="sect3" id="BTREE-DELETION"><div class="titlepage"><div><div><h4 class="title">64.1.4.2. ボトムアップインデックスの削除 <a href="#BTREE-DELETION" class="id_link">#</a></h4></div></div></div><span class="original">
+  &lt;title&gt;Bottom-up Index Deletion&lt;/title&gt;
+</span><p>
+<span class="original">
+   B-Tree indexes are not directly aware that under MVCC, there might
+   be multiple extant versions of the same logical table row; to an
+   index, each tuple is an independent object that needs its own index
+   entry.  &lt;quote&gt;Version churn&lt;/quote&gt; tuples may sometimes
+   accumulate and adversely affect query latency and throughput.  This
+   typically occurs with &lt;command&gt;UPDATE&lt;/command&gt;-heavy workloads
+   where most individual updates cannot apply the
+   &lt;link linkend="storage-hot"&gt;&lt;acronym&gt;HOT&lt;/acronym&gt; optimization.&lt;/link&gt;
+   Changing the value of only
+   one column covered by one index during an &lt;command&gt;UPDATE&lt;/command&gt;
+   &lt;emphasis&gt;always&lt;/emphasis&gt; necessitates a new set of index tuples
+   &amp;mdash; one for &lt;emphasis&gt;each and every&lt;/emphasis&gt; index on the
+   table.  Note in particular that this includes indexes that were not
+   &lt;quote&gt;logically modified&lt;/quote&gt; by the &lt;command&gt;UPDATE&lt;/command&gt;.
+   All indexes will need a successor physical index tuple that points
+   to the latest version in the table.  Each new tuple within each
+   index will generally need to coexist with the original
+   &lt;quote&gt;updated&lt;/quote&gt; tuple for a short period of time (typically
+   until shortly after the &lt;command&gt;UPDATE&lt;/command&gt; transaction
+   commits).
+</span>
+B-Treeインデックスは、MVCCの下で同じ論理テーブル行の複数の現存するバージョンが存在する可能性があることを直接認識していません。
+インデックスに対して、各タプルは独自のインデックスエントリを必要とする独立したオブジェクトです。
+<span class="quote">「<span class="quote">バージョンチャーン</span>」</span>タプルは蓄積し、クエリ待ち時間とスループットに悪影響を与える可能性があります。
+これは通常、個々の更新のほとんどが<a class="link" href="storage-hot.html" title="65.7. ヒープ専用タプル(HOT)"><acronym class="acronym">HOT</acronym>最適化</a>を適用できないような<code class="command">UPDATE</code>の重いワークロードで発生します。
+<code class="command">UPDATE</code>中にあるインデックスによって、カバーされる一つだけの行の値を変更するには、新しいインデックスタプルのセットを<span class="emphasis"><em>いつも</em></span>必要とします。
+テーブル上にある <span class="emphasis"><em>ありとあらゆる</em></span>インデックスにつき一つです。
+具体的には、<code class="command">UPDATE</code>によって<span class="quote">「<span class="quote">論理的に変更</span>」</span>されなかったインデックスが含まれることに注意してください。
+すべてのインデックスは、テーブル上で最新バージョンを指す後継の物理的なインデックスタプルを必要とします。
+各インデックス中のそれぞれの新しいタプルは通常元の<span class="quote">「<span class="quote">更新された</span>」</span>タプルと短期間共存する必要があります（通常、<code class="command">UPDATE</code>トランザクションのコミットした直後までです）。
+  </p><p>
+<span class="original">
+   B-Tree indexes incrementally delete version churn index tuples by
+   performing &lt;firstterm&gt;bottom-up index deletion&lt;/firstterm&gt; passes.
+   Each deletion pass is triggered in reaction to an anticipated
+   &lt;quote&gt;version churn page split&lt;/quote&gt;.  This only happens with
+   indexes that are not logically modified by
+   &lt;command&gt;UPDATE&lt;/command&gt; statements, where concentrated build up
+   of obsolete versions in particular pages would occur otherwise.  A
+   page split will usually be avoided, though it's possible that
+   certain implementation-level heuristics will fail to identify and
+   delete even one garbage index tuple (in which case a page split or
+   deduplication pass resolves the issue of an incoming new tuple not
+   fitting on a leaf page).  The worst-case number of versions that
+   any index scan must traverse (for any single logical row) is an
+   important contributor to overall system responsiveness and
+   throughput.  A bottom-up index deletion pass targets suspected
+   garbage tuples in a single leaf page based on
+   &lt;emphasis&gt;qualitative&lt;/emphasis&gt; distinctions involving logical
+   rows and versions.  This contrasts with the &lt;quote&gt;top-down&lt;/quote&gt;
+   index cleanup performed by autovacuum workers, which is triggered
+   when certain &lt;emphasis&gt;quantitative&lt;/emphasis&gt; table-level
+   thresholds are exceeded (see &lt;xref linkend="autovacuum"/&gt;).
+</span>
+B-Treeインデックスは、<em class="firstterm">ボトムアップインデックスの削除</em>パスの実行によって、バージョンチャーンのインデックスタプルを徐々に削除します。
+各削除パスは、予期された<span class="quote">「<span class="quote">バージョンチャーンのページ分割</span>」</span>に対してトリガーされます。
+これは、<code class="command">UPDATE</code>文によって論理的に変更されてないインデックスだけで発生します。
+さもないと、特定のページで使われなくなったバージョンが集中的に蓄積されます。
+ある種の実装レベルの発見的手法は、均一のごみインデックスタプルの特定及び削除に失敗する可能がありますが、ページの分割は通常避けることができます（ページ分割もしくは重複排除パスの場合に、リーフページ上の収まらない新しいタプルが入ることの問題が解決します）。
+インデックススキャンが（単一の論理行に対して）通過しなければならない最悪の場合のバージョン数は、システム全体の応答性やスループットに重要な影響があります。
+ボトムアップインデックス削除パスは、論理行とバージョンを含む<span class="emphasis"><em>定性的な</em></span>特徴に基づいた単一のリーフページ内の疑わしいごみタプルを対象としています。
+これは、一定の<span class="emphasis"><em>定量的な</em></span>テーブルレベルの閾値が超えられたとき（<a class="xref" href="routine-vacuuming.html#AUTOVACUUM" title="24.1.6. 自動バキュームデーモン">24.1.6</a>参照）に起動されるautovacuumワーカーによって実行された<span class="quote">「<span class="quote">トップダウン</span>」</span>インデックスのクリーンアップと対照的です。
+  </p><div class="note"><h3 class="title">注記</h3><p>
+<span class="original">
+    Not all deletion operations that are performed within B-Tree
+    indexes are bottom-up deletion operations.  There is a distinct
+    category of index tuple deletion: &lt;firstterm&gt;simple index tuple
+     deletion&lt;/firstterm&gt;.  This is a deferred maintenance operation
+    that deletes index tuples that are known to be safe to delete
+    (those whose item identifier's &lt;literal&gt;LP_DEAD&lt;/literal&gt; bit is
+    already set).  Like bottom-up index deletion, simple index
+    deletion takes place at the point that a page split is anticipated
+    as a way of avoiding the split.
+</span>
+B-Treeインデックス内で実行されたすべての削除操作がボトムアップ削除操作とは限りません。
+インデックスタプルの削除の異なる分類があります。
+それは、<em class="firstterm">単純なインデックスのタプル削除</em>です。
+これは、削除が安全であると分かるインデックスタプル(アイテム識別子の<code class="literal">LP_DEAD</code>ビットが既に設定されているタプル)を削除する遅延メンテナンス操作です。
+ボトムアップインデックス削除と同様に、単純インデックス削除は分割を回避する方法としてページ分割が予測された時点で実行されます。
+   </p><p>
+<span class="original">
+    Simple deletion is opportunistic in the sense that it can only
+    take place when recent index scans set the
+    &lt;literal&gt;LP_DEAD&lt;/literal&gt; bits of affected items in passing.
+    Prior to &lt;productname&gt;PostgreSQL&lt;/productname&gt; 14, the only
+    category of B-Tree deletion was simple deletion.  The main
+    differences between it and bottom-up deletion are that only the
+    former is opportunistically driven by the activity of passing
+    index scans, while only the latter specifically targets version
+    churn from &lt;command&gt;UPDATE&lt;/command&gt;s that do not logically modify
+    indexed columns.
+</span>
+単純削除は、最近のインデックススキャンでは影響があるアイテムに<code class="literal">LP_DEAD</code>ビットをセットする際に、ついでに実行できる機会の場合のみに実行されるという意味で、機会主義と言えます。
+<span class="productname">PostgreSQL</span> 14より前では、B-Treeの削除の種類は単純な削除のみでした。
+単純な削除とボトムアップ削除の主な違いは、前者だけがインデックススキャンの動きによって機会を狙って駆動されることに対して、後者だけがインデックスカラムが論理的に変更されない<code class="command">UPDATE</code>からのバージョンチャーンを具体的に対象とすることです。
+   </p></div><p>
+<span class="original">
+   Bottom-up index deletion performs the vast majority of all garbage
+   index tuple cleanup for particular indexes with certain workloads.
+   This is expected with any B-Tree index that is subject to
+   significant version churn from &lt;command&gt;UPDATE&lt;/command&gt;s that
+   rarely or never logically modify the columns that the index covers.
+   The average and worst-case number of versions per logical row can
+   be kept low purely through targeted incremental deletion passes.
+   It's quite possible that the on-disk size of certain indexes will
+   never increase by even one single page/block despite
+   &lt;emphasis&gt;constant&lt;/emphasis&gt; version churn from
+   &lt;command&gt;UPDATE&lt;/command&gt;s.  Even then, an exhaustive &lt;quote&gt;clean
+    sweep&lt;/quote&gt; by a &lt;command&gt;VACUUM&lt;/command&gt; operation (typically
+   run in an autovacuum worker process) will eventually be required as
+   a part of &lt;emphasis&gt;collective&lt;/emphasis&gt; cleanup of the table and
+   each of its indexes.
+</span>
+ボトムアップインデックス削除は、明確なワークロードによる特定インデックスのすべてのゴミインデックスタプルの掃除の大多数を実行します。
+これは、インデックスがカバーするカラムを論理的に変更することが滅多にまたは決してない<code class="command">UPDATE</code>からの有意なバージョンチャーンに依存するB-Treeインデックスで予想されます。
+論理行ごとのバージョン数の平均と最も悪いケースは、対象とされた増分削除パスによって純粋に低く維持することができます。
+特定インデックスのディスク上のサイズは、<code class="command">UPDATE</code>からの<span class="emphasis"><em>一定の</em></span>バージョンチャーンがあるにも関わらず、ページやブロックが一つも増加することがない可能性が十分にあります。
+そのような場合でも、<code class="command">VACUUM</code>操作（通常、自動バキュームワーカープロセスで実行します）による、徹底的な<span class="quote">「<span class="quote">一掃</span>」</span>が、テーブルとその各インデックスの<span class="emphasis"><em>共通の</em></span>クリーンアップの一部として最終的に要求されます。
+  </p><p>
+<span class="original">
+   Unlike &lt;command&gt;VACUUM&lt;/command&gt;, bottom-up index deletion does not
+   provide any strong guarantees about how old the oldest garbage
+   index tuple may be.  No index can be permitted to retain
+   &lt;quote&gt;floating garbage&lt;/quote&gt; index tuples that became dead prior
+   to a conservative cutoff point shared by the table and all of its
+   indexes collectively.  This fundamental table-level invariant makes
+   it safe to recycle table &lt;acronym&gt;TID&lt;/acronym&gt;s.  This is how it
+   is possible for distinct logical rows to reuse the same table
+   &lt;acronym&gt;TID&lt;/acronym&gt; over time (though this can never happen with
+   two logical rows whose lifetimes span the same
+   &lt;command&gt;VACUUM&lt;/command&gt; cycle).
+</span>
+ <code class="command">VACUUM</code>とは異なり、ボトムアップインデックス削除は最も古いゴミのインデックスタプルがどのくらい経過しているかについて強い保証を提供しません。
+テーブルと全てのインデックスの合計によって共通する保守的な切り捨て点より前に、不要になる<span class="quote">「<span class="quote">浮いているゴミ</span>」</span>インデックスタプルの維持を許可することはできません。
+この基本的なテーブルレベルの不変条件は、テーブルの<acronym class="acronym">TID</acronym>を安全にリサイクルします。
+これにより、時間の経過と共に異なる論理行が同じテーブル<acronym class="acronym">TID</acronym>を再利用することが可能です（ただし、これは存続期間が同じ<code class="command">VACUUM</code>サイクルにまたがる、二つの論理行に同時には発生しません）。
+  </p></div><div class="sect3" id="BTREE-DEDUPLICATION"><div class="titlepage"><div><div><h4 class="title">64.1.4.3. 重複排除 <a href="#BTREE-DEDUPLICATION" class="id_link">#</a></h4></div></div></div><span class="original">
+  &lt;title&gt;Deduplication&lt;/title&gt;
+</span><p>
+<span class="original">
+   A duplicate is a leaf page tuple (a tuple that points to a table
+   row) where &lt;emphasis&gt;all&lt;/emphasis&gt; indexed key columns have values
+   that match corresponding column values from at least one other leaf
+   page tuple in the same index.  Duplicate tuples are quite common in
+   practice.  B-Tree indexes can use a special, space-efficient
+   representation for duplicates when an optional technique is
+   enabled: &lt;firstterm&gt;deduplication&lt;/firstterm&gt;.
+</span>
+重複とは、同じインデックスで<span class="emphasis"><em>全ての</em></span>インデックスキー列が少なくとも一つの他のリーフページタプルの該当する列の値と一致する値をもっている、リーフページタプル（テーブルの行を指すタプル）です。
+重複タプルは実際によくあります。
+オプションの技法「<em class="firstterm">重複排除</em>」が有効にされているとき、B-Treeインデックスは、特別な重複に対する空間効率の良い表現方法を使用できます。
+  </p><p>
+<span class="original">
+   Deduplication works by periodically merging groups of duplicate
+   tuples together, forming a single &lt;firstterm&gt;posting list&lt;/firstterm&gt; tuple for each
+   group.  The column key value(s) only appear once in this
+   representation.  This is followed by a sorted array of
+   &lt;acronym&gt;TID&lt;/acronym&gt;s that point to rows in the table.  This
+   significantly reduces the storage size of indexes where each value
+   (or each distinct combination of column values) appears several
+   times on average.  The latency of queries can be reduced
+   significantly.  Overall query throughput may increase
+   significantly.  The overhead of routine index vacuuming may also be
+   reduced significantly.
+</span>
+重複排除は重複タプルのグループを定期的に合併して、各グループに対する単一の<em class="firstterm">ポスティングリスト</em>タプルを形成することで機能します。
+この表現方法では列のキー値は一度だけ現れます。
+テーブルの行を指す<acronym class="acronym">TID</acronym>のソートされた配列がこれに続きます。
+概して各値（あるいは列値の異なる組み合わせ）が複数回出現する場合に、これは顕著にインデックスの格納サイズを減らします。
+問い合わせの遅延も顕著に削減できます。
+全体的な問い合わせのスループットも顕著に増加するかもしれません。
+インデックスのバキューム処理のオーバーヘッドも顕著に削減されるかもしれません。
+  </p><div class="note"><h3 class="title">注記</h3><p>
+<span class="original">
+    B-Tree deduplication is just as effective with
+    &lt;quote&gt;duplicates&lt;/quote&gt; that contain a NULL value, even though
+    NULL values are never equal to each other according to the
+    &lt;literal&gt;=&lt;/literal&gt; member of any B-Tree operator class.  As far
+    as any part of the implementation that understands the on-disk
+    B-Tree structure is concerned, NULL is just another value from the
+    domain of indexed values.
+</span>
+B-Tree重複排除は、B-Tree演算子クラスの<code class="literal">=</code>項に従ってNULL値が決して互いに等しくならないとしても、NULL値を含む<span class="quote">「<span class="quote">重複</span>」</span>に効果的です。
+ディスク上のB-Tree構造を解するいかなる実装部分に関しても、NULLはまさにインデックス値の定義域以外の一つの値です。
+   </p></div><p>
+<span class="original">
+   The deduplication process occurs lazily, when a new item is
+   inserted that cannot fit on an existing leaf page, though only when
+   index tuple deletion could not free sufficient space for the new
+   item (typically deletion is briefly considered and then skipped
+   over).  Unlike GIN posting list tuples, B-Tree posting list tuples
+   do not need to expand every time a new duplicate is inserted; they
+   are merely an alternative physical representation of the original
+   logical contents of the leaf page.  This design prioritizes
+   consistent performance with mixed read-write workloads.  Most
+   client applications will at least see a moderate performance
+   benefit from using deduplication.  Deduplication is enabled by
+   default.
+</span>
+既存のリーフページに収まらない新たな要素が挿入されたとき、重複排除の処理は怠惰に実行されますが、インデックスタプルの削除は新しいアイテムのための十分なスペースを解放できなかった場合に限ります（通常、削除は簡易に検討した上で無視されます）。
+GINのポスティングリストのタプルと違って、B-Treeのポスティングリストのタプルは新たな重複が挿入される度に拡張する必要がありません。それらはリーフページの元の論理内容に対する単なる代替の物理表現にすぎません。
+この設計は読み書き混合のワークロードでの性能の一貫性を重視しています。
+ほとんどのクライアントアプリケーションは重複排除を使うことで少なくとも控えめな性能の恩恵を確認することができるでしょう。
+  </p><p>
+<span class="original">
+   &lt;command&gt;CREATE INDEX&lt;/command&gt; and &lt;command&gt;REINDEX&lt;/command&gt;
+   apply deduplication to create posting list tuples, though the
+   strategy they use is slightly different.  Each group of duplicate
+   ordinary tuples encountered in the sorted input taken from the
+   table is merged into a posting list tuple
+   &lt;emphasis&gt;before&lt;/emphasis&gt; being added to the current pending leaf
+   page.  Individual posting list tuples are packed with as many
+   &lt;acronym&gt;TID&lt;/acronym&gt;s as possible.  Leaf pages are written out in
+   the usual way, without any separate deduplication pass.  This
+   strategy is well-suited to &lt;command&gt;CREATE INDEX&lt;/command&gt; and
+   &lt;command&gt;REINDEX&lt;/command&gt; because they are once-off batch
+   operations.
+</span>
+<code class="command">CREATE INDEX</code>と<code class="command">REINDEX</code>は、使用する手順が若干異なりますが、ポスティングリストタプルを作って重複排除を適用します。
+テーブルから取得されてソートされた入力で遭遇した重複した通常タプルの各グループは、現在のペンディングリーフページに追加される<span class="emphasis"><em>前に</em></span>、ポスティングリストタプルにマージされます。
+個別のポスティングリストタプルには、可能な限り多数の<acronym class="acronym">TID</acronym>が詰め込まれます。
+リーフページは、重複排除用の別パスではなく、通常の方法で書き出されます。
+この戦略は<code class="command">CREATE INDEX</code>と<code class="command">REINDEX</code>に良く適合します。これらは1回で終わるバッチ操作であるからです。
+  </p><p>
+<span class="original">
+   Write-heavy workloads that don't benefit from deduplication due to
+   having few or no duplicate values in indexes will incur a small,
+   fixed performance penalty (unless deduplication is explicitly
+   disabled).  The &lt;literal&gt;deduplicate_items&lt;/literal&gt; storage
+   parameter can be used to disable deduplication within individual
+   indexes.  There is never any performance penalty with read-only
+   workloads, since reading posting list tuples is at least as
+   efficient as reading the standard tuple representation.  Disabling
+   deduplication isn't usually helpful.
+</span>
+インデックスの値に重複が無いか殆ど無いために重複排除から利益を得られない、書き込みの多いワークロードには、（重複排除が明示的に無効化されて居ない限り）固定のペナルティによる小さい負荷増があります。
+<code class="literal">deduplicate_items</code>格納パラメータは個別のインデックス内で重複排除を無効化するのに使うことができます。
+ポスティングリストタプルの読み込みは少なくとも通常タプル表現の読み込み程度に効率的であるため、読み込みのみのワークロードで性能ペナルティは一切ありません
+通常は重複排除を無効化することは有益ではありません。
+  </p><p>
+<span class="original">
+   It is sometimes possible for unique indexes (as well as unique
+   constraints) to use deduplication.  This allows leaf pages to
+   temporarily &lt;quote&gt;absorb&lt;/quote&gt; extra version churn duplicates.
+   Deduplication in unique indexes augments bottom-up index deletion,
+   especially in cases where a long-running transaction holds a
+   snapshot that blocks garbage collection.  The goal is to buy time
+   for the bottom-up index deletion strategy to become effective
+   again.  Delaying page splits until a single long-running
+   transaction naturally goes away can allow a bottom-up deletion pass
+   to succeed where an earlier deletion pass failed.
+</span>
+一意性インデックス(や一意制約)が重複排除に使用できる場合があります。
+これにより、リーフページは余分なバージョンチャーンの重複を一時的に<span class="quote">「<span class="quote">吸収</span>」</span>することができます。
+一意性インデックス内の重複排除は、特に時間のかかるトランザクションがガベージコレクションを妨げるスナップショットを保持している場合にボトムアップインデックス削除を増強します。
+目的は、ボトムアップインデックス削除の戦略が再び有効になるための時間を稼ぐことです。
+一つの時間のかかるトランザクションが自然に消えるまでページ分割を遅らせることで、以前の削除パスが失敗した場所でボトムアップ削除パスを成功することができます。
+  </p><div class="tip"><h3 class="title">ヒント</h3><p>
+<span class="original">
+    A special heuristic is applied to determine whether a
+    deduplication pass in a unique index should take place.  It can
+    often skip straight to splitting a leaf page, avoiding a
+    performance penalty from wasting cycles on unhelpful deduplication
+    passes.  If you're concerned about the overhead of deduplication,
+    consider setting &lt;literal&gt;deduplicate_items = off&lt;/literal&gt;
+    selectively.  Leaving deduplication enabled in unique indexes has
+    little downside.
+</span>
+一意性インデックスで重複排除パスを実行すべきかどうかの判断には、特別なヒューリスティックが適用されます。
+これは、しばしばリーフページ分割まで連続してスキップして、無益な重複排除パスでの無駄なサイクルによる性能ペナルティを回避できます。
+重複排除のオーバーヘッドを懸念するなら、選択的に設定<code class="literal">deduplicate_items = off</code>を検討してください。
+一意性インデックスでは重複排除を無効にすることに不都合はありません。
+   </p></div><p>
+<span class="original">
+   Deduplication cannot be used in all cases due to
+   implementation-level restrictions.  Deduplication safety is
+   determined when &lt;command&gt;CREATE INDEX&lt;/command&gt; or
+   &lt;command&gt;REINDEX&lt;/command&gt; is run.
+</span>
+実装レベルの制限により、重複排除は全ての場合に使えるわけではありません。
+重複排除の安全性は<code class="command">CREATE INDEX</code>あるいは<code class="command">REINDEX</code>が実行されたときに決定されます。
+  </p><p>
+<span class="original">
+   Note that deduplication is deemed unsafe and cannot be used in the
+   following cases involving semantically significant differences
+   among equal datums:
+</span>
+等しいデータの間で意味的に明らかな違いを伴う以下の場合には、重複排除は安全でないと見做されて使用できないことに注意してください。
+  </p><p>
+   </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>
+<span class="original">
+      &lt;type&gt;text&lt;/type&gt;, &lt;type&gt;varchar&lt;/type&gt;, and &lt;type&gt;char&lt;/type&gt;
+      cannot use deduplication when a
+      &lt;emphasis&gt;nondeterministic&lt;/emphasis&gt; collation is used.  Case
+      and accent differences must be preserved among equal datums.
+</span>
+<span class="emphasis"><em>非決定的な</em></span>照合順序が使われているとき<code class="type">text</code>、<code class="type">varchar</code>、および、<code class="type">char</code>は重複排除を使えません。
+等しいデータの間で大文字小文字やアクセントの違いが維持されなければなりません。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      &lt;type&gt;numeric&lt;/type&gt; cannot use deduplication.  Numeric display
+      scale must be preserved among equal datums.
+</span>
+<code class="type">numeric</code>は重複排除を使えません。
+等しいデータの間で数の表示スケールが維持されなければなりません。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      &lt;type&gt;jsonb&lt;/type&gt; cannot use deduplication, since the
+      &lt;type&gt;jsonb&lt;/type&gt; B-Tree operator class uses
+      &lt;type&gt;numeric&lt;/type&gt; internally.
+</span>
+<code class="type">jsonb</code>のB-Tree演算子クラスは内部的に<code class="type">numeric</code>を使っているため、<code class="type">jsonb</code>は重複排除を使えません。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      &lt;type&gt;float4&lt;/type&gt; and &lt;type&gt;float8&lt;/type&gt; cannot use
+      deduplication.  These types have distinct representations for
+      &lt;literal&gt;-0&lt;/literal&gt; and &lt;literal&gt;0&lt;/literal&gt;, which are
+      nevertheless considered equal.  This difference must be
+      preserved.
+</span>
+<code class="type">float4</code>および<code class="type">float8</code>は重複排除を使えません。
+これらの型は<code class="literal">-0</code>と<code class="literal">0</code>に異なる表現を持ち、にもかかわらずこれらは等しいと見做されます。
+この違いは維持されなければなりません。
+     </p></li></ul></div><p>
+  </p><p>
+<span class="original">
+   There is one further implementation-level restriction that may be
+   lifted in a future version of
+   &lt;productname&gt;PostgreSQL&lt;/productname&gt;:
+</span>
+さらに以下の実装レベルの制限があります。これは<span class="productname">PostgreSQL</span>の将来バージョンで解消されるかもしれません。
+  </p><p>
+   </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>
+<span class="original">
+      Container types (such as composite types, arrays, or range
+      types) cannot use deduplication.
+</span>
+コンテナ型（複合型、配列型、あるいは、範囲型など）は、重複排除を使えません。
+     </p></li></ul></div><p>
+  </p><p>
+<span class="original">
+   There is one further implementation-level restriction that applies
+   regardless of the operator class or collation used:
+</span>
+さらに以下の実装レベルの制限があります。これは使われている演算子クラスや照合順序にかかわりなく該当します。
+  </p><p>
+   </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>
+<span class="original">
+      &lt;literal&gt;INCLUDE&lt;/literal&gt; indexes can never use deduplication.
+</span>
+      <code class="literal">INCLUDE</code>インデックスには重複排除は使えません。
+     </p></li></ul></div><p>
+  </p></div></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="indextypes.html" title="第64章 Built-in Index Access Methods">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="indextypes.html" title="第64章 Built-in Index Access Methods">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="gist.html" title="64.2. GiSTインデックス">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">第64章 Built-in Index Access Methods </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 17.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 64.2. GiSTインデックス</td></tr></table></div></body></html>

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>34.4. 非同期コマンドの処理</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="libpq-exec.html" title="34.3. コマンド実行関数" /><link rel="next" href="libpq-pipeline-mode.html" title="34.5. パイプラインモード" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 16.4文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="libpq.html" title="第34章 libpq — C ライブラリ">第34章 <span class="application">libpq</span> — C ライブラリ</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 16.4 : libpq-async.html">誤訳等の報告
-                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="libpq-exec.html" title="34.3. コマンド実行関数">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="libpq.html" title="第34章 libpq — C ライブラリ">上へ</a></td><td width="60%" align="center">34.4. 非同期コマンドの処理</td><td width="20%" align="right"> <a accesskey="n" href="libpq-pipeline-mode.html" title="34.5. パイプラインモード">次へ</a></td></tr></table><hr /></div><div class="sect1" id="LIBPQ-ASYNC"><div class="titlepage"><div><div><h2 class="title" style="clear: both">34.4. 非同期コマンドの処理 <a href="#LIBPQ-ASYNC" class="id_link">#</a></h2></div></div></div><span class="original">
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>32.4. 非同期コマンドの処理</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="libpq-exec.html" title="32.3. コマンド実行関数" /><link rel="next" href="libpq-pipeline-mode.html" title="32.5. パイプラインモード" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 17.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="libpq.html" title="第32章 libpq — C ライブラリ">第32章 <span class="application">libpq</span> — C ライブラリ</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 17.0 : libpq-async.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="libpq-exec.html" title="32.3. コマンド実行関数">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="libpq.html" title="第32章 libpq — C ライブラリ">上へ</a></td><td width="60%" align="center">32.4. 非同期コマンドの処理</td><td width="20%" align="right"> <a accesskey="n" href="libpq-pipeline-mode.html" title="32.5. パイプラインモード">次へ</a></td></tr></table><hr /></div><div class="sect1" id="LIBPQ-ASYNC"><div class="titlepage"><div><div><h2 class="title" style="clear: both">32.4. 非同期コマンドの処理 <a href="#LIBPQ-ASYNC" class="id_link">#</a></h2></div></div></div><span class="original">
   &lt;title&gt;Asynchronous Command Processing&lt;/title&gt;
 </span><a id="id-1.7.3.11.2" class="indexterm"></a><a id="id-1.7.3.11.3" class="indexterm"></a><p>
 <span class="original">
@@ -59,21 +59,28 @@
    &lt;xref linkend="libpq-PQsendQueryParams"/&gt;,
    &lt;xref linkend="libpq-PQsendPrepare"/&gt;,
    &lt;xref linkend="libpq-PQsendQueryPrepared"/&gt;,
-   &lt;xref linkend="libpq-PQsendDescribePrepared"/&gt;, and
+   &lt;xref linkend="libpq-PQsendDescribePrepared"/&gt;,
    &lt;xref linkend="libpq-PQsendDescribePortal"/&gt;,
+   &lt;xref linkend="libpq-PQsendClosePrepared"/&gt;, and
+   &lt;xref linkend="libpq-PQsendClosePortal"/&gt;,
    which can be used with &lt;xref linkend="libpq-PQgetResult"/&gt; to duplicate
    the functionality of
    &lt;xref linkend="libpq-PQexecParams"/&gt;,
    &lt;xref linkend="libpq-PQprepare"/&gt;,
    &lt;xref linkend="libpq-PQexecPrepared"/&gt;,
-   &lt;xref linkend="libpq-PQdescribePrepared"/&gt;, and
-   &lt;xref linkend="libpq-PQdescribePortal"/&gt;
-   respectively.
+   &lt;xref linkend="libpq-PQdescribePrepared"/&gt;,
 </span>
-アプリケーションにとってこのような制限が望ましくない場合は、代わりに<a class="xref" href="libpq-exec.html#LIBPQ-PQEXEC"><code class="function">PQexec</code></a>を構成する関数<a class="xref" href="libpq-async.html#LIBPQ-PQSENDQUERY"><code class="function">PQsendQuery</code></a>と<a class="xref" href="libpq-async.html#LIBPQ-PQGETRESULT"><code class="function">PQgetResult</code></a>を使用してください。
+《マッチ度[74.937028]》アプリケーションにとってこのような制限が望ましくない場合は、代わりに<a class="xref" href="libpq-exec.html#LIBPQ-PQEXEC"><code class="function">PQexec</code></a>を構成する関数<a class="xref" href="libpq-async.html#LIBPQ-PQSENDQUERY"><code class="function">PQsendQuery</code></a>と<a class="xref" href="libpq-async.html#LIBPQ-PQGETRESULT"><code class="function">PQgetResult</code></a>を使用してください。
 また、<a class="xref" href="libpq-async.html#LIBPQ-PQSENDQUERYPARAMS"><code class="function">PQsendQueryParams</code></a>と<a class="xref" href="libpq-async.html#LIBPQ-PQSENDPREPARE"><code class="function">PQsendPrepare</code></a>、<a class="xref" href="libpq-async.html#LIBPQ-PQSENDQUERYPREPARED"><code class="function">PQsendQueryPrepared</code></a>、<a class="xref" href="libpq-async.html#LIBPQ-PQSENDDESCRIBEPREPARED"><code class="function">PQsendDescribePrepared</code></a>、<a class="xref" href="libpq-async.html#LIBPQ-PQSENDDESCRIBEPORTAL"><code class="function">PQsendDescribePortal</code></a>もあり、<a class="xref" href="libpq-async.html#LIBPQ-PQGETRESULT"><code class="function">PQgetResult</code></a>を使用して、それぞれ<a class="xref" href="libpq-exec.html#LIBPQ-PQEXECPARAMS"><code class="function">PQexecParams</code></a>と<a class="xref" href="libpq-exec.html#LIBPQ-PQPREPARE"><code class="function">PQprepare</code></a>、<a class="xref" href="libpq-exec.html#LIBPQ-PQEXECPREPARED"><code class="function">PQexecPrepared</code></a>、<a class="xref" href="libpq-exec.html#LIBPQ-PQDESCRIBEPREPARED"><code class="function">PQdescribePrepared</code></a>、<a class="xref" href="libpq-exec.html#LIBPQ-PQDESCRIBEPORTAL"><code class="function">PQdescribePortal</code></a>と同等の機能を行うことができます。
+《機械翻訳》これらの制限を嫌うアプリケーションは、<a class="xref" href="libpq-exec.html#LIBPQ-PQEXEC"><code class="function">PQexec</code></a>が基礎としている関数<a class="xref" href="libpq-async.html#LIBPQ-PQSENDQUERY"><code class="function">PQsendQuery</code></a>と<a class="xref" href="libpq-async.html#LIBPQ-PQGETRESULT"><code class="function">PQgetResult</code></a>を使用することができます。
+<a class="xref" href="libpq-async.html#LIBPQ-PQSENDQUERYPARAMS"><code class="function">PQsendQueryParams</code></a>、<a class="xref" href="libpq-async.html#LIBPQ-PQSENDPREPARE"><code class="function">PQsendPrepare</code></a>、<a class="xref" href="libpq-async.html#LIBPQ-PQSENDQUERYPREPARED"><code class="function">PQsendQueryPrepared</code></a>、<a class="xref" href="libpq-async.html#LIBPQ-PQSENDDESCRIBEPREPARED"><code class="function">PQsendDescribePrepared</code></a>、<a class="xref" href="libpq-async.html#LIBPQ-PQSENDDESCRIBEPORTAL"><code class="function">PQsendDescribePortal</code></a>、<a class="xref" href="libpq-async.html#LIBPQ-PQSENDCLOSEPREPARED"><code class="function">PQsendClosePrepared</code></a>、<a class="xref" href="libpq-async.html#LIBPQ-PQSENDCLOSEPORTAL"><code class="function">PQsendClosePortal</code></a>があります。
+これらは<a class="xref" href="libpq-async.html#LIBPQ-PQGETRESULT"><code class="function">PQgetResult</code></a>とともに使用して、<a class="xref" href="libpq-exec.html#LIBPQ-PQEXECPARAMS"><code class="function">PQexecParams</code></a>、<a class="xref" href="libpq-exec.html#LIBPQ-PQPREPARE"><code class="function">PQprepare</code></a>、<a class="xref" href="libpq-exec.html#LIBPQ-PQEXECPREPARED"><code class="function">PQexecPrepared</code></a>、<a class="xref" href="libpq-exec.html#LIBPQ-PQDESCRIBEPREPARED"><code class="function">PQdescribePrepared</code></a>の機能を複製できます。
+   <a class="xref" href="libpq-exec.html#LIBPQ-PQDESCRIBEPORTAL"><code class="function">PQdescribePortal</code></a>
+   <a class="xref" href="libpq-exec.html#LIBPQ-PQCLOSEPREPARED"><code class="function">PQclosePrepared</code></a>, and
+   <a class="xref" href="libpq-exec.html#LIBPQ-PQCLOSEPORTAL"><code class="function">PQclosePortal</code></a>
+   respectively.
 
-   </p><div class="variablelist"><dl class="variablelist"><dt id="LIBPQ-PQSENDQUERY"><span class="term"><code class="function">PQsendQuery</code><a id="id-1.7.3.11.5.15.1.1.2" class="indexterm"></a></span> <a href="#LIBPQ-PQSENDQUERY" class="id_link">#</a></dt><dd><p>
+   </p><div class="variablelist"><dl class="variablelist"><dt id="LIBPQ-PQSENDQUERY"><span class="term"><code class="function">PQsendQuery</code><a id="id-1.7.3.11.5.33.1.1.2" class="indexterm"></a></span> <a href="#LIBPQ-PQSENDQUERY" class="id_link">#</a></dt><dd><p>
 <span class="original">
        Submits a command to the server without waiting for the result(s).
        1 is returned if the command was successfully dispatched and 0 if
@@ -82,7 +89,10 @@
 </span>
 結果を待つことなく、サーバにコマンドを発行します。
 コマンドの登録に成功した場合1が、失敗した場合0が返されます。
-(後者の場合、<a class="xref" href="libpq-status.html#LIBPQ-PQERRORMESSAGE"><code class="function">PQerrorMessage</code></a>を使用して失敗についてのより多くの情報を取り出してください。)
+(後者の場合、<a class="xref" href="libpq-status.html#LIBPQ-PQERRORMESSAGE">
+      <code class="function">PQerrorMessage</code>
+      
+     </a>を使用して失敗についてのより多くの情報を取り出してください。)
 </p><pre class="synopsis">
 int PQsendQuery(PGconn *conn, const char *command);
 </pre><p>
@@ -101,7 +111,7 @@ int PQsendQuery(PGconn *conn, const char *command);
        In pipeline mode, this function is disallowed.
 </span>
 パイプラインモードでは、この関数は使用できません。
-      </p></dd><dt id="LIBPQ-PQSENDQUERYPARAMS"><span class="term"><code class="function">PQsendQueryParams</code><a id="id-1.7.3.11.5.15.2.1.2" class="indexterm"></a></span> <a href="#LIBPQ-PQSENDQUERYPARAMS" class="id_link">#</a></dt><dd><p>
+      </p></dd><dt id="LIBPQ-PQSENDQUERYPARAMS"><span class="term"><code class="function">PQsendQueryParams</code><a id="id-1.7.3.11.5.33.2.1.2" class="indexterm"></a></span> <a href="#LIBPQ-PQSENDQUERYPARAMS" class="id_link">#</a></dt><dd><p>
 <span class="original">
        Submits a command and separate parameters to the server without
        waiting for the result(s).
@@ -129,7 +139,7 @@ int PQsendQueryParams(PGconn *conn,
 これは、問い合わせのパラメータが問い合わせ文字列と分けて指定できる点を除き、<a class="xref" href="libpq-async.html#LIBPQ-PQSENDQUERY"><code class="function">PQsendQuery</code></a>と同じです。
 この関数のパラメータは<a class="xref" href="libpq-exec.html#LIBPQ-PQEXECPARAMS"><code class="function">PQexecParams</code></a>と同様に扱われます。
 <a class="xref" href="libpq-exec.html#LIBPQ-PQEXECPARAMS"><code class="function">PQexecParams</code></a>同様、問い合わせ文字列には1つのコマンドしか指定できません。
-      </p></dd><dt id="LIBPQ-PQSENDPREPARE"><span class="term"><code class="function">PQsendPrepare</code><a id="id-1.7.3.11.5.15.3.1.2" class="indexterm"></a></span> <a href="#LIBPQ-PQSENDPREPARE" class="id_link">#</a></dt><dd><p>
+      </p></dd><dt id="LIBPQ-PQSENDPREPARE"><span class="term"><code class="function">PQsendPrepare</code><a id="id-1.7.3.11.5.33.3.1.2" class="indexterm"></a></span> <a href="#LIBPQ-PQSENDPREPARE" class="id_link">#</a></dt><dd><p>
 <span class="original">
        Sends a request to create a prepared statement with the given
        parameters, without waiting for completion.
@@ -156,7 +166,7 @@ int PQsendPrepare(PGconn *conn,
 要求の登録に成功した場合1が、失敗した場合0が返されます。
 呼び出しの成功の後、サーバがプリペアド文の生成に成功したかを確認するためには<a class="xref" href="libpq-async.html#LIBPQ-PQGETRESULT"><code class="function">PQgetResult</code></a>を呼び出してください。
 この関数のパラメータは<a class="xref" href="libpq-exec.html#LIBPQ-PQPREPARE"><code class="function">PQprepare</code></a>と同様に扱われます。
-      </p></dd><dt id="LIBPQ-PQSENDQUERYPREPARED"><span class="term"><code class="function">PQsendQueryPrepared</code><a id="id-1.7.3.11.5.15.4.1.2" class="indexterm"></a></span> <a href="#LIBPQ-PQSENDQUERYPREPARED" class="id_link">#</a></dt><dd><p>
+      </p></dd><dt id="LIBPQ-PQSENDQUERYPREPARED"><span class="term"><code class="function">PQsendQueryPrepared</code><a id="id-1.7.3.11.5.33.4.1.2" class="indexterm"></a></span> <a href="#LIBPQ-PQSENDQUERYPREPARED" class="id_link">#</a></dt><dd><p>
 <span class="original">
        Sends a request to execute a prepared statement with given
        parameters, without waiting for the result(s).
@@ -181,7 +191,7 @@ int PQsendQueryPrepared(PGconn *conn,
 </span>
 これは<a class="xref" href="libpq-async.html#LIBPQ-PQSENDQUERYPARAMS"><code class="function">PQsendQueryParams</code></a>と似ていますが、実行されるコマンドは問い合わせ文字列ではなく、事前に準備された文の名前で指定されます。
 この関数のパラメータは<a class="xref" href="libpq-exec.html#LIBPQ-PQEXECPREPARED"><code class="function">PQexecPrepared</code></a>と同様に扱われます。
-      </p></dd><dt id="LIBPQ-PQSENDDESCRIBEPREPARED"><span class="term"><code class="function">PQsendDescribePrepared</code><a id="id-1.7.3.11.5.15.5.1.2" class="indexterm"></a></span> <a href="#LIBPQ-PQSENDDESCRIBEPREPARED" class="id_link">#</a></dt><dd><p>
+      </p></dd><dt id="LIBPQ-PQSENDDESCRIBEPREPARED"><span class="term"><code class="function">PQsendDescribePrepared</code><a id="id-1.7.3.11.5.33.5.1.2" class="indexterm"></a></span> <a href="#LIBPQ-PQSENDDESCRIBEPREPARED" class="id_link">#</a></dt><dd><p>
 <span class="original">
        Submits a request to obtain information about the specified
        prepared statement, without waiting for completion.
@@ -203,7 +213,7 @@ int PQsendDescribePrepared(PGconn *conn, const char *stmtName);
 要求の登録に成功した場合1が、失敗した場合0が返されます。
 呼び出しに成功した後、<a class="xref" href="libpq-async.html#LIBPQ-PQGETRESULT"><code class="function">PQgetResult</code></a>を呼び出して結果を入手してください。
 この関数のパラメータは<a class="xref" href="libpq-exec.html#LIBPQ-PQDESCRIBEPREPARED"><code class="function">PQdescribePrepared</code></a>と同じように扱われます。
-      </p></dd><dt id="LIBPQ-PQSENDDESCRIBEPORTAL"><span class="term"><code class="function">PQsendDescribePortal</code><a id="id-1.7.3.11.5.15.6.1.2" class="indexterm"></a></span> <a href="#LIBPQ-PQSENDDESCRIBEPORTAL" class="id_link">#</a></dt><dd><p>
+      </p></dd><dt id="LIBPQ-PQSENDDESCRIBEPORTAL"><span class="term"><code class="function">PQsendDescribePortal</code><a id="id-1.7.3.11.5.33.6.1.2" class="indexterm"></a></span> <a href="#LIBPQ-PQSENDDESCRIBEPORTAL" class="id_link">#</a></dt><dd><p>
 <span class="original">
        Submits a request to obtain information about the specified
        portal, without waiting for completion.
@@ -225,7 +235,59 @@ int PQsendDescribePortal(PGconn *conn, const char *portalName);
 要求の登録に成功した場合1が、失敗した場合0が返されます。
 呼び出しに成功した後、<a class="xref" href="libpq-async.html#LIBPQ-PQGETRESULT"><code class="function">PQgetResult</code></a>を呼び出して結果を入手してください。
 この関数のパラメータは<a class="xref" href="libpq-exec.html#LIBPQ-PQDESCRIBEPORTAL"><code class="function">PQdescribePortal</code></a>と同じように扱われます。
-      </p></dd><dt id="LIBPQ-PQGETRESULT"><span class="term"><code class="function">PQgetResult</code><a id="id-1.7.3.11.5.15.7.1.2" class="indexterm"></a></span> <a href="#LIBPQ-PQGETRESULT" class="id_link">#</a></dt><dd><p>
+      </p></dd><dt id="LIBPQ-PQSENDCLOSEPREPARED"><span class="term"><code class="function">PQsendClosePrepared</code><a id="id-1.7.3.11.5.33.7.1.2" class="indexterm"></a></span> <a href="#LIBPQ-PQSENDCLOSEPREPARED" class="id_link">#</a></dt><dd><p>
+<span class="original">
+       Submits a request to close the specified prepared statement, without
+       waiting for completion.
+</span>
+《マッチ度[59.782609]》指定したプリペアド文に関する情報入手要求を送ります。
+入手完了まで待機しません。
+《機械翻訳》完了を待たずに、指定した準備文を閉じる要求を送信します。
+</p><pre class="synopsis">
+int PQsendClosePrepared(PGconn *conn, const char *stmtName);
+</pre><p>
+
+<span class="original">
+       This is an asynchronous version of &lt;xref linkend="libpq-PQclosePrepared"/&gt;:
+       it returns 1 if it was able to dispatch the request, and 0 if not.
+       After a successful call, call &lt;xref linkend="libpq-PQgetResult"/&gt; to
+       obtain the results.  The function's parameters are handled
+       identically to &lt;xref linkend="libpq-PQclosePrepared"/&gt;.
+</span>
+《マッチ度[85.230769]》これは<a class="xref" href="libpq-exec.html#LIBPQ-PQDESCRIBEPREPARED"><code class="function">PQdescribePrepared</code></a>の非同期版です。
+要求の登録に成功した場合1が、失敗した場合0が返されます。
+呼び出しに成功した後、<a class="xref" href="libpq-async.html#LIBPQ-PQGETRESULT"><code class="function">PQgetResult</code></a>を呼び出して結果を入手してください。
+この関数のパラメータは<a class="xref" href="libpq-exec.html#LIBPQ-PQDESCRIBEPREPARED"><code class="function">PQdescribePrepared</code></a>と同じように扱われます。
+《機械翻訳》これは<a class="xref" href="libpq-exec.html#LIBPQ-PQCLOSEPREPARED"><code class="function">PQclosePrepared</code></a>の非同期版です。
+要求を送信できた場合は1を、そうでない場合は0を返します。
+成功した場合は<a class="xref" href="libpq-async.html#LIBPQ-PQGETRESULT"><code class="function">PQgetResult</code></a>を呼び出して結果を取得します。
+この関数のパラメータは<a class="xref" href="libpq-exec.html#LIBPQ-PQCLOSEPREPARED"><code class="function">PQclosePrepared</code></a>と同じように扱われます。
+      </p></dd><dt id="LIBPQ-PQSENDCLOSEPORTAL"><span class="term"><code class="function">PQsendClosePortal</code><a id="id-1.7.3.11.5.33.8.1.2" class="indexterm"></a></span> <a href="#LIBPQ-PQSENDCLOSEPORTAL" class="id_link">#</a></dt><dd><p>
+<span class="original">
+       Submits a request to close specified portal, without waiting for
+       completion.
+</span>
+《機械翻訳》完了を待たずに、指定されたポータルを閉じる要求を送信します。
+</p><pre class="synopsis">
+int PQsendClosePortal(PGconn *conn, const char *portalName);
+</pre><p>
+
+<span class="original">
+       This is an asynchronous version of &lt;xref linkend="libpq-PQclosePortal"/&gt;:
+       it returns 1 if it was able to dispatch the request, and 0 if not.
+       After a successful call, call &lt;xref linkend="libpq-PQgetResult"/&gt; to
+       obtain the results.  The function's parameters are handled
+       identically to &lt;xref linkend="libpq-PQclosePortal"/&gt;.
+</span>
+《マッチ度[85.046729]》これは<a class="xref" href="libpq-exec.html#LIBPQ-PQDESCRIBEPORTAL"><code class="function">PQdescribePortal</code></a>の非同期版です。
+要求の登録に成功した場合1が、失敗した場合0が返されます。
+呼び出しに成功した後、<a class="xref" href="libpq-async.html#LIBPQ-PQGETRESULT"><code class="function">PQgetResult</code></a>を呼び出して結果を入手してください。
+この関数のパラメータは<a class="xref" href="libpq-exec.html#LIBPQ-PQDESCRIBEPORTAL"><code class="function">PQdescribePortal</code></a>と同じように扱われます。
+《機械翻訳》これは<a class="xref" href="libpq-exec.html#LIBPQ-PQCLOSEPORTAL"><code class="function">PQclosePortal</code></a>の非同期版です。
+要求を送信できた場合は1を、そうでない場合は0を返します。
+呼び出しが成功した後、結果を得るために<a class="xref" href="libpq-async.html#LIBPQ-PQGETRESULT"><code class="function">PQgetResult</code></a>を呼び出します。
+この関数のパラメータは<a class="xref" href="libpq-exec.html#LIBPQ-PQCLOSEPORTAL"><code class="function">PQclosePortal</code></a>と同じように扱われます。
+      </p></dd><dt id="LIBPQ-PQGETRESULT"><span class="term"><code class="function">PQgetResult</code><a id="id-1.7.3.11.5.33.9.1.2" class="indexterm"></a></span> <a href="#LIBPQ-PQGETRESULT" class="id_link">#</a></dt><dd><p>
 <span class="original">
        Waits for the next result from a prior
        &lt;xref linkend="libpq-PQsendQuery"/&gt;,
@@ -233,14 +295,19 @@ int PQsendDescribePortal(PGconn *conn, const char *portalName);
        &lt;xref linkend="libpq-PQsendPrepare"/&gt;,
        &lt;xref linkend="libpq-PQsendQueryPrepared"/&gt;,
        &lt;xref linkend="libpq-PQsendDescribePrepared"/&gt;,
-       &lt;xref linkend="libpq-PQsendDescribePortal"/&gt;, or
+       &lt;xref linkend="libpq-PQsendDescribePortal"/&gt;,
+       &lt;xref linkend="libpq-PQsendClosePrepared"/&gt;,
+       &lt;xref linkend="libpq-PQsendClosePortal"/&gt;,
+       &lt;xref linkend="libpq-PQsendPipelineSync"/&gt;, or
        &lt;xref linkend="libpq-PQpipelineSync"/&gt;
        call, and returns it.
        A null pointer is returned when the command is complete and there
        will be no more results.
 </span>
-以前に呼び出した<a class="xref" href="libpq-async.html#LIBPQ-PQSENDQUERY"><code class="function">PQsendQuery</code></a>、<a class="xref" href="libpq-async.html#LIBPQ-PQSENDQUERYPARAMS"><code class="function">PQsendQueryParams</code></a>、<a class="xref" href="libpq-async.html#LIBPQ-PQSENDPREPARE"><code class="function">PQsendPrepare</code></a>、<a class="xref" href="libpq-async.html#LIBPQ-PQSENDQUERYPREPARED"><code class="function">PQsendQueryPrepared</code></a>、<a class="xref" href="libpq-async.html#LIBPQ-PQSENDDESCRIBEPREPARED"><code class="function">PQsendDescribePrepared</code></a>、<a class="xref" href="libpq-async.html#LIBPQ-PQSENDDESCRIBEPORTAL"><code class="function">PQsendDescribePortal</code></a>、<a class="xref" href="libpq-pipeline-mode.html#LIBPQ-PQPIPELINESYNC"><code class="function">PQpipelineSync</code></a>から次の結果を待ち、その結果を返します。
+《マッチ度[67.238422]》以前に呼び出した<a class="xref" href="libpq-async.html#LIBPQ-PQSENDQUERY"><code class="function">PQsendQuery</code></a>、<a class="xref" href="libpq-async.html#LIBPQ-PQSENDQUERYPARAMS"><code class="function">PQsendQueryParams</code></a>、<a class="xref" href="libpq-async.html#LIBPQ-PQSENDPREPARE"><code class="function">PQsendPrepare</code></a>、<a class="xref" href="libpq-async.html#LIBPQ-PQSENDQUERYPREPARED"><code class="function">PQsendQueryPrepared</code></a>、<a class="xref" href="libpq-async.html#LIBPQ-PQSENDDESCRIBEPREPARED"><code class="function">PQsendDescribePrepared</code></a>、<a class="xref" href="libpq-async.html#LIBPQ-PQSENDDESCRIBEPORTAL"><code class="function">PQsendDescribePortal</code></a>、<a class="xref" href="libpq-pipeline-mode.html#LIBPQ-PQPIPELINESYNC"><code class="function">PQpipelineSync</code></a>から次の結果を待ち、その結果を返します。
 コマンドが完了し、これ以上結果がない場合は、NULLポインタが返されます。
+《機械翻訳》以前の<a class="xref" href="libpq-async.html#LIBPQ-PQSENDQUERY"><code class="function">PQsendQuery</code></a>、<a class="xref" href="libpq-async.html#LIBPQ-PQSENDQUERYPARAMS"><code class="function">PQsendQueryParams</code></a>、<a class="xref" href="libpq-async.html#LIBPQ-PQSENDPREPARE"><code class="function">PQsendPrepare</code></a>、<a class="xref" href="libpq-async.html#LIBPQ-PQSENDQUERYPREPARED"><code class="function">PQsendQueryPrepared</code></a>、<a class="xref" href="libpq-async.html#LIBPQ-PQSENDDESCRIBEPREPARED"><code class="function">PQsendDescribePrepared</code></a>、<a class="xref" href="libpq-async.html#LIBPQ-PQSENDDESCRIBEPORTAL"><code class="function">PQsendDescribePortal</code></a>、<a class="xref" href="libpq-async.html#LIBPQ-PQSENDCLOSEPREPARED"><code class="function">PQsendClosePrepared</code></a>、<a class="xref" href="libpq-async.html#LIBPQ-PQSENDCLOSEPORTAL"><code class="function">PQsendClosePortal</code></a>、<a class="xref" href="libpq-pipeline-mode.html#LIBPQ-PQSENDPIPELINESYNC"><code class="function">PQsendPipelineSync</code></a>、または<a class="xref" href="libpq-pipeline-mode.html#LIBPQ-PQPIPELINESYNC"><code class="function">PQpipelineSync</code></a>からの結果を待ち、それを返します。
+コマンドが完了し、それ以上結果がない場合は、NULLポインタが返されます。
 </p><pre class="synopsis">
 PGresult *PQgetResult(PGconn *conn);
 </pre><p>
@@ -310,11 +377,14 @@ PGresult *PQgetResult(PGconn *conn);
 <span class="original">
    Another frequently-desired feature that can be obtained with
    &lt;xref linkend="libpq-PQsendQuery"/&gt; and &lt;xref linkend="libpq-PQgetResult"/&gt;
-   is retrieving large query results a row at a time.  This is discussed
+   is retrieving large query results a limited number of rows at a time.
+   This is discussed
    in &lt;xref linkend="libpq-single-row-mode"/&gt;.
 </span>
-<a class="xref" href="libpq-async.html#LIBPQ-PQSENDQUERY"><code class="function">PQsendQuery</code></a>および<a class="xref" href="libpq-async.html#LIBPQ-PQGETRESULT"><code class="function">PQgetResult</code></a>で得られる、その他のよく望まれる機能は多くの問い合わせ結果を一度に1行受け取ることです。
-これについては<a class="xref" href="libpq-single-row-mode.html" title="34.6. １行１行問い合わせ結果を受け取る">34.6</a>で説明します。
+《マッチ度[88.059701]》<a class="xref" href="libpq-async.html#LIBPQ-PQSENDQUERY"><code class="function">PQsendQuery</code></a>および<a class="xref" href="libpq-async.html#LIBPQ-PQGETRESULT"><code class="function">PQgetResult</code></a>で得られる、その他のよく望まれる機能は多くの問い合わせ結果を一度に1行受け取ることです。
+これについては<a class="xref" href="libpq-single-row-mode.html" title="32.6. Retrieving Query Results in Chunks">32.6</a>で説明します。
+《機械翻訳》<a class="xref" href="libpq-async.html#LIBPQ-PQSENDQUERY"><code class="function">PQsendQuery</code></a>と<a class="xref" href="libpq-async.html#LIBPQ-PQGETRESULT"><code class="function">PQgetResult</code></a>で取得できるもう一つの望ましい機能は、一度に限られた数の行を取り出すことです。
+これについては<a class="xref" href="libpq-single-row-mode.html" title="32.6. Retrieving Query Results in Chunks">32.6</a>で説明します。
   </p><p>
 <span class="original">
    By itself, calling &lt;xref linkend="libpq-PQgetResult"/&gt;
@@ -346,7 +416,10 @@ int PQconsumeInput(PGconn *conn);
        &lt;function&gt;PQnotifies&lt;/function&gt; to see if their state has changed.
 </span>
 <a class="xref" href="libpq-async.html#LIBPQ-PQCONSUMEINPUT"><code class="function">PQconsumeInput</code>
-     </a>は通常、<span class="quote">「<span class="quote">エラーなし</span>」</span>を示す1を返しますが、何らかの障害があると0を返します（この場合は、<a class="xref" href="libpq-status.html#LIBPQ-PQERRORMESSAGE"><code class="function">PQerrorMessage</code></a>を参考にしてください）。
+     </a>は通常、<span class="quote">「<span class="quote">エラーなし</span>」</span>を示す1を返しますが、何らかの障害があると0を返します（この場合は、<a class="xref" href="libpq-status.html#LIBPQ-PQERRORMESSAGE">
+      <code class="function">PQerrorMessage</code>
+      
+     </a>を参考にしてください）。
 この結果は、何らかの入力データが実際に収集されたかどうかを示しているのではないことに注意してください。
 <a class="xref" href="libpq-async.html#LIBPQ-PQCONSUMEINPUT"><code class="function">PQconsumeInput</code>
      </a>の呼び出し後、アプリケーションは<a class="xref" href="libpq-async.html#LIBPQ-PQISBUSY"><code class="function">PQisBusy</code></a>、または必要があれば<code class="function">PQnotifies</code>を呼び出して状態に変化がないか調べることができます。
@@ -411,21 +484,21 @@ int PQisBusy(PGconn *conn);
 メインループが入力準備完了を検出すると、その入力を読み込むために<a class="xref" href="libpq-async.html#LIBPQ-PQCONSUMEINPUT"><code class="function">PQconsumeInput</code>
      </a>を呼び出さなければなりません。
 そして、<a class="xref" href="libpq-async.html#LIBPQ-PQISBUSY"><code class="function">PQisBusy</code></a>を、更に<a class="xref" href="libpq-async.html#LIBPQ-PQISBUSY"><code class="function">PQisBusy</code></a>が偽(0)を返す場合に<a class="xref" href="libpq-async.html#LIBPQ-PQGETRESULT"><code class="function">PQgetResult</code></a>も呼び出すことができます。
-また、<code class="function">PQnotifies</code>を呼び出して、<code class="command">NOTIFY</code>メッセージ（<a class="xref" href="libpq-notify.html" title="34.9. 非同期通知">34.9</a>を参照）を検出することもできます。
+また、<code class="function">PQnotifies</code>を呼び出して、<code class="command">NOTIFY</code>メッセージ（<a class="xref" href="libpq-notify.html" title="32.9. 非同期通知">32.9</a>を参照）を検出することもできます。
   </p><p>
 <span class="original">
    A client that uses
    &lt;xref linkend="libpq-PQsendQuery"/&gt;/&lt;xref linkend="libpq-PQgetResult"/&gt;
    can also attempt to cancel a command that is still being processed
    by the server; see &lt;xref linkend="libpq-cancel"/&gt;.  But regardless of
-   the return value of &lt;xref linkend="libpq-PQcancel"/&gt;, the application
+   the return value of &lt;xref linkend="libpq-PQcancelBlocking"/&gt;, the application
    must continue with the normal result-reading sequence using
    &lt;xref linkend="libpq-PQgetResult"/&gt;.  A successful cancellation will
    simply cause the command to terminate sooner than it would have
    otherwise.
 </span>
-また、<a class="xref" href="libpq-async.html#LIBPQ-PQSENDQUERY"><code class="function">PQsendQuery</code></a>/<a class="xref" href="libpq-async.html#LIBPQ-PQGETRESULT"><code class="function">PQgetResult</code></a>を使用するクライアントは、サーバで処理中のコマンドに対してキャンセルを試行することができます。
-<a class="xref" href="libpq-cancel.html" title="34.7. 処理中の問い合わせのキャンセル">34.7</a>を参照してください。
+《マッチ度[92.702170]》また、<a class="xref" href="libpq-async.html#LIBPQ-PQSENDQUERY"><code class="function">PQsendQuery</code></a>/<a class="xref" href="libpq-async.html#LIBPQ-PQGETRESULT"><code class="function">PQgetResult</code></a>を使用するクライアントは、サーバで処理中のコマンドに対してキャンセルを試行することができます。
+<a class="xref" href="libpq-cancel.html" title="32.7. 処理中の問い合わせのキャンセル">32.7</a>を参照してください。
 しかし、<a class="xref" href="libpq-cancel.html#LIBPQ-PQCANCEL"><code class="function">PQcancel</code></a>の戻り値と関係なく、アプリケーションは<a class="xref" href="libpq-async.html#LIBPQ-PQGETRESULT"><code class="function">PQgetResult</code></a>を使用した通常の結果読み取り手順を続けなければなりません。
 キャンセル手続きの成功は単に、そのコマンドを通常よりも早めに終わらせるだけです。
   </p><p>
@@ -535,4 +608,4 @@ int PQflush(PGconn *conn);
 (例えばNOTICEメッセージのように、こちらがそのデータを読むまで、サーバがデータを送ろうとするのを妨げ、こちらのデータを読もうとしないことがありますので、読み込み準備ができたことを確認して<a class="xref" href="libpq-async.html#LIBPQ-PQCONSUMEINPUT"><code class="function">PQconsumeInput</code>
      </a>で入力をすべて抜き取ることが必要です。)
 <a class="xref" href="libpq-async.html#LIBPQ-PQFLUSH"><code class="function">PQflush</code></a>が0を返した後は、ソケットの読み込み準備が整うまで待ち、上述のように応答を読み取ってください。
-  </p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="libpq-exec.html" title="34.3. コマンド実行関数">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="libpq.html" title="第34章 libpq — C ライブラリ">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="libpq-pipeline-mode.html" title="34.5. パイプラインモード">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">34.3. コマンド実行関数 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 16.4文書">ホーム</a></td><td width="40%" align="right" valign="top"> 34.5. パイプラインモード</td></tr></table></div></body></html>
+  </p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="libpq-exec.html" title="32.3. コマンド実行関数">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="libpq.html" title="第32章 libpq — C ライブラリ">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="libpq-pipeline-mode.html" title="32.5. パイプラインモード">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">32.3. コマンド実行関数 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 17.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 32.5. パイプラインモード</td></tr></table></div></body></html>

@@ -1,40 +1,521 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>34.7. 処理中の問い合わせのキャンセル</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="libpq-single-row-mode.html" title="34.6. １行１行問い合わせ結果を受け取る" /><link rel="next" href="libpq-fastpath.html" title="34.8. 近道インタフェース" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 16.4文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="libpq.html" title="第34章 libpq — C ライブラリ">第34章 <span class="application">libpq</span> — C ライブラリ</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 16.4 : libpq-cancel.html">誤訳等の報告
-                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="libpq-single-row-mode.html" title="34.6. １行１行問い合わせ結果を受け取る">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="libpq.html" title="第34章 libpq — C ライブラリ">上へ</a></td><td width="60%" align="center">34.7. 処理中の問い合わせのキャンセル</td><td width="20%" align="right"> <a accesskey="n" href="libpq-fastpath.html" title="34.8. 近道インタフェース">次へ</a></td></tr></table><hr /></div><div class="sect1" id="LIBPQ-CANCEL"><div class="titlepage"><div><div><h2 class="title" style="clear: both">34.7. 処理中の問い合わせのキャンセル <a href="#LIBPQ-CANCEL" class="id_link">#</a></h2></div></div></div><span class="original">
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>32.7. 処理中の問い合わせのキャンセル</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="libpq-single-row-mode.html" title="32.6. Retrieving Query Results in Chunks" /><link rel="next" href="libpq-fastpath.html" title="32.8. 近道インタフェース" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 17.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="libpq.html" title="第32章 libpq — C ライブラリ">第32章 <span class="application">libpq</span> — C ライブラリ</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 17.0 : libpq-cancel.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="libpq-single-row-mode.html" title="32.6. Retrieving Query Results in Chunks">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="libpq.html" title="第32章 libpq — C ライブラリ">上へ</a></td><td width="60%" align="center">32.7. 処理中の問い合わせのキャンセル</td><td width="20%" align="right"> <a accesskey="n" href="libpq-fastpath.html" title="32.8. 近道インタフェース">次へ</a></td></tr></table><hr /></div><div class="sect1" id="LIBPQ-CANCEL"><div class="titlepage"><div><div><h2 class="title" style="clear: both">32.7. 処理中の問い合わせのキャンセル <a href="#LIBPQ-CANCEL" class="id_link">#</a></h2></div></div></div><span class="original">
   &lt;title&gt;Canceling Queries in Progress&lt;/title&gt;
-</span><a id="id-1.7.3.14.2" class="indexterm"></a><a id="id-1.7.3.14.3" class="indexterm"></a><p>
+</span><a id="id-1.7.3.14.2" class="indexterm"></a><a id="id-1.7.3.14.3" class="indexterm"></a><div class="sect2" id="LIBPQ-CANCEL-FUNCTIONS"><div class="titlepage"><div><div><h3 class="title">32.7.1. Functions for Sending Cancel Requests <a href="#LIBPQ-CANCEL-FUNCTIONS" class="id_link">#</a></h3></div></div></div><div class="variablelist"><dl class="variablelist"><dt id="LIBPQ-PQCANCELCREATE"><span class="term"><code class="function">PQcancelCreate</code><a id="id-1.7.3.14.4.2.1.1.2" class="indexterm"></a></span> <a href="#LIBPQ-PQCANCELCREATE" class="id_link">#</a></dt><dd><p>
 <span class="original">
-   A client application can request cancellation of a command that is
-   still being processed by the server, using the functions described in
-   this section.
+       Prepares a connection over which a cancel request can be sent.
 </span>
-本節で説明する関数を使用して、クライアントアプリケーションはサーバで処理中のコマンドをキャンセルする要求を行うことができます。
+《機械翻訳》キャンセル要求を送信できる接続を準備します。
+</p><pre class="synopsis">
+PGcancelConn *PQcancelCreate(PGconn *conn);
+</pre><p>
+      </p><p>
+<span class="original">
+       &lt;xref linkend="libpq-PQcancelCreate"/&gt; creates a
+       &lt;structname&gt;PGcancelConn&lt;/structname&gt;&lt;indexterm&gt;&lt;primary&gt;PGcancelConn&lt;/primary&gt;&lt;/indexterm&gt;
+       object, but it won't instantly start sending a cancel request over this
+       connection. A cancel request can be sent over this connection in a
+       blocking manner using &lt;xref linkend="libpq-PQcancelBlocking"/&gt; and in a
+       non-blocking manner using &lt;xref linkend="libpq-PQcancelStart"/&gt;.
+       The return value can be passed to &lt;xref linkend="libpq-PQcancelStatus"/&gt;
+       to check if the &lt;structname&gt;PGcancelConn&lt;/structname&gt; object was
+       created successfully. The &lt;structname&gt;PGcancelConn&lt;/structname&gt; object
+       is an opaque structure that is not meant to be accessed directly by the
+       application. This &lt;structname&gt;PGcancelConn&lt;/structname&gt; object can be
+       used to cancel the query that's running on the original connection in a
+       thread-safe way.
+</span>
+《機械翻訳》<a class="xref" href="libpq-cancel.html#LIBPQ-PQCANCELCREATE"><code class="function">PQcancelCreate</code></a>は<code class="structname">PGcancelConn</code><a id="id-1.7.3.14.4.2.1.2.2.3" class="indexterm"></a>オブジェクトを作成しますが、この接続を介して直ちにキャンセルリクエストを送信し始めることはありません。
+キャンセル要求は、<a class="xref" href="libpq-cancel.html#LIBPQ-PQCANCELBLOCKING"><code class="function">PQcancelBlocking</code></a>を使用してブロッキング方式で、<a class="xref" href="libpq-cancel.html#LIBPQ-PQCANCELSTART"><code class="function">PQcancelStart</code></a>を使用して非ブロッキング方式でこの接続を介して送信できます。
+返り値は<a class="xref" href="libpq-cancel.html#LIBPQ-PQCANCELSTATUS"><code class="function">PQcancelStatus</code></a>に渡して、<code class="structname">PGcancelConn</code>オブジェクトが正常に作成されたかどうかを調べることができます。
+<code class="structname">PGcancelConn</code>オブジェクトは、アプリケーションが直接アクセスすることを意図していない不透明な構造体です。
+この<code class="structname">PGcancelConn</code>オブジェクトは、スレッドセーフな方法で元の接続で実行中の問い合わせをキャンセルするために使用できます。
+      </p><p>
+<span class="original">
+       Many connection parameters of the original client will be reused when
+       setting up the connection for the cancel request. Importantly, if the
+       original connection requires encryption of the connection and/or
+       verification of the target host (using &lt;literal&gt;sslmode&lt;/literal&gt; or
+       &lt;literal&gt;gssencmode&lt;/literal&gt;), then the connection for the cancel
+       request is made with these same requirements. Any connection options
+       that are only used during authentication or after authentication of the
+       client are ignored though, because cancellation requests do not require
+       authentication and the connection is closed right after the cancellation
+       request is submitted.
+</span>
+《機械翻訳》元のクライアントの多くの接続パラメータは、キャンセル要求の接続を設定するときに再利用されます。
+重要な点として、元の接続が接続の暗号化とターゲットホストの検証（<code class="literal">sslmode</code>または<code class="literal">gssencmode</code>を使用）を必要とする場合、キャンセル要求の接続はこれらの同じ要件を使用して作成されます。
+ただし、クライアントの認証中または認証後にのみ使用される接続オプションは無視されます。
+取り消し要求では認証は必要なく、接続は取り消し要求が送信された直後に閉じられるためです。
+      </p><p>
+<span class="original">
+       Note that when &lt;function&gt;PQcancelCreate&lt;/function&gt; returns a non-null
+       pointer, you must call &lt;xref linkend="libpq-PQcancelFinish"/&gt; when you
+       are finished with it, in order to dispose of the structure and any
+       associated memory blocks. This must be done even if the cancel request
+       failed or was abandoned.
+</span>
+《マッチ度[59.735974]》<code class="function">PQconnectStart</code>や<a class="xref" href="libpq-connect.html#LIBPQ-PQCONNECTSTARTPARAMS"><code class="function">PQconnectStartParams</code></a>が非NULLポインタを返した場合、処理を終了する際には、構造体や関連するメモリブロックを始末するために、<a class="xref" href="libpq-connect.html#LIBPQ-PQFINISH"><code class="function">PQfinish</code></a>を呼び出さなくてはならないことに注意してください。
+この処理は、接続試行が失敗した場合やその試行を中断する場合にも、必ず実行されなければいけません。
+《機械翻訳》<code class="function">PQcancelCreate</code>がNULL以外のポインタを返した場合、構造体と関連するメモリブロックを処理するために、<a class="xref" href="libpq-cancel.html#LIBPQ-PQCANCELFINISH"><code class="function">PQcancelFinish</code></a>を呼び出す必要があります。
+これは、キャンセル要求が失敗したか、あるいは放棄された場合でも必要です。
+      </p></dd><dt id="LIBPQ-PQCANCELBLOCKING"><span class="term"><code class="function">PQcancelBlocking</code><a id="id-1.7.3.14.4.2.2.1.2" class="indexterm"></a></span> <a href="#LIBPQ-PQCANCELBLOCKING" class="id_link">#</a></dt><dd><p>
+<span class="original">
+       Requests that the server abandons processing of the current command
+       in a blocking manner.
+</span>
+《マッチ度[67.415730]》サーバに現在のコマンドの廃棄処理を要求します。
+《機械翻訳》サーバがブロック方式で現在のコマンドの処理を中止するように要求します。
+</p><pre class="synopsis">
+int PQcancelBlocking(PGcancelConn *cancelConn);
+</pre><p>
+      </p><p>
+<span class="original">
+       The request is made over the given &lt;structname&gt;PGcancelConn&lt;/structname&gt;,
+       which needs to be created with &lt;xref linkend="libpq-PQcancelCreate"/&gt;.
+       The return value of &lt;xref linkend="libpq-PQcancelBlocking"/&gt;
+       is 1 if the cancel request was successfully
+       dispatched and 0 if not. If it was unsuccessful, the error message can be
+       retrieved using &lt;xref linkend="libpq-PQcancelErrorMessage"/&gt;.
+</span>
+《機械翻訳》この要求は、<a class="xref" href="libpq-cancel.html#LIBPQ-PQCANCELCREATE"><code class="function">PQcancelCreate</code></a>で作成する必要がある指定された<code class="structname">PGcancel</code>を介して行われます。
+取り消し要求が正常にディスパッチされた場合、<a class="xref" href="libpq-cancel.html#LIBPQ-PQCANCELBLOCKING"><code class="function">PQcancelBlocking</code></a>の値は1です。
+失敗した場合、エラーメッセージは<a class="xref" href="libpq-cancel.html#LIBPQ-PQCANCELERRORMESSAGE">
+      <code class="function">PQcancelErrorMessage</code>
+      
+     </a>を使用して取得できます。
+      </p><p>
+<span class="original">
+       Successful dispatch of the cancellation is no guarantee that the request
+       will have any effect, however. If the cancellation is effective, the
+       command being canceled will terminate early and return an error result.
+       If the cancellation fails (say, because the server was already done
+       processing the command), then there will be no visible result at all.
+</span>
+《マッチ度[78.917379]》しかし、要求の受け入れが成功したとしても、その要求の効果が出ることは全く保証していません。
+もしキャンセル操作が有効であれば、現在のコマンドは間もなく中断され、エラーが結果として返ります。
+キャンセル操作に失敗した場合（例えばバックエンドがすでにコマンド処理を終了していたため）、目に見える結果は何も出てこなくなります。
+《機械翻訳》キャンセルの送信が成功しても、要求が有効になるとは限りません。
+キャンセルが有効な場合、キャンセルされるコマンドは早期に終了し、エラー結果を返します。
+キャンセルが失敗した場合 （サーバがコマンドの処理をすでに完了していた場合など）、目に見える結果はまったくありません。
+      </p></dd><dt id="LIBPQ-PQCANCELSTART"><span class="term"><code class="function">PQcancelStart</code><a id="id-1.7.3.14.4.2.3.1.2" class="indexterm"></a><br /></span><span class="term"><code class="function">PQcancelPoll</code><a id="id-1.7.3.14.4.2.3.2.2" class="indexterm"></a></span> <a href="#LIBPQ-PQCANCELSTART" class="id_link">#</a></dt><dd><p>
+<span class="original">
+       Requests that the server abandons processing of the current command
+       in a non-blocking manner.
+</span>
+《マッチ度[64.516129]》サーバに現在のコマンドの廃棄処理を要求します。
+《機械翻訳》サーバが非ブロッキング方式で現在のコマンドの処理を中止するように要求します。
+</p><pre class="synopsis">
+int PQcancelStart(PGcancelConn *cancelConn);
 
-   </p><div class="variablelist"><dl class="variablelist"><dt id="LIBPQ-PQGETCANCEL"><span class="term"><code class="function">PQgetCancel</code><a id="id-1.7.3.14.4.1.1.1.2" class="indexterm"></a></span> <a href="#LIBPQ-PQGETCANCEL" class="id_link">#</a></dt><dd><p>
+PostgresPollingStatusType PQcancelPoll(PGcancelConn *cancelConn);
+</pre><p>
+      </p><p>
+<span class="original">
+       The request is made over the given &lt;structname&gt;PGcancelConn&lt;/structname&gt;,
+       which needs to be created with &lt;xref linkend="libpq-PQcancelCreate"/&gt;.
+       The return value of &lt;xref linkend="libpq-PQcancelStart"/&gt;
+       is 1 if the cancellation request could be started and 0 if not.
+       If it was unsuccessful, the error message can be
+       retrieved using &lt;xref linkend="libpq-PQcancelErrorMessage"/&gt;.
+</span>
+《機械翻訳》この要求は、<a class="xref" href="libpq-cancel.html#LIBPQ-PQCANCELCREATE"><code class="function">PQcancelCreate</code></a>を使用して作成する必要がある指定された<code class="structname">PGcancel</code>を介して行われます。
+取り消し要求が開始できた場合、<a class="xref" href="libpq-cancel.html#LIBPQ-PQCANCELSTART"><code class="function">PQcancelStart</code></a>の値は1です。
+開始できなかった場合、エラーメッセージは<a class="xref" href="libpq-cancel.html#LIBPQ-PQCANCELERRORMESSAGE">
+      <code class="function">PQcancelErrorMessage</code>
+      
+     </a>を使用して取得できます。
+      </p><p>
+<span class="original">
+       If &lt;function&gt;PQcancelStart&lt;/function&gt; succeeds, the next stage
+       is to poll &lt;application&gt;libpq&lt;/application&gt; so that it can proceed with
+       the cancel connection sequence.
+       Use &lt;xref linkend="libpq-PQcancelSocket"/&gt; to obtain the descriptor of the
+       socket underlying the database connection.
+       (Caution: do not assume that the socket remains the same
+       across &lt;function&gt;PQcancelPoll&lt;/function&gt; calls.)
+       Loop thus: If &lt;function&gt;PQcancelPoll(cancelConn)&lt;/function&gt; last returned
+       &lt;symbol&gt;PGRES_POLLING_READING&lt;/symbol&gt;, wait until the socket is ready to
+       read (as indicated by &lt;function&gt;select()&lt;/function&gt;,
+       &lt;function&gt;poll()&lt;/function&gt;, or similar system function).
+       Then call &lt;function&gt;PQcancelPoll(cancelConn)&lt;/function&gt; again.
+       Conversely, if &lt;function&gt;PQcancelPoll(cancelConn)&lt;/function&gt; last returned
+       &lt;symbol&gt;PGRES_POLLING_WRITING&lt;/symbol&gt;, wait until the socket is ready
+       to write, then call &lt;function&gt;PQcancelPoll(cancelConn)&lt;/function&gt; again.
+       On the first iteration, i.e., if you have yet to call
+       &lt;function&gt;PQcancelPoll(cancelConn)&lt;/function&gt;, behave as if it last returned
+       &lt;symbol&gt;PGRES_POLLING_WRITING&lt;/symbol&gt;.  Continue this loop until
+       &lt;function&gt;PQcancelPoll(cancelConn)&lt;/function&gt; returns
+       &lt;symbol&gt;PGRES_POLLING_FAILED&lt;/symbol&gt;, indicating the connection procedure
+       has failed, or &lt;symbol&gt;PGRES_POLLING_OK&lt;/symbol&gt;, indicating cancel
+       request was successfully dispatched.
+</span>
+《マッチ度[74.797943]》<code class="function">PQconnectStart</code>あるいは<a class="xref" href="libpq-connect.html#LIBPQ-PQCONNECTSTARTPARAMS"><code class="function">PQconnectStartParams</code></a>が成功したら、次は接続シーケンスを進めるために、<span class="application">libpq</span>をポーリングします。
+データベース接続の背後にあるソケットの記述子を取り出すには、<code class="function">PQsocket(conn)</code>を使用します。
+（注意：複数の<code class="function">PQconnectPoll</code>呼び出しでソケットが同じままであると思わないでください。）
+以下の繰り返しです。
+直前の<code class="function">PQconnectPoll(conn)</code>が<code class="symbol">PGRES_POLLING_READING</code>の場合、（<code class="function">select()</code>や<code class="function">poll()</code>などのシステム関数で示されて）ソケットの読み込み準備が整うまで待機します。
+そして、再度<code class="function">PQconnectPoll(conn)</code>を呼び出します。
+反対に直前の<code class="function">PQconnectPoll(conn)</code>が<code class="symbol">PGRES_POLLING_WRITING</code>の場合、ソケットの書き込み準備が整うまで待機し、その後、<code class="function">PQconnectPoll(conn)</code>を再度呼び出します。
+繰り返しの最初、すなわち、未だ<code class="function">PQconnectPoll</code>を呼び出していない場合、最後に<code class="symbol">PGRES_POLLING_WRITING</code>を返したかのように振舞います。
+この繰り返しを<code class="function">PQconnectPoll(conn)</code>が、接続手続きの失敗を示す<code class="symbol">PGRES_POLLING_FAILED</code>、もしくは、接続確立に成功したことを示す<code class="symbol">PGRES_POLLING_OK</code>を返すまで継続します。
+《機械翻訳》<code class="function">PQcancelStart</code>が成功した場合、次の段階は<span class="application">libpq</span>をポーリングして、接続解除シーケンスを続行できるようにすることです。
+データベース接続の基礎となるソケットの記述子を取得するには、<a class="xref" href="libpq-cancel.html#LIBPQ-PQCANCELSOCKET"><code class="function">PQcancelSocket</code></a>を使用します。
+（注意: ソケットは<code class="function">PQcancelPoll</code>呼び出しの間は同じままだと仮定しないでください）。
+ループを次のように実行します。
+<code class="function">PQcancelPoll(cancelConn)</code>が最後に<code class="symbol">PGRES_POLLING_READING</code>を返した場合、ソケットが読み込みの準備ができるまで待ちます(<code class="function">select()</code>や<code class="function">poll()</code>などのシステム関数で指定します)。
+その後、再度<code class="function">PQcancelPoll(cancelConn)</code>を呼び出します。
+逆に、<code class="function">PQcancelPoll(cancelConn)</code>が最後に<code class="symbol">PGRES_POLLING_WRITING</code>を返した場合、ソケットが書き込み可能になるまで待ってから、再度<code class="function">PQcancelPoll(cancelConn)</code>を呼び出します。
+最初の反復では、つまり<code class="function">PQcancelPoll(cancelConn)</code>をまだ呼び出していない場合は、最後に<code class="symbol">PGRES_POLLING_WRITING</code>を返したかのように振る舞います。
+接続手続きが失敗したことを示す<code class="symbol">PGRES_POLLING_FAILED</code>を返すか、または、<code class="symbol">PGRES_POLLING_OK</code>を返して、キャンセル要求が正常にディスパッチされたことを示すまで、このループを続けます。
+      </p><p>
+<span class="original">
+       Successful dispatch of the cancellation is no guarantee that the request
+       will have any effect, however. If the cancellation is effective, the
+       command being canceled will terminate early and return an error result.
+       If the cancellation fails (say, because the server was already done
+       processing the command), then there will be no visible result at all.
+</span>
+《マッチ度[78.917379]》しかし、要求の受け入れが成功したとしても、その要求の効果が出ることは全く保証していません。
+もしキャンセル操作が有効であれば、現在のコマンドは間もなく中断され、エラーが結果として返ります。
+キャンセル操作に失敗した場合（例えばバックエンドがすでにコマンド処理を終了していたため）、目に見える結果は何も出てこなくなります。
+《機械翻訳》キャンセルの送信が成功しても、要求が有効になるとは限りません。
+キャンセルが有効な場合、キャンセルされるコマンドは早期に終了し、エラー結果を返します。
+キャンセルが失敗した場合 （サーバがコマンドの処理をすでに完了していた場合など）、目に見える結果はまったくありません。
+      </p><p>
+<span class="original">
+       At any time during connection, the status of the connection can be
+       checked by calling &lt;xref linkend="libpq-PQcancelStatus"/&gt;.
+       If this call returns &lt;symbol&gt;CONNECTION_BAD&lt;/symbol&gt;, then
+       the cancel procedure has failed; if the call returns
+       &lt;function&gt;CONNECTION_OK&lt;/function&gt;, then cancel request was
+       successfully dispatched.
+       Both of these states are equally detectable from the return value of
+       &lt;function&gt;PQcancelPoll&lt;/function&gt;, described above.
+       Other states might also occur during (and only during) an asynchronous
+       connection procedure.
+       These indicate the current stage of the connection procedure and might
+       be useful to provide feedback to the user for example.
+       These statuses are:
+</span>
+《マッチ度[85.043988]》接続している間は、いつでも<a class="xref" href="libpq-status.html#LIBPQ-PQSTATUS"><code class="function">PQstatus</code></a>を呼び出すことで、接続の状態を検査することができます。
+この関数呼び出しが<code class="symbol">CONNECTION_BAD</code>を返す場合、接続手続きは失敗しており、<code class="symbol">CONNECTION_OK</code>を返す場合、接続が確立しています。
+上述のように、このいずれの状態も、<code class="function">PQconnectPoll</code>の戻り値から同様に検出できます。
+これ以外の状態は、非同期の接続手続きの間（のみに）現れることがあります。
+これらは、接続手続きの現在の段階を示すものであり、例えばユーザへのフィードバックを提供することに使用できます。
+以下の状態があります。
+《機械翻訳》接続中はいつでも、<a class="xref" href="libpq-cancel.html#LIBPQ-PQCANCELSTATUS"><code class="function">PQcancelStatus</code></a>を呼び出すことで接続の状態を確認できます。
+この呼び出しが<code class="symbol">CONNECTION_BAD</code>を返した場合、キャンセルプロシージャは失敗です。
+この呼び出しが<code class="function">CONNECTION_OK</code>を返した場合、キャンセル要求は正常にディスパッチされました。
+これらの状態はどちらも、上記の<code class="function">PQcancelPoll</code>の戻り値から等しく検出できます。
+他の状態は、非同期接続手順の間（およびその間のみ）に発生することもあります。
+これらは、接続手順の現在の段階を示し、例えばユーザにフィードバックを提供するのに有用である。
+これらのステータスは次のとおりです。
+
+       </p><div class="variablelist"><dl class="variablelist"><dt id="LIBPQ-CANCEL-CONNECTION-ALLOCATED"><span class="term"><code class="symbol">CONNECTION_ALLOCATED</code></span> <a href="#LIBPQ-CANCEL-CONNECTION-ALLOCATED" class="id_link">#</a></dt><dd><p>
+<span class="original">
+           Waiting for a call to &lt;xref linkend="libpq-PQcancelStart"/&gt; or
+           &lt;xref linkend="libpq-PQcancelBlocking"/&gt;, to actually open the
+           socket. This is the connection state right after
+           calling &lt;xref linkend="libpq-PQcancelCreate"/&gt;
+           or &lt;xref linkend="libpq-PQcancelReset"/&gt;. No connection to the
+           server has been initiated yet at this point. To actually start
+           sending the cancel request use &lt;xref linkend="libpq-PQcancelStart"/&gt; or
+           &lt;xref linkend="libpq-PQcancelBlocking"/&gt;.
+</span>
+《機械翻訳》<a class="xref" href="libpq-cancel.html#LIBPQ-PQCANCELSTART"><code class="function">PQcancelStart</code></a>や<a class="xref" href="libpq-cancel.html#LIBPQ-PQCANCELBLOCKING"><code class="function">PQcancelBlocking</code></a>への呼び出しを待って、実際にソケットをオープンします。
+これは<a class="xref" href="libpq-cancel.html#LIBPQ-PQCANCELCREATE"><code class="function">PQcancelCreate</code></a>や<a class="xref" href="libpq-cancel.html#LIBPQ-PQCANCELRESET"><code class="function">PQcancelReset</code></a>を呼んだ直後のコネクションの状態です。
+このポイントではサーバへのコネクションはまだ開始されていません。
+実際にスタートがキャンセルリクエストを送るには<a class="xref" href="libpq-cancel.html#LIBPQ-PQCANCELSTART"><code class="function">PQcancelStart</code></a>や<a class="xref" href="libpq-cancel.html#LIBPQ-PQCANCELBLOCKING"><code class="function">PQcancelBlocking</code></a>を使います。
+          </p></dd><dt id="LIBPQ-CANCEL-CONNECTION-STARTED"><span class="term"><code class="symbol">CONNECTION_STARTED</code></span> <a href="#LIBPQ-CANCEL-CONNECTION-STARTED" class="id_link">#</a></dt><dd><p>
+<span class="original">
+           Waiting for connection to be made.
+</span>
+接続の確立待ち状態です。
+          </p></dd><dt id="LIBPQ-CANCEL-CONNECTION-MADE"><span class="term"><code class="symbol">CONNECTION_MADE</code></span> <a href="#LIBPQ-CANCEL-CONNECTION-MADE" class="id_link">#</a></dt><dd><p>
+<span class="original">
+           Connection OK; waiting to send.
+</span>
+接続はOKです。送信待ち状態です。
+          </p></dd><dt id="LIBPQ-CANCEL-CONNECTION-AWAITING-RESPONSE"><span class="term"><code class="symbol">CONNECTION_AWAITING_RESPONSE</code></span> <a href="#LIBPQ-CANCEL-CONNECTION-AWAITING-RESPONSE" class="id_link">#</a></dt><dd><p>
+<span class="original">
+           Waiting for a response from the server.
+</span>
+サーバからの応答待ち状態です。
+          </p></dd><dt id="LIBPQ-CANCEL-CONNECTION-SSL-STARTUP"><span class="term"><code class="symbol">CONNECTION_SSL_STARTUP</code></span> <a href="#LIBPQ-CANCEL-CONNECTION-SSL-STARTUP" class="id_link">#</a></dt><dd><p>
+<span class="original">
+           Negotiating SSL encryption.
+</span>
+SSL暗号化の調停状態です。
+          </p></dd><dt id="LIBPQ-CANCEL-CONNECTION-GSS-STARTUP"><span class="term"><code class="symbol">CONNECTION_GSS_STARTUP</code></span> <a href="#LIBPQ-CANCEL-CONNECTION-GSS-STARTUP" class="id_link">#</a></dt><dd><p>
+<span class="original">
+           Negotiating GSS encryption.
+</span>
+《マッチ度[51.851852]》SSL暗号化の調停状態です。
+《機械翻訳》GSS 暗号化のネゴシエーション。
+          </p></dd></dl></div><p>
+
+<span class="original">
+       Note that, although these constants will remain (in order to maintain
+       compatibility), an application should never rely upon these occurring in a
+       particular order, or at all, or on the status always being one of these
+       documented values. An application might do something like this:
+</span>
+これらの定数は（互換性を保つため）なくなることはありませんが、アプリケーションは、これらが特定の順で出現したり、本書に書いてある値のどれかに必ずステータス値が該当するということを決して当てにしてはいけません。
+アプリケーションは、以下に示すようにするべきです。
+</p><pre class="programlisting">
+switch(PQcancelStatus(conn))
+{
+        case CONNECTION_STARTED:
+            feedback = "Connecting...";
+            break;
+
+        case CONNECTION_MADE:
+            feedback = "Connected to server...";
+            break;
+.
+.
+.
+        default:
+            feedback = "Connecting...";
+}
+</pre><p>
+      </p><p>
+<span class="original">
+       The &lt;literal&gt;connect_timeout&lt;/literal&gt; connection parameter is ignored
+       when using &lt;function&gt;PQcancelPoll&lt;/function&gt;; it is the application's
+       responsibility to decide whether an excessive amount of time has elapsed.
+       Otherwise, &lt;function&gt;PQcancelStart&lt;/function&gt; followed by a
+       &lt;function&gt;PQcancelPoll&lt;/function&gt; loop is equivalent to
+       &lt;xref linkend="libpq-PQcancelBlocking"/&gt;.
+</span>
+《マッチ度[82.795699]》<code class="function">PQconnectPoll</code>を使用する場合、<code class="literal">connect_timeout</code>接続パラメータは無視されます。
+経過時間が長過ぎるかどうかの判定はアプリケーションの責任で行ないます。
+さもないと、<code class="function">PQconnectStart</code>の後の<code class="function">PQconnectPoll</code>の繰り返しが<a class="xref" href="libpq-connect.html#LIBPQ-PQCONNECTDB"><code class="function">PQconnectdb</code></a>と同じになります。
+《機械翻訳》<code class="function">PQcancelPoll</code>を使用する場合、<code class="literal">connect_timeout</code>接続パラメータは無視されます。
+過度の時間が経過したかどうかはアプリケーション側で判断します。
+そうでない場合、<code class="function">PQcancelStart</code>とそれに続く<code class="function">PQcancelPoll</code>ループは<a class="xref" href="libpq-cancel.html#LIBPQ-PQCANCELBLOCKING"><code class="function">PQcancelBlocking</code></a>と同等です。
+      </p></dd><dt id="LIBPQ-PQCANCELSTATUS"><span class="term"><code class="function">PQcancelStatus</code><a id="id-1.7.3.14.4.2.4.1.2" class="indexterm"></a></span> <a href="#LIBPQ-PQCANCELSTATUS" class="id_link">#</a></dt><dd><p>
+<span class="original">
+       Returns the status of the cancel connection.
+</span>
+《マッチ度[68.181818]》接続の状態を返します。
+《機械翻訳》接続解除のステータスを返します。
+</p><pre class="synopsis">
+ConnStatusType PQcancelStatus(const PGcancelConn *cancelConn);
+</pre><p>
+      </p><p>
+<span class="original">
+       The status can be one of a number of values.  However, only three of
+       these are seen outside of an asynchronous cancel procedure:
+       &lt;literal&gt;CONNECTION_ALLOCATED&lt;/literal&gt;,
+       &lt;literal&gt;CONNECTION_OK&lt;/literal&gt; and
+       &lt;literal&gt;CONNECTION_BAD&lt;/literal&gt;. The initial state of a
+       &lt;function&gt;PGcancelConn&lt;/function&gt; that's successfully created using
+       &lt;xref linkend="libpq-PQcancelCreate"/&gt; is &lt;literal&gt;CONNECTION_ALLOCATED&lt;/literal&gt;.
+       A cancel request that was successfully dispatched
+       has the status &lt;literal&gt;CONNECTION_OK&lt;/literal&gt;.  A failed
+       cancel attempt is signaled by status
+       &lt;literal&gt;CONNECTION_BAD&lt;/literal&gt;.  An OK status will
+       remain so until &lt;xref linkend="libpq-PQcancelFinish"/&gt; or
+       &lt;xref linkend="libpq-PQcancelReset"/&gt; is called.
+</span>
+《機械翻訳》ステータスは、いくつかの値のいずれかになります。
+しかし、非同期キャンセル手続きの外で見られるのは、<code class="literal">CONNECTION_ALLOCATED</code>、<code class="literal">CONNECTION_OK</code>、<code class="literal">CONNECTION_BAD</code>の3つだけです。
+<a class="xref" href="libpq-cancel.html#LIBPQ-PQCANCELCREATE"><code class="function">PQcancelCreate</code></a>を使用して正常に作成された<code class="function">PGcancelConn</code>の初期状態は<code class="literal">CONNECTION_ALLOCATED</code>です。
+正常にディスパッチされたキャンセル要求は<code class="literal">CONNECTION_OK</code>の状態になります。
+キャンセルが失敗した場合、状態<code class="literal">CONNECTION_BAD</code>が通知されます。
+<a class="xref" href="libpq-cancel.html#LIBPQ-PQCANCELFINISH"><code class="function">PQcancelFinish</code></a>または<a class="xref" href="libpq-cancel.html#LIBPQ-PQCANCELRESET"><code class="function">PQcancelReset</code></a>が呼び出されるまで、OK状態はそのまま残ります。
+      </p><p>
+<span class="original">
+       See the entry for &lt;xref linkend="libpq-PQcancelStart"/&gt; with regards
+       to other status codes that might be returned.
+</span>
+《機械翻訳》返される可能性がある他の状態コードについては<a class="xref" href="libpq-cancel.html#LIBPQ-PQCANCELSTART"><code class="function">PQcancelStart</code></a>の項目を参照してください。
+      </p><p>
+<span class="original">
+       Successful dispatch of the cancellation is no guarantee that the request
+       will have any effect, however. If the cancellation is effective, the
+       command being canceled will terminate early and return an error result.
+       If the cancellation fails (say, because the server was already done
+       processing the command), then there will be no visible result at all.
+</span>
+《マッチ度[78.917379]》しかし、要求の受け入れが成功したとしても、その要求の効果が出ることは全く保証していません。
+もしキャンセル操作が有効であれば、現在のコマンドは間もなく中断され、エラーが結果として返ります。
+キャンセル操作に失敗した場合（例えばバックエンドがすでにコマンド処理を終了していたため）、目に見える結果は何も出てこなくなります。
+《機械翻訳》キャンセルの送信が成功しても、要求が有効になるとは限りません。
+キャンセルが有効な場合、キャンセルされるコマンドは早期に終了し、エラー結果を返します。
+キャンセルが失敗した場合 （サーバがコマンドの処理をすでに完了していた場合など）、目に見える結果はまったくありません。
+      </p></dd><dt id="LIBPQ-PQCANCELSOCKET"><span class="term"><code class="function">PQcancelSocket</code><a id="id-1.7.3.14.4.2.5.1.2" class="indexterm"></a></span> <a href="#LIBPQ-PQCANCELSOCKET" class="id_link">#</a></dt><dd><p>
+<span class="original">
+       Obtains the file descriptor number of the cancel connection socket to
+       the server.
+</span>
+《機械翻訳》サーバへのキャンセル接続ソケットのファイル記述子番号を取得する。
+</p><pre class="synopsis">
+int PQcancelSocket(const PGcancelConn *cancelConn);
+</pre><p>
+      </p><p>
+<span class="original">
+       A valid descriptor will be greater than or equal to 0;
+       a result of -1 indicates that no server connection is currently open.
+       This might change as a result of calling any of the functions
+       in this section on the &lt;structname&gt;PGcancelConn&lt;/structname&gt;
+       (except for &lt;xref linkend="libpq-PQcancelErrorMessage"/&gt; and
+       &lt;function&gt;PQcancelSocket&lt;/function&gt; itself).
+</span>
+《機械翻訳》有効なディスクリプタは 0 以上です。
+-1 の結果は、現在オープンしているサーバ接続がないことを示します。
+このセクションの関数を<code class="structname">PGcancelConn</code>（<a class="xref" href="libpq-cancel.html#LIBPQ-PQCANCELERRORMESSAGE">
+      <code class="function">PQcancelErrorMessage</code>
+      
+     </a>と<code class="function">PQcancelSocket</code>自身を除く）で呼び出すと、この値が変わる可能性があります。
+      </p></dd><dt id="LIBPQ-PQCANCELERRORMESSAGE"><span class="term">
+      <code class="function">PQcancelErrorMessage</code><a id="id-1.7.3.14.4.2.6.1.2" class="indexterm"></a>
+      <a id="id-1.7.3.14.4.2.6.1.3" class="indexterm"></a>
+     </span> <a href="#LIBPQ-PQCANCELERRORMESSAGE" class="id_link">#</a></dt><dd><p>
+<span class="original">
+       Returns the error message most recently generated by an
+       operation on the cancel connection.
+</span>
+《機械翻訳》接続解除操作で最後に生成されたエラー・メッセージを戻します。
+</p><pre class="synopsis">
+char *PQcancelErrorMessage(const PGcancelConn *cancelconn);
+</pre><p>
+      </p><p>
+<span class="original">
+       Nearly all &lt;application&gt;libpq&lt;/application&gt; functions that take a
+       &lt;structname&gt;PGcancelConn&lt;/structname&gt; will set a message for
+       &lt;xref linkend="libpq-PQcancelErrorMessage"/&gt; if they fail.
+       Note that by &lt;application&gt;libpq&lt;/application&gt; convention,
+       a nonempty &lt;xref linkend="libpq-PQcancelErrorMessage"/&gt; result
+       can consist of multiple lines, and will include a trailing newline.
+       The caller should not free the result directly.
+       It will be freed when the associated
+       &lt;structname&gt;PGcancelConn&lt;/structname&gt; handle is passed to
+       &lt;xref linkend="libpq-PQcancelFinish"/&gt;.  The result string should not be
+       expected to remain the same across operations on the
+       &lt;literal&gt;PGcancelConn&lt;/literal&gt; structure.
+</span>
+《マッチ度[77.664234]》ほとんどすべての<span class="application">libpq</span>関数は、失敗時に<a class="xref" href="libpq-status.html#LIBPQ-PQERRORMESSAGE">
+      <code class="function">PQerrorMessage</code>
+      
+     </a>用のメッセージを設定します。
+<span class="application">libpq</span>での決まりとして、空でない<a class="xref" href="libpq-status.html#LIBPQ-PQERRORMESSAGE">
+      <code class="function">PQerrorMessage</code>
+      
+     </a>の結果は複数行に渡ることも可能で、最後に改行が含まれることがある点に注意してください。
+呼び出し元はこの結果を直接解放してはいけません。
+関連する<code class="structname">PGconn</code>ハンドルが<a class="xref" href="libpq-connect.html#LIBPQ-PQFINISH"><code class="function">PQfinish</code></a>に渡された時にこれは解放されます。
+<code class="literal">PGconn</code>構造体への操作を跨って、この結果文字列が同一であると想定してはいけません。
+《機械翻訳》<code class="structname">PGcancelConn</code>を取得する<span class="application">libpq</span>関数のほとんどは、失敗した場合に<a class="xref" href="libpq-cancel.html#LIBPQ-PQCANCELERRORMESSAGE">
+      <code class="function">PQcancelErrorMessage</code>
+      
+     </a>にメッセージを設定します。
+<span class="application">libpq</span>の規則では、空でない<a class="xref" href="libpq-cancel.html#LIBPQ-PQCANCELERRORMESSAGE">
+      <code class="function">PQcancelErrorMessage</code>
+      
+     </a>結果は複数行からなり、最後に改行を含むことに注意してください。
+呼び出し元は、結果を直接解放しないでください。
+関連する<code class="structname">PGcancelConn</code>ハンドルが<a class="xref" href="libpq-cancel.html#LIBPQ-PQCANCELFINISH"><code class="function">PQcancelFinish</code></a>に渡されると解放されます。
+結果の文字列は<code class="literal">PGcancelConn</code>構造体に対する操作を通じて同じままになることは期待されません。
+      </p></dd><dt id="LIBPQ-PQCANCELFINISH"><span class="term"><code class="function">PQcancelFinish</code><a id="id-1.7.3.14.4.2.7.1.2" class="indexterm"></a></span> <a href="#LIBPQ-PQCANCELFINISH" class="id_link">#</a></dt><dd><p>
+<span class="original">
+       Closes the cancel connection (if it did not finish sending the
+       cancel request yet). Also frees memory used by the
+       &lt;structname&gt;PGcancelConn&lt;/structname&gt; object.
+</span>
+《マッチ度[55.974843]》サーバとの接続を閉ざします。
+また、<code class="structname">PGconn</code>オブジェクトが占めるメモリも解放します。
+《機械翻訳》接続のキャンセルを閉じます（キャンセル要求の送信がまだ完了していない場合）。
+また、<code class="structname">PGcancelConn</code>オブジェクトが使用するメモリを解放します。
+</p><pre class="synopsis">
+void PQcancelFinish(PGcancelConn *cancelConn);
+</pre><p>
+      </p><p>
+<span class="original">
+       Note that even if the cancel attempt fails (as
+       indicated by &lt;xref linkend="libpq-PQcancelStatus"/&gt;), the
+       application should call &lt;xref linkend="libpq-PQcancelFinish"/&gt;
+       to free the memory used by the &lt;structname&gt;PGcancelConn&lt;/structname&gt;
+       object.
+       The &lt;structname&gt;PGcancelConn&lt;/structname&gt; pointer must not be used
+       again after &lt;xref linkend="libpq-PQcancelFinish"/&gt; has been called.
+</span>
+《マッチ度[78.364116]》たとえサーバへの接続試行が失敗しても（<a class="xref" href="libpq-status.html#LIBPQ-PQSTATUS"><code class="function">PQstatus</code></a>で調べます）、アプリケーションは<a class="xref" href="libpq-connect.html#LIBPQ-PQFINISH"><code class="function">PQfinish</code></a>を呼び出し<code class="structname">PGconn</code>オブジェクトが占めるメモリを解放するべきです。
+そして<a class="xref" href="libpq-connect.html#LIBPQ-PQFINISH"><code class="function">PQfinish</code></a>を呼び出したら、もう<code class="structname">PGconn</code>へのポインタを使ってはいけません。
+《機械翻訳》取り消しの試みが失敗した場合（<a class="xref" href="libpq-cancel.html#LIBPQ-PQCANCELSTATUS"><code class="function">PQcancelStatus</code></a>で示されるように）でも、アプリケーションは<a class="xref" href="libpq-cancel.html#LIBPQ-PQCANCELFINISH"><code class="function">PQcancelFinish</code></a>を呼び出して<code class="structname">PGcancelConn</code>オブジェクトが使用したメモリを解放するようにしてください。
+<code class="structname">PGcancelConn</code>ポインタは<a class="xref" href="libpq-cancel.html#LIBPQ-PQCANCELFINISH"><code class="function">PQcancelFinish</code></a>が呼び出された後は再度使用してはなりません。
+      </p></dd><dt id="LIBPQ-PQCANCELRESET"><span class="term"><code class="function">PQcancelReset</code><a id="id-1.7.3.14.4.2.8.1.2" class="indexterm"></a></span> <a href="#LIBPQ-PQCANCELRESET" class="id_link">#</a></dt><dd><p>
+<span class="original">
+       Resets the &lt;symbol&gt;PGcancelConn&lt;/symbol&gt; so it can be reused for a new
+       cancel connection.
+</span>
+《機械翻訳》新しいキャンセル接続に再利用できるように<code class="symbol">PGcancelConn</code>をリセットします。
+</p><pre class="synopsis">
+void PQcancelReset(PGcancelConn *cancelConn);
+</pre><p>
+      </p><p>
+<span class="original">
+       If the &lt;symbol&gt;PGcancelConn&lt;/symbol&gt; is currently used to send a cancel
+       request, then this connection is closed. It will then prepare the
+       &lt;symbol&gt;PGcancelConn&lt;/symbol&gt; object such that it can be used to send a
+       new cancel request.
+</span>
+《機械翻訳》<code class="symbol">PGcancelConn</code>が現在キャンセル要求を送信するために使用されている場合、この接続は閉じられます。
+次に、新しいキャンセル要求を送信するために使用できるように<code class="symbol">PGcancelConn</code>オブジェクトを準備します。
+      </p><p>
+<span class="original">
+       This can be used to create one &lt;structname&gt;PGcancelConn&lt;/structname&gt;
+       for a &lt;structname&gt;PGconn&lt;/structname&gt; and reuse it multiple times
+       throughout the lifetime of the original &lt;structname&gt;PGconn&lt;/structname&gt;.
+</span>
+《機械翻訳》これは<code class="structname">PGconn</code>に対して1つの<code class="structname">PGcancelConn</code>を作成し、元の<code class="structname">PGconn</code>の存続期間中に何度も再利用することができます。
+      </p></dd></dl></div></div><div class="sect2" id="LIBPQ-CANCEL-DEPRECATED"><div class="titlepage"><div><div><h3 class="title">32.7.2. Obsolete Functions for Sending Cancel Requests <a href="#LIBPQ-CANCEL-DEPRECATED" class="id_link">#</a></h3></div></div></div><p>
+<span class="original">
+    These functions represent older methods of sending cancel requests.
+    Although they still work, they are deprecated due to not sending the cancel
+    requests in an encrypted manner, even when the original connection
+    specified &lt;literal&gt;sslmode&lt;/literal&gt; or &lt;literal&gt;gssencmode&lt;/literal&gt; to
+    require encryption. Thus these older methods are heavily discouraged from
+    being used in new code, and it is recommended to change existing code to
+    use the new functions instead.
+</span>
+《機械翻訳》これらの関数は古い方法でキャンセル要求を送信するものです。
+これらはまだ動作しますが、元の接続が暗号化を要求するために<code class="literal">sslmode</code>または<code class="literal">gssencmode</code>を指定した場合でも、キャンセル要求を暗号化された方法で送信しないため、推奨されません。
+したがって、これらの古い方法は新しいコードではほとんど使用されず、既存のコードを変更して新しい関数を使用することをお勧めします。
+   </p><div class="variablelist"><dl class="variablelist"><dt id="LIBPQ-PQGETCANCEL"><span class="term"><code class="function">PQgetCancel</code><a id="id-1.7.3.14.5.3.1.1.2" class="indexterm"></a></span> <a href="#LIBPQ-PQGETCANCEL" class="id_link">#</a></dt><dd><p>
 <span class="original">
        Creates a data structure containing the information needed to cancel
-       a command issued through a particular database connection.
+       a command using &lt;xref linkend="libpq-PQcancel"/&gt;.
 </span>
-特定のデータベース接続を通して発行されたコマンドをキャンセルするために必要な情報を持つデータ構造を作成します。
+《マッチ度[55.084746]》特定のデータベース接続を通して発行されたコマンドをキャンセルするために必要な情報を持つデータ構造を作成します。
+《機械翻訳》<a class="xref" href="libpq-cancel.html#LIBPQ-PQCANCEL"><code class="function">PQcancel</code></a>を使用してコマンドをキャンセルするために必要な情報を含むデータ構造体を作成します。
 </p><pre class="synopsis">
 PGcancel *PQgetCancel(PGconn *conn);
 </pre><p>
       </p><p>
 <span class="original">
        &lt;xref linkend="libpq-PQgetCancel"/&gt; creates a
-       &lt;structname&gt;PGcancel&lt;/structname&gt;&lt;indexterm&gt;&lt;primary&gt;PGcancel&lt;/primary&gt;&lt;/indexterm&gt; object
-       given a &lt;structname&gt;PGconn&lt;/structname&gt; connection object.  It will return
-       &lt;symbol&gt;NULL&lt;/symbol&gt; if the given &lt;parameter&gt;conn&lt;/parameter&gt; is &lt;symbol&gt;NULL&lt;/symbol&gt; or an invalid
-       connection.  The &lt;structname&gt;PGcancel&lt;/structname&gt; object is an opaque
+       &lt;structname&gt;PGcancel&lt;/structname&gt;&lt;indexterm&gt;&lt;primary&gt;PGcancel&lt;/primary&gt;&lt;/indexterm&gt;
+       object given a &lt;structname&gt;PGconn&lt;/structname&gt; connection object.
+       It will return &lt;symbol&gt;NULL&lt;/symbol&gt; if the given &lt;parameter&gt;conn&lt;/parameter&gt;
+       is &lt;symbol&gt;NULL&lt;/symbol&gt; or an invalid connection.
+       The &lt;structname&gt;PGcancel&lt;/structname&gt; object is an opaque
        structure that is not meant to be accessed directly by the
        application; it can only be passed to &lt;xref linkend="libpq-PQcancel"/&gt;
        or &lt;xref linkend="libpq-PQfreeCancel"/&gt;.
 </span>
-<a class="xref" href="libpq-cancel.html#LIBPQ-PQGETCANCEL"><code class="function">PQgetCancel</code></a>は、与えられた<code class="structname">PGconn</code>接続オブジェクトの<code class="structname">PGcancel</code><a id="id-1.7.3.14.4.1.1.2.2.4" class="indexterm"></a>オブジェクトを作成します。
+《マッチ度[89.511754]》<a class="xref" href="libpq-cancel.html#LIBPQ-PQGETCANCEL"><code class="function">PQgetCancel</code></a>は、与えられた<code class="structname">PGconn</code>接続オブジェクトの<code class="structname">PGcancel</code><a id="id-1.7.3.14.5.3.1.2.2.4" class="indexterm"></a>オブジェクトを作成します。
 与えられた<em class="parameter"><code>conn</code></em>が<code class="symbol">NULL</code>もしくは無効な接続であった場合、<code class="symbol">NULL</code>が返されます。
 <code class="structname">PGcancel</code>オブジェクトは不透明な構造体であり、アプリケーションから直接アクセスすることができません。
 これは<a class="xref" href="libpq-cancel.html#LIBPQ-PQCANCEL"><code class="function">PQcancel</code></a>もしくは<a class="xref" href="libpq-cancel.html#LIBPQ-PQFREECANCEL"><code class="function">PQfreeCancel</code></a>に渡すことしかできません。
-      </p></dd><dt id="LIBPQ-PQFREECANCEL"><span class="term"><code class="function">PQfreeCancel</code><a id="id-1.7.3.14.4.1.2.1.2" class="indexterm"></a></span> <a href="#LIBPQ-PQFREECANCEL" class="id_link">#</a></dt><dd><p>
+《機械翻訳》<a class="xref" href="libpq-cancel.html#LIBPQ-PQGETCANCEL"><code class="function">PQgetCancel</code></a>は<code class="structname">PGconn</code>接続オブジェクトを与えられた<code class="structname">PGcancel</code><a id="id-1.7.3.14.5.3.1.2.2.14" class="indexterm"></a>オブジェクトを作成します。
+指定された<em class="parameter"><code>conn</code></em>が<code class="symbol">NULL</code>か、または無効な接続である場合、<code class="symbol">NULL</code>を返します。
+<code class="structname">PGcancel</code>オブジェクトは、アプリケーションが直接アクセスするためのものではありません。
+これは<a class="xref" href="libpq-cancel.html#LIBPQ-PQCANCEL"><code class="function">PQcancel</code></a>または<a class="xref" href="libpq-cancel.html#LIBPQ-PQFREECANCEL"><code class="function">PQfreeCancel</code></a>に渡すことができるだけです。
+      </p></dd><dt id="LIBPQ-PQFREECANCEL"><span class="term"><code class="function">PQfreeCancel</code><a id="id-1.7.3.14.5.3.2.1.2" class="indexterm"></a></span> <a href="#LIBPQ-PQFREECANCEL" class="id_link">#</a></dt><dd><p>
 <span class="original">
        Frees a data structure created by &lt;xref linkend="libpq-PQgetCancel"/&gt;.
 </span>
@@ -48,61 +529,75 @@ void PQfreeCancel(PGcancel *cancel);
        by &lt;xref linkend="libpq-PQgetCancel"/&gt;.
 </span>
 <a class="xref" href="libpq-cancel.html#LIBPQ-PQFREECANCEL"><code class="function">PQfreeCancel</code></a>は事前に<a class="xref" href="libpq-cancel.html#LIBPQ-PQGETCANCEL"><code class="function">PQgetCancel</code></a>で作成されたデータオブジェクトを解放します。
-      </p></dd><dt id="LIBPQ-PQCANCEL"><span class="term"><code class="function">PQcancel</code><a id="id-1.7.3.14.4.1.3.1.2" class="indexterm"></a></span> <a href="#LIBPQ-PQCANCEL" class="id_link">#</a></dt><dd><p>
+      </p></dd><dt id="LIBPQ-PQCANCEL"><span class="term"><code class="function">PQcancel</code><a id="id-1.7.3.14.5.3.3.1.2" class="indexterm"></a></span> <a href="#LIBPQ-PQCANCEL" class="id_link">#</a></dt><dd><p>
 <span class="original">
-       Requests that the server abandon processing of the current command.
+       &lt;xref linkend="libpq-PQcancel"/&gt; is a deprecated and insecure
+       variant of &lt;xref linkend="libpq-PQcancelBlocking"/&gt;, but one that can be
+       used safely from within a signal handler.
 </span>
-サーバに現在のコマンドの廃棄処理を要求します。
+《機械翻訳》<a class="xref" href="libpq-cancel.html#LIBPQ-PQCANCEL"><code class="function">PQcancel</code></a>は、<a class="xref" href="libpq-cancel.html#LIBPQ-PQCANCELBLOCKING"><code class="function">PQcancelBlocking</code></a>の非推奨で安全でない変種ですが、シグナルハンドラ内から安全に使用できます。
 </p><pre class="synopsis">
 int PQcancel(PGcancel *cancel, char *errbuf, int errbufsize);
 </pre><p>
       </p><p>
 <span class="original">
-       The return value is 1 if the cancel request was successfully
-       dispatched and 0 if not.  If not, &lt;parameter&gt;errbuf&lt;/parameter&gt; is filled
-       with an explanatory error message.  &lt;parameter&gt;errbuf&lt;/parameter&gt;
-       must be a char array of size &lt;parameter&gt;errbufsize&lt;/parameter&gt; (the
-       recommended size is 256 bytes).
+       &lt;xref linkend="libpq-PQcancel"/&gt; only exists because of backwards
+       compatibility reasons. &lt;xref linkend="libpq-PQcancelBlocking"/&gt; should be
+       used instead. The only benefit that &lt;xref linkend="libpq-PQcancel"/&gt; has
+       is that it can be safely invoked from a signal handler, if the
+       &lt;parameter&gt;errbuf&lt;/parameter&gt; is a local variable in the signal handler.
+       However, this is generally not considered a big enough benefit to be
+       worth the security issues that this function has.
 </span>
-キャンセル要求の受け入れが成功すれば1を、そうでなければ0を返します。
+《機械翻訳》<a class="xref" href="libpq-cancel.html#LIBPQ-PQCANCEL"><code class="function">PQcancel</code></a>が存在するのは、下位互換性のためだけです。
+代わりに<a class="xref" href="libpq-cancel.html#LIBPQ-PQCANCELBLOCKING"><code class="function">PQcancelBlocking</code></a>を使用してください。
+<a class="xref" href="libpq-cancel.html#LIBPQ-PQCANCEL"><code class="function">PQcancel</code></a>の唯一の利点は、<em class="parameter"><code>errbuf</code></em>がシグナルハンドラ内のローカル変数である場合に、シグナルハンドラから安全に呼び出すことができることです。
+しかし、一般的には、この関数が持つセキュリティ問題に見合うほど大きな利点とは考えられていません。
+      </p><p>
+<span class="original">
+       The &lt;structname&gt;PGcancel&lt;/structname&gt; object is read-only as far as
+       &lt;xref linkend="libpq-PQcancel"/&gt; is concerned, so it can also be invoked
+       from a thread that is separate from the one manipulating the
+       &lt;structname&gt;PGconn&lt;/structname&gt; object.
+</span>
+《機械翻訳》<code class="structname">PGcancel</code>オブジェクトは<a class="xref" href="libpq-cancel.html#LIBPQ-PQCANCEL"><code class="function">PQcancel</code></a>に関しては読み取り専用であるため、<code class="structname">PGconn</code>オブジェクトを操作するスレッドとは別のスレッドからも呼び出すことができます。
+      </p><p>
+<span class="original">
+       The return value of &lt;xref linkend="libpq-PQcancel"/&gt; is 1 if the
+       cancel request was successfully dispatched and 0 if not.
+       If not, &lt;parameter&gt;errbuf&lt;/parameter&gt; is filled with an explanatory
+       error message.
+       &lt;parameter&gt;errbuf&lt;/parameter&gt; must be a char array of size
+       &lt;parameter&gt;errbufsize&lt;/parameter&gt; (the recommended size is 256 bytes).
+</span>
+《マッチ度[78.143713]》キャンセル要求の受け入れが成功すれば1を、そうでなければ0を返します。
 失敗した場合、<em class="parameter"><code>errbuf</code></em>にそれを説明するエラーメッセージが収納されます。
 <em class="parameter"><code>errbuf</code></em>は<em class="parameter"><code>errbufsize</code></em>サイズの文字配列でなければなりません。
 (推奨サイズは256バイトです。)
-      </p><p>
+《機械翻訳》取り消し要求が正常にディスパッチされた場合、<a class="xref" href="libpq-cancel.html#LIBPQ-PQCANCEL"><code class="function">PQcancel</code></a>の戻り値は1です。
+ディスパッチされなかった場合、<em class="parameter"><code>errbuf</code></em>に説明的なエラーメッセージが入ります。
+<em class="parameter"><code>errbuf</code></em>は<em class="parameter"><code>errbufsize</code></em>のサイズ（推奨サイズは256バイト）の文字配列でなければなりません。
+      </p></dd></dl></div><div class="variablelist"><dl class="variablelist"><dt id="LIBPQ-PQREQUESTCANCEL"><span class="term"><code class="function">PQrequestCancel</code><a id="id-1.7.3.14.5.4.1.1.2" class="indexterm"></a></span> <a href="#LIBPQ-PQREQUESTCANCEL" class="id_link">#</a></dt><dd><p>
 <span class="original">
-       Successful dispatch is no guarantee that the request will have
-       any effect, however.  If the cancellation is effective, the current
-       command will terminate early and return an error result.  If the
-       cancellation fails (say, because the server was already done
-       processing the command), then there will be no visible result at
-       all.
+       &lt;xref linkend="libpq-PQrequestCancel"/&gt; is a deprecated and insecure
+       variant of &lt;xref linkend="libpq-PQcancelBlocking"/&gt;.
 </span>
-しかし、要求の受け入れが成功したとしても、その要求の効果が出ることは全く保証していません。
-もしキャンセル操作が有効であれば、現在のコマンドは間もなく中断され、エラーが結果として返ります。
-キャンセル操作に失敗した場合（例えばバックエンドがすでにコマンド処理を終了していたため）、目に見える結果は何も出てこなくなります。
-      </p><p>
-<span class="original">
-       &lt;xref linkend="libpq-PQcancel"/&gt; can safely be invoked from a signal
-       handler, if the &lt;parameter&gt;errbuf&lt;/parameter&gt; is a local variable in the
-       signal handler.  The &lt;structname&gt;PGcancel&lt;/structname&gt; object is read-only
-       as far as &lt;xref linkend="libpq-PQcancel"/&gt; is concerned, so it can
-       also be invoked from a thread that is separate from the one
-       manipulating the &lt;structname&gt;PGconn&lt;/structname&gt; object.
-</span>
-<em class="parameter"><code>errbuf</code></em>がシグナルハンドラ内のローカル変数であれば、<a class="xref" href="libpq-cancel.html#LIBPQ-PQCANCEL"><code class="function">PQcancel</code></a>はシグナルハンドラから起動しても問題ありません。
-<a class="xref" href="libpq-cancel.html#LIBPQ-PQCANCEL"><code class="function">PQcancel</code></a>の実行中、<code class="structname">PGcancel</code>は読み取りのみです。
-従って、<code class="structname">PGconn</code>オブジェクトを操作するスレッドと別のスレッドからこの関数を呼び出すこともできます。
-      </p></dd></dl></div><p>
-
-   </p><div class="variablelist"><dl class="variablelist"><dt id="LIBPQ-PQREQUESTCANCEL"><span class="term"><code class="function">PQrequestCancel</code><a id="id-1.7.3.14.4.2.1.1.2" class="indexterm"></a></span> <a href="#LIBPQ-PQREQUESTCANCEL" class="id_link">#</a></dt><dd><p>
-<span class="original">
-       &lt;xref linkend="libpq-PQrequestCancel"/&gt; is a deprecated variant of
-       &lt;xref linkend="libpq-PQcancel"/&gt;.
-</span>
-<a class="xref" href="libpq-cancel.html#LIBPQ-PQREQUESTCANCEL"><code class="function">PQrequestCancel</code></a>は<a class="xref" href="libpq-cancel.html#LIBPQ-PQCANCEL"><code class="function">PQcancel</code></a>の廃止予定の変形版です。
+《マッチ度[71.074380]》<a class="xref" href="libpq-cancel.html#LIBPQ-PQREQUESTCANCEL"><code class="function">PQrequestCancel</code></a>は<a class="xref" href="libpq-cancel.html#LIBPQ-PQCANCEL"><code class="function">PQcancel</code></a>の廃止予定の変形版です。
+《機械翻訳》<a class="xref" href="libpq-cancel.html#LIBPQ-PQREQUESTCANCEL"><code class="function">PQrequestCancel</code></a>は、<a class="xref" href="libpq-cancel.html#LIBPQ-PQCANCELBLOCKING"><code class="function">PQcancelBlocking</code></a>の非推奨で安全でない変種です。
 </p><pre class="synopsis">
 int PQrequestCancel(PGconn *conn);
 </pre><p>
+      </p><p>
+<span class="original">
+       &lt;xref linkend="libpq-PQrequestCancel"/&gt; only exists because of backwards
+       compatibility reasons. &lt;xref linkend="libpq-PQcancelBlocking"/&gt; should be
+       used instead. There is no benefit to using
+       &lt;xref linkend="libpq-PQrequestCancel"/&gt; over
+       &lt;xref linkend="libpq-PQcancelBlocking"/&gt;.
+</span>
+《機械翻訳》<a class="xref" href="libpq-cancel.html#LIBPQ-PQREQUESTCANCEL"><code class="function">PQrequestCancel</code></a>は下位互換性のために存在します。
+代わりに<a class="xref" href="libpq-cancel.html#LIBPQ-PQCANCELBLOCKING"><code class="function">PQcancelBlocking</code></a>を使用してください。
+<a class="xref" href="libpq-cancel.html#LIBPQ-PQREQUESTCANCEL"><code class="function">PQrequestCancel</code></a>を<a class="xref" href="libpq-cancel.html#LIBPQ-PQCANCELBLOCKING"><code class="function">PQcancelBlocking</code></a>よりも使用することはありません。
       </p><p>
 <span class="original">
        Requests that the server abandon processing of the current
@@ -117,7 +612,9 @@ int PQrequestCancel(PGconn *conn);
 </span>
 サーバに現在のコマンドの廃棄処理を要求します。
 これは<code class="structname">PGconn</code>オブジェクトを直接扱い、また、失敗した場合エラーメッセージは<code class="structname">PGconn</code>オブジェクト内に収納されます。
-(<a class="xref" href="libpq-status.html#LIBPQ-PQERRORMESSAGE"><code class="function">PQerrorMessage</code></a>により取り出すことができます。)
+(<a class="xref" href="libpq-status.html#LIBPQ-PQERRORMESSAGE">
+      <code class="function">PQerrorMessage</code>
+      
+     </a>により取り出すことができます。)
 機能的には同一ですが、この方法は複数スレッドプログラムやシグナルハンドラでは安全ではありません。<code class="structname">PGconn</code>のエラーメッセージが上書きされることにより、その接続で現在進行中の操作を台無しにする可能性があるからです。
-      </p></dd></dl></div><p>
-  </p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="libpq-single-row-mode.html" title="34.6. １行１行問い合わせ結果を受け取る">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="libpq.html" title="第34章 libpq — C ライブラリ">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="libpq-fastpath.html" title="34.8. 近道インタフェース">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">34.6. １行１行問い合わせ結果を受け取る </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 16.4文書">ホーム</a></td><td width="40%" align="right" valign="top"> 34.8. 近道インタフェース</td></tr></table></div></body></html>
+      </p></dd></dl></div></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="libpq-single-row-mode.html" title="32.6. Retrieving Query Results in Chunks">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="libpq.html" title="第32章 libpq — C ライブラリ">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="libpq-fastpath.html" title="32.8. 近道インタフェース">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">32.6. Retrieving Query Results in Chunks </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 17.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 32.8. 近道インタフェース</td></tr></table></div></body></html>

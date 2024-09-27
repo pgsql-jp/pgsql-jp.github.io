@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>F.2. amcheck — テーブルとインデックスの一貫性を検査するツール</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="adminpack.html" title="F.1. adminpack — pgAdminサポートツールパック" /><link rel="next" href="auth-delay.html" title="F.3. auth_delay — 認証エラー時に一時停止" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 16.4文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="contrib.html" title="付録F 追加で提供されるモジュールと拡張">付録F 追加で提供されるモジュールと拡張</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 16.4 : amcheck.html">誤訳等の報告
-                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="adminpack.html" title="F.1. adminpack — pgAdminサポートツールパック">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="contrib.html" title="付録F 追加で提供されるモジュールと拡張">上へ</a></td><td width="60%" align="center">F.2. amcheck — テーブルとインデックスの一貫性を検査するツール</td><td width="20%" align="right"> <a accesskey="n" href="auth-delay.html" title="F.3. auth_delay — 認証エラー時に一時停止">次へ</a></td></tr></table><hr /></div><div class="sect1" id="AMCHECK"><div class="titlepage"><div><div><h2 class="title" style="clear: both">F.2. amcheck — テーブルとインデックスの一貫性を検査するツール <a href="#AMCHECK" class="id_link">#</a></h2></div></div></div><span class="original">
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>F.1. amcheck — テーブルとインデックスの一貫性を検査するツール</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="contrib.html" title="付録F 追加で提供されるモジュールと拡張" /><link rel="next" href="auth-delay.html" title="F.2. auth_delay — 認証エラー時に一時停止" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 17.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="contrib.html" title="付録F 追加で提供されるモジュールと拡張">付録F 追加で提供されるモジュールと拡張</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 17.0 : amcheck.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="contrib.html" title="付録F 追加で提供されるモジュールと拡張">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="contrib.html" title="付録F 追加で提供されるモジュールと拡張">上へ</a></td><td width="60%" align="center">F.1. amcheck — テーブルとインデックスの一貫性を検査するツール</td><td width="20%" align="right"> <a accesskey="n" href="auth-delay.html" title="F.2. auth_delay — 認証エラー時に一時停止">次へ</a></td></tr></table><hr /></div><div class="sect1" id="AMCHECK"><div class="titlepage"><div><div><h2 class="title" style="clear: both">F.1. amcheck — テーブルとインデックスの一貫性を検査するツール <a href="#AMCHECK" class="id_link">#</a></h2></div></div></div><span class="original">
  &lt;title&gt;amcheck &amp;mdash; tools to verify table and index consistency&lt;/title&gt;
-</span><a id="id-1.11.7.12.2" class="indexterm"></a><p>
+</span><a id="id-1.11.7.11.2" class="indexterm"></a><p>
 <span class="original">
   The &lt;filename&gt;amcheck&lt;/filename&gt; module provides functions that allow you to
   verify the logical consistency of the structure of relations.
@@ -21,12 +21,21 @@
   to hold, we can expect binary searches on the affected page to
   incorrectly guide index scans, resulting in wrong answers to SQL
   queries.  If the structure appears to be valid, no error is raised.
+  While these checking functions are run, the &lt;xref
+  linkend="guc-search-path"/&gt; is temporarily changed to &lt;literal&gt;pg_catalog,
+  pg_temp&lt;/literal&gt;.
 </span>
-B-Tree検査関数は、特定のリレーションの構造表現における様々な<span class="emphasis"><em>不変量</em></span>を検査します。
-インデックスのスキャンや、その他の重要な操作を担うアクセスメソッド関数の正しさは、これらの不変量を常に保つことに依存しています。
+《マッチ度[80.790960]》B-Tree検査関数は、特定のリレーションの構造表現における様々な<span class="emphasis"><em>不変量</em></span>を検査します。
+インデックスの走査や、その他の重要な操作を担うアクセスメソッド関数の正しさは、これらの不変量を常に保つことに依存しています。
 たとえば、ある関数は、とりわけすべてのB-Treeページの中の項目が<span class="quote">「<span class="quote">論理的な</span>」</span>順序になっていることを検査します。（たとえば<code class="type">text</code>のB-Treeインデックスでは、インデックスタプルは語句の照合順になっていなければなりません。）
-その特定の不変量が何らかの理由で保たれなければ、該当するページで二分探索が不正なインデックススキャンをもたらし、SQL問い合わせに誤った答えを返すことになるでしょう。
+その特定の不変量が何らかの理由で保たれなければ、該当するページで二分探索が不正なインデックス走査をもたらし、SQL問い合わせに誤った答えを返すことになるでしょう。
 構造が適正であると見なされれば、エラーは報告されません。
+《機械翻訳》Bツリー検査関数は、特定のリレーションの表現形式の構造における様々な<span class="emphasis"><em>不変量</em></span>を検証する。
+インデックススキャンやその他の重要な操作の背後にあるアクセスメソッド関数の正確さは、これらの不変量が常に保持されていることに依存している。
+例について、特定の関数は、とりわけ、すべてのB-ツリーページが<span class="quote">「<span class="quote">ロジカル</span>」</span>オーダーにアイテムを有することを検証する（例えば、<code class="type">テキスト</code>上のB-ツリーインデックスについては、インデックスタプルは、照合されたレキシカルオーダーにあるべきである）。
+この特定の不変式が何らかの形で成立しない場合、影響を受けたバイナリでのページ検索が誤ってガイドインデックススキャンを行い、その結果、間違いがSQLクエリに応答することが予想される。
+構造が有効であると思われる場合、エラーは上げられません。
+これらのチェック関数の実行中、<a class="xref" href="runtime-config-client.html#GUC-SEARCH-PATH">search_path</a>は一時的に<code class="literal">pg_catalog, pg_temp</code>に変更されます。
  </p><p>
 <span class="original">
   Verification is performed using the same procedures as those used by
@@ -39,7 +48,7 @@ B-Tree検査関数は、特定のリレーションの構造表現における�
 検証は、インデックススキャン自身で使われるのと同じ手続きを用いて行われます。
 その手続きは、ユーザ定義演算子クラスのコードかもしれません。
 たとえば、B-Treeインデックスの検査は、一つ以上のB-Treeサポート関数1ルーチンを用いる比較に依存しています。
-演算子クラスサポート関数の詳細については<a class="xref" href="xindex.html#XINDEX-SUPPORT" title="38.16.3. インデックスメソッドのサポートルーチン">38.16.3</a>をご覧ください。
+演算子クラスサポート関数の詳細については<a class="xref" href="xindex.html#XINDEX-SUPPORT" title="36.16.3. インデックスメソッドのサポートルーチン">36.16.3</a>をご覧ください。
  </p><p>
 <span class="original">
   Unlike the B-Tree checking functions which report corruption by raising
@@ -64,11 +73,11 @@ B-Tree検査関数は、特定のリレーションの構造表現における�
 </span>
 非スーパーユーザに<code class="filename">amcheck</code>関数の実行許可を与えることができますが、そのような権限を許可する前に、データのセキュリティとプライバシー上の懸念を注意深く考慮すべきです。
 これらの関数が生成する破損報告は、データの構造と見つかった破損の性質ほどには、破損データの内容に焦点を当てるわけではありませんが、とりわけ攻撃者が破損を引き起こすこともできるのであれば、これらの関数の実行権限を与えられた攻撃者はそうしたメッセージからデータ自身を推測できるかもしれません。
- </p><div class="sect2" id="AMCHECK-FUNCTIONS"><div class="titlepage"><div><div><h3 class="title">F.2.1. 関数 <a href="#AMCHECK-FUNCTIONS" class="id_link">#</a></h3></div></div></div><span class="original">
+ </p><div class="sect2" id="AMCHECK-FUNCTIONS"><div class="titlepage"><div><div><h3 class="title">F.1.1. 関数 <a href="#AMCHECK-FUNCTIONS" class="id_link">#</a></h3></div></div></div><span class="original">
   &lt;title&gt;Functions&lt;/title&gt;
 </span><div class="variablelist"><dl class="variablelist"><dt><span class="term">
-     <code class="function">bt_index_check(index regclass, heapallindexed boolean) returns void</code>
-     <a id="id-1.11.7.12.8.2.1.1.2" class="indexterm"></a>
+     <code class="function">bt_index_check(index regclass, heapallindexed boolean, checkunique boolean) returns void</code>
+     <a id="id-1.11.7.11.8.2.1.1.2" class="indexterm"></a>
     </span></dt><dd><p>
 <span class="original">
       &lt;function&gt;bt_index_check&lt;/function&gt; tests that its target, a
@@ -129,19 +138,27 @@ ORDER BY c.relpages DESC LIMIT 10;
       that span child/parent relationships, but will verify the
       presence of all heap tuples as index tuples within the index
       when &lt;parameter&gt;heapallindexed&lt;/parameter&gt; is
-      &lt;literal&gt;true&lt;/literal&gt;.  When a routine, lightweight test for
+      &lt;literal&gt;true&lt;/literal&gt;.  When &lt;parameter&gt;checkunique&lt;/parameter&gt;
+      is &lt;literal&gt;true&lt;/literal&gt; &lt;function&gt;bt_index_check&lt;/function&gt; will
+      check that no more than one among duplicate entries in unique
+      index is visible.  When a routine, lightweight test for
       corruption is required in a live production environment, using
       &lt;function&gt;bt_index_check&lt;/function&gt; often provides the best
       trade-off between thoroughness of verification and limiting the
       impact on application performance and availability.
 </span>
-<code class="function">bt_index_check</code>は、ターゲットとなるインデックスと、それが所属するヒープリレーションに対して<code class="literal">AccessShareLock</code>を獲得します。
+《マッチ度[73.312565]》<code class="function">bt_index_check</code>は、ターゲットとなるインデックスと、それが所属するヒープリレーションに対して<code class="literal">AccessShareLock</code>を獲得します。
 このロックモードは、単純な<code class="literal">SELECT</code>文がリレーションに対して獲得するのと同じものです。
 <code class="function">bt_index_check</code>は、子／親関係に渡る不変量を検査しませんが、<em class="parameter"><code>heapallindexed</code></em>が<code class="literal">true</code>の場合には、インデックス中のインデックスタプルに対応するすべてのヒープタプルの存在が検証されます。
 実行中の運用環境で定期的、軽量なデータ破損検査が必要な場合、<code class="function">bt_index_check</code>を使うのが、検査の完全性と、アプリケーションの性能と稼働への影響を限定することとの間の最良のトレードオフになることがしばしばあります。
+《機械翻訳》<code class="function">bt_index_check</code>は、ターゲットインデックスとそれが属するヒープリレーションの<code class="literal">AccessShareLock</code>を取得します。
+このロックモードは、シンプル<code class="literal">セレクト</code>の声明によってリレーションで取得されたのと同じロックモードです。
+<code class="function">bt_index_check</code>は、子と親の関係にまたがる不変条件を検証しませんが、<em class="parameter"><code>heapallindexed</code></em>が<code class="literal">ヒープ</code>の場合、インデックス内のインデックスタプルとしてすべての真タプルの存在を検証します。
+<em class="parameter"><code>checkunique</code></em>が<code class="literal">真</code><code class="function">bt_index_check</code>の場合、一意インデックス内の重複エントリの中で可視のものが1つだけであることをチェックする。
+実際の運用環境で、破損に対するルーチンの軽量なテストが必要な場合、<code class="function">bt_index_check</code>を使用すると、検証の徹底と、アプリケーションパフォーマンスのインパクトとアベイラビリティの制限との間のベストの取引-オフが提供されることがよくある。
      </p></dd><dt><span class="term">
-     <code class="function">bt_index_parent_check(index regclass, heapallindexed boolean, rootdescend boolean) returns void</code>
-     <a id="id-1.11.7.12.8.2.2.1.2" class="indexterm"></a>
+     <code class="function">bt_index_parent_check(index regclass, heapallindexed boolean, rootdescend boolean, checkunique boolean) returns void</code>
+     <a id="id-1.11.7.11.8.2.2.1.2" class="indexterm"></a>
     </span></dt><dd><p>
 <span class="original">
       &lt;function&gt;bt_index_parent_check&lt;/function&gt; tests that its
@@ -149,7 +166,10 @@ ORDER BY c.relpages DESC LIMIT 10;
       Optionally, when the &lt;parameter&gt;heapallindexed&lt;/parameter&gt;
       argument is &lt;literal&gt;true&lt;/literal&gt;, the function verifies the
       presence of all heap tuples that should be found within the
-      index.  When the optional &lt;parameter&gt;rootdescend&lt;/parameter&gt;
+      index.  When &lt;parameter&gt;checkunique&lt;/parameter&gt;
+      is &lt;literal&gt;true&lt;/literal&gt; &lt;function&gt;bt_index_parent_check&lt;/function&gt; will
+      check that no more than one among duplicate entries in unique
+      index is visible.  When the optional &lt;parameter&gt;rootdescend&lt;/parameter&gt;
       argument is &lt;literal&gt;true&lt;/literal&gt;, verification re-finds
       tuples on the leaf level by performing a new search from the
       root page for each tuple.  The checks that can be performed by
@@ -165,13 +185,20 @@ ORDER BY c.relpages DESC LIMIT 10;
       convention of raising an error if it finds a logical
       inconsistency or other problem.
 </span>
-<code class="function">bt_index_parent_check</code>は、ターゲットとなるB-Treeインデックスが様々な不変量を保っていることを検査します。
+《マッチ度[77.753465]》<code class="function">bt_index_parent_check</code>は、ターゲットとなるB-Treeインデックスが様々な不変量を保っていることを検査します。
 オプションとして、<em class="parameter"><code>heapallindexed</code></em>引数が<code class="literal">true</code>の場合、インデックスに対応して存在すべきすべてのヒープタプルの存在を検証します。
 省略可能な引数<em class="parameter"><code>rootdescend</code></em>が<code class="literal">true</code>であれば、各タプルに対するルートページから新しく探索することで、検証はリーフレベルのタプルを再び見つけます。
 <code class="function">bt_index_parent_check</code>により実施される検査は、<code class="function">bt_index_check</code>により実施される検査のスーパーセットになっています。
 <code class="function">bt_index_parent_check</code>は、<code class="function">bt_index_check</code>の更なる完璧版であると考えることができます。
 つまり、<code class="function">bt_index_check</code>と違って<code class="function">bt_index_parent_check</code>は、インデックス構造中のダウンリンクに漏れがないことを含め、親／子関係に渡る不変量も検査します。
 <code class="function">bt_index_parent_check</code>は、論理的な非一貫性やその他の問題を発見した場合、一般的な習慣に従ってエラーを報告します。
+《機械翻訳》<code class="function">bt_index_parent_check</code>は、そのターゲットであるB-ツリーインデックスがさまざまな不変条件を尊重することをテストする。
+オプションで、<em class="parameter"><code>heapallindexed</code></em>引数が<code class="literal">真</code>の場合、関数は、インデックス内で検出されるすべてのヒープタプルの存在を検証します。
+<em class="parameter"><code>checkunique</code></em>が<code class="literal">真</code><code class="function">bt_index_parent_check</code>の場合、一意インデックスの重複エントリの中で可視のものが1つだけであることをチェックします。
+オプショナル<em class="parameter"><code>rootdescend</code></em>引数が<code class="literal">真</code>である場合、検証は、各リーフレベルに対してルートページから新しい検索を実行することによって、タプル上のタプルを再検索する。
+<code class="function">bt_index_parent_check</code>で実行可能なチェックは、<code class="function">bt_index_check</code>で実行可能なチェックのスーパーセットです。
+<code class="function">bt_index_parent_check</code>は、<code class="function">bt_index_check</code>のより完全な変形と考えることができます:<code class="function">bt_index_check</code>とは異なり、<code class="function">bt_index_parent_check</code>は、インデックス構造に欠落したダウンリンクがないことをチェックするなど、親/子の関係にまたがる不変条件もチェックします。
+<code class="function">bt_index_parent_check</code>は、ロジカルの不一致やその他の問題を検出した場合にエラーを上げるという一般的な規則に従います。
      </p><p>
 <span class="original">
       A &lt;literal&gt;ShareLock&lt;/literal&gt; is required on the target index by
@@ -358,7 +385,7 @@ SET client_min_messages = DEBUG1;
          A message describing the problem detected.
 </span>
 検出された問題を記述するメッセージ。
-        </p></dd></dl></div></dd></dl></div></div><div class="sect2" id="AMCHECK-OPTIONAL-HEAPALLINDEXED-VERIFICATION"><div class="titlepage"><div><div><h3 class="title">F.2.2. オプション<em class="parameter"><code>heapallindexed</code></em>検証 <a href="#AMCHECK-OPTIONAL-HEAPALLINDEXED-VERIFICATION" class="id_link">#</a></h3></div></div></div><span class="original">
+        </p></dd></dl></div></dd></dl></div></div><div class="sect2" id="AMCHECK-OPTIONAL-HEAPALLINDEXED-VERIFICATION"><div class="titlepage"><div><div><h3 class="title">F.1.2. オプション<em class="parameter"><code>heapallindexed</code></em>検証 <a href="#AMCHECK-OPTIONAL-HEAPALLINDEXED-VERIFICATION" class="id_link">#</a></h3></div></div></div><span class="original">
   &lt;title&gt;Optional &lt;parameter&gt;heapallindexed&lt;/parameter&gt; Verification&lt;/title&gt;
 </span><p>
 <span class="original">
@@ -411,7 +438,7 @@ B-Tree検証関数の<em class="parameter"><code>heapallindexed</code></em>引�
 タプルごとに利用可能なメモリが少ないほど、非一貫性を見逃す可能性が徐々に増えていきます。
 この手法によって検証のオーバーヘッドを大幅に減らせる一方、とりわけ検証を日常的な保守作業として行うシステムでは、問題を検出できる確率が少し減少するだけです。
 失われた、あるいは不正なタプルは次の検証の機会に検出されます。
- </p></div><div class="sect2" id="AMCHECK-USING-AMCHECK-EFFECTIVELY"><div class="titlepage"><div><div><h3 class="title">F.2.3. <code class="filename">amcheck</code>を効果的に使う <a href="#AMCHECK-USING-AMCHECK-EFFECTIVELY" class="id_link">#</a></h3></div></div></div><span class="original">
+ </p></div><div class="sect2" id="AMCHECK-USING-AMCHECK-EFFECTIVELY"><div class="titlepage"><div><div><h3 class="title">F.1.3. <code class="filename">amcheck</code>を効果的に使う <a href="#AMCHECK-USING-AMCHECK-EFFECTIVELY" class="id_link">#</a></h3></div></div></div><span class="original">
   &lt;title&gt;Using &lt;filename&gt;amcheck&lt;/filename&gt; Effectively&lt;/title&gt;
 </span><p>
 <span class="original">
@@ -462,7 +489,7 @@ B-Tree検証関数の<em class="parameter"><code>heapallindexed</code></em>引�
 </span>
 そうした問題が起きても、影響を受けた照合順序を使って順序付けられた個々のインデックスには影響ないかもしれません。
 これは単純に、振る舞いにおける一貫性のなさにかかわらず<span class="emphasis"><em>インデックスされた</em></span>値は同じ絶対的な順になるからです。
-<span class="productname">PostgreSQL</span>がオペレーティングシステムのロケールと照合順序をどう使用するかについての更なる詳細については、<a class="xref" href="locale.html" title="24.1. ロケールのサポート">24.1</a>と<a class="xref" href="collation.html" title="24.2. 照合順序サポート">24.2</a>をご覧ください。
+<span class="productname">PostgreSQL</span>がオペレーティングシステムのロケールと照合順序をどう使用するかについての更なる詳細については、<a class="xref" href="locale.html" title="23.1. ロケールのサポート">23.1</a>と<a class="xref" href="collation.html" title="23.2. 照合順序サポート">23.2</a>をご覧ください。
     </p></li><li class="listitem"><p>
 <span class="original">
      Structural inconsistencies between indexes and the heap relations
@@ -499,7 +526,7 @@ B-Tree検証関数の<em class="parameter"><code>heapallindexed</code></em>引�
 新規、あるいは提案中の <span class="productname">PostgreSQL</span>の機能が、論理的な非一貫性をもたらしかねないかどうか全般的にテストする際に、インデックスの構造的な一貫性の自動検証が役立ちます。
 テーブル構造と、関連する可視性およびトランザクション状態情報の検証も同じような役割を果たします。
 わかりやすいテスト戦略の一つは、標準のリグレッションテストを実行中に、<code class="filename">amcheck</code>関数を継続的に呼び出すことです。
-テストの実行に関する詳細は、<a class="xref" href="regress-run.html" title="33.1. テストの実行">33.1</a>をご覧ください。
+テストの実行に関する詳細は、<a class="xref" href="regress-run.html" title="31.1. テストの実行">31.1</a>をご覧ください。
     </p></li><li class="listitem"><p>
 <span class="original">
      File system or storage subsystem faults where checksums happen to
@@ -555,7 +582,7 @@ B-Tree検証関数の<em class="parameter"><code>heapallindexed</code></em>引�
   checksums&lt;/application&gt;&lt;/link&gt;.
 </span>
 構造上の破損は故障したストレージハードウェア、あるいはリレーションファイルが無関係のソフトウェアによって上書きされたり変更されることによって起こることがあります。
-この種の破損は<a class="link" href="checksums.html" title="30.2. データチェックサム"><span class="application">データページチェックサム</span></a>によっても検出することができます。
+この種の破損は<a class="link" href="checksums.html" title="28.2. データチェックサム"><span class="application">データページチェックサム</span></a>によっても検出することができます。
  </p><p>
 <span class="original">
   Relation pages which are correctly formatted, internally consistent, and
@@ -591,14 +618,14 @@ B-Tree検証関数の<em class="parameter"><code>heapallindexed</code></em>引�
 破損したリレーションは、リスクの高い活動がもっとも忌避される環境である、運用中の実システム環境では最大の懸念事項です。
 このため、<code class="function">verify_heapam</code>は過度のリスクを伴わずに破損を診断するように設計されています。
 ひどく破損したシステムでは問い合わせの呼び出しを実行するだけでも安全ではないため、バックエンドのクラッシュのすべての原因から守ることはできません。
-カタログ自身が破損していれば<a class="link" href="catalogs-overview.html" title="53.1. 概要">カタログテーブル</a>へのアクセスの実行も問題になるでしょう。
+カタログ自身が破損していれば<a class="link" href="catalogs-overview.html" title="51.1. 概要">カタログテーブル</a>へのアクセスの実行も問題になるでしょう。
  </p><p>
 <span class="original">
   In general, &lt;filename&gt;amcheck&lt;/filename&gt; can only prove the presence of
   corruption; it cannot prove its absence.
 </span>
 一般的に、<code class="filename">amcheck</code>は破損の存在を証明することはできますが、破損がないことを証明することはできません。
- </p></div><div class="sect2" id="AMCHECK-REPAIRING-CORRUPTION"><div class="titlepage"><div><div><h3 class="title">F.2.4. 破損の修復 <a href="#AMCHECK-REPAIRING-CORRUPTION" class="id_link">#</a></h3></div></div></div><span class="original">
+ </p></div><div class="sect2" id="AMCHECK-REPAIRING-CORRUPTION"><div class="titlepage"><div><div><h3 class="title">F.1.4. 破損の修復 <a href="#AMCHECK-REPAIRING-CORRUPTION" class="id_link">#</a></h3></div></div></div><span class="original">
   &lt;title&gt;Repairing Corruption&lt;/title&gt;
 </span><p>
 <span class="original">
@@ -621,6 +648,6 @@ B-Tree検証関数の<em class="parameter"><code>heapallindexed</code></em>引�
 </span>
 <code class="filename">amcheck</code>が検出した問題を修復する一般的な方法はありません。
 不変条件違反の根本的な原因の説明が求められます。
-<code class="filename">amcheck</code>が検出した破損の診断には、<a class="xref" href="pageinspect.html" title="F.25. pageinspect — データベースページの低レベルな調査">pageinspect</a>が有用な役割を担うかもしれません。
+<code class="filename">amcheck</code>が検出した破損の診断には、<a class="xref" href="pageinspect.html" title="F.23. pageinspect — データベースページの低レベルな調査">pageinspect</a>が有用な役割を担うかもしれません。
 <code class="command">REINDEX</code>は破損の修復には効果的ではないかもしれません。
- </p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="adminpack.html" title="F.1. adminpack — pgAdminサポートツールパック">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="contrib.html" title="付録F 追加で提供されるモジュールと拡張">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="auth-delay.html" title="F.3. auth_delay — 認証エラー時に一時停止">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">F.1. adminpack — pgAdminサポートツールパック </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 16.4文書">ホーム</a></td><td width="40%" align="right" valign="top"> F.3. auth_delay — 認証エラー時に一時停止</td></tr></table></div></body></html>
+ </p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="contrib.html" title="付録F 追加で提供されるモジュールと拡張">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="contrib.html" title="付録F 追加で提供されるモジュールと拡張">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="auth-delay.html" title="F.2. auth_delay — 認証エラー時に一時停止">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">付録F 追加で提供されるモジュールと拡張 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 17.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> F.2. auth_delay — 認証エラー時に一時停止</td></tr></table></div></body></html>

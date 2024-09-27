@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>27.2. ログシッピングスタンバイサーバ</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="different-replication-solutions.html" title="27.1. 様々な解法の比較" /><link rel="next" href="warm-standby-failover.html" title="27.3. フェイルオーバー" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 16.4文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="high-availability.html" title="第27章 高可用性、負荷分散およびレプリケーション">第27章 高可用性、負荷分散およびレプリケーション</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 16.4 : warm-standby.html">誤訳等の報告
-                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="different-replication-solutions.html" title="27.1. 様々な解法の比較">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="high-availability.html" title="第27章 高可用性、負荷分散およびレプリケーション">上へ</a></td><td width="60%" align="center">27.2. ログシッピングスタンバイサーバ</td><td width="20%" align="right"> <a accesskey="n" href="warm-standby-failover.html" title="27.3. フェイルオーバー">次へ</a></td></tr></table><hr /></div><div class="sect1" id="WARM-STANDBY"><div class="titlepage"><div><div><h2 class="title" style="clear: both">27.2. ログシッピングスタンバイサーバ <a href="#WARM-STANDBY" class="id_link">#</a></h2></div></div></div><span class="original">
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>26.2. ログシッピングスタンバイサーバ</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="different-replication-solutions.html" title="26.1. 様々な解法の比較" /><link rel="next" href="warm-standby-failover.html" title="26.3. フェイルオーバー" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 17.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="high-availability.html" title="第26章 高可用性、負荷分散およびレプリケーション">第26章 高可用性、負荷分散およびレプリケーション</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 17.0 : warm-standby.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="different-replication-solutions.html" title="26.1. 様々な解法の比較">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="high-availability.html" title="第26章 高可用性、負荷分散およびレプリケーション">上へ</a></td><td width="60%" align="center">26.2. ログシッピングスタンバイサーバ</td><td width="20%" align="right"> <a accesskey="n" href="warm-standby-failover.html" title="26.3. フェイルオーバー">次へ</a></td></tr></table><hr /></div><div class="sect1" id="WARM-STANDBY"><div class="titlepage"><div><div><h2 class="title" style="clear: both">26.2. ログシッピングスタンバイサーバ <a href="#WARM-STANDBY" class="id_link">#</a></h2></div></div></div><span class="original">
  &lt;title&gt;Log-Shipping Standby Servers&lt;/title&gt;
 </span><p>
 <span class="original">
@@ -47,7 +47,7 @@
 つまりWALレコードはある時点で1つのファイル(WALセグメント)として送信されることを意味します。
 WALファイル(16MB)は隣り合うシステム、同じサイトの別システム、地球の裏側のシステムなど距離に関わらず、簡単かつ安価に送付することができます。
 この技法に必要な帯域幅はプライマリサーバのトランザクションの頻度に応じて変動します。
-レコードベースのログシッピングはより粒度を細かくしたもので、ネットワーク接続を介してWALの変更を増分的に流します（<a class="xref" href="warm-standby.html#STREAMING-REPLICATION" title="27.2.5. ストリーミングレプリケーション">27.2.5</a>参照）。
+レコードベースのログシッピングはより粒度を細かくしたもので、ネットワーク接続を介してWALの変更を増分的に流します（<a class="xref" href="warm-standby.html#STREAMING-REPLICATION" title="26.2.5. ストリーミングレプリケーション">26.2.5</a>参照）。
   </p><p>
 <span class="original">
    It should be noted that log shipping is asynchronous, i.e., the WAL
@@ -67,7 +67,7 @@ WALファイル(16MB)は隣り合うシステム、同じサイトの別シス�
 ファイルベースのログシッピングにおけるデータ損失の空白期間量を<code class="varname">archive_timeout</code>パラメータを用いて制限することができます。
 これは数秒程度まで小さく設定することができます。
 しかし、低く設定するとファイル転送に必要な帯域幅が増大します。
-ストリーミングレプリケーション（<a class="xref" href="warm-standby.html#STREAMING-REPLICATION" title="27.2.5. ストリーミングレプリケーション">27.2.5</a>参照）により、データを損失する期間を非常に小さくすることができます。
+ストリーミングレプリケーション（<a class="xref" href="warm-standby.html#STREAMING-REPLICATION" title="26.2.5. ストリーミングレプリケーション">26.2.5</a>参照）により、データを損失する期間を非常に小さくすることができます。
   </p><p>
 <span class="original">
    Recovery performance is sufficiently good that the standby will
@@ -86,8 +86,8 @@ WALファイル(16MB)は隣り合うシステム、同じサイトの別シス�
 保管されたベースバックアップからサーバをリストアし、ロールフォワードを行うことはおそらく長時間かかりますので、これは高可用性のための解法とはいえず、災害からのリカバリのための解法です。
 スタンバイサーバは読み取り専用の問い合わせに使用することもできます。
 この場合<em class="firstterm">ホットスタンバイ</em>サーバと呼ばれます。
-詳細については<a class="xref" href="hot-standby.html" title="27.4. ホットスタンバイ">27.4</a>を参照してください。
-  </p><a id="id-1.6.14.22.7" class="indexterm"></a><a id="id-1.6.14.22.8" class="indexterm"></a><a id="id-1.6.14.22.9" class="indexterm"></a><a id="id-1.6.14.22.10" class="indexterm"></a><a id="id-1.6.14.22.11" class="indexterm"></a><a id="id-1.6.14.22.12" class="indexterm"></a><a id="id-1.6.14.22.13" class="indexterm"></a><a id="id-1.6.14.22.14" class="indexterm"></a><a id="id-1.6.14.22.15" class="indexterm"></a><a id="id-1.6.14.22.16" class="indexterm"></a><a id="id-1.6.14.22.17" class="indexterm"></a><div class="sect2" id="STANDBY-PLANNING"><div class="titlepage"><div><div><h3 class="title">27.2.1. 計画 <a href="#STANDBY-PLANNING" class="id_link">#</a></h3></div></div></div><span class="original">
+詳細については<a class="xref" href="hot-standby.html" title="26.4. ホットスタンバイ">26.4</a>を参照してください。
+  </p><a id="id-1.6.13.22.7" class="indexterm"></a><a id="id-1.6.13.22.8" class="indexterm"></a><a id="id-1.6.13.22.9" class="indexterm"></a><a id="id-1.6.13.22.10" class="indexterm"></a><a id="id-1.6.13.22.11" class="indexterm"></a><a id="id-1.6.13.22.12" class="indexterm"></a><a id="id-1.6.13.22.13" class="indexterm"></a><a id="id-1.6.13.22.14" class="indexterm"></a><a id="id-1.6.13.22.15" class="indexterm"></a><a id="id-1.6.13.22.16" class="indexterm"></a><a id="id-1.6.13.22.17" class="indexterm"></a><div class="sect2" id="STANDBY-PLANNING"><div class="titlepage"><div><div><h3 class="title">26.2.1. 計画 <a href="#STANDBY-PLANNING" class="id_link">#</a></h3></div></div></div><span class="original">
    &lt;title&gt;Planning&lt;/title&gt;
 </span><p>
 <span class="original">
@@ -135,7 +135,7 @@ WALファイル(16MB)は隣り合うシステム、同じサイトの別シス�
 新しいマイナーリリースは以前のマイナーリリースのWALファイルを読み込むことはできますが、逆はできないかもしれません。
    </p></div><span class="original">
   &lt;sect2 id="standby-server-operation" xreflabel="Standby Server Operation"&gt;
-</span><div class="sect2" id="STANDBY-SERVER-OPERATION"><div class="titlepage"><div><div><h3 class="title">27.2.2. スタンバイサーバの動作 <a href="#STANDBY-SERVER-OPERATION" class="id_link">#</a></h3></div></div></div><span class="original">
+</span><div class="sect2" id="STANDBY-SERVER-OPERATION"><div class="titlepage"><div><div><h3 class="title">26.2.2. スタンバイサーバの動作 <a href="#STANDBY-SERVER-OPERATION" class="id_link">#</a></h3></div></div></div><span class="original">
    &lt;title&gt;Standby Server Operation&lt;/title&gt;
 </span><p>
 <span class="original">
@@ -145,7 +145,7 @@ WALファイル(16MB)は隣り合うシステム、同じサイトの別シス�
     &lt;indexterm&gt;&lt;primary&gt;&lt;filename&gt;standby.signal&lt;/filename&gt;&lt;/primary&gt;&lt;/indexterm&gt;
     file exists in the data directory when the server is started.
 </span>
-サーバが起動した時にデータディレクトリに<span id="FILE-STANDBY-SIGNAL"></span><code class="filename">standby.signal</code><a id="id-1.6.14.22.19.2.3" class="indexterm"></a>が存在すると、サーバはスタンバイモードに入ります。
+サーバが起動した時にデータディレクトリに<span id="FILE-STANDBY-SIGNAL"></span><code class="filename">standby.signal</code><a id="id-1.6.13.22.19.2.3" class="indexterm"></a>が存在すると、サーバはスタンバイモードに入ります。
    </p><p>
 <span class="original">
     In standby mode, the server continuously applies WAL received from the
@@ -193,7 +193,7 @@ WALファイル(16MB)は隣り合うシステム、同じサイトの別シス�
 </span>
 スタンバイモードは、<code class="command">pg_ctl promote</code>が実行されたとき、または<code class="function">pg_promote()</code>が呼び出されたときに終了し、サーバは通常の動作に切り替わります。
 フェイルオーバーの前に、アーカイブまたは<code class="filename">pg_wal</code>内で直ちに使用可能なWALはすべてリストアされますが、プライマリへの接続は試みられません。
-   </p></div><div class="sect2" id="PREPARING-PRIMARY-FOR-STANDBY"><div class="titlepage"><div><div><h3 class="title">27.2.3. スタンバイサーバのためのプライマリの準備 <a href="#PREPARING-PRIMARY-FOR-STANDBY" class="id_link">#</a></h3></div></div></div><span class="original">
+   </p></div><div class="sect2" id="PREPARING-PRIMARY-FOR-STANDBY"><div class="titlepage"><div><div><h3 class="title">26.2.3. スタンバイサーバのためのプライマリの準備 <a href="#PREPARING-PRIMARY-FOR-STANDBY" class="id_link">#</a></h3></div></div></div><span class="original">
    &lt;title&gt;Preparing the Primary for Standby Servers&lt;/title&gt;
 </span><p>
 <span class="original">
@@ -204,7 +204,7 @@ WALファイル(16MB)は隣り合うシステム、同じサイトの別シス�
     reside on the standby server itself or another trusted server, not on
     the primary server.
 </span>
-<a class="xref" href="continuous-archiving.html" title="26.3. 継続的アーカイブとポイントインタイムリカバリ（PITR）">26.3</a>で説明したように、スタンバイからアクセス可能なアーカイブディレクトリに対してプライマリで継続的なアーカイブを設定してください。
+<a class="xref" href="continuous-archiving.html" title="25.3. 継続的アーカイブとポイントインタイムリカバリ（PITR）">25.3</a>で説明したように、スタンバイからアクセス可能なアーカイブディレクトリに対してプライマリで継続的なアーカイブを設定してください。
 このアーカイブ場所はプライマリが停止した時であってもスタンバイからアクセス可能でなければなりません。
 つまり、プライマリサーバ上ではなく、スタンバイサーバ自身上に存在するか、または他の高信頼性サーバ上に存在しなければなりません。
    </p><p>
@@ -228,8 +228,8 @@ WALファイル(16MB)は隣り合うシステム、同じサイトの別シス�
     Take a base backup as described in &lt;xref linkend="backup-base-backup"/&gt;
     to bootstrap the standby server.
 </span>
-<a class="xref" href="continuous-archiving.html#BACKUP-BASE-BACKUP" title="26.3.2. ベースバックアップの作成">26.3.2</a>に記述したように、スタンバイサーバの再起動のために、ベースバックアップを取得してください。
-   </p></div><div class="sect2" id="STANDBY-SERVER-SETUP"><div class="titlepage"><div><div><h3 class="title">27.2.4. スタンバイサーバの設定 <a href="#STANDBY-SERVER-SETUP" class="id_link">#</a></h3></div></div></div><span class="original">
+<a class="xref" href="continuous-archiving.html#BACKUP-BASE-BACKUP" title="25.3.2. ベースバックアップの作成">25.3.2</a>に記述したように、スタンバイサーバの再起動のために、ベースバックアップを取得してください。
+   </p></div><div class="sect2" id="STANDBY-SERVER-SETUP"><div class="titlepage"><div><div><h3 class="title">26.2.4. スタンバイサーバの設定 <a href="#STANDBY-SERVER-SETUP" class="id_link">#</a></h3></div></div></div><span class="original">
    &lt;title&gt;Setting Up a Standby Server&lt;/title&gt;
 </span><p>
 <span class="original">
@@ -243,8 +243,8 @@ WALファイル(16MB)は隣り合うシステム、同じサイトの別シス�
     &lt;literal&gt;latest&lt;/literal&gt; (the default), to make the standby server follow the timeline change
     that occurs at failover to another standby.
 </span>
-スタンバイサーバを設定するためには、プライマリサーバから取得したベースバックアップをリストアしてください(<a class="xref" href="continuous-archiving.html#BACKUP-PITR-RECOVERY" title="26.3.4. 継続的アーカイブによるバックアップを使用した復旧">26.3.4</a>参照)。
-スタンバイのクラスタデータディレクトリ内に<a class="link" href="warm-standby.html#FILE-STANDBY-SIGNAL"><code class="filename">standby.signal</code></a><a id="id-1.6.14.22.21.2.3" class="indexterm"></a>ファイルを作成してください。
+スタンバイサーバを設定するためには、プライマリサーバから取得したベースバックアップをリストアしてください(<a class="xref" href="continuous-archiving.html#BACKUP-PITR-RECOVERY" title="25.3.5. 継続的アーカイブによるバックアップを使用した復旧">25.3.5</a>参照)。
+スタンバイのクラスタデータディレクトリ内に<a class="link" href="warm-standby.html#FILE-STANDBY-SIGNAL"><code class="filename">standby.signal</code></a><a id="id-1.6.13.22.21.2.3" class="indexterm"></a>ファイルを作成してください。
 WALアーカイブからファイルをコピーする簡単なコマンドを<a class="xref" href="runtime-config-wal.html#GUC-RESTORE-COMMAND">restore_command</a>に設定してください。
 高可用性のために複数のスタンバイサーバを持たせようとしている場合、<code class="varname">recovery_target_timeline</code>を<code class="literal">latest</code>に設定し（デフォルト）、スタンバイサーバが他のスタンバイにフェイルオーバーする時に発生するタイムラインの変更に従うようにします。
    </p><div class="note"><h3 class="title">注記</h3><p>
@@ -305,9 +305,9 @@ archive_cleanup_command = 'pg_archivecleanup /path/to/archive %r'
     the primary to allow them to be connected simultaneously.
 </span>
 スタンバイサーバの台数に制限はありませんが、ストリーミングレプリケーションを使用するなら、プライマリサーバに同時に接続できるように<code class="varname">max_wal_senders</code>を十分な数に設定してください。
-   </p></div><div class="sect2" id="STREAMING-REPLICATION"><div class="titlepage"><div><div><h3 class="title">27.2.5. ストリーミングレプリケーション <a href="#STREAMING-REPLICATION" class="id_link">#</a></h3></div></div></div><span class="original">
+   </p></div><div class="sect2" id="STREAMING-REPLICATION"><div class="titlepage"><div><div><h3 class="title">26.2.5. ストリーミングレプリケーション <a href="#STREAMING-REPLICATION" class="id_link">#</a></h3></div></div></div><span class="original">
    &lt;title&gt;Streaming Replication&lt;/title&gt;
-</span><a id="id-1.6.14.22.22.2" class="indexterm"></a><a id="id-1.6.14.22.22.3" class="indexterm"></a><p>
+</span><a id="id-1.6.13.22.22.2" class="indexterm"></a><a id="id-1.6.13.22.22.3" class="indexterm"></a><p>
 <span class="original">
     Streaming replication allows a standby server to stay more up-to-date
     than is possible with file-based log shipping. The standby connects
@@ -327,7 +327,7 @@ archive_cleanup_command = 'pg_archivecleanup /path/to/archive %r'
     streaming replication, &lt;varname&gt;archive_timeout&lt;/varname&gt; is not required to
     reduce the data loss window.
 </span>
-ストリーミングレプリケーションはデフォルトで非同期で、(<a class="xref" href="warm-standby.html#SYNCHRONOUS-REPLICATION" title="27.2.8. 同期レプリケーション">27.2.8</a>参照)
+ストリーミングレプリケーションはデフォルトで非同期で、(<a class="xref" href="warm-standby.html#SYNCHRONOUS-REPLICATION" title="26.2.8. 同期レプリケーション">26.2.8</a>参照)
 この場合、プライマリでトランザクションがコミットされてから、その変更がスタンバイ側で参照可能になるまでの間にわずかな遅延がまだあります。
 しかし、この遅延はファイルベースのログシッピングよりも非常に小さなもので、負荷に追随できる程度の能力があるスタンバイであれば通常は1秒以下です。
 ストリーミングレプリケーションでは、データ損失期間を減らすための<code class="varname">archive_timeout</code>を必要としません。
@@ -358,9 +358,9 @@ archive_cleanup_command = 'pg_archivecleanup /path/to/archive %r'
     can connect to the &lt;literal&gt;replication&lt;/literal&gt; pseudo-database on the primary
     server (see &lt;xref linkend="streaming-replication-authentication"/&gt;).
 </span>
-ストリーミングレプリケーションを使用するためには、<a class="xref" href="warm-standby.html" title="27.2. ログシッピングスタンバイサーバ">27.2</a>の説明のようにファイルベースのログシッピングを行うスタンバイサーバを設定してください。
+ストリーミングレプリケーションを使用するためには、<a class="xref" href="warm-standby.html" title="26.2. ログシッピングスタンバイサーバ">26.2</a>の説明のようにファイルベースのログシッピングを行うスタンバイサーバを設定してください。
 ファイルベースのログシッピングを行うスタンバイをストリーミングレプリケーションを行うスタンバイに切り替える手順は、<code class="varname">primary_conninfo</code>設定をプライマリサーバを指し示すように設定することです。
-スタンバイサーバがプライマリサーバ上の<code class="literal">replication</code>疑似データベースに接続できる(<a class="xref" href="warm-standby.html#STREAMING-REPLICATION-AUTHENTICATION" title="27.2.5.1. 認証">27.2.5.1</a>参照)ように、プライマリで<a class="xref" href="runtime-config-connection.html#GUC-LISTEN-ADDRESSES">listen_addresses</a>と認証オプション(<code class="filename">pg_hba.conf</code>参照)を設定してください。
+スタンバイサーバがプライマリサーバ上の<code class="literal">replication</code>疑似データベースに接続できる(<a class="xref" href="warm-standby.html#STREAMING-REPLICATION-AUTHENTICATION" title="26.2.5.1. 認証">26.2.5.1</a>参照)ように、プライマリで<a class="xref" href="runtime-config-connection.html#GUC-LISTEN-ADDRESSES">listen_addresses</a>と認証オプション(<code class="filename">pg_hba.conf</code>参照)を設定してください。
    </p><p>
 <span class="original">
     On systems that support the keepalive socket option, setting
@@ -386,7 +386,7 @@ archive_cleanup_command = 'pg_archivecleanup /path/to/archive %r'
 </span>
 スタンバイが起動し、<code class="varname">primary_conninfo</code>が正しく設定されると、スタンバイはアーカイブ内で利用可能なWALファイルをすべて再生した後にプライマリと接続します。
 接続の確立に成功すると、スタンバイで<code class="literal">walreceiver</code>が存在し、プライマリで対応する<code class="literal">walsender</code>が存在します。
-   </p><div class="sect3" id="STREAMING-REPLICATION-AUTHENTICATION"><div class="titlepage"><div><div><h4 class="title">27.2.5.1. 認証 <a href="#STREAMING-REPLICATION-AUTHENTICATION" class="id_link">#</a></h4></div></div></div><span class="original">
+   </p><div class="sect3" id="STREAMING-REPLICATION-AUTHENTICATION"><div class="titlepage"><div><div><h4 class="title">26.2.5.1. 認証 <a href="#STREAMING-REPLICATION-AUTHENTICATION" class="id_link">#</a></h4></div></div></div><span class="original">
     &lt;title&gt;Authentication&lt;/title&gt;
 </span><p>
 <span class="original">
@@ -456,7 +456,7 @@ host    replication     foo             192.168.1.100/32        md5
 # 利用者名が foo でパスワードが foopass とする
 primary_conninfo = 'host=192.168.1.50 port=5432 user=foo password=foopass'
 </pre><p>
-    </p></div><div class="sect3" id="STREAMING-REPLICATION-MONITORING"><div class="titlepage"><div><div><h4 class="title">27.2.5.2. 監視 <a href="#STREAMING-REPLICATION-MONITORING" class="id_link">#</a></h4></div></div></div><span class="original">
+    </p></div><div class="sect3" id="STREAMING-REPLICATION-MONITORING"><div class="titlepage"><div><div><h4 class="title">26.2.5.2. 監視 <a href="#STREAMING-REPLICATION-MONITORING" class="id_link">#</a></h4></div></div></div><span class="original">
     &lt;title&gt;Monitoring&lt;/title&gt;
 </span><p>
 <span class="original">
@@ -475,8 +475,8 @@ primary_conninfo = 'host=192.168.1.50 port=5432 user=foo password=foopass'
 </span>
 ストリーミングレプリケーションの重要な健全性尺度は、プライマリサーバで生成されたがスタンバイサーバではまだ適用されていないWALレコードの量です。
 プライマリサーバの現在のWAL書き込み位置とスタンバイサーバの受理したWALの最終位置を比較すれば、この遅延を計算できます。
-これらの位置は、プライマリサーバでは<code class="function">pg_current_wal_lsn</code>を、スタンバイサーバでは<code class="function">pg_last_wal_receive_lsn</code>を使用すれば検索できます（詳細は<a class="xref" href="functions-admin.html#FUNCTIONS-ADMIN-BACKUP-TABLE" title="表9.91 バックアップ制御関数">表 9.91</a>および<a class="xref" href="functions-admin.html#FUNCTIONS-RECOVERY-INFO-TABLE" title="表9.92 リカバリ情報関数">表 9.92</a>を参照）。
-スタンバイサーバの最終位置は、<code class="command">ps</code>コマンドを使用して WAL受信プロセスの状態としても表示できます（詳細は<a class="xref" href="monitoring-ps.html" title="28.1. 標準的なUnixツール">28.1</a>を参照）。
+これらの位置は、プライマリサーバでは<code class="function">pg_current_wal_lsn</code>を、スタンバイサーバでは<code class="function">pg_last_wal_receive_lsn</code>を使用すれば検索できます（詳細は<a class="xref" href="functions-admin.html#FUNCTIONS-ADMIN-BACKUP-TABLE" title="表9.95 バックアップ制御関数">表 9.95</a>および<a class="xref" href="functions-admin.html#FUNCTIONS-RECOVERY-INFO-TABLE" title="表9.96 リカバリ情報関数">表 9.96</a>を参照）。
+スタンバイサーバの最終位置は、<code class="command">ps</code>コマンドを使用して WAL受信プロセスの状態としても表示できます（詳細は<a class="xref" href="monitoring-ps.html" title="27.1. 標準的なUnixツール">27.1</a>を参照）。
     </p><p>
 <span class="original">
      You can retrieve a list of WAL sender processes via the
@@ -488,7 +488,7 @@ primary_conninfo = 'host=192.168.1.50 port=5432 user=foo password=foopass'
      &lt;function&gt;pg_last_wal_receive_lsn&lt;/function&gt; on the standby might indicate
      network delay, or that the standby is under heavy load.
 </span>
-<a class="link" href="monitoring-stats.html#MONITORING-PG-STAT-REPLICATION-VIEW" title="28.2.4. pg_stat_replication"><code class="structname">pg_stat_replication</code></a>ビューを介してWAL送信処理プロセスのリストを入手することができます。
+<a class="link" href="monitoring-stats.html#MONITORING-PG-STAT-REPLICATION-VIEW" title="27.2.4. pg_stat_replication"><code class="structname">pg_stat_replication</code></a>ビューを介してWAL送信処理プロセスのリストを入手することができます。
 <code class="function">pg_current_wal_lsn</code>とビューの<code class="literal">sent_lsn</code>フィールドとの違いが大きい場合、プライマリサーバが高負荷状態であることを示している可能性があります。
 一方でスタンバイサーバ上の<code class="literal">sent_lsn</code>と<code class="function">pg_last_wal_receive_lsn</code>の値の差異は、ネットワーク遅延、またはスタンバイが高負荷状態であることを示す可能性があります。
     </p><p>
@@ -500,49 +500,55 @@ primary_conninfo = 'host=192.168.1.50 port=5432 user=foo password=foopass'
      view's &lt;literal&gt;flushed_lsn&lt;/literal&gt; indicates that WAL is being
      received faster than it can be replayed.
 </span>
-ホットスタンバイ上では、WAL受信プロセスの状態は、<a class="link" href="monitoring-stats.html#MONITORING-PG-STAT-WAL-RECEIVER-VIEW" title="28.2.6. pg_stat_wal_receiver"><code class="structname">pg_stat_wal_receiver</code></a>ビューを通じて入手することができます。
+ホットスタンバイ上では、WAL受信プロセスの状態は、<a class="link" href="monitoring-stats.html#MONITORING-PG-STAT-WAL-RECEIVER-VIEW" title="27.2.6. pg_stat_wal_receiver"><code class="structname">pg_stat_wal_receiver</code></a>ビューを通じて入手することができます。
 <code class="function">pg_last_wal_replay_lsn</code>とビューの<code class="literal">flushed_lsn</code>との違いが大きい場合、WALのリプレイを上回る速さでWALが受信されていることを示しています。
-    </p></div></div><div class="sect2" id="STREAMING-REPLICATION-SLOTS"><div class="titlepage"><div><div><h3 class="title">27.2.6. レプリケーションスロット <a href="#STREAMING-REPLICATION-SLOTS" class="id_link">#</a></h3></div></div></div><span class="original">
+    </p></div></div><div class="sect2" id="STREAMING-REPLICATION-SLOTS"><div class="titlepage"><div><div><h3 class="title">26.2.6. レプリケーションスロット <a href="#STREAMING-REPLICATION-SLOTS" class="id_link">#</a></h3></div></div></div><span class="original">
    &lt;title&gt;Replication Slots&lt;/title&gt;
-</span><a id="id-1.6.14.22.23.2" class="indexterm"></a><a id="id-1.6.14.22.23.3" class="indexterm"></a><p>
+</span><a id="id-1.6.13.22.23.2" class="indexterm"></a><a id="id-1.6.13.22.23.3" class="indexterm"></a><p>
 <span class="original">
-    Replication slots provide an automated way to ensure that the primary does
+    Replication slots provide an automated way to ensure that the
+    primary server does
     not remove WAL segments until they have been received by all standbys,
     and that the primary does not remove rows which could cause a
     &lt;link linkend="hot-standby-conflict"&gt;recovery conflict&lt;/link&gt; even when the
     standby is disconnected.
 </span>
-レプリケーションスロットは、以下のことを保証する自動的な方法を提供します。
-全てのスタンバイがWALセグメントを受け取るまでは、プライマリがWALセグメントを削除しないこと、また、スタンバイが接続していない際にも、<a class="link" href="hot-standby.html#HOT-STANDBY-CONFLICT" title="27.4.2. 問い合わせコンフリクトの処理">リカバリの競合</a>が発生する可能性がある行をプライマリが削除しないこと、です。
+《マッチ度[91.746032]》レプリケーションスロットは、以下のことを保証する自動的な方法を提供します。
+全てのスタンバイがWALセグメントを受け取るまでは、プライマリがWALセグメントを削除しないこと、また、スタンバイが接続していない際にも、<a class="link" href="hot-standby.html#HOT-STANDBY-CONFLICT" title="26.4.2. 問い合わせコンフリクトの処理">リカバリの競合</a>が発生する可能性がある行をプライマリが削除しないこと、です。
    </p><p>
 <span class="original">
     In lieu of using replication slots, it is possible to prevent the removal
     of old WAL segments using &lt;xref linkend="guc-wal-keep-size"/&gt;, or by
     storing the segments in an archive using
     &lt;xref linkend="guc-archive-command"/&gt; or &lt;xref linkend="guc-archive-library"/&gt;.
-    However, these methods often result in retaining more WAL segments than
+    A disadvantage of these methods is that they
+    often result in retaining more WAL segments than
     required, whereas replication slots retain only the number of segments
-    known to be needed.  On the other hand, replication slots can retain so
-    many WAL segments that they fill up the space allocated
-    for &lt;literal&gt;pg_wal&lt;/literal&gt;;
-    &lt;xref linkend="guc-max-slot-wal-keep-size"/&gt; limits the size of WAL files
-    retained by replication slots.
+    known to be needed.
 </span>
-レプリケーションスロットを使う代わりに、<a class="xref" href="runtime-config-replication.html#GUC-WAL-KEEP-SIZE">wal_keep_size</a>を使う、あるいは<a class="xref" href="runtime-config-wal.html#GUC-ARCHIVE-COMMAND">archive_command</a>または <a class="xref" href="runtime-config-wal.html#GUC-ARCHIVE-LIBRARY">archive_library</a>を使用してセグメントをアーカイブに保存することによっても、古いWALセグメントの削除を防ぐことができます。
-しかし、これらの方法はしばしば要求される以上のWALセグメントを残すことになってしまうのに対し、レプリケーションスロットは必要と判断されたセグメントのみを残します。
-一方で、レプリケーションスロットは<code class="literal">pg_wal</code>のための領域を埋め尽くす大量のWALセグメントを残してしまうかも知れません。
-<a class="xref" href="runtime-config-replication.html#GUC-MAX-SLOT-WAL-KEEP-SIZE">max_slot_wal_keep_size</a>はレプリケーションスロットによって残されるWALファイルの大きさを制限します。
+《機械翻訳》レプリケーションスロットを使用する代わりに、<a class="xref" href="runtime-config-replication.html#GUC-WAL-KEEP-SIZE">wal_keep_size</a>を使用したり、<a class="xref" href="runtime-config-wal.html#GUC-ARCHIVE-COMMAND">archive_command</a>や<a class="xref" href="runtime-config-wal.html#GUC-ARCHIVE-LIBRARY">archive_library</a>を使用してアーカイブにセグメントを保存したりすることで、古いWALセグメントの削除を防ぐことができます。
+これらの方法の欠点は、レプリケーションスロットが必要とされる数のセグメントしか保持しないのに対して、必要以上のWALセグメントを保持することが多いことです。
    </p><p>
 <span class="original">
     Similarly, &lt;xref linkend="guc-hot-standby-feedback"/&gt; on its own, without
     also using a replication slot, provides protection against relevant rows
     being removed by vacuum, but provides no protection during any time period
-    when the standby is not connected.  Replication slots overcome these
-    disadvantages.
+    when the standby is not connected.
 </span>
-同様に、<a class="xref" href="runtime-config-replication.html#GUC-HOT-STANDBY-FEEDBACK">hot_standby_feedback</a>は、レプリケーションスロットを使用しない場合、関連する行がバキュームによって削除されることに対して保護しますが、スタンバイが接続されていない間は保護しません。
+《マッチ度[73.046875]》同様に、<a class="xref" href="runtime-config-replication.html#GUC-HOT-STANDBY-FEEDBACK">hot_standby_feedback</a>は、レプリケーションスロットを使用しない場合、関連する行がバキュームによって削除されることに対して保護しますが、スタンバイが接続されていない間は保護しません。
 レプリケーションスロットはこれらの欠点を克服します。
-   </p><div class="sect3" id="STREAMING-REPLICATION-SLOTS-MANIPULATION"><div class="titlepage"><div><div><h4 class="title">27.2.6.1. レプリケーションスロットへの問い合わせと操作 <a href="#STREAMING-REPLICATION-SLOTS-MANIPULATION" class="id_link">#</a></h4></div></div></div><span class="original">
+《機械翻訳》同様に、レプリケーションスロットを使用しない<a class="xref" href="runtime-config-replication.html#GUC-HOT-STANDBY-FEEDBACK">hot_standby_feedback</a>自体は、関連する行がバキュームによって除去されることに対する保護を提供するが、ピリオドが接続されていないときは、スタンバイ中に保護を提供しない。
+   </p><div class="caution"><h3 class="title">注意</h3><p>
+<span class="original">
+     Beware that replication slots can cause the server to retain so
+     many WAL segments that they fill up the space allocated for
+     &lt;literal&gt;pg_wal&lt;/literal&gt;.
+     &lt;xref linkend="guc-max-slot-wal-keep-size"/&gt; can be used to limit the size
+     of WAL files retained by replication slots.
+</span>
+《機械翻訳》レプリケーションスロットは、サーバが非常に多くのWALセグメントを保持し、<code class="literal">pg_wal</code>に割り当てられたスペースを一杯にしてしまう可能性があることに注意してください。
+<a class="xref" href="runtime-config-replication.html#GUC-MAX-SLOT-WAL-KEEP-SIZE">max_slot_wal_keep_size</a>は、レプリケーションスロットが保持するWALファイルのサイズを制限するために使用できます。
+    </p></div><div class="sect3" id="STREAMING-REPLICATION-SLOTS-MANIPULATION"><div class="titlepage"><div><div><h4 class="title">26.2.6.1. レプリケーションスロットへの問い合わせと操作 <a href="#STREAMING-REPLICATION-SLOTS-MANIPULATION" class="id_link">#</a></h4></div></div></div><span class="original">
     &lt;title&gt;Querying and Manipulating Replication Slots&lt;/title&gt;
 </span><p>
 <span class="original">
@@ -556,7 +562,7 @@ primary_conninfo = 'host=192.168.1.50 port=5432 user=foo password=foopass'
      &lt;link linkend="view-pg-replication-slots"&gt;&lt;structname&gt;pg_replication_slots&lt;/structname&gt;&lt;/link&gt;
      view.
 </span>
-レプリケーションスロットとその状態は<a class="link" href="view-pg-replication-slots.html" title="54.19. pg_replication_slots"><code class="structname">pg_replication_slots</code></a>
+レプリケーションスロットとその状態は<a class="link" href="view-pg-replication-slots.html" title="52.19. pg_replication_slots"><code class="structname">pg_replication_slots</code></a>
 ビューより確認できます。
     </p><p>
 <span class="original">
@@ -564,8 +570,8 @@ primary_conninfo = 'host=192.168.1.50 port=5432 user=foo password=foopass'
      protocol (see &lt;xref linkend="protocol-replication"/&gt;) or via SQL
      functions (see &lt;xref linkend="functions-replication"/&gt;).
 </span>
-レプリケーションスロットはストリーミングレプリケーションプロトコル( <a class="xref" href="protocol-replication.html" title="55.4. ストリーミングレプリケーションプロトコル">55.4</a>参照)もしくはSQL関数(<a class="xref" href="functions-admin.html#FUNCTIONS-REPLICATION" title="9.27.6. レプリケーション管理関数">9.27.6</a>参照)を使用し、作成や削除ができます。
-    </p></div><div class="sect3" id="STREAMING-REPLICATION-SLOTS-CONFIG"><div class="titlepage"><div><div><h4 class="title">27.2.6.2. 設定の例 <a href="#STREAMING-REPLICATION-SLOTS-CONFIG" class="id_link">#</a></h4></div></div></div><span class="original">
+レプリケーションスロットはストリーミングレプリケーションプロトコル( <a class="xref" href="protocol-replication.html" title="53.4. ストリーミングレプリケーションプロトコル">53.4</a>参照)もしくはSQL関数(<a class="xref" href="functions-admin.html#FUNCTIONS-REPLICATION" title="9.28.6. レプリケーション管理関数">9.28.6</a>参照)を使用し、作成や削除ができます。
+    </p></div><div class="sect3" id="STREAMING-REPLICATION-SLOTS-CONFIG"><div class="titlepage"><div><div><h4 class="title">26.2.6.2. 設定の例 <a href="#STREAMING-REPLICATION-SLOTS-CONFIG" class="id_link">#</a></h4></div></div></div><span class="original">
     &lt;title&gt;Configuration Example&lt;/title&gt;
 </span><p>
 <span class="original">
@@ -594,9 +600,9 @@ postgres=# SELECT slot_name, slot_type, active FROM pg_replication_slots;
 primary_conninfo = 'host=192.168.1.50 port=5432 user=foo password=foopass'
 primary_slot_name = 'node_a_slot'
 </pre><p>
-    </p></div></div><div class="sect2" id="CASCADING-REPLICATION"><div class="titlepage"><div><div><h3 class="title">27.2.7. カスケードレプリケーション <a href="#CASCADING-REPLICATION" class="id_link">#</a></h3></div></div></div><span class="original">
+    </p></div></div><div class="sect2" id="CASCADING-REPLICATION"><div class="titlepage"><div><div><h3 class="title">26.2.7. カスケードレプリケーション <a href="#CASCADING-REPLICATION" class="id_link">#</a></h3></div></div></div><span class="original">
    &lt;title&gt;Cascading Replication&lt;/title&gt;
-</span><a id="id-1.6.14.22.24.2" class="indexterm"></a><a id="id-1.6.14.22.24.3" class="indexterm"></a><p>
+</span><a id="id-1.6.13.22.24.2" class="indexterm"></a><a id="id-1.6.13.22.24.3" class="indexterm"></a><p>
 <span class="original">
     The cascading replication feature allows a standby server to accept replication
     connections and stream WAL records to other standbys, acting as a relay.
@@ -633,7 +639,7 @@ primary_slot_name = 'node_a_slot'
     (see &lt;xref linkend="synchronous-replication"/&gt;) settings have no effect on
     cascading replication at present.
 </span>
-カスケードレプリケーションは現時点では非同期です。同期レプリケーション（参照<a class="xref" href="warm-standby.html#SYNCHRONOUS-REPLICATION" title="27.2.8. 同期レプリケーション">27.2.8</a>）の設定は現時点でカスケードレプリケーションへは影響を与えません。
+カスケードレプリケーションは現時点では非同期です。同期レプリケーション（参照<a class="xref" href="warm-standby.html#SYNCHRONOUS-REPLICATION" title="26.2.8. 同期レプリケーション">26.2.8</a>）の設定は現時点でカスケードレプリケーションへは影響を与えません。
    </p><p>
 <span class="original">
     Hot standby feedback propagates upstream, whatever the cascaded arrangement.
@@ -656,11 +662,11 @@ primary_slot_name = 'node_a_slot'
     You will also need to set &lt;varname&gt;primary_conninfo&lt;/varname&gt; in the downstream
     standby to point to the cascading standby.
 </span>
-カスケードレプリケーションを使うためには、カスケードスタンバイをセットアップ、つまり、レプリケーション接続を許可してください。(<a class="xref" href="runtime-config-replication.html#GUC-MAX-WAL-SENDERS">max_wal_senders</a>と<a class="xref" href="runtime-config-replication.html#GUC-HOT-STANDBY">hot_standby</a>および、 <a class="link" href="auth-pg-hba-conf.html" title="21.1. pg_hba.confファイル">クライアント認証</a>を設定してください)
+カスケードレプリケーションを使うためには、カスケードスタンバイをセットアップ、つまり、レプリケーション接続を許可してください。(<a class="xref" href="runtime-config-replication.html#GUC-MAX-WAL-SENDERS">max_wal_senders</a>と<a class="xref" href="runtime-config-replication.html#GUC-HOT-STANDBY">hot_standby</a>および、 <a class="link" href="auth-pg-hba-conf.html" title="20.1. pg_hba.confファイル">クライアント認証</a>を設定してください)
 また、下流スタンバイがカスケードスタンバイに接続できるために、下流スタンバイでは<code class="varname">primary_conninfo</code>を設定する必要があります。
-   </p></div><div class="sect2" id="SYNCHRONOUS-REPLICATION"><div class="titlepage"><div><div><h3 class="title">27.2.8. 同期レプリケーション <a href="#SYNCHRONOUS-REPLICATION" class="id_link">#</a></h3></div></div></div><span class="original">
+   </p></div><div class="sect2" id="SYNCHRONOUS-REPLICATION"><div class="titlepage"><div><div><h3 class="title">26.2.8. 同期レプリケーション <a href="#SYNCHRONOUS-REPLICATION" class="id_link">#</a></h3></div></div></div><span class="original">
    &lt;title&gt;Synchronous Replication&lt;/title&gt;
-</span><a id="id-1.6.14.22.25.2" class="indexterm"></a><a id="id-1.6.14.22.25.3" class="indexterm"></a><p>
+</span><a id="id-1.6.13.22.25.2" class="indexterm"></a><a id="id-1.6.13.22.25.3" class="indexterm"></a><p>
 <span class="original">
     &lt;productname&gt;PostgreSQL&lt;/productname&gt; streaming replication is asynchronous by
     default. If the primary server
@@ -733,7 +739,7 @@ primary_slot_name = 'node_a_slot'
 また同期スタンバイは、適切なフィードバックメッセージを送信する方法を知っている、物理あるいは論理WALレプリケーションストリームの消費者であっても構いません。
 組み込みの物理あるいは論理レプリケーションシステムを別にすると、<code class="command">pg_receivewal</code>と<code class="command">pg_recvlogical</code>、それにサードパーティのレプリケーションシステムとカスタムプログラムが該当します。
 対応する同期レプリケーションのサポートの詳細に関するドキュメントを参照してください。
-   </p><div class="sect3" id="SYNCHRONOUS-REPLICATION-CONFIG"><div class="titlepage"><div><div><h4 class="title">27.2.8.1. 基本設定 <a href="#SYNCHRONOUS-REPLICATION-CONFIG" class="id_link">#</a></h4></div></div></div><span class="original">
+   </p><div class="sect3" id="SYNCHRONOUS-REPLICATION-CONFIG"><div class="titlepage"><div><div><h4 class="title">26.2.8.1. 基本設定 <a href="#SYNCHRONOUS-REPLICATION-CONFIG" class="id_link">#</a></h4></div></div></div><span class="original">
     &lt;title&gt;Basic Configuration&lt;/title&gt;
 </span><p>
 <span class="original">
@@ -753,7 +759,7 @@ primary_slot_name = 'node_a_slot'
     the durability guarantee on a per-transaction basis.
 </span>
 一度、ストリーミングレプリケーションが設定されている場合、同期レプリケーションの設定には必要な追加設定は１つだけ：<a class="xref" href="runtime-config-replication.html#GUC-SYNCHRONOUS-STANDBY-NAMES">synchronous_standby_names</a>を空でない値に設定することです。
-また<code class="varname">synchronous_commit</code>は<code class="literal">on</code>に設定されていなければなりませんが、これはデフォルト値ですので、通常は変更する必要はありません。（<a class="xref" href="runtime-config-wal.html#RUNTIME-CONFIG-WAL-SETTINGS" title="20.5.1. 諸設定">20.5.1</a> および<a class="xref" href="runtime-config-replication.html#RUNTIME-CONFIG-REPLICATION-PRIMARY" title="20.6.2. プライマリサーバ">20.6.2</a>を参照してください。）
+また<code class="varname">synchronous_commit</code>は<code class="literal">on</code>に設定されていなければなりませんが、これはデフォルト値ですので、通常は変更する必要はありません。（<a class="xref" href="runtime-config-wal.html#RUNTIME-CONFIG-WAL-SETTINGS" title="19.5.1. 諸設定">19.5.1</a> および<a class="xref" href="runtime-config-replication.html#RUNTIME-CONFIG-REPLICATION-PRIMARY" title="19.6.2. プライマリサーバ">19.6.2</a>を参照してください。）
 この設定によりスタンバイがそのコミットレコードを信頼できるストレージに書き込んだことが確認できるまで、各コミットが待たされるようになります。
 <code class="varname">synchronous_commit</code>は個々のユーザによって設定することができます。
 このため、トランザクション単位を基準とした永続性の保証を制御するために、設定ファイルの中で特定のユーザまたはデータベースについて設定することも、アプリケーションによって動的に設定することもできます。
@@ -823,7 +829,7 @@ primary_slot_name = 'node_a_slot'
 </span>
 高速シャットダウンが要求された場合、ユーザは待ち状態ではなくなります。
 しかし非同期レプリケーションを使用している時と同じく、送信中のWALレコードが現在接続しているスタンバイサーバに転送されるまで、サーバは完全に停止しません。
-   </p></div><div class="sect3" id="SYNCHRONOUS-REPLICATION-MULTIPLE-STANDBYS"><div class="titlepage"><div><div><h4 class="title">27.2.8.2. 複数の同期スタンバイ <a href="#SYNCHRONOUS-REPLICATION-MULTIPLE-STANDBYS" class="id_link">#</a></h4></div></div></div><span class="original">
+   </p></div><div class="sect3" id="SYNCHRONOUS-REPLICATION-MULTIPLE-STANDBYS"><div class="titlepage"><div><div><h4 class="title">26.2.8.2. 複数の同期スタンバイ <a href="#SYNCHRONOUS-REPLICATION-MULTIPLE-STANDBYS" class="id_link">#</a></h4></div></div></div><span class="original">
     &lt;title&gt;Multiple Synchronous Standbys&lt;/title&gt;
 </span><p>
 <span class="original">
@@ -910,7 +916,7 @@ synchronous_standby_names = 'ANY 2 (s1, s2, s3)'
     the &lt;structname&gt;pg_stat_replication&lt;/structname&gt; view.
 </span>
 <code class="structname">pg_stat_replication</code>ビューを使って、スタンバイサーバの同期状態を見ることができます。
-   </p></div><div class="sect3" id="SYNCHRONOUS-REPLICATION-PERFORMANCE"><div class="titlepage"><div><div><h4 class="title">27.2.8.3. 性能に関する考慮 <a href="#SYNCHRONOUS-REPLICATION-PERFORMANCE" class="id_link">#</a></h4></div></div></div><span class="original">
+   </p></div><div class="sect3" id="SYNCHRONOUS-REPLICATION-PERFORMANCE"><div class="titlepage"><div><div><h4 class="title">26.2.8.3. 性能に関する考慮 <a href="#SYNCHRONOUS-REPLICATION-PERFORMANCE" class="id_link">#</a></h4></div></div></div><span class="original">
     &lt;title&gt;Planning for Performance&lt;/title&gt;
 </span><p>
 <span class="original">
@@ -957,7 +963,7 @@ synchronous_standby_names = 'ANY 2 (s1, s2, s3)'
     the rate of generation of WAL data.
 </span>
 生成されるWALデータの割合よりネットワーク帯域幅が大きくなければならないことを考慮しなければなりません。
-   </p></div><div class="sect3" id="SYNCHRONOUS-REPLICATION-HA"><div class="titlepage"><div><div><h4 class="title">27.2.8.4. 高可用性に関する検討 <a href="#SYNCHRONOUS-REPLICATION-HA" class="id_link">#</a></h4></div></div></div><span class="original">
+   </p></div><div class="sect3" id="SYNCHRONOUS-REPLICATION-HA"><div class="titlepage"><div><div><h4 class="title">26.2.8.4. 高可用性に関する検討 <a href="#SYNCHRONOUS-REPLICATION-HA" class="id_link">#</a></h4></div></div></div><span class="original">
     &lt;title&gt;Planning for High Availability&lt;/title&gt;
 </span><p>
 <span class="original">
@@ -1055,16 +1061,18 @@ PostgreSQLは、WALデータをすべてのスタンバイが安全に受信し�
    </p><p>
 <span class="original">
     If you need to re-create a standby server while transactions are
-    waiting, make sure that the commands pg_backup_start() and
-    pg_backup_stop() are run in a session with
+    waiting, make sure that the functions &lt;function&gt;pg_backup_start()&lt;/function&gt;
+    and &lt;function&gt;pg_backup_stop()&lt;/function&gt; are run in a session with
     &lt;varname&gt;synchronous_commit&lt;/varname&gt; = &lt;literal&gt;off&lt;/literal&gt;, otherwise those
     requests will wait forever for the standby to appear.
 </span>
-トランザクションの待機中にスタンバイサーバを再作成する必要がある場合、pg_backup_start()およびpg_backup_stop()を実行するコマンドを<code class="varname">synchronous_commit</code> = <code class="literal">off</code>であるセッション内で確実に実行してください。
+《マッチ度[80.758017]》トランザクションの待機中にスタンバイサーバを再作成する必要がある場合、pg_backup_start()およびpg_backup_stop()を実行するコマンドを<code class="varname">synchronous_commit</code> = <code class="literal">off</code>であるセッション内で確実に実行してください。
 さもないとこれらの要求はスタンバイに現れるまで永遠に待機します。
-   </p></div></div><div class="sect2" id="CONTINUOUS-ARCHIVING-IN-STANDBY"><div class="titlepage"><div><div><h3 class="title">27.2.9. スタンバイにおける継続的アーカイビング <a href="#CONTINUOUS-ARCHIVING-IN-STANDBY" class="id_link">#</a></h3></div></div></div><span class="original">
+《機械翻訳》トランザクションの待機中にスタンバイサーバを再作成する必要がある場合、makeは、関数<code class="function">pg_backup_start()</code>と<code class="function">pg_backup_stop()</code>が<code class="varname">synchronous_commit</code> = <code class="literal">off</code>で実行されていることを確認します。
+そうでない場合、これらの要求はスタンバイが現れるまで永遠に待機します。
+   </p></div></div><div class="sect2" id="CONTINUOUS-ARCHIVING-IN-STANDBY"><div class="titlepage"><div><div><h3 class="title">26.2.9. スタンバイにおける継続的アーカイビング <a href="#CONTINUOUS-ARCHIVING-IN-STANDBY" class="id_link">#</a></h3></div></div></div><span class="original">
    &lt;title&gt;Continuous Archiving in Standby&lt;/title&gt;
-</span><a id="id-1.6.14.22.26.2" class="indexterm"></a><a id="id-1.6.14.22.26.3" class="indexterm"></a><p>
+</span><a id="id-1.6.13.22.26.2" class="indexterm"></a><a id="id-1.6.13.22.26.3" class="indexterm"></a><p>
 <span class="original">
      When continuous WAL archiving is used in a standby, there are two
      different scenarios: the WAL archive can be shared between the primary
@@ -1110,4 +1118,4 @@ WALアーカイブがプライマリとスタンバイで共有されるケー�
 というのも、スタンバイはアーカイブにあるファイルだけをリストアできるからです。
 ストリーミングレプリケーションが有効ならば、この限りではありません。
 サーバがリカバリモードでない場合には、<code class="literal">on</code>と<code class="literal">always</code>のモードの間には違いはありません。
-   </p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="different-replication-solutions.html" title="27.1. 様々な解法の比較">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="high-availability.html" title="第27章 高可用性、負荷分散およびレプリケーション">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="warm-standby-failover.html" title="27.3. フェイルオーバー">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">27.1. 様々な解法の比較 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 16.4文書">ホーム</a></td><td width="40%" align="right" valign="top"> 27.3. フェイルオーバー</td></tr></table></div></body></html>
+   </p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="different-replication-solutions.html" title="26.1. 様々な解法の比較">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="high-availability.html" title="第26章 高可用性、負荷分散およびレプリケーション">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="warm-standby-failover.html" title="26.3. フェイルオーバー">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">26.1. 様々な解法の比較 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 17.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 26.3. フェイルオーバー</td></tr></table></div></body></html>

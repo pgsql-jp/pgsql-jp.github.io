@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>COPY</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="sql-commit-prepared.html" title="COMMIT PREPARED" /><link rel="next" href="sql-create-access-method.html" title="CREATE ACCESS METHOD" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 16.4文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="sql-commands.html" title="SQLコマンド">SQLコマンド</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 16.4 : sql-copy.html">誤訳等の報告
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>COPY</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="sql-commit-prepared.html" title="COMMIT PREPARED" /><link rel="next" href="sql-create-access-method.html" title="CREATE ACCESS METHOD" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 17.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="sql-commands.html" title="SQLコマンド">SQLコマンド</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 17.0 : sql-copy.html">誤訳等の報告
                     </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="sql-commit-prepared.html" title="COMMIT PREPARED">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="sql-commands.html" title="SQLコマンド">上へ</a></td><td width="60%" align="center">COPY</td><td width="20%" align="right"> <a accesskey="n" href="sql-create-access-method.html" title="CREATE ACCESS METHOD">次へ</a></td></tr></table><hr /></div><div class="refentry" id="SQL-COPY"><div class="titlepage"></div><a id="id-1.9.3.55.1" class="indexterm"></a><div class="refnamediv"><h2><span class="refentrytitle">COPY</span></h2><p>COPY<span class="original">
   &lt;refpurpose&gt;copy data between a file and a table&lt;/refpurpose&gt;
 </span> — ファイルとテーブルの間でデータをコピーする</p></div><div class="refsynopsisdiv"><h2>概要</h2><pre class="synopsis">
@@ -26,9 +26,11 @@ COPY { <em class="replaceable"><code>table_name</code></em> [ ( <em class="repla
     QUOTE '<em class="replaceable"><code>quote_character</code></em>'
     ESCAPE '<em class="replaceable"><code>escape_character</code></em>'
     FORCE_QUOTE { ( <em class="replaceable"><code>column_name</code></em> [, ...] ) | * }
-    FORCE_NOT_NULL ( <em class="replaceable"><code>column_name</code></em> [, ...] )
-    FORCE_NULL ( <em class="replaceable"><code>column_name</code></em> [, ...] )
+    FORCE_NOT_NULL { ( <em class="replaceable"><code>column_name</code></em> [, ...] ) | * }
+    FORCE_NULL { ( <em class="replaceable"><code>column_name</code></em> [, ...] ) | * }
+    ON_ERROR <em class="replaceable"><code>error_action</code></em>
     ENCODING '<em class="replaceable"><code>encoding_name</code></em>'
+    LOG_VERBOSITY <em class="replaceable"><code>verbosity</code></em>
 </pre></div><div class="refsect1" id="id-1.9.3.55.5"><h2>説明</h2><span class="original">
   &lt;title&gt;Description&lt;/title&gt;
 </span><p>
@@ -85,7 +87,16 @@ COPY { <em class="replaceable"><code>table_name</code></em> [ ( <em class="repla
     &lt;xref linkend="copy-progress-reporting"/&gt; for details.
 </span>
 <code class="command">COPY</code>を実行している各バックエンドはその進捗を<code class="structname">pg_stat_progress_copy</code>ビューで報告します。
-詳細は<a class="xref" href="progress-reporting.html#COPY-PROGRESS-REPORTING" title="28.4.3. COPYの進捗状況のレポート">28.4.3</a>を参照してください。
+詳細は<a class="xref" href="progress-reporting.html#COPY-PROGRESS-REPORTING" title="27.4.3. COPYの進捗状況のレポート">27.4.3</a>を参照してください。
+  </p><p>
+<span class="original">
+    By default, &lt;command&gt;COPY&lt;/command&gt; will fail if it encounters an error
+    during processing. For use cases where a best-effort attempt at loading
+    the entire file is desired, the &lt;literal&gt;ON_ERROR&lt;/literal&gt; clause can
+    be used to specify some other behavior.
+</span>
+《機械翻訳》デフォルトでは、<code class="command">COPY</code>は処理中にエラーが発生した場合に失敗します。
+ファイル全体をロードするベストエフォート型の試みが必要な場合、<code class="literal">ON_ERROR</code>句を使用して別の動作を指定できます。
   </p></div><div class="refsect1" id="id-1.9.3.55.6"><h2>パラメータ</h2><span class="original">
   &lt;title&gt;Parameters&lt;/title&gt;
 </span><div class="variablelist"><dl class="variablelist"><dt><span class="term"><em class="replaceable"><code>table_name</code></em></span></dt><dd><p>
@@ -106,21 +117,26 @@ COPY { <em class="replaceable"><code>table_name</code></em> [ ( <em class="repla
       A &lt;link linkend="sql-select"&gt;&lt;command&gt;SELECT&lt;/command&gt;&lt;/link&gt;,
       &lt;link linkend="sql-values"&gt;&lt;command&gt;VALUES&lt;/command&gt;&lt;/link&gt;,
       &lt;link linkend="sql-insert"&gt;&lt;command&gt;INSERT&lt;/command&gt;&lt;/link&gt;,
-      &lt;link linkend="sql-update"&gt;&lt;command&gt;UPDATE&lt;/command&gt;&lt;/link&gt;, or
-      &lt;link linkend="sql-delete"&gt;&lt;command&gt;DELETE&lt;/command&gt;&lt;/link&gt; command whose results are to be
-      copied.  Note that parentheses are required around the query.
+      &lt;link linkend="sql-update"&gt;&lt;command&gt;UPDATE&lt;/command&gt;&lt;/link&gt;,
+      &lt;link linkend="sql-delete"&gt;&lt;command&gt;DELETE&lt;/command&gt;&lt;/link&gt;, or
+      &lt;link linkend="sql-merge"&gt;&lt;command&gt;MERGE&lt;/command&gt;&lt;/link&gt; command
+      whose results are to be copied.  Note that parentheses are required
+      around the query.
 </span>
-<a class="link" href="sql-select.html" title="SELECT"><code class="command">SELECT</code></a>、<a class="link" href="sql-values.html" title="VALUES"><code class="command">VALUES</code></a>、<a class="link" href="sql-insert.html" title="INSERT"><code class="command">INSERT</code></a>、<a class="link" href="sql-update.html" title="UPDATE"><code class="command">UPDATE</code></a>あるいは<a class="link" href="sql-delete.html" title="DELETE"><code class="command">DELETE</code></a>コマンドで、その結果がコピーされます。
+《マッチ度[78.260870]》<a class="link" href="sql-select.html" title="SELECT"><code class="command">SELECT</code></a>、<a class="link" href="sql-values.html" title="VALUES"><code class="command">VALUES</code></a>、<a class="link" href="sql-insert.html" title="INSERT"><code class="command">INSERT</code></a>、<a class="link" href="sql-update.html" title="UPDATE"><code class="command">UPDATE</code></a>あるいは<a class="link" href="sql-delete.html" title="DELETE"><code class="command">DELETE</code></a>コマンドで、その結果がコピーされます。
 問い合わせを括弧でくくる必要があることに注意してください。
+《機械翻訳》結果をコピーする<a class="link" href="sql-select.html" title="SELECT"><code class="command">SELECT</code></a>、<a class="link" href="sql-values.html" title="VALUES"><code class="command">VALUES</code></a>、<a class="link" href="sql-insert.html" title="INSERT"><code class="command">INSERT</code></a>、<a class="link" href="sql-update.html" title="UPDATE"><code class="command">UPDATE</code></a>、<a class="link" href="sql-delete.html" title="DELETE"><code class="command">DELETE</code></a>、または<a class="link" href="sql-merge.html" title="MERGE"><code class="command">MERGE</code></a>コマンド。
+問い合わせの周りに括弧が必要です。
      </p><p>
 <span class="original">
-      For &lt;command&gt;INSERT&lt;/command&gt;, &lt;command&gt;UPDATE&lt;/command&gt; and
-      &lt;command&gt;DELETE&lt;/command&gt; queries a &lt;literal&gt;RETURNING&lt;/literal&gt; clause
-      must be provided, and the target relation must not have a conditional
-      rule, nor an &lt;literal&gt;ALSO&lt;/literal&gt; rule, nor an
-      &lt;literal&gt;INSTEAD&lt;/literal&gt; rule that expands to multiple statements.
+      For &lt;command&gt;INSERT&lt;/command&gt;, &lt;command&gt;UPDATE&lt;/command&gt;,
+      &lt;command&gt;DELETE&lt;/command&gt;, and &lt;command&gt;MERGE&lt;/command&gt; queries a
+      &lt;literal&gt;RETURNING&lt;/literal&gt; clause must be provided, and the target
+      relation must not have a conditional rule, nor an
+      &lt;literal&gt;ALSO&lt;/literal&gt; rule, nor an &lt;literal&gt;INSTEAD&lt;/literal&gt; rule
+      that expands to multiple statements.
 </span>
-<code class="command">INSERT</code>、<code class="command">UPDATE</code>および<code class="command">DELETE</code>の問い合わせについては<code class="literal">RETURNING</code>句を付けなければならず、また、対象のリレーションには、複数の文に展開される条件付きルール、<code class="literal">ALSO</code>ルール、<code class="literal">INSTEAD</code>ルールがあってはなりません。
+《機械翻訳》<code class="command">INSERT</code>、<code class="command">UPDATE</code>、<code class="command">DELETE</code>、<code class="command">MERGE</code>問い合わせでは、<code class="literal">RETURNING</code>句を指定する必要があり、また、対象リレーションは条件付きルールも<code class="literal">ALSO</code>ルールも<code class="literal">INSTEAD</code>ルールも持たないこと。
      </p></dd><dt><span class="term"><em class="replaceable"><code>filename</code></em></span></dt><dd><p>
 <span class="original">
       The path name of the input or output file.  An input file name can be
@@ -193,11 +209,17 @@ Windowsユーザの場合、<code class="literal">E''</code>文字列を使用�
       open and there are no older snapshots held by this transaction.  It is
       currently not possible to perform a &lt;command&gt;COPY FREEZE&lt;/command&gt; on
       a partitioned table.
+      This option is only allowed in &lt;command&gt;COPY FROM&lt;/command&gt;.
 </span>
-あたかも<code class="command">VACUUM FREEZE</code>コマンドを実行した後のように、行を凍結した状態のデータコピー処理を要求します。
+《マッチ度[80.180180]》あたかも<code class="command">VACUUM FREEZE</code>コマンドを実行した後のように、行を凍結した状態のデータコピー処理を要求します。
 これは、初期データロード処理用の性能オプションとしての利用を意図しています。
 ロード元のテーブルが現在の副トランザクションで作成または切り詰めされ、開いているカーソルは存在せず、またこのトランザクションで保持される古めのスナップショットが存在しない場合のみ、行は凍結されます。
 今のところ、パーティションテーブルでは<code class="command">COPY FREEZE</code>を実行できません。
+《機械翻訳》行がすでに凍結されているデータをコピーする要求を、<code class="command">VACUUM FREEZE</code>コマンドの実行後と同様に行います。
+これは、初期データ・ロードのパフォーマンス・オプションとして意図されています。
+ローが凍結されるのは、ロード中のテーブルが現在のサブトランザクションで作成または切り捨てられた場合、カーソルが開いていない場合、およびこのトランザクションが保持している古いスナップショットがない場合のみです。
+現在のところ、パーティション化されたテーブルに対して<code class="command">COPY FREEZE</code>を実行することはできません。
+このオプションは<code class="command">COPY FROM</code>でのみ使用できます。
      </p><p>
 <span class="original">
       Note that all other sessions will immediately be able to see the data
@@ -314,24 +336,64 @@ NULL値と空文字列を区別する必要がない場合は、テキスト形�
       In the default case where the null string is empty, this means that
       empty values will be read as zero-length strings rather than nulls,
       even when they are not quoted.
+      If &lt;literal&gt;*&lt;/literal&gt; is specified, the option will be applied to all columns.
       This option is allowed only in &lt;command&gt;COPY FROM&lt;/command&gt;, and only when
       using &lt;literal&gt;CSV&lt;/literal&gt; format.
 </span>
-指定された列の値をNULL文字列に対して比較しません。
+《マッチ度[75.175644]》指定された列の値をNULL文字列に対して比較しません。
 NULL文字列が空であるデフォルトでは、空の値は引用符付けされていなくてもNULLではなく長さが0の文字列として読み取られることを意味します。
 このオプションは<code class="command">COPY FROM</code>において、かつ、<code class="literal">CSV</code>形式を使用する場合のみで許されます。
+《機械翻訳》指定された列の値をNULL文字列と一致させないでください。
+デフォルトの場合、NULL文字列が空の場合、これは、引用符が付いていない場合でも、空の値がNULLではなく長さ0の文字列として読み取られることを意味します。
+<code class="literal">*</code>が指定されている場合、このオプションはすべての列に適用されます。
+このオプションは<code class="command">COPY FROM</code>でのみ、かつ<code class="literal">CSV</code>形式を使用する場合にのみ許可されます。
      </p></dd><dt><span class="term"><code class="literal">FORCE_NULL</code></span></dt><dd><p>
 <span class="original">
       Match the specified columns' values against the null string, even
       if it has been quoted, and if a match is found set the value to
       &lt;literal&gt;NULL&lt;/literal&gt;. In the default case where the null string is empty,
       this converts a quoted empty string into NULL.
+      If &lt;literal&gt;*&lt;/literal&gt; is specified, the option will be applied to all columns.
       This option is allowed only in &lt;command&gt;COPY FROM&lt;/command&gt;, and only when
       using &lt;literal&gt;CSV&lt;/literal&gt; format.
 </span>
-指定された列の値を、それが引用符付きであったとしても、NULL文字列と比較し、一致した場合は値を<code class="literal">NULL</code>にセットします。
+《マッチ度[76.233184]》指定された列の値を、それが引用符付きであったとしても、NULL文字列と比較し、一致した場合は値を<code class="literal">NULL</code>にセットします。
 NULL文字列が空であるデフォルトでは、引用符付きの空文字列をNULLに変換します。
 このオプションは<code class="command">COPY FROM</code>で、かつ<code class="literal">CSV</code>形式を使用する場合のみ許されます。
+《機械翻訳》指定された列の値を、引用符で囲まれている場合でもNULL文字列と照合し、一致するものが見つかった場合は値を<code class="literal">NULL</code>に設定します。
+デフォルトの場合、NULL文字列は空文字列です。
+これは引用符で囲まれた空文字列を<code class="literal">CSV</code>形式を使用している場合にのみ変換します。
+<code class="literal">*</code>を指定すると、このオプションは全ての列に適用されます。
+このオプションは<code class="command">COPY FROM</code>でのみ使用可能で、<code class="literal">CSV</code>形式を使用する場合にのみ有効です。
+     </p></dd><dt><span class="term"><code class="literal">ON_ERROR</code></span></dt><dd><p>
+<span class="original">
+      Specifies how to behave when encountering an error converting a column's
+      input value into its data type.
+      An &lt;replaceable class="parameter"&gt;error_action&lt;/replaceable&gt; value of
+      &lt;literal&gt;stop&lt;/literal&gt; means fail the command, while
+      &lt;literal&gt;ignore&lt;/literal&gt; means discard the input row and continue with the next one.
+      The default is &lt;literal&gt;stop&lt;/literal&gt;.
+</span>
+《機械翻訳》列の入力値をデータ型に変換する際にエラーが発生した場合の動作を指定します。
+<em class="replaceable"><code>error_action</code></em>の値が<code class="literal">stop</code>の場合、コマンドは失敗し、<code class="literal">ignore</code>の場合、入力行は破棄され、次の行に移ります。
+デフォルトは<code class="literal">stop</code>です。
+     </p><p>
+<span class="original">
+      The &lt;literal&gt;ignore&lt;/literal&gt; option is applicable only for &lt;command&gt;COPY FROM&lt;/command&gt;
+      when the &lt;literal&gt;FORMAT&lt;/literal&gt; is &lt;literal&gt;text&lt;/literal&gt; or &lt;literal&gt;csv&lt;/literal&gt;.
+</span>
+《機械翻訳》<code class="literal">ignore</code>オプションは、<code class="literal">FORMAT</code>が<code class="literal">text</code>または<code class="literal">csv</code>の場合の<code class="command">COPY FROM</code>にのみ適用できます。
+     </p><p>
+<span class="original">
+      A &lt;literal&gt;NOTICE&lt;/literal&gt; message containing the ignored row count is
+      emitted at the end of the &lt;command&gt;COPY FROM&lt;/command&gt; if at least one
+      row was discarded. When &lt;literal&gt;LOG_VERBOSITY&lt;/literal&gt; option is set to
+      &lt;literal&gt;verbose&lt;/literal&gt;, a &lt;literal&gt;NOTICE&lt;/literal&gt; message
+      containing the line of the input file and the column name whose input
+      conversion has failed is emitted for each discarded row.
+</span>
+《機械翻訳》少なくとも1行が破棄された場合、<code class="command">COPY FROM</code>の最後に、無視された行数を含む<code class="literal">NOTICE</code>メッセージが出力されます。
+<code class="literal">LOG_VERBOSITY</code>オプションが<code class="literal">verbose</code>に設定されている場合、破棄された各行に対して、入力ファイルの行と入力変換に失敗した列名を含む<code class="literal">NOTICE</code>メッセージが出力されます。
      </p></dd><dt><span class="term"><code class="literal">ENCODING</code></span></dt><dd><p>
 <span class="original">
       Specifies that the file is encoded in the &lt;replaceable
@@ -342,7 +404,23 @@ NULL文字列が空であるデフォルトでは、引用符付きの空文字�
 ファイルが<em class="replaceable"><code>encoding_name</code></em>で符号化されていることを指定します。
 このオプションが省略された場合、現在のクライアント符号化方式が使用されます。
 後述の注釈を参照してください。
-     </p></dd><dt><span class="term"><code class="literal">WHERE</code></span></dt><dd><p>
+     </p></dd><dt><span class="term"><code class="literal">LOG_VERBOSITY</code></span></dt><dd><p>
+<span class="original">
+      Specify the amount of messages emitted by a &lt;command&gt;COPY&lt;/command&gt;
+      command: &lt;literal&gt;default&lt;/literal&gt; or &lt;literal&gt;verbose&lt;/literal&gt;. If
+      &lt;literal&gt;verbose&lt;/literal&gt; is specified, additional messages are emitted
+      during processing.
+</span>
+《機械翻訳》<code class="command">COPY</code>コマンドが出力するメッセージの量を指定します。
+<code class="literal">default</code>または<code class="literal">verbose</code>です。
+<code class="literal">verbose</code>が指定された場合、処理中に追加のメッセージが出力されます。
+     </p><p>
+<span class="original">
+      This is currently used in &lt;command&gt;COPY FROM&lt;/command&gt; command when
+      &lt;literal&gt;ON_ERROR&lt;/literal&gt; option is set to &lt;literal&gt;ignore&lt;/literal&gt;.
+</span>
+《機械翻訳》これは現在、<code class="literal">ON_ERROR</code>オプションが<code class="literal">ignore</code>に設定されている場合の<code class="command">COPY FROM</code>コマンドで使用されます。
+      </p></dd><dt><span class="term"><code class="literal">WHERE</code></span></dt><dd><p>
 <span class="original">
     The optional &lt;literal&gt;WHERE&lt;/literal&gt; clause has the general form
 </span>
@@ -541,20 +619,19 @@ IDENTITY列については、<code class="command">COPY FROM</code>コマンド�
 たとえデータがクライアント経由ではなくサーバにより直接ファイルから読み書きされるとしても、入力データは<code class="literal">ENCODING</code>オプションまたは現在のクライアント符号化方式にしたがって解釈され、出力データは<code class="literal">ENCODING</code>オプションまたは現在のクライアント符号化方式で符号化されます。
    </p><p>
 <span class="original">
-    &lt;command&gt;COPY&lt;/command&gt; stops operation at the first error. This
-    should not lead to problems in the event of a &lt;command&gt;COPY
-    TO&lt;/command&gt;, but the target table will already have received
-    earlier rows in a &lt;command&gt;COPY FROM&lt;/command&gt;. These rows will not
-    be visible or accessible, but they still occupy disk space. This might
-    amount to a considerable amount of wasted disk space if the failure
-    happened well into a large copy operation. You might wish to invoke
-    &lt;command&gt;VACUUM&lt;/command&gt; to recover the wasted space.
+    The &lt;command&gt;COPY FROM&lt;/command&gt; command physically inserts input rows
+    into the table as it progresses.  If the command fails, these rows are
+    left in a deleted state; these rows will not be visible, but still
+    occupy disk space. This might amount to considerable
+    wasted disk space if the failure happened well into a large copy
+    operation. &lt;command&gt;VACUUM&lt;/command&gt; should be used to recover the
+    wasted space.
 </span>
-<code class="command">COPY</code>では、エラーが発生するとすぐに処理を停止します。
-<code class="command">COPY TO</code>コマンドの実行では何ら問題ありませんが、<code class="command">COPY FROM</code>の場合は、対象となるテーブルは初めの方の行を既に受け取っています。
-これらの行は不可視となり、アクセスすることもできませんが、ディスク領域を占有します。
-したがって、大きなコピー処理がかなり進んだ後で失敗した場合には、それなりの量の無駄なディスク領域が使われてしまいます。
-この無駄な領域を取り戻すには、<code class="command">VACUUM</code>を行う必要があります。
+《機械翻訳》<code class="command">COPY FROM</code>コマンドは、入力行を物理的にテーブルに挿入します。
+コマンドが失敗した場合、これらの行は削除された状態のままになります。
+これらの行は表示されませんが、ディスク領域を占有します。
+これは、大規模なコピー操作の途中で失敗した場合、かなりのディスク領域を浪費することになります。
+失われた領域を回復するには<code class="command">VACUUM</code>を使用してください。
    </p><p>
 <span class="original">
     &lt;literal&gt;FORCE_NULL&lt;/literal&gt; and &lt;literal&gt;FORCE_NOT_NULL&lt;/literal&gt; can be used
@@ -1111,4 +1188,4 @@ COPY [ BINARY ] <em class="replaceable"><code>table_name</code></em>
     [ WITH NULL AS '<em class="replaceable"><code>null_string</code></em>' ]
 </pre></div><div class="refsect1" id="id-1.9.3.55.12"><h2>関連項目</h2><span class="original">
   &lt;title&gt;See Also&lt;/title&gt;
-</span><span class="simplelist"><a class="xref" href="progress-reporting.html#COPY-PROGRESS-REPORTING" title="28.4.3. COPYの進捗状況のレポート">28.4.3</a></span></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="sql-commit-prepared.html" title="COMMIT PREPARED">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="sql-commands.html" title="SQLコマンド">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="sql-create-access-method.html" title="CREATE ACCESS METHOD">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">COMMIT PREPARED </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 16.4文書">ホーム</a></td><td width="40%" align="right" valign="top"> CREATE ACCESS METHOD</td></tr></table></div></body></html>
+</span><span class="simplelist"><a class="xref" href="progress-reporting.html#COPY-PROGRESS-REPORTING" title="27.4.3. COPYの進捗状況のレポート">27.4.3</a></span></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="sql-commit-prepared.html" title="COMMIT PREPARED">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="sql-commands.html" title="SQLコマンド">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="sql-create-access-method.html" title="CREATE ACCESS METHOD">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">COMMIT PREPARED </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 17.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> CREATE ACCESS METHOD</td></tr></table></div></body></html>

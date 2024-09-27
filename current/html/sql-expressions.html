@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>4.2. 評価式</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="sql-syntax-lexical.html" title="4.1. 字句の構造" /><link rel="next" href="sql-syntax-calling-funcs.html" title="4.3. 関数呼び出し" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 16.4文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="sql-syntax.html" title="第4章 SQLの構文">第4章 SQLの構文</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 16.4 : sql-expressions.html">誤訳等の報告
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>4.2. 評価式</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="sql-syntax-lexical.html" title="4.1. 字句の構造" /><link rel="next" href="sql-syntax-calling-funcs.html" title="4.3. 関数呼び出し" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 17.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="sql-syntax.html" title="第4章 SQLの構文">第4章 SQLの構文</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 17.0 : sql-expressions.html">誤訳等の報告
                     </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="sql-syntax-lexical.html" title="4.1. 字句の構造">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="sql-syntax.html" title="第4章 SQLの構文">上へ</a></td><td width="60%" align="center">4.2. 評価式</td><td width="20%" align="right"> <a accesskey="n" href="sql-syntax-calling-funcs.html" title="4.3. 関数呼び出し">次へ</a></td></tr></table><hr /></div><div class="sect1" id="SQL-EXPRESSIONS"><div class="titlepage"><div><div><h2 class="title" style="clear: both">4.2. 評価式 <a href="#SQL-EXPRESSIONS" class="id_link">#</a></h2></div></div></div><span class="original">
   &lt;title&gt;Value Expressions&lt;/title&gt;
 </span><a id="id-1.5.3.7.2" class="indexterm"></a><a id="id-1.5.3.7.3" class="indexterm"></a><a id="id-1.5.3.7.4" class="indexterm"></a><a id="id-1.5.3.7.5" class="indexterm"></a><a id="id-1.5.3.7.6" class="indexterm"></a><a id="id-1.5.3.7.7" class="indexterm"></a><p>
@@ -478,7 +478,23 @@ sqrt(2)
 <em class="replaceable"><code>order_by_clause</code></em>は、<a class="xref" href="queries-order.html" title="7.5. 行の並べ替え(ORDER BY)">7.5</a>で説明する問い合わせレベルの<code class="literal">ORDER BY</code>句と同じ構文を取りますが、その式は常に単なる式であり、出力列名や序数とすることはできません。
 以下に例を示します。
 </p><pre class="programlisting">
-SELECT array_agg(a ORDER BY b DESC) FROM table;
+WITH vals (v) AS ( VALUES (1),(3),(4),(3),(2) )
+SELECT array_agg(v ORDER BY v DESC) FROM vals;
+  array_agg
+-------------
+ {4,3,3,2,1}
+</pre><p>
+<span class="original">
+    Since &lt;type&gt;jsonb&lt;/type&gt; only keeps the last matching key, ordering
+    of its keys can be significant:
+</span>
+《機械翻訳》<code class="type">jsonb</code>は最後のマッチングキーのみを保持するため、そのキーの順序付けが重要になる場合があります。
+</p><pre class="programlisting">
+WITH vals (k, v) AS ( VALUES ('key0','1'), ('key1','3'), ('key1','2') )
+SELECT jsonb_object_agg(k, v ORDER BY v) FROM vals;
+      jsonb_object_agg
+----------------------------
+ {"key0": "1", "key1": "3"}
 </pre><p>
    </p><p>
 <span class="original">
@@ -507,20 +523,21 @@ SELECT string_agg(a ORDER BY a, ',') FROM table;  -- incorrect
     後者は構文的には有効なものですが、2つの<code class="literal">ORDER BY</code>キーを持つ単一引数の集約関数の呼び出しを表しています。(2つ目のキーは定数なので役には立ちません。)
    </p><p>
 <span class="original">
-    If &lt;literal&gt;DISTINCT&lt;/literal&gt; is specified in addition to an
-    &lt;replaceable&gt;order_by_clause&lt;/replaceable&gt;, then all the &lt;literal&gt;ORDER BY&lt;/literal&gt;
-    expressions must match regular arguments of the aggregate; that is,
-    you cannot sort on an expression that is not included in the
-    &lt;literal&gt;DISTINCT&lt;/literal&gt; list.
+    If &lt;literal&gt;DISTINCT&lt;/literal&gt; is specified with an
+    &lt;replaceable&gt;order_by_clause&lt;/replaceable&gt;, &lt;literal&gt;ORDER
+    BY&lt;/literal&gt; expressions can only reference columns in the
+    &lt;literal&gt;DISTINCT&lt;/literal&gt; list.  For example:
 </span>
-<em class="replaceable"><code>order_by_clause</code></em>に加え<code class="literal">DISTINCT</code>が指定された場合、すべての<code class="literal">ORDER BY</code>式が集約関数の通常の引数に一致しなければなりません。つまり、<code class="literal">DISTINCT</code>リストに含まれない式でソートすることはできません。
-   </p><div class="note"><h3 class="title">注記</h3><p>
-<span class="original">
-     The ability to specify both &lt;literal&gt;DISTINCT&lt;/literal&gt; and &lt;literal&gt;ORDER BY&lt;/literal&gt;
-     in an aggregate function is a &lt;productname&gt;PostgreSQL&lt;/productname&gt; extension.
-</span>
-集約関数において<code class="literal">DISTINCT</code>と<code class="literal">ORDER BY</code>の両方を指定できる機能は<span class="productname">PostgreSQL</span>の拡張です。
-    </p></div><p>
+《機械翻訳》<code class="literal">DISTINCT</code>が <em class="replaceable"><code>order_by_clause</code></em>で指定されている場合、<code class="literal">ORDER BY</code>式では<code class="literal">DISTINCT</code>リストのリファレンス列のみを使用できます。
+例の場合:。
+</p><pre class="programlisting">
+WITH vals (v) AS ( VALUES (1),(3),(4),(3),(2) )
+SELECT array_agg(DISTINCT v ORDER BY v DESC) FROM vals;
+ array_agg
+-----------
+ {4,3,2,1}
+</pre><p>
+   </p><p>
 <span class="original">
     Placing &lt;literal&gt;ORDER BY&lt;/literal&gt; within the aggregate's regular argument
     list, as described so far, is used when ordering the input rows for
@@ -569,8 +586,8 @@ SELECT string_agg(a ORDER BY a, ',') FROM table;  -- incorrect
 直接引数のリストは空でも構いません。この場合、<code class="literal">(*)</code>ではなく<code class="literal">()</code>と書いてください。
 (<span class="productname">PostgreSQL</span>は実際にどちらの綴りも受け付けますが、後者だけが標準SQLに準拠しています。)
    </p><p>
-    <a id="id-1.5.3.7.18.17.1" class="indexterm"></a>
-    <a id="id-1.5.3.7.18.17.2" class="indexterm"></a>
+    <a id="id-1.5.3.7.18.16.1" class="indexterm"></a>
+    <a id="id-1.5.3.7.18.16.2" class="indexterm"></a>
 <span class="original">
     An example of an ordered-set aggregate call is:
 </span>
@@ -645,7 +662,7 @@ FROM generate_series(1,10) AS s(i);
     appearing only in the result list or &lt;literal&gt;HAVING&lt;/literal&gt; clause
     applies with respect to the query level that the aggregate belongs to.
 </span>
-集約式が副問い合わせ（<a class="xref" href="sql-expressions.html#SQL-SYNTAX-SCALAR-SUBQUERIES" title="4.2.11. スカラ副問い合わせ">4.2.11</a>と<a class="xref" href="functions-subquery.html" title="9.23. 副問い合わせ式">9.23</a>を参照）内に現れた場合、通常、集約は副問い合わせの行全体に対して評価されます。
+集約式が副問い合わせ（<a class="xref" href="sql-expressions.html#SQL-SYNTAX-SCALAR-SUBQUERIES" title="4.2.11. スカラ副問い合わせ">4.2.11</a>と<a class="xref" href="functions-subquery.html" title="9.24. 副問い合わせ式">9.24</a>を参照）内に現れた場合、通常、集約は副問い合わせの行全体に対して評価されます。
 しかし、その集約の引数(と、もしあれば<em class="replaceable"><code>filter_clause</code></em>)が上位レベルの変数のみを持つ場合は例外です。
 その場合、集約は最も近い外側のレベルに属し、その問い合わせの行全体に対して評価されます。
 全体として、その集約式は、その後、その集約を含む副問い合わせでは外部参照となり、その副問い合わせにおける評価に対しては定数として動作します。
@@ -949,7 +966,7 @@ EXCLUDE NO OTHERS
     statistical aggregate can be used as a window function.  (Ordered-set
     and hypothetical-set aggregates cannot presently be used as window functions.)
 </span>
-組み込みウィンドウ関数は<a class="xref" href="functions-window.html#FUNCTIONS-WINDOW-TABLE" title="表9.64 汎用ウィンドウ関数">表 9.64</a>に記載されています。その他のウィンドウ関数をユーザが追加できます。
+組み込みウィンドウ関数は<a class="xref" href="functions-window.html#FUNCTIONS-WINDOW-TABLE" title="表9.65 汎用ウィンドウ関数">表 9.65</a>に記載されています。その他のウィンドウ関数をユーザが追加できます。
 また、全ての組み込み、またはユーザ定義の、汎用または統計集約関数もウィンドウ関数として使用できます。
 (順序集合と仮想集合集約は現在のところウィンドウ関数として使用できません。)
    </p><p>
@@ -1135,7 +1152,7 @@ SELECT * FROM tbl WHERE a &gt; 'foo' COLLATE "C";
 </span>
 後者の場合、<code class="literal">COLLATE</code>句が、処理対象と想定している入力演算子の引数に対して付与されることに注意してください。
 演算子や関数の呼び出しのどの引数に対して<code class="literal">COLLATE</code>句が付与されるかは問題ではありません。演算子や関数により適用される照合順序は対象となる全ての引数を考慮して引き出され、そして明示的に指定された<code class="literal">COLLATE</code>句がその他の全ての引数に対しての照合順序を上書きするからです。
-(しかし、複数の引数に対して一致しない<code class="literal">COLLATE</code>句の付与はエラーとなります。詳細は<a class="xref" href="collation.html" title="24.2. 照合順序サポート">24.2</a>を参照してください。)
+(しかし、複数の引数に対して一致しない<code class="literal">COLLATE</code>句の付与はエラーとなります。詳細は<a class="xref" href="collation.html" title="23.2. 照合順序サポート">23.2</a>を参照してください。)
 このため、前述の例と同じ結果を次のようにして取得できます。
 </p><pre class="programlisting">
 SELECT * FROM tbl WHERE a COLLATE "C" &gt; 'foo';
@@ -1178,7 +1195,7 @@ SELECT * FROM tbl WHERE (a &gt; 'foo') COLLATE "C";
 そのスカラ結果はNULLとして扱われます）。
 副問い合わせは、その周りの問い合わせ内の値を参照できます。
 その値は副問い合わせの評価時には定数として扱われます。
-副問い合わせに関する他の式については<a class="xref" href="functions-subquery.html" title="9.23. 副問い合わせ式">9.23</a>も参照してください。
+副問い合わせに関する他の式については<a class="xref" href="functions-subquery.html" title="9.24. 副問い合わせ式">9.24</a>も参照してください。
    </p><p>
 <span class="original">
     For example, the following finds the largest city population in each
@@ -1452,27 +1469,15 @@ SELECT getf1(CAST(ROW(11,'this is a test',2.5) AS myrowtype));
 <span class="original">
    Row constructors can be used to build composite values to be stored
    in a composite-type table column, or to be passed to a function that
-   accepts a composite parameter.  Also,
-   it is possible to compare two row values or test a row with
-   &lt;literal&gt;IS NULL&lt;/literal&gt; or &lt;literal&gt;IS NOT NULL&lt;/literal&gt;, for example:
+   accepts a composite parameter.  Also, it is possible to test rows
+   using the standard comparison operators as described in &lt;xref
+   linkend="functions-comparison"/&gt;, to compare one row against another
+   as described in &lt;xref linkend="functions-comparisons"/&gt;, and to
+   use them in connection with subqueries, as discussed in &lt;xref
+   linkend="functions-subquery"/&gt;,
 </span>
-行コンストラクタは、複合型のテーブル列に格納する複合型の値を構築するため、あるいは複合型のパラメータを受け付ける関数に渡すために使用できます。
-また、以下の例のように、2つの行値を比較することも、<code class="literal">IS NULL</code>もしくは<code class="literal">IS NOT NULL</code>で行を検査することも可能です。
-</p><pre class="programlisting">
-SELECT ROW(1,2.5,'this is a test') = ROW(1, 3, 'not the same');
-
-<span class="original">
-SELECT ROW(table.*) IS NULL FROM table;  &amp;#45;- detect all-null rows
-</span>
-SELECT ROW(table.*) IS NULL FROM table;  -- すべてがNULLの行を検出します。
-</pre><p>
-<span class="original">
-   For more detail see &lt;xref linkend="functions-comparisons"/&gt;.
-   Row constructors can also be used in connection with subqueries,
-   as discussed in &lt;xref linkend="functions-subquery"/&gt;.
-</span>
-詳細は<a class="xref" href="functions-comparisons.html" title="9.24. 行と配列の比較">9.24</a>を参照してください。
-行コンストラクタは、<a class="xref" href="functions-subquery.html" title="9.23. 副問い合わせ式">9.23</a>で説明するように、副問い合わせと一緒に使用することもできます。
+《機械翻訳》行コンストラクタを使用すると、複合値を複合タイプテーブル列に格納するようにビルドしたり、複合パラメータを受け入れる関数に渡すことができます。
+また、<a class="xref" href="functions-comparison.html" title="9.2. 比較関数および演算子">9.2</a>で説明されているように、標準比較演算子を使用して行をテストしたり、<a class="xref" href="functions-comparisons.html" title="9.25. 行と配列の比較">9.25</a>で説明されているように、ある行を別のと比較したり、<a class="xref" href="functions-subquery.html" title="9.24. 副問い合わせ式">9.24</a>で説明されているように、サブクエリを使用してコネクションでそれらを使用したりすることもできます。
   </p></div><div class="sect2" id="SYNTAX-EXPRESS-EVAL"><div class="titlepage"><div><div><h3 class="title">4.2.14. 式の評価規則 <a href="#SYNTAX-EXPRESS-EVAL" class="id_link">#</a></h3></div></div></div><span class="original">
    &lt;title&gt;Expression Evaluation Rules&lt;/title&gt;
 </span><a id="id-1.5.3.7.25.2" class="indexterm"></a><a id="id-1.5.3.7.25.3" class="indexterm"></a><p>
@@ -1561,7 +1566,7 @@ SELECT ... WHERE CASE WHEN x &gt; 0 THEN y/x &gt; 1.5 ELSE false END;
 </span>
 しかしながら、<code class="literal">CASE</code>はそのような問題に対する万能薬ではありません。
 上で示したような方法の限界の1つは、定数副式が早く評価されるのを防げないことです。
-<a class="xref" href="xfunc-volatility.html" title="38.7. 関数の変動性分類">38.7</a>に記すように、<code class="literal">IMMUTABLE</code>と印をつけられた関数と演算子は、実行される時ではなく問い合わせが計画される時に評価されるかもしれません。
+<a class="xref" href="xfunc-volatility.html" title="36.7. 関数の変動性分類">36.7</a>に記すように、<code class="literal">IMMUTABLE</code>と印をつけられた関数と演算子は、実行される時ではなく問い合わせが計画される時に評価されるかもしれません。
 そのため、例えば
 </p><pre class="programlisting">
 SELECT CASE WHEN x &gt; 0 THEN x ELSE 1/0 END FROM tab;
@@ -1614,4 +1619,4 @@ SELECT CASE WHEN min(employees) &gt; 0
 </span>
 <code class="function">min()</code>と<code class="function">avg()</code>集約は入力行すべてに対して同時に計算されますので、もし<code class="structfield">employees</code>がゼロになる行があれば、<code class="function">min()</code>の結果が検査される機会の前にゼロ除算エラーが起こります。
 代わりに、まずは問題のある入力行が集約関数に渡されないようにするために<code class="literal">WHERE</code>または<code class="literal">FILTER</code>句を使ってください。
-   </p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="sql-syntax-lexical.html" title="4.1. 字句の構造">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="sql-syntax.html" title="第4章 SQLの構文">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="sql-syntax-calling-funcs.html" title="4.3. 関数呼び出し">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">4.1. 字句の構造 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 16.4文書">ホーム</a></td><td width="40%" align="right" valign="top"> 4.3. 関数呼び出し</td></tr></table></div></body></html>
+   </p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="sql-syntax-lexical.html" title="4.1. 字句の構造">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="sql-syntax.html" title="第4章 SQLの構文">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="sql-syntax-calling-funcs.html" title="4.3. 関数呼び出し">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">4.1. 字句の構造 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 17.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 4.3. 関数呼び出し</td></tr></table></div></body></html>

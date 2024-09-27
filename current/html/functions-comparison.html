@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>9.2. 比較関数および演算子</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="functions-logical.html" title="9.1. 論理演算子" /><link rel="next" href="functions-math.html" title="9.3. 算術関数と演算子" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 16.4文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="functions.html" title="第9章 関数と演算子">第9章 関数と演算子</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 16.4 : functions-comparison.html">誤訳等の報告
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>9.2. 比較関数および演算子</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="functions-logical.html" title="9.1. 論理演算子" /><link rel="next" href="functions-math.html" title="9.3. 算術関数と演算子" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 17.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="functions.html" title="第9章 関数と演算子">第9章 関数と演算子</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 17.0 : functions-comparison.html">誤訳等の報告
                     </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="functions-logical.html" title="9.1. 論理演算子">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="functions.html" title="第9章 関数と演算子">上へ</a></td><td width="60%" align="center">9.2. 比較関数および演算子</td><td width="20%" align="right"> <a accesskey="n" href="functions-math.html" title="9.3. 算術関数と演算子">次へ</a></td></tr></table><hr /></div><div class="sect1" id="FUNCTIONS-COMPARISON"><div class="titlepage"><div><div><h2 class="title" style="clear: both">9.2. 比較関数および演算子 <a href="#FUNCTIONS-COMPARISON" class="id_link">#</a></h2></div></div></div><span class="original">
    &lt;title&gt;Comparison Functions and Operators&lt;/title&gt;
 </span><a id="id-1.5.8.10.2" class="indexterm"></a><a id="id-1.5.8.10.3" class="indexterm"></a><p>
@@ -508,18 +508,33 @@ NULLを比較可能な値とした上で、等しい。
     &lt;literal&gt;IS NULL&lt;/literal&gt; and &lt;literal&gt;IS NOT NULL&lt;/literal&gt; do not always return
     inverse results for row-valued expressions; in particular, a row-valued
     expression that contains both null and non-null fields will return false
-    for both tests.  In some cases, it may be preferable to
+    for both tests.  For example:
+</span>
+《機械翻訳》<em class="replaceable"><code>expression</code></em>が行値の場合、行式自体がNULLであるか、または行のすべてのフィールドがNULLである場合、<code class="literal">IS NULL</code>は真です。
+一方、行式自体が非NULLであり、かつ行のすべてのフィールドが非NULLである場合、<code class="literal">IS NOT NULL</code>は真です。
+この振る舞いのため、<code class="literal">IS NULL</code>と<code class="literal">IS NOT NULL</code>は行値式に対して必ずしも逆の結果を返すとは限りません。
+特に、nullと非nullの両方のフィールドを含む行値式は、両方のテストに対して偽を返します。
+たとえば、
+
+</p><pre class="programlisting">
+SELECT ROW(1,2.5,'this is a test') = ROW(1, 3, 'not the same');
+
+SELECT ROW(table.*) IS NULL FROM table;  -- detect all-null rows
+
+SELECT ROW(table.*) IS NOT NULL FROM table;  -- detect all-non-null rows
+
+SELECT NOT(ROW(table.*) IS NOT NULL) FROM TABLE; -- detect at least one null in rows
+</pre><p>
+
+<span class="original">
+    In some cases, it may be preferable to
     write &lt;replaceable&gt;row&lt;/replaceable&gt; &lt;literal&gt;IS DISTINCT FROM NULL&lt;/literal&gt;
     or &lt;replaceable&gt;row&lt;/replaceable&gt; &lt;literal&gt;IS NOT DISTINCT FROM NULL&lt;/literal&gt;,
     which will simply check whether the overall row value is null without any
     additional tests on the row fields.
 </span>
-<em class="replaceable"><code>expression</code></em>が行値の場合、行式自体がNULLまたは、行のフィールドすべてがNULLの場合に<code class="literal">IS NULL</code>は真となります。
-一方<code class="literal">IS NOT NULL</code>は、行式自体が非NULLかつ、行のフィールドすべてが非NULLの場合に真となります。
-この動作により、<code class="literal">IS NULL</code>および<code class="literal">IS NOT NULL</code>は行値評価式に対し常に反対の結果を返すわけではありません。
-特に、NULLと非NULLの値の両方を含む行値式はどちらの試験でも偽を返します。
-場合によっては、<em class="replaceable"><code>row</code></em> <code class="literal">IS DISTINCT FROM NULL</code>あるいは<em class="replaceable"><code>row</code></em> <code class="literal">IS NOT DISTINCT FROM NULL</code>と記述する方が望ましいことがあるでしょう。
-これらは単に行全体の値がNULLかどうかを検査し、行のフィールドについての追加的検査を全く行わないからです。
+《機械翻訳》場合によっては、<em class="replaceable"><code>row</code></em> <code class="literal">IS DISTINCT FROM NULL</code>または<em class="replaceable"><code>row</code></em> <code class="literal">IS NOT DISTINCT FROM NULL</code>を書く方が好ましい場合があります。
+これは単に、行フィールドに対する追加のテストなしに、全体の行値がNULLかどうかをチェックするだけです。
    </p><p>
     <a id="id-1.5.8.10.20.1" class="indexterm"></a>
     <a id="id-1.5.8.10.20.2" class="indexterm"></a>
@@ -604,4 +619,4 @@ NULL引数の数を返す。
        <p>
         <code class="literal">num_nulls(1, NULL, 2)</code>
         → <code class="returnvalue">1</code>
-       </p></td></tr></tbody></table></div></div><br class="table-break" /></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="functions-logical.html" title="9.1. 論理演算子">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="functions.html" title="第9章 関数と演算子">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="functions-math.html" title="9.3. 算術関数と演算子">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">9.1. 論理演算子 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 16.4文書">ホーム</a></td><td width="40%" align="right" valign="top"> 9.3. 算術関数と演算子</td></tr></table></div></body></html>
+       </p></td></tr></tbody></table></div></div><br class="table-break" /></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="functions-logical.html" title="9.1. 論理演算子">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="functions.html" title="第9章 関数と演算子">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="functions-math.html" title="9.3. 算術関数と演算子">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">9.1. 論理演算子 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 17.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 9.3. 算術関数と演算子</td></tr></table></div></body></html>
