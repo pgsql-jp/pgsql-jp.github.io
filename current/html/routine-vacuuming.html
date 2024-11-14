@@ -757,16 +757,11 @@ HINT:  Execute a database-wide VACUUM in that database.
     user-mode in order to restore normal operation.
     Instead, follow these steps:
 </span>
-《マッチ度[85.146444]》この状態では、すでに進行中のトランザクションは継続できますが、読み込み専用トランザクションのみを開始できます。
+この状態では、すでに進行中のトランザクションは継続できますが、読み込み専用トランザクションのみを開始できます。
 データベースレコードを変更したり、リレーションを切り詰めたりする操作は失敗します。
 <code class="command">VACUUM</code>コマンドは通常どおりに実行できます。
-ヒントが述べていることに反して、通常の操作を復元するために、postmasterを停止したりシングルユーザモードに入ったりする必要はなく、また、それが望ましいことでもありません。
+以前のリリースで推奨されていたことに反して、通常の操作を復元するために、postmasterを停止したりシングルユーザモードに入ったりする必要はなく、また、それが望ましいことでもないことに注意してください。
 代わりに、次の手順を実行してください。
-《機械翻訳》この状態では、すでに進行中のトランザクションは継続できますが、開始できるのは読み取り専用トランザクションのみです。
-データベースレコードを変更したり、リレーションを切り捨てたりする操作は失敗します。
-<code class="command">VACUUM</code>コマンドは通常どおり実行できます。
-ノートは、以前のリリースで推奨されていたことに反して、postmasterを停止したり、オーダーからリストアへの通常の操作で単一のユーザモードに入る必要も望ましくもありません。
-代わりに、次の手順に従います。
 
     </p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><span class="original">
       &lt;simpara&gt;Resolve old prepared transactions. You can find these by checking
@@ -910,8 +905,8 @@ HINT:  Execute a database-wide VACUUM in that database.
      warnings are ignored, the system will refuse to generate new MXIDs once there are fewer
      than three million left until wraparound.
 </span>
-《マッチ度[93.005181]》XIDの場合と同様に、自動バキュームがテーブルから古いMXIDをクリアできない場合、データベースの最も古いMXIDが周回ポイントから4000万トランザクションに達すると、システムは警告メッセージの出力を開始します。
-そして、XIDの場合と同様に、こうした警告を無視し続け、周回するまで3000万を切ると、システムは新しいMXIDの生成を拒絶します。
+XIDの場合と同様に、自動バキュームがテーブルから古いMXIDをクリアできない場合、データベースの最も古いMXIDが周回ポイントから4000万トランザクションに達すると、システムは警告メッセージの出力を開始します。
+そして、XIDの場合と同様に、こうした警告を無視し続け、周回するまで300万を切ると、システムは新しいMXIDの生成を拒絶します。
     </p><p>
 <span class="original">
      Normal operation when MXIDs are exhausted can be restored in much the same way as
@@ -1062,21 +1057,13 @@ vacuum insert threshold = vacuum base insert threshold + vacuum insert scale fac
     &lt;structfield&gt;relfrozenxid&lt;/structfield&gt;; otherwise, only pages that have been modified
     since the last vacuum are scanned.
 </span>
-《マッチ度[85.266458]》ここで、バキューム挿入基礎閾値は<a class="xref" href="runtime-config-autovacuum.html#GUC-AUTOVACUUM-VACUUM-INSERT-THRESHOLD">autovacuum_vacuum_insert_threshold</a>、バキューム挿入規模係数は<a class="xref" href="runtime-config-autovacuum.html#GUC-AUTOVACUUM-VACUUM-INSERT-SCALE-FACTOR">autovacuum_vacuum_insert_scale_factor</a>です。
+ここで、バキューム挿入基礎閾値は<a class="xref" href="runtime-config-autovacuum.html#GUC-AUTOVACUUM-VACUUM-INSERT-THRESHOLD">autovacuum_vacuum_insert_threshold</a>、バキューム挿入規模係数は<a class="xref" href="runtime-config-autovacuum.html#GUC-AUTOVACUUM-VACUUM-INSERT-SCALE-FACTOR">autovacuum_vacuum_insert_scale_factor</a>です。
 そのようなバキュームは、テーブルの一部を<em class="firstterm">全可視</em>と印づけたり、タプルを凍結したりもできますので、後続のバキュームで必要となる作業を減らせます。
 より早いバキュームによりタプルを凍結できますので、<code class="command">INSERT</code>操作を受けたものの<code class="command">UPDATE</code>/<code class="command">DELETE</code>操作を全くもしくはほとんど受けていないテーブルに対しては、テーブルの<a class="xref" href="sql-createtable.html#RELOPTION-AUTOVACUUM-FREEZE-MIN-AGE">autovacuum_freeze_min_age</a>を低くすることが有益な場合があります。
 不要となったタプル数と挿入されたタプル数は、累積統計情報システムから取得されます。
-これは、<code class="command">UPDATE</code>、<code class="command">DELETE</code>および<code class="command">INSERT</code>操作ごとに更新されるほぼ正確な数です。
-(負荷が高いと一部の情報が失われる可能性があることから、これはほぼ正確な数でしかありません。)
+これは、<code class="command">UPDATE</code>、<code class="command">DELETE</code>および<code class="command">INSERT</code>操作ごとに更新される、最終的には一貫性のある数です。
 テーブルの<code class="structfield">relfrozenxid</code>値が<code class="varname">vacuum_freeze_table_age</code>トランザクション年齢より大きい場合、古いタプルを凍結して、<code class="structfield">relfrozenxid</code>を繰り上げるため、積極的なバキュームが実行されます。
 そうでなければ最後のバキュームの後に変更されたページのみ走査されます。
-《機械翻訳》ここで、バキュームインサートベースしきい値は<a class="xref" href="runtime-config-autovacuum.html#GUC-AUTOVACUUM-VACUUM-INSERT-THRESHOLD">autovacuum_vacuum_insert_threshold</a>で、バキュームインサートスケールファクタは<a class="xref" href="runtime-config-autovacuum.html#GUC-AUTOVACUUM-VACUUM-INSERT-SCALE-FACTOR">autovacuum_vacuum_insert_scale_factor</a>です。
-このようなバキュームでは、テーブルの一部を<em class="firstterm">すべての可視</em>としてマークすることができ、タプルを凍結することもできるため、その後のバキュームで必要とされる作業を減らすことができる。
-<code class="command">INSERT</code>操作を受け取るが、<code class="command">UPDATE</code>/<code class="command">DELETE</code>操作をまったく、またはほとんど受け取らないテーブルの場合、テーブルの<a class="xref" href="sql-createtable.html#RELOPTION-AUTOVACUUM-FREEZE-MIN-AGE">autovacuum_freeze_min_age</a>を下げると、以前のバキュームによってタプルが凍結される可能性があるため、有益な場合があります。
-使用されなくなったタプルの数と挿入されたタプルの数は、累積的な統計処理システムから取得される。
-これは、<code class="command">UPDATE</code>、<code class="command">DELETE</code>、<code class="command">INSERT</code>の各カウントによって更新される、最終的に一貫性のあるオペレーションである。
-テーブルの<code class="structfield">relfrozenxid</code>の値が<code class="varname">vacuum_freeze_table_age</code>トランザクションの古さよりも大きい場合、積極的なバキュームは古いタプルをフリーズして進めるために実行されます<code class="structfield">relfrozenxid</code>。
-それ以外の場合は、最後のバキューム以降に変更されたページのみがスキャンされます。
    </p><p>
 <span class="original">
     For analyze, a similar condition is used: the threshold, defined as:

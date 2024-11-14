@@ -602,7 +602,7 @@ postgres=# SELECT * FROM pg_walfile_name_offset((pg_backup_stop()).lsn);
 <span class="original">
     Similarly, &lt;function&gt;pg_walfile_name&lt;/function&gt; extracts just the write-ahead log file name.
 </span>
-《機械翻訳》同様に、<code class="function">pg_walfile_name</code>は先行書き込みログファイル名のみを抽出します。
+同様に、<code class="function">pg_walfile_name</code>は先行書き込みログファイル名のみを抽出します。
    </p><p>
 <span class="original">
     &lt;function&gt;pg_split_walfile_name&lt;/function&gt; is useful to compute a
@@ -1093,18 +1093,12 @@ bgwriterやcheckpointerがログするのを待たずに、実行中のトラン
         the replication protocol command
         &lt;literal&gt;CREATE_REPLICATION_SLOT ... LOGICAL&lt;/literal&gt;.
 </span>
-《マッチ度[68.834081]》出力プラグイン<em class="parameter"><code>plugin</code></em>を使って<em class="parameter"><code>slot_name</code></em>という名前の新しい論理（デコーディング）レプリケーションスロットを作ります。
+出力プラグイン<em class="parameter"><code>plugin</code></em>を使って<em class="parameter"><code>slot_name</code></em>という名前の新しい論理（デコーディング）レプリケーションスロットを作ります。
 3番目のオプションパラメータ<em class="parameter"><code>temporary</code></em>をtrueに設定すると、このスロットを永続的にディスクに保存するべきではなく、現在のセッションでのみ使われることを意図します。
 また、一時スロットはエラーが起きると解放されます。
 オプションの4つ目の引数<em class="parameter"><code>twophase</code></em>がtrueならば、準備されたトランザクションのデコードがこのスロットで可能になります。
+オプションの5番目の引数<em class="parameter"><code>failover</code></em>がtrueならば、このスロットがスタンバイに同期化できるようになり、フェイルオーバー後に論理的な複製を再開できるようになります。
 この関数の呼び出しはレプリケーションプロトコルコマンドの<code class="literal">CREATE_REPLICATION_SLOT ... LOGICAL</code>と同じ効果があります。
-《機械翻訳》出力プラグイン<em class="parameter"><code>plugin</code></em>を使用して、<em class="parameter"><code>slot_name</code></em>という名前の新しい論理（復号）レプリケーションスロットを作成します。
-オプションの第3パラメータ<em class="parameter"><code>temporary</code></em>は、真に設定した場合、スロットを永久的にディスクに保存しないことを指定します。
-これは現在のセッションでのみ使用するためのものです。
-一時スロットもエラーが発生すると解放されます。
-オプションの4番目のパラメータ<em class="parameter"><code>twophase</code></em>は、真に設定した場合、このスロットに対して準備されたトランザクションのデコードが有効になるように指定します。
-オプションの5番目のパラメータ<em class="parameter"><code>failover</code></em>は、真に設定した場合、このスロットがスタンバイに同期化できるようになり、フェイルオーバー後に論理的な複製を再開できるようになります。
-この関数を呼び出すと、レプリケーションプロトコルコマンド<code class="literal">CREATE_REPLICATION_SLOT ... LOGICAL</code>と同じ効果を持ちます。
        </p></td></tr><tr><td class="func_table_entry"><p class="func_signature">
         <a id="id-1.5.8.36.8.5.2.2.4.1.1.1" class="indexterm"></a>
         <code class="function">pg_copy_physical_replication_slot</code> ( <em class="parameter"><code>src_slot_name</code></em> <code class="type">name</code>, <em class="parameter"><code>dst_slot_name</code></em> <code class="type">name</code> [<span class="optional">, <em class="parameter"><code>temporary</code></em> <code class="type">boolean</code> </span>] )
@@ -1173,11 +1167,11 @@ bgwriterやcheckpointerがログするのを待たずに、実行中のトラン
         &lt;link linkend="guc-synchronized-standby-slots"&gt;&lt;varname&gt;synchronized_standby_slots&lt;/varname&gt;&lt;/link&gt;
         have confirmed WAL receipt.
 </span>
-《機械翻訳》最後に変更が使用されたスロットから開始して、スロット<em class="parameter"><code>slot_name</code></em>の変更を返します。
-<em class="parameter"><code>upto_lsn</code></em>と<em class="parameter"><code>upto_nchanges</code></em>がnullの場合、ロジカルデコーディングはWALの終了まで継続します。
-<em class="parameter"><code>upto_lsn</code></em>がnull以外の場合、デコードは、指定されたLSNより前にincludeしたトランザクションのみをコミットします。
-<em class="parameter"><code>upto_nchanges</code></em>がnull以外の場合、デコードによって生成された行数が指定した値を超えるとデコードが停止します。
-ただし、ノートでは、この制限は新しいトランザクションコミットをデコードするたびに生成される行を追加した後にのみチェックされるため、実際に返される行数はより多くなる可能性があります。
+変更が最後に消費された時点から開始して、スロット<em class="parameter"><code>slot_name</code></em>の変更を返します。
+<em class="parameter"><code>upto_lsn</code></em>と<em class="parameter"><code>upto_nchanges</code></em>がNULLならば論理デコードはWALの最後まで続きます。
+<em class="parameter"><code>upto_lsn</code></em>が非NULLであれば、デコードは指定されたLSNより前にコミットされたトランザクションのみを含みます。
+<em class="parameter"><code>upto_nchanges</code></em>が非NULLであれば、デコードにより生成された行の数が指定された値を越えたときに、デコードは止まります。
+しかしながら、新しいトランザクションの各コミットをデコードして生成された行を追加した後でしかこの制限は確認されませんので、実際に返される行の数は大きいかもしれないことに注意してください。
 指定されたスロットがロジカルフェイルオーバースロットである場合、関数は<a class="link" href="runtime-config-replication.html#GUC-SYNCHRONIZED-STANDBY-SLOTS"><code class="varname">synchronized_standby_slots</code></a>で指定された全ての物理的スロットがWAL受信を確認するまで結果しません。
        </p></td></tr><tr><td id="PG-LOGICAL-SLOT-PEEK-CHANGES" class="func_table_entry"><p class="func_signature">
         <a id="id-1.5.8.36.8.5.2.2.7.1.1.1" class="indexterm"></a>
@@ -1246,12 +1240,12 @@ bgwriterやcheckpointerがログするのを待たずに、実行中のトラン
         &lt;link linkend="guc-synchronized-standby-slots"&gt;&lt;varname&gt;synchronized_standby_slots&lt;/varname&gt;&lt;/link&gt;
         have confirmed WAL receipt.
 </span>
-《機械翻訳》レプリケーションスロット記名的<em class="parameter"><code>slot_name</code></em>の現在確認位置を進めます。
-スロットは後方に移動せず、現在の挿入位置を超えて移動することもありません。
-スロットの名前と、前に進められた実際の位置を返します。
-更新されたスロット位置情報は、次のチェックポイント時に進角が行われた場合に書き出される。
-したがって、クラッシュのイベントでは、スロットがより早い位置に結果する可能性があります。
-指定されたスロットがロジカルフェイルオーバースロットである場合、関数は<a class="link" href="runtime-config-replication.html#GUC-SYNCHRONIZED-STANDBY-SLOTS"><code class="varname">synchronized_standby_slots</code></a>で指定された全ての物理的スロットがWAL受信を確認するまで結果しません。
+<em class="parameter"><code>slot_name</code></em>という名前のレプリケーションスロットの現在の確認された位置を進めます。
+スロットは後方には動きませんし、現在の挿入位置を超えて進むこともありません。
+スロットの名前と前に進んだ実際の位置を返します。
+前に進んだ場合は更新されたスロットに関する情報がこの後のチェックポイントで書き出されます。
+クラッシュが発生すると、そのスロットは以前の位置に戻るかもしれません。
+指定されたスロットがロジカルフェイルオーバースロットである場合、関数は<a class="link" href="runtime-config-replication.html#GUC-SYNCHRONIZED-STANDBY-SLOTS"><code class="varname">synchronized_standby_slots</code></a>で指定された全ての物理的スロットがWAL受信を確認するまで結果を返しません。
        </p></td></tr><tr><td id="PG-REPLICATION-ORIGIN-CREATE" class="func_table_entry"><p class="func_signature">
         <a id="id-1.5.8.36.8.5.2.2.11.1.1.1" class="indexterm"></a>
         <code class="function">pg_replication_origin_create</code> ( <em class="parameter"><code>node_name</code></em> <code class="type">text</code> )
@@ -1419,20 +1413,15 @@ bgwriterやcheckpointerがログするのを待たずに、実行中のトラン
         flushed to WAL or not. &lt;parameter&gt;flush&lt;/parameter&gt; has no effect
         with &lt;parameter&gt;transactional&lt;/parameter&gt;, as the message's WAL
         record is flushed along with its transaction.
+
 </span>
-《マッチ度[58.887677]》論理デコードのメッセージを送出します
+論理デコードのメッセージを送出します
 これは汎用的なメッセージをWALを通して論理デコードのプラグインに渡すのに使うことができます。
 パラメータ<em class="parameter"><code>transactional</code></em>は、メッセージが現在のトランザクションの一部なのか、あるいはすぐに書き込み、論理デコードがレコードを読んだらすぐにデコードされるべきものなのかを指定します。
 <em class="parameter"><code>prefix</code></em>パラメータは文字通りの接頭辞で、論理デコードのプラグインが、自分にとって関心のあるメッセージを容易に認識できるように使われます。
 <em class="parameter"><code>content</code></em>パラメータはメッセージの内容で、テキストまたはバイナリ形式で与えられます。
-《機械翻訳》論理デコード メッセージを出力します。
-これはWALを通じて汎用メッセージを論理デコードプラグインに渡すために使用することができます。
-<em class="parameter"><code>transactional</code></em>パラメータは、メッセージが現在のトランザクションの一部であるべきか、それとも直ちに書き込まれ、論理デコーダがレコードを読み取ったらすぐにデコードされるべきかを指定します。
-<em class="parameter"><code>prefix</code></em>パラメータは、論理デコーディングプラグインが関心のあるメッセージを容易に認識するために使用できるテキストプレフィックスです。
-<em class="parameter"><code>content</code></em>パラメータは、テキスト形式またはバイナリ形式で与えられるメッセージの内容です。
-<em class="parameter"><code>flush</code></em>（デフォルトは<code class="literal">false</code>）は、メッセージを即座にWALにフラッシュするかどうかを制御します。
-<em class="parameter"><code>flush</code></em>は<em class="parameter"><code>transactional</code></em>では効果がありません。
-メッセージのWALレコードはトランザクションと共にフラッシュされるからです。
+<em class="parameter"><code>flush</code></em>（デフォルトは<code class="literal">false</code>）は、メッセージを即座にWALに吐き出すかどうかを制御します。
+<em class="parameter"><code>flush</code></em>は<em class="parameter"><code>transactional</code></em>では効果がありません。メッセージのWALレコードはトランザクションと共に吐き出されるからです。
        </p></td></tr><tr><td id="PG-SYNC-REPLICATION-SLOTS" class="func_table_entry"><p class="func_signature">
         <a id="id-1.5.8.36.8.5.2.2.23.1.1.1" class="indexterm"></a>
         <code class="function">pg_sync_replication_slots</code> ()
@@ -1450,11 +1439,11 @@ bgwriterやcheckpointerがログするのを待たずに、実行中のトラン
         sync_replication_slots&lt;/varname&gt;&lt;/link&gt; is enabled and the slotsync
         worker is already running to perform the synchronization of slots.
 </span>
-《機械翻訳》プライマリ サーバからスタンバイ サーバへの論理フェイルオーバーレプリケーション スロットを同期します。
-この機能は、スタンバイ・サーバでのみ実行できます。
-一時的に同期されたスロットは、論理復号化に使用できず、プロモート後に破棄する必要があります。
+プライマリサーバからスタンバイサーバへの論理フェイルオーバーレプリケーションスロットを同期します。
+この機能は、スタンバイサーバでのみ実行できます。
+一時的に同期されたスロットは、ロジカルでコーディングに使用できず、昇格後に破棄する必要があります。
 詳細は<a class="xref" href="logicaldecoding-explanation.html#LOGICALDECODING-REPLICATION-SLOTS-SYNCHRONIZATION" title="47.2.3. レプリケーションスロットの同期">47.2.3</a>を参照してください。
-<a class="link" href="runtime-config-replication.html#GUC-SYNC-REPLICATION-SLOTS"><code class="varname"> sync_replication_slots</code></a>が有効で、スロットの同期を実行するためにスロットワーカーがすでに実行中の場合、この関数は実行できないことに注意してください。
+<a class="link" href="runtime-config-replication.html#GUC-SYNC-REPLICATION-SLOTS"><code class="varname"> sync_replication_slots</code></a>が有効で、スロットの同期を実行するためにスロット同期ワーカーがすでに実行中の場合、この関数は実行できないことに注意してください。
        </p>
 
        <div class="caution"><h3 class="title">注意</h3><p>
@@ -1469,7 +1458,7 @@ bgwriterやcheckpointerがログするのを待たずに、実行中のトラン
           synchronized slot will be removed by the VACUUM process on the primary
           server, resulting in the synchronized slot becoming invalidated.
 </span>
-《機械翻訳》関数の実行後に、スタンバイ側で<a class="link" href="runtime-config-replication.html#GUC-HOT-STANDBY-FEEDBACK"><code class="varname">hot_standby_feedback</code></a>が無効になったり、<a class="link" href="runtime-config-replication.html#GUC-PRIMARY-SLOT-NAME"><code class="varname">primary_slot_name</code></a>に設定された物理スロットが削除されたりすると、同期スロットの必要な行がプライマリサーバのVACUUM処理によって削除され、同期スロットが無効になる可能性があります。
+関数の実行後に、スタンバイ側で<a class="link" href="runtime-config-replication.html#GUC-HOT-STANDBY-FEEDBACK"><code class="varname">hot_standby_feedback</code></a>が無効になったり、<a class="link" href="runtime-config-replication.html#GUC-PRIMARY-SLOT-NAME"><code class="varname">primary_slot_name</code></a>に設定された物理スロットが削除されたりすると、同期スロットの必要な行がプライマリサーバのVACUUM処理によって削除され、同期スロットが無効になる可能性があります。
         </p></div>
       </td></tr></tbody></table></div></div><br class="table-break" /></div><div class="sect2" id="FUNCTIONS-ADMIN-DBOBJECT"><div class="titlepage"><div><div><h3 class="title">9.28.7. データベースオブジェクト管理関数 <a href="#FUNCTIONS-ADMIN-DBOBJECT" class="id_link">#</a></h3></div></div></div><span class="original">
    &lt;title&gt;Database Object Management Functions&lt;/title&gt;
@@ -1537,9 +1526,9 @@ bgwriterやcheckpointerがログするのを待たずに、実行中のトラン
         &lt;xref linkend="storage-toast"/&gt; for more information about
         &lt;acronym&gt;TOAST&lt;/acronym&gt;.
 </span>
-《機械翻訳》ディスク上の<acronym class="acronym">TOAST</acronym>化された値の<code class="structfield">chunk_id</code>を表示します。
-値が<acronym class="acronym">TOAST</acronym>化されていない場合、またはディスク上で<acronym class="acronym">TOAST</acronym>化されていない場合は<code class="literal">NULL</code>を返します。
-<a class="xref" href="storage-toast.html" title="65.2. TOAST">65.2</a>を参照してください。
+ディスク上の<acronym class="acronym">TOAST</acronym>化された値の<code class="structfield">chunk_id</code>を表示します。
+値が非<acronym class="acronym">TOAST</acronym>化されていたり、あるいはディスク上にない場合は<code class="literal">NULL</code>を返します。
+<acronym class="acronym">TOAST</acronym>についてのより詳しい情報は<a class="xref" href="storage-toast.html" title="65.2. TOAST">65.2</a>を参照してください。
        </p></td></tr><tr><td class="func_table_entry"><p class="func_signature">
         <a id="id-1.5.8.36.9.3.2.2.4.1.1.1" class="indexterm"></a>
         <code class="function">pg_database_size</code> ( <code class="type">name</code> )
