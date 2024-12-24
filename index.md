@@ -7,7 +7,7 @@ layout: default
 
 ## 最新
 
-last-updated: 2024-12-17 04:25:52 JST
+last-updated: 2024-12-25 04:22:22 JST
 
 ### 最新 PostgreSQL
 
