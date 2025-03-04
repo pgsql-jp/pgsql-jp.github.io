@@ -22,7 +22,7 @@
 多くのインストレーションでは、<a class="xref" href="routine-vacuuming.html#AUTOVACUUM" title="25.1.6. 自動バキュームデーモン">25.1.6</a>で説明されている<em class="firstterm">自動バキュームデーモン</em>でのバキューム処理を行わせることで充分です。
 それぞれの状況に合った最善の結果を得るため、そこで説明する自動バキューム用パラメータの調整が必要かもしれません。
 データベース管理者によっては、<span class="application">cron</span>もしくは<span class="application">タスクスケジューラ</span>スクリプトに従って典型的に実行される、手作業管理の<code class="command">VACUUM</code>コマンドによりデーモンの活動を補足したり、置き換えたりすることを意図するかもしれません。
-手作業管理のバキューム処理を適切に設定するためには、以下のいくつかの小節で説明する問題点を理解することが必須です。
+手作業管理のバキューム処理を適切に設定するためには、以下のいくつかの副節で説明する問題点を理解することが必須です。
 自動バキューム処理に信頼をおいている管理者にとっても、この資料に目を通すことはそれらの理解と自動バキューム処理の調整に役に立つことでしょう。
   </p><div class="sect2" id="VACUUM-BASICS"><div class="titlepage"><div><div><h3 class="title">25.1.1. バキューム作業の基本 <a href="#VACUUM-BASICS" class="id_link">#</a></h3></div></div></div><span class="original">
    &lt;title&gt;Vacuuming Basics&lt;/title&gt;
@@ -63,7 +63,7 @@
     Each of these reasons dictates performing &lt;command&gt;VACUUM&lt;/command&gt; operations
     of varying frequency and scope, as explained in the following subsections.
 </span>
-以降の小節で説明するように、これらの理由の1つ1つは<code class="command">VACUUM</code>操作の実行について、その頻度の変動や対象領域の変動に影響します。
+以降の副節で説明するように、これらの理由の1つ1つは<code class="command">VACUUM</code>操作の実行について、その頻度の変動や対象領域の変動に影響します。
    </p><p>
 <span class="original">
     There are two variants of &lt;command&gt;VACUUM&lt;/command&gt;: standard &lt;command&gt;VACUUM&lt;/command&gt;
@@ -526,13 +526,13 @@ XIDのカウンタが一周して0に戻り、そして、突然に、過去に�
     &lt;varname&gt;vacuum_freeze_table_age&lt;/varname&gt; to 0 forces &lt;command&gt;VACUUM&lt;/command&gt; to
     always use its aggressive strategy.
 </span>
-<code class="command">VACUUM</code>は<a class="link" href="storage-vm.html" title="73.4. 可視性マップ">可視性マップ</a>を使用して、テーブルのどのページを走査する必要があるかを決定します。
+<code class="command">VACUUM</code>は<a class="link" href="storage-vm.html" title="73.4. 可視性マップ">可視性マップ</a>を使用して、テーブルのどのページをスキャンする必要があるかを決定します。
 通常は、無効な行バージョンを持っていないページをスキップします。このとき、そのページに古いXID値の行バージョンがまだある可能性があったとしても読み飛ばします。
 したがって、通常の<code class="command">VACUUM</code>では必ずしもテーブル内のすべての古い行バージョンを凍結するわけではありません。
 そのようなことが起きた場合には、最終的に<code class="command">VACUUM</code>で<em class="firstterm">積極的なバキューム</em>を実行する必要があるでしょう。そのときは、全可視ではあるが全凍結ではないページにあるものを含めて、適切な凍結されていないXID値やMXID値をすべて凍結します。
 実際には、ほとんどのテーブルには定期的な積極的なバキュームが必要です。
 <a class="xref" href="runtime-config-client.html#GUC-VACUUM-FREEZE-TABLE-AGE">vacuum_freeze_table_age</a>は<code class="command">VACUUM</code>がいつこれを行うかを制御します。
-つまり、最後にそのような走査が行われた後に実行されたトランザクションの数が<code class="varname">vacuum_freeze_table_age</code>から<code class="varname">vacuum_freeze_min_age</code>を引いた数より大きいとき、全可視ではあるが全凍結ではないページも走査されます。
+つまり、最後にそのようなスキャンが行われた後に実行されたトランザクションの数が<code class="varname">vacuum_freeze_table_age</code>から<code class="varname">vacuum_freeze_min_age</code>を引いた数より大きいとき、全可視ではあるが全凍結ではないページもスキャンされます。
 <code class="varname">vacuum_freeze_table_age</code>を0に設定すると<code class="command">VACUUM</code>は常にこの積極的な戦略を使うようになります。
    </p><p>
 <span class="original">
@@ -710,9 +710,9 @@ SELECT datname, age(datfrozenxid) FROM pg_database;
     &lt;varname&gt;autovacuum_freeze_max_age&lt;/varname&gt; is reached, an autovacuum will soon
     be forced for the table.
 </span>
-<code class="command">VACUUM</code>は通常は最後のバキュームの後で変更されたページのみ走査しますが、<code class="structfield">relfrozenxid</code>はテーブルの凍結されていないXIDを含むかもしれないすべてのページを走査したときのみ繰り上がります。
+<code class="command">VACUUM</code>は通常は最後のバキュームの後で変更されたページのみスキャンしますが、<code class="structfield">relfrozenxid</code>はテーブルの凍結されていないXIDを含むかもしれないすべてのページをスキャンしたときのみ繰り上がります。
 これは、<code class="structfield">relfrozenxid</code>が<code class="varname">vacuum_freeze_table_age</code>トランザクション年齢より大きい時、<code class="command">VACUUM</code>の<code class="literal">FREEZE</code>オプションが使用された時、もしくは無効な行バージョンを削除するため全凍結になっていないすべてのページをバキュームしなければならなくなった時に発生します。
-<code class="command">VACUUM</code>がテーブルの全凍結になっていないすべてのページを走査したとき、<code class="literal">age(relfrozenxid)</code>は、使用された<code class="varname">vacuum_freeze_min_age</code>設定より若干大きくなるはずです
+<code class="command">VACUUM</code>がテーブルの全凍結になっていないすべてのページをスキャンしたとき、<code class="literal">age(relfrozenxid)</code>は、使用された<code class="varname">vacuum_freeze_min_age</code>設定より若干大きくなるはずです
 （<code class="command">VACUUM</code>を起動してから始まったトランザクションの数分大きくなります）。
 <code class="command">VACUUM</code>は<code class="structfield">relfrozenxid</code>をテーブルに残っている最も古いXIDに設定しますので、最後の値を厳密に要求されるものよりずっとより新しいものとすることが可能です。
 <code class="structfield">relfrozenxid</code>を繰り上げる<code class="command">VACUUM</code>が<code class="varname">autovacuum_freeze_max_age</code>に達するまでにテーブルに対して発行されない場合、そのテーブルに対して自動バキュームが早急に強制されます。
@@ -866,7 +866,7 @@ HINT:  Stop the postmaster and vacuum that database in single-user mode.
      be skipped.  &lt;function&gt;mxid_age()&lt;/function&gt; can be used on
      &lt;structname&gt;pg_class&lt;/structname&gt;.&lt;structfield&gt;relminmxid&lt;/structfield&gt; to find its age.
 </span>
-テーブルの何らかの部分に対し<code class="command">VACUUM</code>走査されるときはいつでも、そのときに見つかった<a class="xref" href="runtime-config-client.html#GUC-VACUUM-MULTIXACT-FREEZE-MIN-AGE">vacuum_multixact_freeze_min_age</a>よりも古いマルチトランザクションIDはすべて異なる値で置き換えられます。
+テーブルの何らかの部分に対し<code class="command">VACUUM</code>スキャンされるときはいつでも、そのときに見つかった<a class="xref" href="runtime-config-client.html#GUC-VACUUM-MULTIXACT-FREEZE-MIN-AGE">vacuum_multixact_freeze_min_age</a>よりも古いマルチトランザクションIDはすべて異なる値で置き換えられます。
 異なる値とは、0かもしれませんし、単一のトランザクションIDかもしれませんし、より新しいマルチトランザクションIDかもしれません。
 各テーブルでは、<code class="structname">pg_class</code>.<code class="structfield">relminmxid</code>がそのテーブルのタプルにまだ現れるマルチトランザクションIDのうちできるだけ古いものを保持しています。
 この値が<a class="xref" href="runtime-config-client.html#GUC-VACUUM-MULTIXACT-FREEZE-TABLE-AGE">vacuum_multixact_freeze_table_age</a>よりも古ければ、積極的バキュームが強制されます。
@@ -882,7 +882,7 @@ HINT:  Stop the postmaster and vacuum that database in single-user mode.
      multixacts can be removed.
 </span>
 積極的な<code class="command">VACUUM</code>は、その原因が何かに関わらず、そのテーブルの<code class="structfield">relminmxid</code>を繰り上げできることが<span class="emphasis"><em>保証されています</em></span>。
-結局、データベースすべてのテーブルすべてが走査され、最も古いマルチトランザクション値が繰り上げられますので、ディスク上でより古いマルチトランザクションを保持している領域は削除できます。
+結局、すべてのデータベースのすべてのテーブルがスキャンされ、最も古いマルチトランザクション値が繰り上げられますので、ディスク上でより古いマルチトランザクションを保持している領域は削除できます。
     </p><p>
 <span class="original">
      As a safety device, an aggressive vacuum scan will
@@ -893,9 +893,9 @@ HINT:  Stop the postmaster and vacuum that database in single-user mode.
      have the oldest multixact-age.  Both of these kinds of aggressive
      scans will occur even if autovacuum is nominally disabled.
 </span>
-安全装置として、<a class="xref" href="runtime-config-autovacuum.html#GUC-AUTOVACUUM-MULTIXACT-FREEZE-MAX-AGE">autovacuum_multixact_freeze_max_age</a>よりもそのマルチトランザクション年代が大きいどのテーブルに対しても、積極的なバキューム走査が起こります。
-また、マルチトランザクションメンバによるストレージの占有が2GBを超えた場合にも、積極的なバキューム走査は、マルチトランザクション年代の一番古いものから始めて、すべてのテーブルに対してより頻繁に起こります。
-この種の積極的走査はどちらも、自動バキュームが名目上は無効にされていても発生します。
+安全装置として、<a class="xref" href="runtime-config-autovacuum.html#GUC-AUTOVACUUM-MULTIXACT-FREEZE-MAX-AGE">autovacuum_multixact_freeze_max_age</a>よりもそのマルチトランザクション年代が大きいどのテーブルに対しても、積極的なバキュームスキャンが起こります。
+また、マルチトランザクションメンバによるストレージの占有が2GBを超えた場合にも、積極的なバキュームスキャンは、マルチトランザクション年代の一番古いものから始めて、すべてのテーブルに対してより頻繁に起こります。
+この種の積極的スキャンはどちらも、自動バキュームが名目上は無効にされていても発生します。
     </p><p>
 <span class="original">
      Similar to the XID case, if autovacuum fails to clear old MXIDs from a table, the
@@ -913,7 +913,7 @@ XIDの場合と同様に、自動バキュームがテーブルから古いMXID�
      following differences:
 </span>
 MXIDが枯渇したときの通常の動作は、XIDが枯渇したときとほぼ同じ方法で復元できます。
-前のセクションと同じ手順に従いますが、次の点が異なります。
+前節と同じ手順に従いますが、次の点が異なります。
 
     </p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><span class="original">
       &lt;simpara&gt;Running transactions and prepared transactions can be ignored if there
@@ -1064,7 +1064,7 @@ vacuum insert threshold = vacuum base insert threshold + vacuum insert scale fac
 これは、<code class="command">UPDATE</code>、<code class="command">DELETE</code>および<code class="command">INSERT</code>操作ごとに更新されるほぼ正確な数です。
 (負荷が高いと一部の情報が失われる可能性があることから、これはほぼ正確な数でしかありません。)
 テーブルの<code class="structfield">relfrozenxid</code>値が<code class="varname">vacuum_freeze_table_age</code>トランザクション年齢より大きい場合、古いタプルを凍結して、<code class="structfield">relfrozenxid</code>を繰り上げるため、積極的なバキュームが実行されます。
-そうでなければ最後のバキュームの後に変更されたページのみ走査されます。
+そうでなければ最後のバキュームの後に変更されたページのみスキャンされます。
    </p><p>
 <span class="original">
     For analyze, a similar condition is used: the threshold, defined as:

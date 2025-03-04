@@ -510,7 +510,8 @@ WALに記録された操作はすでにプライマリで発生したもので�
 しかし、スタンバイ側で行うべき問い合わせをプライマリサーバ上で直接実行することと比べ、こうしたクリーンアップに関する問題を優先する価値はありません。
 また、スタンバイに実行負荷を分散できるという利点があります。
 スタンバイサーバが接続、切断を頻繁に繰り返す場合、<code class="varname">hot_standby_feedback</code>によるフィードバックが提供されていなければ、その値を調整したいと思うでしょう。
-例えば、<code class="varname">max_standby_archive_delay</code>が増大し、切断している期間WALアーカイブのコンフリクト発生による問い合わせの中断が速やかに行われないことを考えてみてください。また、再接続後に速やかに問い合わせが中断されることを避けるために<code class="varname">max_standby_streaming_delay</code>を大きくすることを考えてみてください。
+例えば、<code class="varname">max_standby_archive_delay</code>を増やし、接続をしていない間、WALアーカイブファイルのコンフリクトによって問い合わせの急速な中断が起きないようにすることを考慮してください。
+また、再接続後に新しく到着したストリーミングWALエントリによる急速な中断が起きることを避けるために<code class="varname">max_standby_streaming_delay</code>を大きくすることを考えてみてください。
    </p><p>
 <span class="original">
     The number of query cancels and the reason for them can be viewed using
@@ -546,6 +547,7 @@ WALに記録された操作はすでにプライマリで発生したもので�
 </span>
 <code class="filename">postgresql.conf</code>において<code class="varname">hot_standby</code>が<code class="literal">on</code>で（これはデフォルトです）、かつ<a class="link" href="warm-standby.html#FILE-STANDBY-SIGNAL"><code class="filename">standby.signal</code></a><a id="id-1.6.14.24.8.2.5" class="indexterm"></a>が存在すれば、サーバはホットスタンバイモードで稼働します。
 しかし、サーバはまず問い合わせが実行できる程度の一貫性を持つ状態を提供するために十分なリカバリを完了させなければなりませんので、ホットスタンバイでの接続が有効になるまでに多少の時間がかかるかもしれません。
+この期間中、接続を試みるクライアントはエラーメッセージとともに拒否されます。
 サーバの準備ができたことを確認するために、アプリケーションで接続試行を繰り返すか、サーバログに以下のメッセージがあるかどうかを確認します。
 
 </p><pre class="programlisting">
@@ -729,7 +731,7 @@ HINT:  You can then restart the server after making the necessary configuration 
     Again, note that some of these commands are actually allowed during
     "read only" mode transactions on the primary.
 </span>
-繰り返しますが、これらのコマンドの一部は、プライマリサーバにおける「読み取り専用」モードのトランザクションで実際に許可されていることに注意してください。
+ここでも、これらのコマンドの一部は、プライマリサーバにおける「読み取り専用」モードのトランザクションで実際に許可されていることに注意してください。
    </p><p>
 <span class="original">
     As a result, you cannot create additional indexes that exist solely
@@ -792,7 +794,7 @@ HINT:  You can then restart the server after making the necessary configuration 
     WAL file control commands will not work during recovery,
     e.g., &lt;function&gt;pg_backup_start&lt;/function&gt;, &lt;function&gt;pg_switch_wal&lt;/function&gt; etc.
 </span>
-リカバリの間WALの制御コマンドは稼働しません。
+リカバリの間、WALファイルの制御コマンドは稼働しません。
 例えば、<code class="function">pg_backup_start</code>や<code class="function">pg_switch_wal</code>などです。
    </p><p>
 <span class="original">
@@ -914,8 +916,8 @@ WALの再実行はトリガに基づいたものではありません。
     The &lt;command&gt;CHECKPOINT&lt;/command&gt; command is accepted during recovery,
     though it performs a restartpoint rather than a new checkpoint.
 </span>
-リカバリの間、チェックポイントプロセスとバックグラウンドライタプロセスは稼働しています。
-チェックポイントプロセスは（プライマリサーバにおけるチェックポイントに類似した）リスタートポイントを設定し、通常のブロック消去を行います。
+リカバリの間、チェックポインタプロセスとバックグラウンドライタプロセスは稼働しています。
+チェックポインタプロセスは（プライマリサーバにおけるチェックポイントに類似した）リスタートポイントを設定し、通常のブロック消去を行います。
 これはスタンバイサーバに保存されるヒントビット情報の更新を含むことができます。
 リカバリの間<code class="command">CHECKPOINT</code>コマンドは受理されますが、新規のチェックポイントではなくてリスタートポイントが設定されます。
    </p></div><div class="sect2" id="HOT-STANDBY-PARAMETERS"><div class="titlepage"><div><div><h3 class="title">27.4.4. ホットスタンバイパラメータリファレンス <a href="#HOT-STANDBY-PARAMETERS" class="id_link">#</a></h3></div></div></div><span class="original">
@@ -1007,7 +1009,7 @@ WALの再実行はトリガに基づいたものではありません。
      hot standby mode will generate an error.
 </span>
 シリアライザブルトランザクション分離レベルはまだホットスタンバイでは利用できません。
-（<a class="xref" href="transaction-iso.html#XACT-SERIALIZABLE" title="13.2.3. シリアライザブル分離レベル">13.2.3</a>および<a class="xref" href="applevel-consistency.html#SERIALIZABLE-CONSISTENCY" title="13.4.1. シリアライザブルトランザクションを用いた一貫性の強化">13.4.1</a>参照）
+（<a class="xref" href="transaction-iso.html#XACT-SERIALIZABLE" title="13.2.3. シリアライザブル分離レベル">13.2.3</a>および<a class="xref" href="applevel-consistency.html#SERIALIZABLE-CONSISTENCY" title="13.4.1. シリアライザブルトランザクションを用いた一貫性の強化">13.4.1</a>参照。）
 ホットスタンバイにおいてトランザクションをシリアライザブルトランザクション分離レベルに設定しようとすると、エラーになります。
     </p></li></ul></div><p>
 

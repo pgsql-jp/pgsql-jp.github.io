@@ -17,8 +17,9 @@
 </span>
 トリガによって行われる多くの操作は<span class="productname">PostgreSQL</span>のルールシステムで実装可能です。
 ルールで実装できないものの1つはある種の制約、特に外部キーに関してです。
-もし他のテーブルに列の値がなかった場合、条件ルールでコマンドを<code class="literal">NOTHING</code>に書き換えてしまうことも可能ですが、これではデータがだまって消去されてしまい、良いアイディアとは言えません。
-有効な値かどうかのチェックが必要で、無効な値についてはエラーメッセージを表示する必要があるなら、このことは今のところトリガを使って行わなければなりません。
+もし他のテーブルに列の値がなかった場合、条件ルールでコマンドを<code class="literal">NOTHING</code>に書き換えてしまうことも可能です。
+しかし、これではデータがだまって消去されてしまい、良いアイディアとは言えません。
+有効な値のチェックが必要で、無効な値の場合にエラーメッセージを生成する必要がある場合、トリガで行う必要があります。
 </p><p>
 <span class="original">
     In this chapter, we focused on using rules to update views. All of
@@ -110,7 +111,7 @@ CREATE RULE computer_del AS ON DELETE TO computer
 <span class="original">
     Now we look at different types of deletes. In the case of a:
 </span>
-ここで別の類の削除を考えてみましょう。
+ここで別の類の削除を考えてみましょう。以下のような場合には、
 
 </p><pre class="programlisting">
 DELETE FROM computer WHERE hostname = 'mypc.local.net';
@@ -121,7 +122,7 @@ DELETE FROM computer WHERE hostname = 'mypc.local.net';
     command issued by the trigger would also use an index scan (also fast).
     The extra command from the rule would be:
 </span>
-上のような場合では、<code class="literal">computer</code>はインデックスにより（高速に）スキャンされます。
+<code class="literal">computer</code>はインデックスにより（高速に）スキャンされます。
 トリガによってこのコマンドが発行された場合もインデックススキャンが使用されます（高速です）。
 ルールによる追加コマンドは以下のようになります。
 
@@ -155,7 +156,8 @@ Nestloop
     is:
 </span>
 次の削除処理では<code class="structfield">hostname</code>が<code class="literal">old</code>で始まる2,000台全てのcomputerを削除しようと思います。
-方法として2つの有効な問い合わせがあって、1つは以下のようなものです。
+方法として2つの有効な問い合わせがあります。
+1つは以下のようなものです。
 
 </p><pre class="programlisting">
 DELETE FROM computer WHERE hostname &gt;= 'old'

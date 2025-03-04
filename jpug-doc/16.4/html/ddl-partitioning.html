@@ -39,7 +39,7 @@
        index, which would require random-access reads scattered across the
        whole table.
 </span>
-問い合わせや更新が一つのパーティションの大部分にアクセスする場合、インデックスを使用してテーブル全体にまたがるランダムアクセス読み取りをする代わりに、そのパーティションへの順次アクセスをすることでパフォーマンスを向上させることができます。
+問い合わせや更新が一つのパーティションの大部分にアクセスする場合、インデックスを使用してテーブル全体にまたがるランダムアクセス読み取りをする代わりに、そのパーティションへのシーケンシャルスキャンを使用することでパフォーマンスが向上します。
       </p></li><li class="listitem"><p>
 <span class="original">
        Bulk loads and deletes can be accomplished by adding or removing
@@ -529,10 +529,10 @@ ALTER TABLE measurement ATTACH PARTITION measurement_y2008m02
      partitions are reached.
 </span>
 上で説明したように、<code class="command">ATTACH PARTITION</code>コマンドを実行する前に、マッチするパーティション制約を記述する<code class="literal">CHECK</code>制約を、パーティションに追加するテーブルに作成することを推奨します。
-こうすることで、システムは、そうしなければ必要になる暗示的なパーティション制約を検証するための走査を、省略できます。
-このような<code class="literal">CHECK</code>制約がなければ、そのパーティションに<code class="literal">ACCESS EXCLUSIVE</code>ロック、を保持したままで、パーティション制約を検証するためにテーブルを走査することになります。
+こうすることで、システムは、そうしなければ必要になる暗示的なパーティション制約を検証するためのスキャンを、省略できます。
+このような<code class="literal">CHECK</code>制約がなければ、そのパーティションに<code class="literal">ACCESS EXCLUSIVE</code>ロック、を保持したままで、パーティション制約を検証するためにテーブルをスキャンすることになります。
 もう不要になったこの<code class="literal">CHECK</code>制約は<code class="command">ATTACH PARTITION</code>が終わった後に削除することを推奨します。
-アタッチされるテーブル自体がパーティションテーブルなら、適切な<code class="literal">CHECK</code>制約が見つかるか、リーフパーティションに到達するまで個々のサブパーティションは再帰的にロックされ走査されます。
+アタッチされるテーブル自体がパーティションテーブルなら、適切な<code class="literal">CHECK</code>制約が見つかるか、リーフパーティションに到達するまで個々のサブパーティションは再帰的にロックされスキャンされます。
     </p><p>
 <span class="original">
      Similarly, if the partitioned table has a &lt;literal&gt;DEFAULT&lt;/literal&gt;
@@ -548,9 +548,9 @@ ALTER TABLE measurement ATTACH PARTITION measurement_y2008m02
      mentioned above.
 </span>
 同様に、そのパーティションが<code class="literal">DEFAULT</code>パーティションを持っているなら、アタッチ予定のパーティションの制約を含まない<code class="literal">CHECK</code>制約を作成することをお勧めします。
-これをしておかないと、アタッチ予定のパーティション中にレコードがないことを確認するために<code class="literal">DEFAULT</code>パーティションが走査されます。
+これをしておかないと、アタッチ予定のパーティション中にレコードがないことを確認するために<code class="literal">DEFAULT</code>パーティションがスキャンされます。
 この操作の間、<code class="literal">ACCESS EXCLUSIVE</code>ロックが<code class="literal">DEFAULT</code>パーティションに保持されます。
-<code class="literal">DEFAULT</code>パーティション自体がパーティションテーブルなら、個々のパーティションは、上で述べたようにアタッチ予定のテーブルと同じ方法で走査されます。
+<code class="literal">DEFAULT</code>パーティション自体がパーティションテーブルなら、個々のパーティションは、上で述べたようにアタッチ予定のテーブルと同じ方法でスキャンされます。
     </p><p>
 <span class="original">
      As explained above, it is possible to create indexes on partitioned tables
@@ -633,13 +633,13 @@ ALTER INDEX measurement_city_id_logdate_key
 </span>
 すべてのパーティションにまたがる排他制約を作成する方法はありません。
 個々のリーフパーティションにそうした制約を設定することだけが可能です。
-繰り返しますが、この制限はパーティションをまたがる制限を強制することができないことに起因しています。
+ここでも、この制限はパーティションをまたがる制限を強制することができないことに起因しています。
       </p></li><li class="listitem"><p>
 <span class="original">
        &lt;literal&gt;BEFORE ROW&lt;/literal&gt; triggers on &lt;literal&gt;INSERT&lt;/literal&gt;
        cannot change which partition is the final destination for a new row.
 </span>
-<code class="literal">INSERT</code>の<code class="literal">BEFORE ROW</code>トリガーは、どのパーティションが新しい行の最終目的地であるかを変更することはできません。
+<code class="literal">INSERT</code>の<code class="literal">BEFORE ROW</code>トリガは、どのパーティションが新しい行の最終目的地であるかを変更することはできません。
       </p></li><li class="listitem"><p>
 <span class="original">
        Mixing temporary and permanent relations in the same partition tree is
@@ -901,8 +901,8 @@ CREATE INDEX measurement_y2008m01_logdate ON measurement_y2008m01 (logdate);
          use a very simple trigger function:
 </span>
 アプリケーションで<code class="literal">INSERT INTO measurement ...</code>を実行することができ、そのときにデータが適切な子テーブルにリダイレクトされることが望ましいです。
-rootテーブルに適当なトリガー関数を追加することでそのような設定にできます。
-データが最後の子テーブルにしか追加されないなら、次のような非常に単純なトリガー関数を使うことができます。
+rootテーブルに適当なトリガ関数を追加することでそのような設定にできます。
+データが最後の子テーブルにしか追加されないなら、次のような非常に単純なトリガ関数を使うことができます。
 
 </p><pre class="programlisting">
 CREATE OR REPLACE FUNCTION measurement_insert_trigger()
@@ -995,7 +995,7 @@ LANGUAGE plpgsql;
          child table is to set up rules, instead of a trigger, on the
          root table.  For example:
 </span>
-挿入を適切な子テーブルにリダイレクトする別の方法は、rootテーブルにトリガーではなくルールを設定することです。
+挿入を適切な子テーブルにリダイレクトする別の方法は、rootテーブルにトリガではなくルールを設定することです。
 例えば次のようにします。
 
 </p><pre class="programlisting">
@@ -1018,8 +1018,8 @@ DO INSTEAD
          method might be advantageous for bulk-insert situations.  In most
          cases, however, the trigger method will offer better performance.
 </span>
-ルールはトリガーに比べるとかなり大きなオーバーヘッドがありますが、このオーバーヘッドは一つの問い合わせに対して一度だけで行ごとではないので、この方法にも一括挿入の状況では利点があります。
-ただし、ほとんどの場合はトリガーを使う方法の方が良いパフォーマンスを得られます。
+ルールはトリガに比べるとかなり大きなオーバーヘッドがありますが、このオーバーヘッドは一つの問い合わせに対して一度だけで行ごとではないので、この方法にも一括挿入の状況では利点があります。
+ただし、ほとんどの場合はトリガを使う方法の方が良いパフォーマンスを得られます。
         </p><p>
 <span class="original">
          Be aware that &lt;command&gt;COPY&lt;/command&gt; ignores rules.  If you want to
@@ -1030,7 +1030,7 @@ DO INSTEAD
 </span>
 <code class="command">COPY</code>はルールを無視することに注意してください。
 データの挿入に<code class="command">COPY</code>を使いたい場合は、rootではなく正しい子テーブルにコピーする必要があります。
-トリガーであれば<code class="command">COPY</code>でも起動されるので、トリガーを使う方法であれば通常通りに使用できます。
+トリガであれば<code class="command">COPY</code>でも起動されるので、トリガを使う方法であれば通常通りに使用できます。
         </p><p>
 <span class="original">
          Another disadvantage of the rule approach is that there is no simple
@@ -1150,7 +1150,7 @@ ALTER TABLE measurement_y2008m02 INHERIT measurement;
 </span>
 ここで示した方法は、行のキー列の値が変わらないか、あるいは、少なくとも他のパーティションへの移動が必要になるような変更はないということを前提としています。
 そのような変更をしようとする<code class="command">UPDATE</code>は<code class="literal">CHECK</code>制約のためにエラーになります。
-このような場合を処理できる必要があるなら、子テーブルに適切なUPDATEトリガーを設定することもできますが、構造の管理がずっと複雑になります。
+このような場合を処理できる必要があるなら、子テーブルに適切なUPDATEトリガを設定することもできますが、構造の管理がずっと複雑になります。
        </p></li><li class="listitem"><p>
 <span class="original">
         If you are using manual &lt;command&gt;VACUUM&lt;/command&gt; or
@@ -1183,8 +1183,8 @@ rootテーブルしか処理しません。
         be much slower than the tuple routing performed internally by
         declarative partitioning.
 </span>
-アプリケーションがパーティショニングのスキームについて明示的に意識しているのでなければ、トリガーまたはルールで行を適切な子テーブルに振り向ける必要があります。
-トリガーを書くのは複雑であり、また宣言的パーティショニングによって内部的に実行されるタプルの振り向けよりずっと遅いでしょう。
+アプリケーションがパーティショニングのスキームについて明示的に意識しているのでなければ、トリガまたはルールで行を適切な子テーブルに振り向ける必要があります。
+トリガを書くのは複雑であり、また宣言的パーティショニングによって内部的に実行されるタプルの振り向けよりずっと遅いでしょう。
        </p></li></ul></div><p>
     </p></div></div><div class="sect2" id="DDL-PARTITION-PRUNING"><div class="titlepage"><div><div><h3 class="title">5.11.4. パーティション除去 <a href="#DDL-PARTITION-PRUNING" class="id_link">#</a></h3></div></div></div><span class="original">
    &lt;title&gt;Partition Pruning&lt;/title&gt;
