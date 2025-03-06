@@ -491,16 +491,12 @@ CREATE TABLE measurement_y2008m02 PARTITION OF measurement
      option can be helpful to avoid tediously repeating the parent table's
      definition; for example:
 </span>
-《マッチ度[66.033755]》別の方法として、パーティション構造の外で新しいテーブルを作成し、後でパーティションとしてアタッチする方が便利なことがあります。
+新たなパーティションを作る代わりに、パーティション構造の外で新しいテーブルを作成し、後でパーティションとしてアタッチする方が便利なことがあります。
 これにより、パーティションテーブルに現れる前に新しいデータをロードし、チェックし、変換することができます。
-さらに、<code class="literal">ATTACH PARTITION</code>操作は、<code class="command">CREATE TABLE ... PARTITION OF</code>で必要とされる<code class="literal">ACCESS EXCLUSIVE</code>ロックとは対照的に、パーティションテーブルに対しては<code class="literal">SHARE UPDATE EXCLUSIVE</code>ロックを必要とするので、パーティションテーブルに対する並行操作に対してよりフレンドリーです。
-<code class="literal">CREATE TABLE ... LIKE</code>オプションは、親テーブルの定義を繰り返し書くのを避けるのに役立ちます。
-《機械翻訳》新しいパーティションを作成する代わりに、パーティション構造とは別に新しいテーブルを作成し、後でパーティションとしてアタッチする方が便利な場合があります。
-これにより、分割されたデータに表示される前に、新しいテーブルをロード、チェック、変換できるようになります。
-さらに、<code class="literal">ATTACH PARTITION</code>操作は、<code class="command">CREATE TABLE ... PARTITION OF</code>で必要とされる<code class="literal">ACCESS EXCLUSIVE</code>ロックとは異なり、パーティションテーブルに対しては<code class="literal">SHARE UPDATE EXCLUSIVE</code>ロックのみが必要です。
-<a class="link" href="sql-altertable.html#SQL-ALTERTABLE-ATTACH-PARTITION"><code class="literal">ALTER TABLE ... ATTACH PARTITION</code></a>を参照してください。
-<a class="link" href="sql-createtable.html#SQL-CREATETABLE-PARMS-LIKE"><code class="literal">CREATE TABLE ... LIKE</code></a>オプションは、親テーブルの定義をうんざりするほど繰り返さないようにするのに役立ちます。
-例の場合:。
+さらに、<code class="literal">ATTACH PARTITION</code>操作は、<code class="command">CREATE TABLE ... PARTITION OF</code>で必要とされる<code class="literal">ACCESS EXCLUSIVE</code>ロックではなく、パーティションテーブルに対しては<code class="literal">SHARE UPDATE EXCLUSIVE</code>ロックだけを必要とするので、パーティションテーブルに対する並行操作に対してよりフレンドリーです。
+詳しくは、<a class="link" href="sql-altertable.html#SQL-ALTERTABLE-ATTACH-PARTITION"><code class="literal">ALTER TABLE ... ATTACH PARTITION</code></a>を参照してください。
+<a class="link" href="sql-createtable.html#SQL-CREATETABLE-PARMS-LIKE"><code class="literal">CREATE TABLE ... LIKE</code></a>オプションは、親テーブルの定義を長々と繰り返し書くのを避けるのに役立ちます。
+例を示します。
 
 </p><pre class="programlisting">
 CREATE TABLE measurement_y2008m02
@@ -534,11 +530,10 @@ ALTER TABLE measurement ATTACH PARTITION measurement_y2008m02
      suitable &lt;literal&gt;CHECK&lt;/literal&gt; constraint is encountered or the leaf
      partitions are reached.
 </span>
-《機械翻訳》ノートは、<code class="command">ATTACH PARTITION</code>コマンドを実行する場合、テーブルはパーティション制約を検証するためにスキャンされ、そのパーティションで<code class="literal">ACCESS EXCLUSIVE</code>ロックを保持します。
-上記のように、このスキャンを回避するために、<code class="literal">CHECK</code>制約マッチングを作成することをお勧めします。
-テーブルをアタッチする前に、予想されるパーティション制約を作成します。
-<code class="command">ATTACH PARTITION</code>が完成したら、冗長になった<code class="literal">CHECK</code>制約を削除することをお勧めします。
-アタッチされているテーブルが分割された自分自身のテーブルである場合、そのサブパーティションのそれぞれは、適切な<code class="literal">CHECK</code>制約に遭遇するか、リーフパーティションに到達するまで、再帰的にロックされ、スキャンされる。
+<code class="command">ATTACH PARTITION</code>コマンドを実行するとき、そのパーティションで<code class="literal">ACCESS EXCLUSIVE</code>ロックを保持したまま、テーブルがパーティション制約を検証するためにスキャンされることに注意してください。
+上記のように、このスキャンを回避するため、アタッチする前に予想されるパーティション制約に一致する<code class="literal">CHECK</code>制約をテーブルに作成することを推奨します。
+<code class="command">ATTACH PARTITION</code>が完了したら、もう不要になった<code class="literal">CHECK</code>制約を削除することをお勧めします。
+アタッチされるテーブル自体がパーティションテーブルなら、適切な<code class="literal">CHECK</code>制約が見つかるか、リーフパーティションに到達するまで個々のサブパーティションは再帰的にロックされスキャンされます。
     </p><p>
 <span class="original">
      Similarly, if the partitioned table has a &lt;literal&gt;DEFAULT&lt;/literal&gt;
@@ -553,10 +548,10 @@ ALTER TABLE measurement ATTACH PARTITION measurement_y2008m02
      recursively checked in the same way as the table being attached, as
      mentioned above.
 </span>
-《マッチ度[91.126761]》同様に、そのパーティションが<code class="literal">DEFAULT</code>パーティションを持っているなら、アタッチ予定のパーティションの制約を含まない<code class="literal">CHECK</code>制約を作成することをお勧めします。
-これをしておかないと、アタッチ予定のパーティション中にレコードがないことを確認するために<code class="literal">DEFAULT</code>パーティションが走査されます。
+同様に、そのパーティションが<code class="literal">DEFAULT</code>パーティションを持っているなら、アタッチ予定のパーティションの制約を含まない<code class="literal">CHECK</code>制約を作成することをお勧めします。
+これをしておかないと、アタッチ予定のパーティション中にレコードがないことを確認するために<code class="literal">DEFAULT</code>パーティションがスキャンされます。
 この操作の間、<code class="literal">ACCESS EXCLUSIVE</code>ロックが<code class="literal">DEFAULT</code>パーティションに保持されます。
-<code class="literal">DEFAULT</code>パーティション自体がパーティションテーブルなら、個々のパーティションは、上で述べたようにアタッチ予定のテーブルと同じ方法で走査されます。
+<code class="literal">DEFAULT</code>パーティション自体がパーティションテーブルなら、個々のパーティションは、上で述べたようにアタッチ予定のテーブルと同じ方法でスキャンされます。
     </p><p>
 <span class="original">
      As mentioned earlier, it is possible to create indexes on partitioned
@@ -575,23 +570,14 @@ ALTER TABLE measurement ATTACH PARTITION measurement_y2008m02
      all the partitions are attached to the parent index, the parent index will
      be marked valid automatically.  Example:
 </span>
-《マッチ度[64.509804]》前述のとおり、階層全体に自動で適用されるようにパーティションテーブル上にインデックスを作成することが可能です。
+前述の通り、階層全体に自動で適用されるようにパーティションテーブル上にインデックスを作成することが可能です。
 既存のパーティションだけではなく将来作成されるパーティションもインデックス付けされるため、これはとても便利です。
-一つの制限は、そのようなパーティションのインデックスを作成する場合<code class="literal">CONCURRENTLY</code>句を使うことができません。
-長いロック時間を避けるためには、パーティションテーブルに<code class="command">CREATE INDEX ON ONLY</code>を使うことが可能です。
-そのようなインデックスは無効とマークされ、パーティションは適用するインデックスを自動で取得しません。
-パーティション上のインデックスは<code class="literal">CONCURRENTLY</code>を使用して個々に作成することができ、後から<code class="command">ALTER INDEX .. ATTACH PARTITION</code>を使用して親のインデックスに<em class="firstterm">attached</em>できます。
-全てのパーティションに対してインデックスがアタッチされた時点で、親のインデックスは、自動で有効とマークされます。
-例を示します。
-《機械翻訳》前述したように、テーブルパーティションにインデックスを作成して、階層全体に自動的に適用することができます。
-これは、既存のすべてのパーティションにインデックスが作成されるだけでなく、将来のパーティションにもインデックスが作成されるため、非常に便利です。
-ただし、テーブルパーティションで新しいインデックスを作成する場合の1つの制限は、<code class="literal">CONCURRENTLY</code>修飾子を使用できないことです。
-これにより、ロック時間が長くなる可能性があります。
-これを回避するには、<code class="command">CREATEインデックスON ONLY</code>を使用して分割されたテーブルを作成します。
-これにより、無効とマークされた新しいインデックスが作成され、既存の分割への自動アプリケーションが防止されます。
-代わりに、<code class="literal">CONCURRENTLY</code>を使用して各パーティションに個別にインデックスを作成し、<code class="command">ALTER INDEX ... ATTACH PARTITION</code>を使用して親の分割されたインデックスに<em class="firstterm">アタッチ</em>することができます。
+ただし、一つ制限があり、テーブルパーティションで新しいインデックスを作成する場合は<code class="literal">CONCURRENTLY</code>修飾子を使用できません。これによりロック時間が長くなる可能性があります。
+これを回避するために、<code class="command">CREATE INDEX ON ONLY</code>を使用してパーティションテーブルを作成できます。
+これにより、無効とマークされた新しいインデックスが作成され、既存のパーティションへの自動適用を防止します。
+代替に、<code class="literal">CONCURRENTLY</code>を使用して各パーティションに個別にインデックスを作成し、<code class="command">ALTER INDEX ... ATTACH PARTITION</code>を使用して親のパーティションインデックスに<em class="firstterm">アタッチ</em>することができます。
 すべてのパーティションのインデックスが親インデックスにアタッチされると、親インデックスは自動的に有効とマークされます。
-例:。
+例を示します。
 </p><pre class="programlisting">
 CREATE INDEX measurement_usls_idx ON ONLY measurement (unitsales);
 
@@ -648,10 +634,10 @@ ALTER INDEX measurement_city_id_logdate_key
        columns that aren't part of the partition key, and it may compare
        those with any operators you like.
 </span>
-《機械翻訳》同様に、排他制約はすべてのパーティションキー列をincludeする必要があります。
-さらに、制約はそれらの列が等しいかどうかを比較する必要があります（<code class="literal">&amp;&amp;</code>などではありません）。
-繰り返しますが、この制限はクロスとパーティションの制限を強制できないことに起因しています。
-制約はパーティションキーのパートではない追加の列をincludeすることがあり、それらを任意の演算子と比較することがあります。
+同様に、排他制約はすべてのパーティションキー列を含める必要があります。
+さらに、それらの列が等しいかを比較する必要があります（<code class="literal">&amp;&amp;</code>などではありません）。
+ここでも、この制限事項はパーティションをまたがる制約を強制できないことに起因しています。
+この排他制約にはパーティションキーの一部ではない追加の列を含めてもよく、それらは任意の演算子と比較してもよいです。
       </p></li><li class="listitem"><p>
 <span class="original">
        &lt;literal&gt;BEFORE ROW&lt;/literal&gt; triggers on &lt;literal&gt;INSERT&lt;/literal&gt;
