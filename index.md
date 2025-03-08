@@ -7,7 +7,7 @@ layout: default
 
 ## 最新
 
-last-updated: 2025-03-07 04:27:08 JST
+last-updated: 2025-03-09 04:23:59 JST
 
 ### 最新 PostgreSQL
 
@@ -25,7 +25,7 @@ last-updated: 2025-03-07 04:27:08 JST
 
 | HTML （オンライン）           | PDF                                           | EPUB                                         | man | 更新日     |
 |:---------------------------|:---------------------------------------------:|:--------------------------------------------:|:---:|:----------:|
-| [16.4](jpug-doc/16.4/html/) | [PDF](jpug-doc/16.3/postgresql-16.4-A4.pdf) | [EPUB](jpug-doc/16.4/postgresql-16.4.epub) | [man.tar.gz](jpug-doc/16.4/man.tar.gz) | <em id="update">2025-03-07</em> |
+| [16.4](jpug-doc/16.4/html/) | [PDF](jpug-doc/16.3/postgresql-16.4-A4.pdf) | [EPUB](jpug-doc/16.4/postgresql-16.4.epub) | [man.tar.gz](jpug-doc/16.4/man.tar.gz) | <em id="update">2025-03-09</em> |
 | [16.3](jpug-doc/16.3/html/) | [PDF](jpug-doc/16.3/postgresql-16.3-A4.pdf) | [EPUB](jpug-doc/16.3/postgresql-16.3.epub) | [man.tar.gz](jpug-doc/16.3/man.tar.gz) | 2024-08-15 |
 | [16.0](jpug-doc/16.0/html/) | [PDF](jpug-doc/16.0/postgresql-16.0-A4.pdf) | [EPUB](jpug-doc/16.0/postgresql-16.0.epub) | [man.tar.gz](jpug-doc/16.0/man.tar.gz) | 2024-05-15 |
 
