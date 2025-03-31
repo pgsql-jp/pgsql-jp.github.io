@@ -174,7 +174,7 @@ I/Oの割合は、チェックポイントの起動時から<code class="varname
    effect on performance; particularly for workloads that are bigger than
    &lt;xref linkend="guc-shared-buffers"/&gt;, but smaller than the OS's page cache.
 </span>
-《マッチ度[92.294221]》LinuxおよびPOSIXプラットフォームでは、チェックポイントによって書かれたページを、設定したバイト数の後にディスクにフラッシュさせるように<a class="xref" href="runtime-config-wal.html#GUC-CHECKPOINT-FLUSH-AFTER">checkpoint_flush_after</a>を使ってOSに強制させることができます。
+LinuxおよびPOSIXプラットフォームでは、チェックポイントによって書かれたページを、設定したバイト数の後にディスクにフラッシュさせるように<a class="xref" href="runtime-config-wal.html#GUC-CHECKPOINT-FLUSH-AFTER">checkpoint_flush_after</a>を使ってOSに強制させることができます。
 この設定がない場合はこのページはOSのページキャッシュに保持されるかもしれず、チェックポイントの最後に<code class="literal">fsync</code>が発行された際の速度低下を招きます。
 この設定は、しばしばトランザクションの遅延を減少させるのに役立ちます。
 しかし、とりわけワークロードが<a class="xref" href="runtime-config-resource.html#GUC-SHARED-BUFFERS">shared_buffers</a>よりも大きく、かつOSのページキャッシュよりも小さい場合には性能上不利になることもあります。
@@ -257,24 +257,16 @@ WALが生成されるペースにWALのアーカイブ処理が追いつかな�
    &lt;link linkend="monitoring-pg-stat-checkpointer-view"&gt;&lt;structname&gt;pg_stat_checkpointer&lt;/structname&gt;&lt;/link&gt;
    view counts the restartpoints that have really been performed.
 </span>
-《マッチ度[54.486540]》アーカイブリカバリもしくはスタンバイモードにおいて、サーバでは定期的に通常運用でのチェックポイント処理と似た<em class="firstterm">リスタートポイント</em><a id="id-1.6.15.7.12.2" class="indexterm"></a>処理を行います。これは、すでに再生されたWALを再度読み込む必要がないよう、ディスクに現在の状態を強制的に書き込み、<code class="filename">pg_control</code>ファイルを更新します。また<code class="filename">pg_wal</code>ディレクトリの中の古いWALセグメントを再利用できるようにします。
-リスタートポイント処理はチェックポイントレコードに対してしか実施されないので、プライマリ側のチェックポイント処理よりも発生頻度が多いということはありません。
-リスタートポイントは、最後のリスタートポイントより少なくとも<code class="varname">checkpoint_timeout</code>秒が経過しているか、あるいは<code class="varname">max_wal_size</code>を超えそうな場合に起動されます。
-しかし、リスタートポイントが実施できるための制約事項により、リカバリの際には1回のチェックポイント分のWALを上限に、<code class="varname">max_wal_size</code>を超えてしまいがちです。
-(どのみち<code class="varname">max_wal_size</code>はハードリミットではないので、ディスクスペースを使い尽くしてしまわないように、常に十分な余裕を持っておくべきです)
-《機械翻訳》アーカイブのリカバリまたはスタンバイモードでは、サーバは定期的に<em class="firstterm">リスタートポイント</em>,<a id="id-1.6.15.7.12.10" class="indexterm"></a>を実行します。
-これは通常の動作におけるチェックポイントに似ています。
-サーバはすべての状態を強制的にディスクにし、<code class="filename">pg_control</code>ファイルを更新して、すでに処理されたWALデータを再度スキャンする必要がないことを示し、<code class="filename">pg_wal</code>ディレクトリ内の古いWALセグメントファイルを再利用します。
-リスタートポイントはチェックポイントの記録でしかできないので、リスタートポイントはプライマリの検問所よりも頻繁に行うことはできません。
-再始動点は、スケジュールまたは外部リクエストによって要求されます。
-<a class="link" href="monitoring-stats.html#MONITORING-PG-STAT-CHECKPOINTER-VIEW" title="27.2.15. pg_stat_checkpointer"><code class="structname">pg_stat_checkpointer</code></a>リスタートポイントの<code class="structfield">restartpoints_timed</code>ビューは最初のリスタートポイントをカウントし、<code class="structfield">地域_req</code>は2番目の地域をカウントします。
-最後に実行されたリスタートポイントから<a class="xref" href="runtime-config-wal.html#GUC-CHECKPOINT-TIMEOUT">checkpoint_timeout</a>秒以上経過してスケジュールに到達した場合、または前回のリスタートポイントの実行に失敗した場合、リスタートポイントはチェックポイントレコードによってトリガーされます。
-最後のケースでは、次の再起動ポイントが15秒以内にスケジュールされます。
-リスタートポイントは、リクエストと同様の理由でチェックポイントによってトリガーされますが、ほとんどの場合、WALサイズが<a class="xref" href="runtime-config-wal.html#GUC-MAX-WAL-SIZE">max_wal_size</a>を超えそうになった場合です。
-しかし、リスタートポイントを実行できるタイミングに制限があるため、リカバリ中に<code class="varname">max_wal_size</code>を超えることがよくあります。
-これは、チェックポイントサイクル1個分のWALに相当します。
-<code class="varname">max_wal_size</code>は決してハードリミットではないので、ディスクスペースが不足しないように常に十分な余裕を残しておくべきです。
-<a class="link" href="monitoring-stats.html#MONITORING-PG-STAT-CHECKPOINTER-VIEW" title="27.2.15. pg_stat_checkpointer"><code class="structname">pg_stat_checkpointer</code></a>ビューの<code class="structfield">restartpoints_done</code>カウンタは、実際に実行されたリスタートポイントをカウントします。
+アーカイブリカバリもしくはスタンバイモードにおいて、サーバでは定期的に通常運用でのチェックポイント処理と似た<em class="firstterm">リスタートポイント</em><a id="id-1.6.15.7.12.2" class="indexterm"></a>処理を行います。これは、すでに再生されたWALを再度読み込む必要がないよう、ディスクに現在の状態を強制的に書き込み、<code class="filename">pg_control</code>ファイルを更新します。また<code class="filename">pg_wal</code>ディレクトリの中の古いWALセグメントを再利用できるようにします。
+リスタートポイント処理はチェックポイントレコードに基づいてのみ実行されるため、プライマリ側のチェックポイント処理よりも頻繁に実行されることはありません。
+リスタートポイントはスケジュールまたは外部リクエストによって要求されます。
+<a class="link" href="monitoring-stats.html#MONITORING-PG-STAT-CHECKPOINTER-VIEW" title="27.2.15. pg_stat_checkpointer"><code class="structname">pg_stat_checkpointer</code></a>ビューの中の<code class="structfield">restartpoints_timed</code>カウンタは最初のリスタートポイントを数え、<code class="structfield">restartpoints_req</code>は2番目のリスタートポイントを数えます。
+リスタートポイントは、チェックポイントレコードに到達し、前回のリスタートポイント処理から<a class="xref" href="runtime-config-wal.html#GUC-CHECKPOINT-TIMEOUT">checkpoint_timeout</a>秒以上経過している場合、または前回のリスタートポイント処理が失敗した場合にスケジュールされます。
+この場合、次のリスタートポイントは15秒後にスケジュールされます。
+リスタートポイントは、チェックポイントと同様の理由で要求されることがありますが、ほとんどはWALサイズが<a class="xref" href="runtime-config-wal.html#GUC-MAX-WAL-SIZE">max_wal_size</a>を超えそうな場合です。
+しかし、リスタートポイント処理が実行できるタイミングに制限があるため、リカバリ中には、1回のチェックポイント分のWAL相当が<code class="varname">max_wal_size</code>を超えることが頻繁にあります。
+（どのみち<code class="varname">max_wal_size</code>はハードリミットではないので、ディスクスペースを使い尽くしてしまわないように、常に十分な余裕を持っておくべきです。）
+<a class="link" href="monitoring-stats.html#MONITORING-PG-STAT-CHECKPOINTER-VIEW" title="27.2.15. pg_stat_checkpointer"><code class="structname">pg_stat_checkpointer</code></a>ビューの中の<code class="structfield">restartpoints_done</code>カウンタは、実際に実行されたリスタートポイントを数えます。
   </p><p>
 <span class="original">
    In some cases, when the WAL size on the primary increases quickly,
@@ -290,10 +282,10 @@ WALが生成されるペースにWALのアーカイブ処理が追いつかな�
    counter among the restartpoint-related ones indicates that noticeable system
    resources have been spent.
 </span>
-《機械翻訳》場合によっては、プライマリのWALサイズが急速に増加すると、大規模なINSERT中のインスタンスでは、スタンバイの<code class="structfield">リスタートポイント_req</code>カウンタがピークの増加を示すことがあります。
-これは、最後の再始動点以降のセーフチェックポイントレコードがスタンバイでまだ再生されていないため、XLOG消費の増加による新規再始動点の作成要求を実行できないために発生します。
-この行動は正常であり、システムリソースの消費の増加にはつながりません。
-<code class="structfield">リスタートポイント_done</code>カウンタのみが、再始動点に関連したものの中で、顕著なシステムリソースが消費されたことを示します。
+場合によっては、プライマリのWALサイズが急速に増加すると、例えば大規模なINSERT中のインスタンスでは、スタンバイの<code class="structfield">restartpoints_req</code>カウンタがピークの増加を示すことがあります。
+これは、最後のリスタートポイント以降の安全なチェックポイントレコードがスタンバイでまだ再生されていないため、XLOG消費の増加による新規リスタートポイントの作成要求を実行できないために発生します。
+この動作は正常であり、システムリソースの消費の増加にはつながりません。
+リスタートポイントに関連するカウンタの中で、顕著なシステムリソースの消費を示すのは<code class="structfield">restartpoints_done</code>カウンタのみです。
   </p><p>
 <span class="original">
    There are two commonly used internal &lt;acronym&gt;WAL&lt;/acronym&gt; functions:
