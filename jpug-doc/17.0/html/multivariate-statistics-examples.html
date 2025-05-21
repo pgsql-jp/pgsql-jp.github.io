@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>68.2. 多変量統計の例</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="row-estimation-examples.html" title="68.1. 行数推定の例" /><link rel="next" href="planner-stats-security.html" title="68.3. プランナの統計情報とセキュリティ" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 17rc1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="planner-stats-details.html" title="第68章 プランナは統計情報をどのように使用するか">第68章 プランナは統計情報をどのように使用するか</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 17rc1 : multivariate-statistics-examples.html">誤訳等の報告
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>68.2. 多変量統計の例</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="row-estimation-examples.html" title="68.1. 行数推定の例" /><link rel="next" href="planner-stats-security.html" title="68.3. プランナの統計情報とセキュリティ" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 17.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="planner-stats-details.html" title="第68章 プランナは統計情報をどのように使用するか">第68章 プランナは統計情報をどのように使用するか</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 17.0 : multivariate-statistics-examples.html">誤訳等の報告
                     </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="row-estimation-examples.html" title="68.1. 行数推定の例">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="planner-stats-details.html" title="第68章 プランナは統計情報をどのように使用するか">上へ</a></td><td width="60%" align="center">68.2. 多変量統計の例</td><td width="20%" align="right"> <a accesskey="n" href="planner-stats-security.html" title="68.3. プランナの統計情報とセキュリティ">次へ</a></td></tr></table><hr /></div><div class="sect1" id="MULTIVARIATE-STATISTICS-EXAMPLES"><div class="titlepage"><div><div><h2 class="title" style="clear: both">68.2. 多変量統計の例 <a href="#MULTIVARIATE-STATISTICS-EXAMPLES" class="id_link">#</a></h2></div></div></div><span class="original">
   &lt;title&gt;Multivariate Statistics Examples&lt;/title&gt;
 </span><a id="id-1.10.21.5.2" class="indexterm"></a><a id="id-1.10.21.5.3" class="indexterm"></a><div class="sect2" id="FUNCTIONAL-DEPENDENCIES"><div class="titlepage"><div><div><h3 class="title">68.2.1. 関数従属性 <a href="#FUNCTIONAL-DEPENDENCIES" class="id_link">#</a></h3></div></div></div><span class="original">
@@ -23,7 +23,7 @@ ANALYZE t;
     cardinality of &lt;structname&gt;t&lt;/structname&gt; using the number of pages and
     rows obtained from &lt;structname&gt;pg_class&lt;/structname&gt;:
 </span>
-<a class="xref" href="planner-stats.html" title="14.2. プランナで使用される統計情報">14.2</a>で説明されているように、<code class="structname">pg_class</code>から得られるページ数と行数を使って、<code class="structname">t</code>の濃度を決定できます。
+<a class="xref" href="planner-stats.html" title="14.2. プランナで使用される統計情報">14.2</a>で説明されているように、<code class="structname">pg_class</code>から得られるページ数と行数を使って、<code class="structname">t</code>のカーディナリティを決定できます。
 
 </p><pre class="programlisting">
 SELECT relpages, reltuples FROM pg_class WHERE relname = 't';
@@ -86,8 +86,8 @@ EXPLAIN (ANALYZE, TIMING OFF) SELECT * FROM t WHERE a = 1 AND b = 1;
     This is a significant underestimate, as the actual number of rows
     matching the conditions (100) is two orders of magnitude higher.
 </span>
-個別に選択度を見積もった結果、上記と同じ1%の見積もりとなります
-次に、その条件が独立であると見なし、それらの選択度を掛けあわせ、最終的な選択度の見積もりをわずか0.01%であるとします
+個別に選択度を見積もった結果、上記と同じ1%の見積もりとなります。
+次に、その条件が独立であると見なし、それらの選択度を掛けあわせ、最終的な選択度の見積もりをわずか0.01%であるとします。
 その条件に一致する実際の行数は2桁多いので(100)、これはかなり過小見積もりです。
    </p><p>
 <span class="original">
@@ -118,7 +118,7 @@ EXPLAIN (ANALYZE, TIMING OFF) SELECT * FROM t WHERE a = 1 AND b = 1;
     estimated number of rows returned by the HashAggregate node) is very
     accurate:
 </span>
-<code class="command">GROUP BY</code>句が生成するグループ数のような、複数列の集合の濃度の見積もりについても、同様の問題が起きます。
+<code class="command">GROUP BY</code>句が生成するグループ数のような、複数列の集合のカーディナリティの見積もりについても、同様の問題が起きます。
 <code class="command">GROUP BY</code>の対象が単一の列なら、N個別値の推定（HashAggregateノードが返す推定行数で示されます）はとても正確です。
 </p><pre class="programlisting">
 EXPLAIN (ANALYZE, TIMING OFF) SELECT COUNT(*) FROM t GROUP BY a;
@@ -133,7 +133,7 @@ EXPLAIN (ANALYZE, TIMING OFF) SELECT COUNT(*) FROM t GROUP BY a;
     groups in a query with two columns in &lt;command&gt;GROUP BY&lt;/command&gt;, as
     in the following example, is off by an order of magnitude:
 </span>
-しかし、多変量統計がないと、二つの列についての<code class="command">GROUP BY</code>問い合わせにおけるグループ数の見積もりは、次の例のようにひと桁ずれてしまいます
+しかし、多変量統計がないと、二つの列についての<code class="command">GROUP BY</code>問い合わせにおけるグループ数の見積もりは、次の例のようにひと桁ずれてしまいます。
 </p><pre class="programlisting">
 EXPLAIN (ANALYZE, TIMING OFF) SELECT COUNT(*) FROM t GROUP BY a, b;
                                        QUERY PLAN
@@ -167,7 +167,7 @@ EXPLAIN (ANALYZE, TIMING OFF) SELECT COUNT(*) FROM t GROUP BY a, b;
     main limitation is their global nature (only tracking dependencies at
     the column level, not between individual column values).
 </span>
-<a class="xref" href="multivariate-statistics-examples.html#FUNCTIONAL-DEPENDENCIES" title="68.2.1. 関数従属性">68.2.1</a>で説明したように、関数従属性は非常に安価で効率的な統計情報ですが、主要な制限はその大域的な性質です(列レベルだけでの従属性の追跡であり、個々の列の値の間のものではありません)。
+<a class="xref" href="multivariate-statistics-examples.html#FUNCTIONAL-DEPENDENCIES" title="68.2.1. 関数従属性">68.2.1</a>で説明したように、関数従属性は非常に安価で効率的な統計情報ですが、主要な制限はその大域的な性質です（列レベルだけでの従属性の追跡であり、個々の列の値の間のものではありません）。
    </p><p>
 <span class="original">
     This section introduces multivariate variant of &lt;acronym&gt;MCV&lt;/acronym&gt;
@@ -186,7 +186,7 @@ EXPLAIN (ANALYZE, TIMING OFF) SELECT COUNT(*) FROM t GROUP BY a, b;
     same set of columns (be sure to drop the functional dependencies, to
     make sure the planner uses the newly created statistics).
 </span>
-再び<a class="xref" href="multivariate-statistics-examples.html#FUNCTIONAL-DEPENDENCIES" title="68.2.1. 関数従属性">68.2.1</a>の問い合わせを見てみましょう。ですが、今回は列の同じ集合に対して<acronym class="acronym">MCV</acronym>リストを作ります(プランナが新しく作られた統計情報を確実に利用するよう、関数従属性を確実に削除してください)。
+再び<a class="xref" href="multivariate-statistics-examples.html#FUNCTIONAL-DEPENDENCIES" title="68.2.1. 関数従属性">68.2.1</a>の問い合わせを見てみましょう。ですが、今回は列の同じ集合に対して<acronym class="acronym">MCV</acronym>リストを作ります（プランナが新しく作られた統計情報を確実に利用するよう、関数従属性を確実に削除してください）。
 
 </p><pre class="programlisting">
 DROP STATISTICS stts;
@@ -287,4 +287,4 @@ EXPLAIN (ANALYZE, TIMING OFF) SELECT * FROM t WHERE a &lt;= 49 AND b &gt; 49;
    Rows Removed by Filter: 10000
 </pre><p>
 
-   </p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="row-estimation-examples.html" title="68.1. 行数推定の例">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="planner-stats-details.html" title="第68章 プランナは統計情報をどのように使用するか">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="planner-stats-security.html" title="68.3. プランナの統計情報とセキュリティ">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">68.1. 行数推定の例 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 17rc1文書">ホーム</a></td><td width="40%" align="right" valign="top"> 68.3. プランナの統計情報とセキュリティ</td></tr></table></div></body></html>
+   </p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="row-estimation-examples.html" title="68.1. 行数推定の例">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="planner-stats-details.html" title="第68章 プランナは統計情報をどのように使用するか">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="planner-stats-security.html" title="68.3. プランナの統計情報とセキュリティ">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">68.1. 行数推定の例 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 17.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 68.3. プランナの統計情報とセキュリティ</td></tr></table></div></body></html>

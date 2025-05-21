@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>32.1. データベース接続制御関数</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="libpq.html" title="第32章 libpq — C ライブラリ" /><link rel="next" href="libpq-status.html" title="32.2. 接続状態関数" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 17rc1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="libpq.html" title="第32章 libpq — C ライブラリ">第32章 <span class="application">libpq</span> — C ライブラリ</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 17rc1 : libpq-connect.html">誤訳等の報告
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>32.1. データベース接続制御関数</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="libpq.html" title="第32章 libpq — C ライブラリ" /><link rel="next" href="libpq-status.html" title="32.2. 接続状態関数" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 17.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="libpq.html" title="第32章 libpq — C ライブラリ">第32章 <span class="application">libpq</span> — C ライブラリ</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 17.0 : libpq-connect.html">誤訳等の報告
                     </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="libpq.html" title="第32章 libpq — C ライブラリ">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="libpq.html" title="第32章 libpq — C ライブラリ">上へ</a></td><td width="60%" align="center">32.1. データベース接続制御関数</td><td width="20%" align="right"> <a accesskey="n" href="libpq-status.html" title="32.2. 接続状態関数">次へ</a></td></tr></table><hr /></div><div class="sect1" id="LIBPQ-CONNECT"><div class="titlepage"><div><div><h2 class="title" style="clear: both">32.1. データベース接続制御関数 <a href="#LIBPQ-CONNECT" class="id_link">#</a></h2></div></div></div><span class="original">
   &lt;title&gt;Database Connection Control Functions&lt;/title&gt;
 </span><p>
@@ -366,25 +366,16 @@ PostgresPollingStatusType PQconnectPoll(PGconn *conn);
        has failed, or &lt;symbol&gt;PGRES_POLLING_OK&lt;/symbol&gt;, indicating the connection
        has been successfully made.
 </span>
-《マッチ度[78.169014]》<code class="function">PQconnectStart</code>あるいは<a class="xref" href="libpq-connect.html#LIBPQ-PQCONNECTSTARTPARAMS"><code class="function">PQconnectStartParams</code></a>が成功したら、次は接続シーケンスを進めるために、<span class="application">libpq</span>をポーリングします。
+<code class="function">PQconnectStart</code>あるいは<a class="xref" href="libpq-connect.html#LIBPQ-PQCONNECTSTARTPARAMS"><code class="function">PQconnectStartParams</code></a>が成功したら、次は接続シーケンスを進めるために、<span class="application">libpq</span>をポーリングします。
 データベース接続の背後にあるソケットの記述子を取り出すには、<code class="function">PQsocket(conn)</code>を使用します。
 （注意：複数の<code class="function">PQconnectPoll</code>呼び出しでソケットが同じままであると思わないでください。）
 以下の繰り返しです。
 直前の<code class="function">PQconnectPoll(conn)</code>が<code class="symbol">PGRES_POLLING_READING</code>の場合、（<code class="function">select()</code>や<code class="function">poll()</code>などのシステム関数で示されて）ソケットの読み込み準備が整うまで待機します。
+システムで利用可能であれば、<code class="function">PQsocketPoll</code>は<code class="function">select(2)</code>や<code class="function">poll(2)</code>の設定を抽象化することで、定型コードを減らすことができます。
 そして、再度<code class="function">PQconnectPoll(conn)</code>を呼び出します。
 反対に直前の<code class="function">PQconnectPoll(conn)</code>が<code class="symbol">PGRES_POLLING_WRITING</code>の場合、ソケットの書き込み準備が整うまで待機し、その後、<code class="function">PQconnectPoll(conn)</code>を再度呼び出します。
 繰り返しの最初、すなわち、未だ<code class="function">PQconnectPoll</code>を呼び出していない場合、最後に<code class="symbol">PGRES_POLLING_WRITING</code>を返したかのように振舞います。
 この繰り返しを<code class="function">PQconnectPoll(conn)</code>が、接続手続きの失敗を示す<code class="symbol">PGRES_POLLING_FAILED</code>、もしくは、接続確立に成功したことを示す<code class="symbol">PGRES_POLLING_OK</code>を返すまで継続します。
-《機械翻訳》<code class="function">PQconnectStart</code>または<a class="xref" href="libpq-connect.html#LIBPQ-PQCONNECTSTARTPARAMS"><code class="function">PQconnectStartParams</code></a>が成功した場合、次の段階は<span class="application">libpq</span>をポーリングして接続シーケンスを続行することです。
-データベース接続の基礎となるソケットの記述子を取得するには、<code class="function">PQsocket(conn)</code>を使用します。
-（注意: ソケットは<code class="function">PQconnectPoll</code>呼び出しの間で同じままだと仮定しないでください）。
-ループを次のように実行します。
-<code class="function">PQconnectPoll(conn)</code>が最後に<code class="symbol">PGRES_POLLING_READING</code>を返した場合、ソケットが読み込みの準備ができるまで待ちます(<code class="function">select()</code>、<code class="function">poll()</code>、または同様のシステム関数で示されます)。
-システムで利用可能であれば、<code class="function">PQsocketPoll</code>は<code class="function">select(2)</code>や<code class="function">poll(2)</code>の設定を抽象化することで、定型コードを減らすことができます。
-次に、<code class="function">PQconnectPoll(conn)</code>を再度呼び出します。
-逆に、<code class="function">PQconnectPoll(conn)</code>が最後に<code class="symbol">PGRES_POLLING_WRITING</code>を返した場合、ソケットが書き込み可能になるまで待ってから、再度<code class="function">PQconnectPoll(conn)</code>を呼び出します。
-最初の繰り返しでは、つまり<code class="function">PQconnectPoll</code>をまだ呼び出していない場合、最後に<code class="symbol">PGRES_POLLING_WRITING</code>を返したかのように振る舞います。
-接続手順が失敗したことを示す<code class="symbol">PGRES_POLLING_FAILED</code>を返すか、接続が成功したことを示す<code class="symbol">PGRES_POLLING_OK</code>を返すまで、このループを続けます。
       </p><p>
 <span class="original">
        At any time during connection, the status of the connection can be
@@ -432,7 +423,7 @@ SSL暗号化の調停状態です。
 <span class="original">
            Negotiating GSS encryption.
 </span>
-《機械翻訳》GSS暗号化の調停状態です。
+GSS暗号化の調停状態です。
           </p></dd><dt id="LIBPQ-CONNECTION-CHECK-WRITABLE"><span class="term"><code class="symbol">CONNECTION_CHECK_WRITABLE</code></span> <a href="#LIBPQ-CONNECTION-CHECK-WRITABLE" class="id_link">#</a></dt><dd><p>
 <span class="original">
            Checking if connection is able to handle write transactions.
@@ -442,7 +433,7 @@ SSL暗号化の調停状態です。
 <span class="original">
            Checking if connection is to a server in standby mode.
 </span>
-《機械翻訳》接続がスタンバイ モードのサーバに対するものかどうかを確認しています。
+接続がスタンバイモードのサーバに対するものかどうかを確認しています。
           </p></dd><dt id="LIBPQ-CONNECTION-CONSUME"><span class="term"><code class="symbol">CONNECTION_CONSUME</code></span> <a href="#LIBPQ-CONNECTION-CONSUME" class="id_link">#</a></dt><dd><p>
 <span class="original">
            Consuming any remaining response messages on connection.
@@ -507,8 +498,8 @@ switch(PQstatus(conn))
        sequence described in the documentation of
        &lt;xref linkend="libpq-PQconnectStartParams"/&gt;.
 </span>
-《機械翻訳》<a id="id-1.7.3.8.2.11.6.2.1.1" class="indexterm"></a><a class="xref" href="libpq-status.html#LIBPQ-PQSOCKET"><code class="function">PQsocket</code></a>で取得されたコネクションの基礎となるソケットディスクリプタをポーリングします。
-この関数のプライマリでの使用は、<a class="xref" href="libpq-connect.html#LIBPQ-PQCONNECTSTARTPARAMS"><code class="function">PQconnectStartParams</code></a>の文書で説明されているコネクションシーケンスを通じて繰り返されます。
+<a id="id-1.7.3.8.2.11.6.2.1.1" class="indexterm"></a><a class="xref" href="libpq-status.html#LIBPQ-PQSOCKET"><code class="function">PQsocket</code></a>で取得された接続の基礎となるソケットディスクリプタをポーリングします。
+この関数の主な用途は、<a class="xref" href="libpq-connect.html#LIBPQ-PQCONNECTSTARTPARAMS"><code class="function">PQconnectStartParams</code></a>の文書で説明されている接続シーケンスを繰り返すことにあります。
 </p><pre class="synopsis">
 typedef pg_int64 pg_usec_time_t;
 
@@ -525,10 +516,9 @@ int PQsocketPoll(int sock, int forRead, int forWrite,
        the function will terminate when the
        socket is ready for writing.
 </span>
-《機械翻訳》この関数は、ファイルディスクリプタのポーリングを実行します。
-オプションでタイムアウトも実行できます。
-<em class="parameter"><code>forRead</code></em>が非ゼロの場合、関数はソケットの読取り準備が整ったときに終了します。
-<em class="parameter"><code>forWrite</code></em>が非ゼロの場合、関数はソケットの書込み準備が整ったときに終了します。
+この関数は、ファイルディスクリプタのポーリングを実行し、オプションでタイムアウトも実行できます。
+<em class="parameter"><code>forRead</code></em>が非ゼロの場合、この関数はソケットの読取り準備が整ったときに終了します。
+<em class="parameter"><code>forWrite</code></em>が非ゼロの場合、この関数はソケットの書込み準備が整ったときに終了します。
       </p><p>
 <span class="original">
        The timeout is specified by &lt;parameter&gt;end_time&lt;/parameter&gt;, which
@@ -543,12 +533,11 @@ int PQsocketPoll(int sock, int forRead, int forWrite,
        Note that the underlying system calls may have less than microsecond
        precision, so that the actual delay may be imprecise.
 </span>
-《機械翻訳》タイムアウトは<em class="parameter"><code>end_time</code></em>で指定されます。
-これは、Unixエポックからのマイクロ秒数で表される待機を停止する時間です（つまり、<code class="type">time_t</code>×100万）。
+タイムアウトは<em class="parameter"><code>end_time</code></em>で指定され、これは、Unixエポックからのマイクロ秒数で表される待機を停止する時間です（つまり、<code class="type">time_t</code>×100万）。
 <em class="parameter"><code>end_time</code></em>が<code class="literal">-1</code>の場合、タイムアウトは無限になります。
-end_timeが<code class="literal">0</code>の場合、タイムアウトは即時（ブロッキングなし）です（実際には、現在の任意の時間前です）。
-タイムアウト値は、<a class="xref" href="libpq-misc.html#LIBPQ-PQGETCURRENTTIMEUSEC"><code class="function">PQgetCurrentTimeUSec</code></a>の結果に所望のマイクロ秒数を加えることによって便利に計算することができる。
-基礎となるシステムが呼び出すノートは、より小さいマイクロ秒精度を有することがあり、その結果、実際の遅延は不正確であり得る。
+end_timeが<code class="literal">0</code>の場合、タイムアウトは即時（ブロッキングなし）です（実際には、現在時刻の前の任意の時刻でも構いません）。
+タイムアウト値は、<a class="xref" href="libpq-misc.html#LIBPQ-PQGETCURRENTTIMEUSEC"><code class="function">PQgetCurrentTimeUSec</code></a>の結果に所望のマイクロ秒数を加えることによって容易に計算できます。
+使用しているシステムコールの精度はマイクロ秒より劣っていることがあり、実際の遅延は不正確である可能性があることに注意してください。
       </p><p>
 <span class="original">
        The function returns a value greater than &lt;literal&gt;0&lt;/literal&gt; if the
@@ -559,9 +548,9 @@ end_timeが<code class="literal">0</code>の場合、タイムアウトは即時
        and &lt;parameter&gt;forWrite&lt;/parameter&gt; are zero, the function immediately
        returns a timeout indication.
 </span>
-《機械翻訳》関数は、指定された条件が満たされた場合は値より大きい<code class="literal">0</code>を返し、タイムアウトが発生した場合は<code class="literal">0</code>を返し、エラーが発生した場合は<code class="literal">-1</code>を返します。
+この関数は、指定された条件が満たされた場合は<code class="literal">0</code>より大きい値を返し、タイムアウトが発生した場合は<code class="literal">0</code>を返し、エラーが発生した場合は<code class="literal">-1</code>を返します。
 エラーは、<code class="literal">errno(3)</code>値をチェックすることによって取得できます。
-イベントでは、<em class="parameter"><code>forRead</code></em>と<em class="parameter"><code>forWrite</code></em>の両方がゼロであり、関数はすぐにタイムアウト表示を返します。
+<em class="parameter"><code>forRead</code></em>と<em class="parameter"><code>forWrite</code></em>の両方がゼロなら、関数はすぐにタイムアウトの返り値を返します。
       </p><p>
 <span class="original">
        &lt;function&gt;PQsocketPoll&lt;/function&gt; is implemented using either
@@ -572,8 +561,8 @@ end_timeが<code class="literal">0</code>の場合、タイムアウトは即時
        &lt;parameter&gt;writefds&lt;/parameter&gt; from &lt;function&gt;select(2)&lt;/function&gt;,
        for more information.
 </span>
-《機械翻訳》<code class="function">PQsocketPoll</code>は、セレクトに応じて<code class="function">poll(2)</code>または<code class="function">プラットフォーム(2)</code>を使用して実装されます。
-詳細については、<code class="function">poll(2)</code>の<code class="literal">POLLIN</code>と<code class="literal">POLLOUT</code>、<code class="function">セレクト(2)</code>の<em class="parameter"><code>readfds</code></em>と<em class="parameter"><code>writefds</code></em>を参照してください。
+<code class="function">PQsocketPoll</code>は、プラットフォームに依存して<code class="function">select(2)</code>または<code class="function">poll(2)</code>を使用して実装されています。
+詳細については、<code class="function">poll(2)</code>の<code class="literal">POLLIN</code>と<code class="literal">POLLOUT</code>、<code class="function">select(2)</code>の<em class="parameter"><code>readfds</code></em>と<em class="parameter"><code>writefds</code></em>を参照してください。
       </p></dd><dt id="LIBPQ-PQCONNDEFAULTS"><span class="term"><code class="function">PQconndefaults</code><a id="id-1.7.3.8.2.11.7.1.2" class="indexterm"></a></span> <a href="#LIBPQ-PQCONNDEFAULTS" class="id_link">#</a></dt><dd><p>
 <span class="original">
        Returns the default connection options.
@@ -628,6 +617,7 @@ typedef struct
 戻り値は、<code class="structname">PQconninfoOption</code>構造体の配列へのポインタで、<code class="structfield">keyword</code>ポインタがNULLとなる項目が配列の末尾にきます。
 メモリが確保できなかった場合にはNULLポインタを返します。
 現在のデフォルト値(<code class="structfield">val</code> フィールド)は、環境変数や他のコンテキストに依存します。
+不足しているか無効なサービスファイルは無視されます。
 呼び出し側では、接続オプションの情報は、読み込み専用として取り扱わなければいけません。
       </p><p>
 <span class="original">
@@ -1466,17 +1456,10 @@ Windowsでは、<code class="literal">localhost</code>への接続を試みま�
        seconds, so the total time spent waiting for a connection might be
        up to 10 seconds.
 </span>
-《マッチ度[58.643326]》接続中の最大待機時間を秒単位（10進整数で記述してください、<code class="literal">10</code>など）で指定します。
+接続中の最大待機時間を秒単位（10進整数で記述してください、<code class="literal">10</code>など）で指定します。
 ゼロ、負値、もしくは未設定は、無期限の待機を意味します。
-許容される最小のタイムアウトは2秒です。
-したがって、<code class="literal">1</code>は<code class="literal">2</code>と解釈されます。
 このタイムアウトは各ホスト名やIPアドレスに別々に適用されます。
 例えば、二つのホストを指定して、<code class="literal">connect_timeout</code>が5であるなら、各ホストが5秒以内に接続できないときにタイムアウトして、接続を待つ合計所要時間は10秒近くになるかもしれません。
-《機械翻訳》接続中に待機する最大時間を秒単位で指定します（10進数整数として記述します。
-例:<code class="literal">10</code>）。
-ゼロ、負の値、または指定しない場合は、無限に待機することを意味します。
-このタイムアウトは、各ホストの名前またはIPアドレスに個別に適用されます。
-例の場合、2つのホストを指定し、<code class="literal">connect_タイムアウト</code>が5の場合、5秒以内にコネクションが作成されないと各ホストがタイムアウトするため、コネクションの待機に費やされる合計時間は最大10秒になります。
       </p></dd><dt id="LIBPQ-CONNECT-CLIENT-ENCODING"><span class="term"><code class="literal">client_encoding</code></span> <a href="#LIBPQ-CONNECT-CLIENT-ENCODING" class="id_link">#</a></dt><dd><p>
 <span class="original">
        This sets the &lt;varname&gt;client_encoding&lt;/varname&gt;
@@ -1501,16 +1484,11 @@ Windowsでは、<code class="literal">localhost</code>への接続を試みま�
         backslash.  For a detailed discussion of the available
         options, consult &lt;xref linkend="runtime-config"/&gt;.
 </span>
-《マッチ度[82.481752]》接続開始時にサーバに送信するコマンドラインオプションを指定します。
-例えば、これを<code class="literal">-c geqo=off</code>に設定すると、<code class="varname">geqo</code>パラメータのセッション値は<code class="literal">off</code>になります。
-この文字列中の空白はバックスラッシュ(<code class="literal">\</code>)でエスケープされていなければコマンド行引数の区切りであるとみなされます。
+接続開始時にサーバに送信するコマンドラインオプションを指定します。
+例えば、これを<code class="literal">-c geqo=off</code>または<code class="literal">--geqo=off</code>に設定すると、<code class="varname">geqo</code>パラメータのセッションの値が<code class="literal">off</code>に設定されます。
+この文字列中の空白はバックスラッシュ(<code class="literal">\</code>)でエスケープされていなければコマンドライン引数の区切りであるとみなされます。
 リテラルのバックスラッシュを表すには<code class="literal">\\</code>と書いて下さい。
 利用可能なオプションに関する詳細については<a class="xref" href="runtime-config.html" title="第19章 サーバ設定">第19章</a>を参照してください。
-《機械翻訳》コネクションスタートでサーバに送信するコマンド-直線オプションを指定します。
-例の場合、これを<code class="literal">-c geqo=オフ</code>または<code class="literal">--geqo=オフ</code>に設定すると、<code class="varname">geqo</code>パラメータのセッションの値が<code class="literal">オフ</code>に設定されます。
-この文字列内のスペースは、コマンド-直線引数を区切るものと見なされます。
-ただし、リテラルバックスラッシュを表すためにバックスラッシュ<code class="literal">\</code>);write<code class="literal">\\</code>でエスケープされている場合を除きます。
-利用可能なオプションの詳細については、<a class="xref" href="runtime-config.html" title="第19章 サーバ設定">第19章</a>を参照してください。
        </p></dd><dt id="LIBPQ-CONNECT-APPLICATION-NAME"><span class="term"><code class="literal">application_name</code></span> <a href="#LIBPQ-CONNECT-APPLICATION-NAME" class="id_link">#</a></dt><dd><p>
 <span class="original">
         Specifies a value for the &lt;xref linkend="guc-application-name"/&gt;
@@ -1776,9 +1754,7 @@ SSLサポートなしで<span class="productname">PostgreSQL</span>がコンパ�
         infrastructure (such as a Kerberos server), also set
         &lt;literal&gt;gssencmode&lt;/literal&gt; to &lt;literal&gt;disable&lt;/literal&gt;.
 </span>
-《マッチ度[86.407767]》<acronym class="acronym">GSSAPI</acronym>暗号化が可能な場合、<code class="literal">sslmode</code>の値に関係なく、<acronym class="acronym">SSL</acronym>暗号化よりも優先して使用されることに注意してください。
-<acronym class="acronym">GSSAPI</acronym>インフラストラクチャが動作している環境(Kerberosサーバなど)で<acronym class="acronym">SSL</acronym>暗号化を強制的に使用するには、<code class="literal">gssencmode</code>を<code class="literal">disable</code>に設定します。
-《機械翻訳》<acronym class="acronym">GSSAPI</acronym>暗号化が可能な場合、<code class="literal">sslmode</code>の値に関係なく、<acronym class="acronym">SSL</acronym>暗号化よりも優先して使用されることに注意してください。
+<acronym class="acronym">GSSAPI</acronym>暗号化が可能な場合、<code class="literal">sslmode</code>の値に関係なく、<acronym class="acronym">SSL</acronym>暗号化よりも優先して使用されることに注意してください。
 <acronym class="acronym">GSSAPI</acronym>インフラストラクチャが動作している環境（Kerberosサーバなど）で<acronym class="acronym">SSL</acronym>暗号化を強制的に使用するには、<code class="literal">gssencmode</code>を<code class="literal">disable</code>に設定します。
        </p></dd><dt id="LIBPQ-CONNECT-REQUIRESSL"><span class="term"><code class="literal">requiressl</code></span> <a href="#LIBPQ-CONNECT-REQUIRESSL" class="id_link">#</a></dt><dd><p>
 <span class="original">
@@ -1819,18 +1795,18 @@ SSLサポート付きで<span class="productname">PostgreSQL</span>をコンパ�
         option was introduced in &lt;productname&gt;PostgreSQL&lt;/productname&gt; version
         17.
 </span>
-《機械翻訳》このオプションは、SSLが使用されている場合に、SSL暗号化がサーバとどのようにネゴシエートされるかを制御します。
-デフォルト<code class="literal">POSTGRES</code>モードでは、クライアントは最初にサーバにSSLがサポートされているかどうかを尋ねます。
-<code class="literal">直接</code>モードでは、クライアントはTCP/IPハンドシェークを確立した直後に標準SSLコネクションを開始します。
-従来型(プロトコルネゴシエーションは、さまざまなサーバ設定に対して最も柔軟性があります。
-<span class="productname">PostgreSQL</span>サーバがサポート直接<acronym class="acronym">SSL</acronym>接続に認識されている場合、SSL接続では必要なラウンドトリップが1つ少なくなり、コネクションレイテンシが削減され、プロトコルに依存しないSSLネットワークツールを使用できるようになります。
+このオプションは、SSLが使用されている場合に、SSL暗号化がサーバとどのように調停されるかを制御します。
+デフォルト<code class="literal">postgres</code>モードでは、クライアントは最初にサーバにSSLがサポートされているかどうかを尋ねます。
+<code class="literal">direct</code>モードでは、クライアントはTCP/IP接続を確立した後に直接標準SSLハンドシェイクを開始します。
+伝統的な<span class="productname">PostgreSQL</span>プロトコルネゴシエーションは、さまざまなサーバ設定に対して最も柔軟性があります。
+<span class="productname">PostgreSQL</span>サーバが直接<acronym class="acronym">SSL</acronym>接続をサポートしているとわかっている場合、SSL接続では必要なラウンドトリップが1つ少なくなり、接続遅延が削減され、プロトコルに依存しないSSLネットワークツールを使用できるようになります。
 直接SSLオプションは、<span class="productname">PostgreSQL</span>バージョン17で導入されました。
        </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="literal">postgres</code></span></dt><dd><p>
 <span class="original">
              perform &lt;productname&gt;PostgreSQL&lt;/productname&gt; protocol
              negotiation. This is the default if the option is not provided.
 </span>
-《機械翻訳》<span class="productname">PostgreSQL</span>プロトコルのネゴシエーションを行います。
+<span class="productname">PostgreSQL</span>プロトコルのネゴシエーションを行います。
 このオプションが指定されていない場合のデフォルトです。
            </p></dd><dt><span class="term"><code class="literal">direct</code></span></dt><dd><p>
 <span class="original">
@@ -1840,9 +1816,8 @@ SSLサポート付きで<span class="productname">PostgreSQL</span>をコンパ�
              plaintext authentication when the server does not support direct
              SSL handshake.
 </span>
-《機械翻訳》TCP/IPハンドシェークを確立した直後にSSLコネクションをスタートします。
-これは、sslmode=require以上の場合にのみ許可されます。
-これは、弱い設定では、サーバがSSL認証をサポートしない場合に、意図しないプレーンテキストハンドシェークへのフォールバックが発生する可能性があるためです。
+TCP/IPハンドシェイクを確立した後に直接SSL接続を開始します。
+弱い設定では、サーバがSSL認証をサポートしない場合に、意図しないプレーンテキストハンドシェイクへのフォールバックが発生する可能性があるため、sslmode=require以上の場合にのみ許可されます。
            </p></dd></dl></div></dd><dt id="LIBPQ-CONNECT-SSLCOMPRESSION"><span class="term"><code class="literal">sslcompression</code></span> <a href="#LIBPQ-CONNECT-SSLCOMPRESSION" class="id_link">#</a></dt><dd><p>
 <span class="original">
         If set to 1, data sent over SSL connections will be compressed.  If
@@ -1863,10 +1838,7 @@ SSLサポート付きで<span class="productname">PostgreSQL</span>をコンパ�
         &lt;productname&gt;PostgreSQL&lt;/productname&gt; 14 disabled compression
         completely in the backend.
 </span>
-《マッチ度[85.948478]》SSL圧縮は今日では安全ではないと考えられていて、もはや使用は推奨されません。
-<span class="productname">OpenSSL</span> 1.1.0はデフォルトでは圧縮を無効にしており、多くのOSディストリビューションでもこれまでのバージョンで無効化しています。そのため、サーバが圧縮を受け付けない場合、本パラメータをonに設定しても効果がありません。
-<span class="productname">PostgreSQL</span> 14はバックエンドでの圧縮を完全に無効にしています。
-《機械翻訳》SSL圧縮は現在では安全ではないと考えられており、その使用は推奨されません。
+SSL圧縮は現在では安全ではないと考えられており、その使用は推奨されません。
 <span class="productname">OpenSSL</span> 1.1.0ではデフォルトで圧縮が無効になっており、多くのオペレーティングシステムのディストリビューションでも以前のバージョンでは無効になっていたため、このパラメータをonに設定してもサーバが圧縮を受け入れない場合は効果がありません。
 <span class="productname">PostgreSQL</span> 14ではバックエンドで圧縮が完全に無効になりました。
        </p><p>
@@ -2083,11 +2055,8 @@ PostgreSQLサーバは、一般に、有効にするかどうかに関係なく�
         in cleartext in the network traffic, so it might be undesirable in
         some cases.
 </span>
-《マッチ度[68.264840]》Server Name Indicationは、SSLストリームを復号化することなく接続をルーティングするために、SSL対応プロキシによって使用できます(これには、SSLプロキシだけでなく、PostgreSQLプロトコルハンドシェイクを認識するプロキシが必要であることに注意してください)。
+Server Name Indicationは、SSLストリームを復号化することなく接続をルーティングするために、SSL対応プロキシによって使用できます。（プロキシがPostgreSQLプロトコルハンドシェイクを認識していない限り、<code class="literal">sslnegotiation</code>を<code class="literal">direct</code>に設定する必要があることに注意してください。）
 しかし、<acronym class="acronym">SNI</acronym>は宛先ホスト名をネットワークトラフィック中に平文で表示しますので、場合によっては望ましくないかもしれません。
-《機械翻訳》サーバ名前表示は、SSL対応プロキシがSSLストリームを復号化せずに接続をルーティングするために使用できます。
-（ノートは、プロキシがPostgreSQLプロトコルハンドシェークを認識していない限り、<code class="literal">直接</code>への設定<code class="literal">sslnegotiation</code>が必要になります。）
-ただし、<acronym class="acronym">SNI</acronym>では、ネットワークトラフィックに宛先ホスト名がクリアテキストで表示されるため、場合によっては望ましくない場合があります。
        </p></dd><dt id="LIBPQ-CONNECT-REQUIREPEER"><span class="term"><code class="literal">requirepeer</code></span> <a href="#LIBPQ-CONNECT-REQUIREPEER" class="id_link">#</a></dt><dd><p>
 <span class="original">
         This parameter specifies the operating-system user name of the
@@ -2304,7 +2273,7 @@ GSS資格証明をサーバに転送(委任)します。
 まず、ホストはランダムな順序で解決されます。
 次に、次のホストを解決する前に、現在のホストのすべての解決済みアドレスがランダムな順序で試されます。
 この動作は、特定のケースで各ノードが取得する接続の数を大幅に歪める可能性があります。たとえば、一部のホストが他のホストより多くのアドレスを解決する場合などです。
-しかし、このような歪曲は、特定の目的で意図的に使用することもできます。たとえば、ホスト文字列で複数回ホスト名を指定することによって、大きなサーバーが取得する接続数を増やすことができます。
+しかし、このような歪曲は、特定の目的で意図的に使用することもできます。たとえば、ホスト文字列で複数回ホスト名を指定することによって、大きなサーバが取得する接続数を増やすことができます。
            </p><p>
 <span class="original">
             When using this value it's recommended to also configure a reasonable
@@ -2316,4 +2285,4 @@ GSS資格証明をサーバに転送(委任)します。
 なぜならそうすれば、負荷分散に使用されているノードの1つが応答しない場合、新しいノードが試されるからです。
            </p></dd></dl></div><p>
        </p></dd></dl></div><p>
-   </p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="libpq.html" title="第32章 libpq — C ライブラリ">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="libpq.html" title="第32章 libpq — C ライブラリ">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="libpq-status.html" title="32.2. 接続状態関数">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">第32章 <span class="application">libpq</span> — C ライブラリ </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 17rc1文書">ホーム</a></td><td width="40%" align="right" valign="top"> 32.2. 接続状態関数</td></tr></table></div></body></html>
+   </p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="libpq.html" title="第32章 libpq — C ライブラリ">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="libpq.html" title="第32章 libpq — C ライブラリ">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="libpq-status.html" title="32.2. 接続状態関数">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">第32章 <span class="application">libpq</span> — C ライブラリ </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 17.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 32.2. 接続状態関数</td></tr></table></div></body></html>

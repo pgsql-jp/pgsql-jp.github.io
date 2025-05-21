@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>32.5. パイプラインモード</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="libpq-async.html" title="32.4. 非同期コマンドの処理" /><link rel="next" href="libpq-single-row-mode.html" title="32.6. Retrieving Query Results in Chunks" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 17rc1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="libpq.html" title="第32章 libpq — C ライブラリ">第32章 <span class="application">libpq</span> — C ライブラリ</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 17rc1 : libpq-pipeline-mode.html">誤訳等の報告
-                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="libpq-async.html" title="32.4. 非同期コマンドの処理">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="libpq.html" title="第32章 libpq — C ライブラリ">上へ</a></td><td width="60%" align="center">32.5. パイプラインモード</td><td width="20%" align="right"> <a accesskey="n" href="libpq-single-row-mode.html" title="32.6. Retrieving Query Results in Chunks">次へ</a></td></tr></table><hr /></div><div class="sect1" id="LIBPQ-PIPELINE-MODE"><div class="titlepage"><div><div><h2 class="title" style="clear: both">32.5. パイプラインモード <a href="#LIBPQ-PIPELINE-MODE" class="id_link">#</a></h2></div></div></div><span class="original">
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>32.5. パイプラインモード</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="libpq-async.html" title="32.4. 非同期コマンドの処理" /><link rel="next" href="libpq-single-row-mode.html" title="32.6. 問い合わせ結果をチャンクとして取り出す" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 17.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="libpq.html" title="第32章 libpq — C ライブラリ">第32章 <span class="application">libpq</span> — C ライブラリ</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 17.0 : libpq-pipeline-mode.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="libpq-async.html" title="32.4. 非同期コマンドの処理">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="libpq.html" title="第32章 libpq — C ライブラリ">上へ</a></td><td width="60%" align="center">32.5. パイプラインモード</td><td width="20%" align="right"> <a accesskey="n" href="libpq-single-row-mode.html" title="32.6. 問い合わせ結果をチャンクとして取り出す">次へ</a></td></tr></table><hr /></div><div class="sect1" id="LIBPQ-PIPELINE-MODE"><div class="titlepage"><div><div><h2 class="title" style="clear: both">32.5. パイプラインモード <a href="#LIBPQ-PIPELINE-MODE" class="id_link">#</a></h2></div></div></div><span class="original">
   &lt;title&gt;Pipeline Mode&lt;/title&gt;
 </span><a id="id-1.7.3.12.2" class="indexterm"></a><a id="id-1.7.3.12.3" class="indexterm"></a><a id="id-1.7.3.12.4" class="indexterm"></a><a id="id-1.7.3.12.5" class="indexterm"></a><a id="id-1.7.3.12.6" class="indexterm"></a><a id="id-1.7.3.12.7" class="indexterm"></a><p>
 <span class="original">
@@ -69,20 +69,13 @@
     the end pipeline result has been consumed, the application may return
     to non-pipelined mode with &lt;xref linkend="libpq-PQexitPipelineMode"/&gt;.
 </span>
-《マッチ度[86.274510]》パイプラインを発行するためには、アプリケーションは接続をパイプラインモードに切り替える必要があります。
+パイプラインを発行するためには、アプリケーションは接続をパイプラインモードに切り替える必要があります。
 これは<a class="xref" href="libpq-pipeline-mode.html#LIBPQ-PQENTERPIPELINEMODE"><code class="function">PQenterPipelineMode</code></a>で行われます。
 <a class="xref" href="libpq-pipeline-mode.html#LIBPQ-PQPIPELINESTATUS"><code class="function">PQpipelineStatus</code></a>は、パイプラインモードがアクティブかどうかをテストするために使用できます。
 パイプラインモードでは、<a class="link" href="libpq-async.html" title="32.4. 非同期コマンドの処理">非同期操作</a>のみが許可され、複数のSQLコマンドを含むコマンド文字列、<code class="literal">COPY</code>は許可されません。
-<code class="function">PQfn</code>、<code class="function">PQexec</code>、<code class="function">PQexecParams</code>、<code class="function">PQprepare</code>、<code class="function">PQexecPrepared</code>、<code class="function">PQdescribePrepared</code>、<code class="function">PQdescribePortal</code>などの同期コマンド実行関数を使用すると、エラー状態になります。
+<code class="function">PQfn</code>、<code class="function">PQexec</code>、<code class="function">PQexecParams</code>、<code class="function">PQprepare</code>、<code class="function">PQexecPrepared</code>、<code class="function">PQdescribePrepared</code>、<code class="function">PQdescribePortal</code>、<code class="function">PQclosePrepared</code>、<code class="function">PQclosePortal</code>などの同期コマンド実行関数を使用するとエラー状態になります。
 <code class="function">PQsendQuery</code>も禁止されています。なぜなら、簡易問い合わせプロトコルを使用するからです。
 登録されたすべてのコマンドの結果が処理され、パイプラインの終了結果が消費されると、アプリケーションは<a class="xref" href="libpq-pipeline-mode.html#LIBPQ-PQEXITPIPELINEMODE"><code class="function">PQexitPipelineMode</code></a>を使用して非パイプラインモードに戻ることができます。
-《機械翻訳》パイプラインを発行するには、アプリケーションは接続をパイプラインモードに切り替える必要があります。
-これは<a class="xref" href="libpq-pipeline-mode.html#LIBPQ-PQENTERPIPELINEMODE"><code class="function">PQenterPipelineMode</code></a>で行います。
-<a class="xref" href="libpq-pipeline-mode.html#LIBPQ-PQPIPELINESTATUS"><code class="function">PQpipelineStatus</code></a>を使用して、パイプラインモードがアクティブかどうかをテストできます。
-パイプラインモードでは、拡張問い合わせプロトコルを利用する<a class="link" href="libpq-async.html" title="32.4. 非同期コマンドの処理">非同期操作</a>のみが許可され、複数のSQLコマンドを含むコマンド文字列は許可されず、<code class="literal">COPY</code>も許可されません。
-<code class="function">PQfn</code>、<code class="function">PQexec</code>、<code class="function">PQexecParams</code>、<code class="function">PQprepare</code>、<code class="function">PQexecPrepared</code>、<code class="function">PQdescribePrepared</code>、<code class="function">PQdescribePortal</code>、<code class="function">PQclosePrepared</code>、<code class="function">PQclosePortal</code>などの同期コマンド実行関数を使用するとエラー状態になります。
-単純な問い合わせプロトコルを使用するので、<code class="function">PQsendQuery</code>も禁止されています。
-すべてのディスパッチされたコマンドが結果を処理し終わり、最終的なパイプライン結果が消費されると、アプリケーションは<a class="xref" href="libpq-pipeline-mode.html#LIBPQ-PQEXITPIPELINEMODE"><code class="function">PQexitPipelineMode</code></a>で非パイプラインモードに戻ることができます。
    </p><div class="note"><h3 class="title">注記</h3><p>
 <span class="original">
      It is best to use pipeline mode with &lt;application&gt;libpq&lt;/application&gt; in
@@ -111,16 +104,11 @@
      &lt;xref linkend="libpq-PQsendClosePortal"/&gt; also work in pipeline mode.
      Result processing is described below.
 </span>
-《マッチ度[80.000000]》パイプラインモードに入った後、アプリケーションは<a class="xref" href="libpq-async.html#LIBPQ-PQSENDQUERYPARAMS"><code class="function">PQsendQueryParams</code></a>、またはその準備された問い合わせ版の兄弟である<a class="xref" href="libpq-async.html#LIBPQ-PQSENDQUERYPREPARED"><code class="function">PQsendQueryPrepared</code></a>を使用して要求を登録します。
+パイプラインモードに入った後、アプリケーションは<a class="xref" href="libpq-async.html#LIBPQ-PQSENDQUERYPARAMS"><code class="function">PQsendQueryParams</code></a>、またはその準備された問い合わせ版の兄弟である<a class="xref" href="libpq-async.html#LIBPQ-PQSENDQUERYPREPARED"><code class="function">PQsendQueryPrepared</code></a>を使用して要求を登録します。
 これらの要求は、サーバにフラッシュされるまでクライアント側で待ち行列に入れられます。
 これは、<a class="xref" href="libpq-pipeline-mode.html#LIBPQ-PQPIPELINESYNC"><code class="function">PQpipelineSync</code></a>がパイプラインに同期ポイントを確立するために使用された場合、または<a class="xref" href="libpq-async.html#LIBPQ-PQFLUSH"><code class="function">PQflush</code></a>が呼び出された場合に発生します。
-<a class="xref" href="libpq-async.html#LIBPQ-PQSENDPREPARE"><code class="function">PQsendPrepare</code></a>、<a class="xref" href="libpq-async.html#LIBPQ-PQSENDDESCRIBEPREPARED"><code class="function">PQsendDescribePrepared</code></a>、<a class="xref" href="libpq-async.html#LIBPQ-PQSENDDESCRIBEPORTAL"><code class="function">PQsendDescribePortal</code></a>の関数もパイプラインモードで動作します。
-結果の処理については後述します。
-《機械翻訳》パイプラインモードに入った後、アプリケーションは<a class="xref" href="libpq-async.html#LIBPQ-PQSENDQUERYPARAMS"><code class="function">PQsendQueryParams</code></a>またはその準備されたクエリの兄弟<a class="xref" href="libpq-async.html#LIBPQ-PQSENDQUERYPREPARED"><code class="function">PQsendQueryPrepared</code></a>を使用して要求をディスパッチします。
-これらの要求は、サーバにフラッシュされるまでクライアント側でキューに入れられます。
-これは、<a class="xref" href="libpq-pipeline-mode.html#LIBPQ-PQPIPELINESYNC"><code class="function">PQpipelineSync</code></a>を使用してパイプライン内に同期点を確立する場合、または<a class="xref" href="libpq-async.html#LIBPQ-PQFLUSH"><code class="function">PQflush</code></a>を呼び出す場合に発生します。
 関数<a class="xref" href="libpq-async.html#LIBPQ-PQSENDPREPARE"><code class="function">PQsendPrepare</code></a>、<a class="xref" href="libpq-async.html#LIBPQ-PQSENDDESCRIBEPREPARED"><code class="function">PQsendDescribePrepared</code></a>、<a class="xref" href="libpq-async.html#LIBPQ-PQSENDDESCRIBEPORTAL"><code class="function">PQsendDescribePortal</code></a>、<a class="xref" href="libpq-async.html#LIBPQ-PQSENDCLOSEPREPARED"><code class="function">PQsendClosePrepared</code></a>、<a class="xref" href="libpq-async.html#LIBPQ-PQSENDCLOSEPORTAL"><code class="function">PQsendClosePortal</code></a>もパイプラインモードで動作します。
-結果の処理については後述する。
+結果の処理については後述します。
     </p><p>
 <span class="original">
      The server executes statements, and returns results, in the order the
@@ -140,20 +128,12 @@
      the transaction.)
      Query processing resumes after the synchronization point.
 </span>
-《マッチ度[86.711712]》サーバは文を実行し、クライアントが送信した順に結果を返します。
+サーバは文を実行し、クライアントが送信した順に結果を返します。
 サーバはパイプラインのコマンドの実行を即座に開始し、パイプラインの終了を待機しません。
-結果はサーバ側でバッファされることに注意してください;同期ポイントが<code class="function">PQpipelineSync</code>で確立されたとき、または<code class="function">PQsendFlushRequest</code>が呼び出されたとき、サーバはバッファをフラッシュします。
+結果はサーバ側でバッファされることに注意してください;同期ポイントが<code class="function">PQpipelineSync</code>か<code class="function">PQsendPipelineSync</code>のどちらかで確立されたとき、または<code class="function">PQsendFlushRequest</code>が呼び出されたとき、サーバはバッファをフラッシュします。
 いずれかの文でエラーが発生した場合、サーバは現在のトランザクションを中止し、次の同期ポイントまでキュー内の後続のコマンドを実行しません。
 このようなコマンドごとに<code class="literal">PGRES_PIPELINE_ABORTED</code>結果が生成されます(パイプラインのコマンドがトランザクションをロールバックする場合でも同様です)。
 問い合わせ処理は同期ポイント後に再開されます。
-《機械翻訳》サーバは、クライアントが送信した順序で文を実行し、結果を返します。
-サーバはパイプラインの終わりを待たずに、直ちにパイプライン内のコマンドの実行を開始します。
-結果はサーバ側でバッファリングされることに注意してください。
-同期点が<code class="function">PQpipelineSync</code>か<code class="function">PQsendPipelineSync</code>のどちらか、あるいは<code class="function">PQsendFlushRequest</code>が呼び出された時点でサーバがそのバッファをフラッシュします。
-いずれかの文がエラーを検出すると、サーバは現在のトランザクションを中断し、次の同期点までキュー内の後続のコマンドを実行しません。
-このようなコマンドごとに<code class="literal">PGRES_PIPELINE_ABORTED</code>の結果が生成されます。
-（パイプラインのコマンドがトランザクションをロールバックする場合でも、この状態は変わりません）。
-同期点の後でクエリ処理が再開されます。
     </p><p>
 <span class="original">
      It's fine for one operation to depend on the results of a
@@ -206,13 +186,9 @@
      until the next &lt;literal&gt;PGRES_PIPELINE_SYNC&lt;/literal&gt;;
      see &lt;xref linkend="libpq-pipeline-errors"/&gt;.
 </span>
-《マッチ度[86.036036]》<code class="function">PQgetResult</code>は通常の非同期処理と同じように動作しますが、新しい<code class="type">PGresult</code>型<code class="literal">PGRES_PIPELINE_SYNC</code>と<code class="literal">PGRES_PIPELINE_ABORTED</code>が含まれる場合があります。
-<code class="literal">PGRES_PIPELINE_SYNC</code>は、パイプラインの対応するポイントの各<code class="function">PQpipelineSync</code>ごとに1回だけ報告されます。
+<code class="function">PQgetResult</code>は通常の非同期処理と同じように動作しますが、新しい<code class="type">PGresult</code>型<code class="literal">PGRES_PIPELINE_SYNC</code>と<code class="literal">PGRES_PIPELINE_ABORTED</code>が含まれる場合があります。
+<code class="literal">PGRES_PIPELINE_SYNC</code>は、パイプラインの対応するポイントの各<code class="function">PQpipelineSync</code>または<code class="function">PQsendPipelineSync</code>ごとに1回だけ報告されます。
 最初のエラーに対する通常の問い合わせ結果の代わりに<code class="literal">PGRES_PIPELINE_ABORTED</code>が出力され、次の<code class="literal">PGRES_PIPELINE_SYNC</code>までのすべての結果が出力されます。
-<a class="xref" href="libpq-pipeline-mode.html#LIBPQ-PIPELINE-ERRORS" title="32.5.1.3. エラー処理">32.5.1.3</a>を参照してください。
-《機械翻訳》<code class="function">PQgetResult</code>は、通常の非同期処理と同じように動作しますが、新しい<code class="type">PGresult</code>型<code class="literal">PGRES_PIPELINE_SYNC</code>と<code class="literal">PGRES_PIPELINE_ABORTED</code>を含むことがあります。
-<code class="literal">PGRES_PIPELINE_SYNC</code>は、対応するパイプラインのポイントで<code class="function">PQpipelineSync</code>または<code class="function">PQsendPipelineSync</code>ごとに1回だけ報告されます。
-最初のエラーとそれに続く<code class="literal">PGRES_PIPELINE_SYNC</code>までのすべての結果に対して、通常の問い合わせ結果の代わりに<code class="literal">PGRES_PIPELINE_ABORTED</code>が発行されます。
 <a class="xref" href="libpq-pipeline-mode.html#LIBPQ-PIPELINE-ERRORS" title="32.5.1.3. エラー処理">32.5.1.3</a>を参照してください。
     </p><p>
 <span class="original">
@@ -252,12 +228,9 @@
      &lt;literal&gt;PGRES_PIPELINE_SYNC&lt;/literal&gt; to signal the end of the aborted pipeline
      and resumption of normal result processing.
 </span>
-《マッチ度[84.826325]》クライアント側から見ると、<code class="function">PQresultStatus</code>が<code class="literal">PGRES_FATAL_ERROR</code>を返した後、パイプラインは中断されたフラグが立てられます。
+クライアント側から見ると、<code class="function">PQresultStatus</code>が<code class="literal">PGRES_FATAL_ERROR</code>を返した後、パイプラインは中断されたフラグが立てられます。
 <code class="function">PQresultStatus</code>は、中断されたパイプラインの残りのキュー操作ごとに<code class="literal">PGRES_PIPELINE_ABORTED</code>結果を報告します。
-<code class="function">PQpipelineSync</code>の結果は<code class="literal">PGRES_PIPELINE_SYNC</code>として報告され、中断されたパイプラインの終了と通常の結果処理の再開を通知します。
-《機械翻訳》クライアントの観点からは、<code class="function">PQresultStatus</code>が<code class="literal">PGRES_FATAL_ERROR</code>を返した後、パイプラインは中止されたものとしてフラグが立てられます。
-中止されたパイプライン内の残りの各待ち行列操作に対して、<code class="function">PQresultStatus</code>は<code class="literal">PGRES_PIPELINE_ABORTED</code>の結果を報告します。
-<code class="function">PQpipelineSync</code>または<code class="function">PQsendPipelineSync</code>の結果は、中断されたパイプラインの終了と通常の結果処理の再開を知らせるために<code class="literal">PGRES_PIPELINE_SYNC</code>として報告されます。
+<code class="function">PQpipelineSync</code>または<code class="function">PQsendPipelineSync</code>の結果は<code class="literal">PGRES_PIPELINE_SYNC</code>として報告され、中断されたパイプラインの終了と通常の結果処理の再開を通知します。
     </p><p>
 <span class="original">
      The client &lt;emphasis&gt;must&lt;/emphasis&gt; process results with
@@ -461,11 +434,8 @@ int PQpipelineSync(PGconn *conn);
        the delimiter of an implicit transaction and an error recovery
        point; see &lt;xref linkend="libpq-pipeline-errors"/&gt;.
 </span>
-《マッチ度[86.428571]》<a class="link" href="protocol-flow.html#PROTOCOL-FLOW-EXT-QUERY" title="53.2.3. 拡張問い合わせ">同期メッセージ</a>を送信し、送信バッファをフラッシュすることにより、パイプラインの同期ポイントをマークします。
-これは暗黙的なトランザクションとエラー修復ポイントの区切り文字として機能します。
-<a class="xref" href="libpq-pipeline-mode.html#LIBPQ-PIPELINE-ERRORS" title="32.5.1.3. エラー処理">32.5.1.3</a>を参照してください。
-《機械翻訳》送信バッファをフラッシュせずに<a class="link" href="protocol-flow.html#PROTOCOL-FLOW-EXT-QUERY" title="53.2.3. 拡張問い合わせ">同期メッセージ</a>を送信することで、パイプライン内の同期点をマークします。
-これは暗黙的なトランザクションとエラー回復ポイントの区切りとして機能します。
+送信バッファをフラッシュせずに<a class="link" href="protocol-flow.html#PROTOCOL-FLOW-EXT-QUERY" title="53.2.3. 拡張問い合わせ">同期メッセージ</a>を送信することで、パイプライン内の同期ポイントをマークします。
+これは暗黙的なトランザクションとエラー修復ポイントの区切り文字として機能します。<a class="xref" href="libpq-pipeline-mode.html#LIBPQ-PIPELINE-ERRORS" title="32.5.1.3. エラー処理">32.5.1.3</a>を参照してください。
 <a class="xref" href="libpq-pipeline-mode.html#LIBPQ-PIPELINE-ERRORS" title="32.5.1.3. エラー処理">32.5.1.3</a>を参照してください。
 
 </p><pre class="synopsis">
@@ -480,18 +450,15 @@ int PQsendPipelineSync(PGconn *conn);
        Note that the message is not itself flushed to the server automatically;
        use &lt;function&gt;PQflush&lt;/function&gt; if necessary.
 </span>
-《マッチ度[50.545455]》成功した場合は1を返します。
+成功した場合は1を返します。
 接続がパイプラインモードでないか、<a class="link" href="protocol-flow.html#PROTOCOL-FLOW-EXT-QUERY" title="53.2.3. 拡張問い合わせ">同期メッセージ</a>の送信に失敗した場合は0を返します。
-《機械翻訳》成功した場合は1を返します。
-接続がパイプラインモードでない場合、または<a class="link" href="protocol-flow.html#PROTOCOL-FLOW-EXT-QUERY" title="53.2.3. 拡張問い合わせ">同期メッセージ</a>の送信に失敗した場合は0を返します。
 メッセージ自体は自動的にサーバにフラッシュされないことに注意してください。
 必要であれば<code class="function">PQflush</code>を使用してください。
       </p></dd><dt id="LIBPQ-PQSENDFLUSHREQUEST"><span class="term"><code class="function">PQsendFlushRequest</code><a id="id-1.7.3.12.13.2.6.1.2" class="indexterm"></a></span> <a href="#LIBPQ-PQSENDFLUSHREQUEST" class="id_link">#</a></dt><dd><p>
 <span class="original">
        Sends a request for the server to flush its output buffer.
 </span>
-《マッチ度[86.206897]》サーバに出力バッファをフラッシュする要求を送信します。
-《機械翻訳》サーバに出力バッファをフラッシュする要求を送信します。
+サーバに出力バッファをフラッシュする要求を送信します。
 </p><pre class="synopsis">
 int PQsendFlushRequest(PGconn *conn);
 </pre><p>
@@ -499,9 +466,7 @@ int PQsendFlushRequest(PGconn *conn);
 <span class="original">
        Returns 1 for success.  Returns 0 on any failure.
 </span>
-《マッチ度[81.250000]》成功した場合は1を返します。
-失敗した場合は0を返します。
-《機械翻訳》成功した場合は1を返します。
+成功した場合は1を返します。
 失敗した場合は0を返します。
       </p><p>
 <span class="original">
@@ -513,14 +478,9 @@ int PQsendFlushRequest(PGconn *conn);
        Note that the request is not itself flushed to the server automatically;
        use &lt;function&gt;PQflush&lt;/function&gt; if necessary.
 </span>
-《マッチ度[86.473430]》サーバは、<code class="function">PQpipelineSync</code>が呼び出された結果として、あるいはパイプラインモードでない要求があった場合に、自動的に出力バッファをフラッシュします。
+サーバは、<code class="function">PQpipelineSync</code>が呼び出された結果として、あるいはパイプラインモードでない要求があった場合に、自動的に出力バッファをフラッシュします。
 この関数は、同期ポイントを確立せずに、サーバにパイプラインモードで出力バッファをフラッシュさせるのに便利です。
-要求自体は自動的にサーバにフラッシュされないことに注意してください。
-必要であれば<code class="function">PQflush</code>を使用してください。
-《機械翻訳》サーバは、<code class="function">PQpipelineSync</code>が呼び出された結果として、あるいはパイプラインモードでない要求があった場合に、自動的に出力バッファをフラッシュします。
-この関数は、同期ポイントを確立せずに、サーバにパイプラインモードで出力バッファをフラッシュさせるのに便利です。
-要求自体は自動的にサーバにフラッシュされないことに注意してください。
-必要であれば<code class="function">PQflush</code>を使用してください。
+要求自体は自動的にサーバにフラッシュされないことに注意してください。必要であれば<code class="function">PQflush</code>を使用してください。
       </p></dd></dl></div></div><div class="sect2" id="LIBPQ-PIPELINE-TIPS"><div class="titlepage"><div><div><h3 class="title">32.5.3. いつパイプラインモードを使用するか <a href="#LIBPQ-PIPELINE-TIPS" class="id_link">#</a></h3></div></div></div><span class="original">
    &lt;title&gt;When to Use Pipeline Mode&lt;/title&gt;
 </span><p>
@@ -578,7 +538,10 @@ SELECT x FROM mytable WHERE id = 42 FOR UPDATE;
 UPDATE mytable SET x = 3 WHERE id = 42;
 COMMIT;
 </pre><p>
+<span class="original">
     could be much more efficiently done with:
+</span>
+次のようにして、より効率的にできます。
 </p><pre class="programlisting">
 UPDATE mytable SET x = x + 1 WHERE id = 42;
 </pre><p>
@@ -599,4 +562,4 @@ UPDATE mytable SET x = x + 1 WHERE id = 42;
 </span>
 クライアントはサーバに問い合わせを送信しようとするのをブロックしますが、サーバは既に処理した問い合わせから結果をクライアントに送信しようとするのをブロックします。
 これは、クライアントが出力バッファとサーバの受信バッファの両方を満たすのに十分な問い合わせを送信してから、サーバからの入力処理に切り替える場合にのみ発生しますが、いつ発生するかを正確に予測するのは困難です。
-       </p></div></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="libpq-async.html" title="32.4. 非同期コマンドの処理">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="libpq.html" title="第32章 libpq — C ライブラリ">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="libpq-single-row-mode.html" title="32.6. Retrieving Query Results in Chunks">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">32.4. 非同期コマンドの処理 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 17rc1文書">ホーム</a></td><td width="40%" align="right" valign="top"> 32.6. Retrieving Query Results in Chunks</td></tr></table></div></body></html>
+       </p></div></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="libpq-async.html" title="32.4. 非同期コマンドの処理">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="libpq.html" title="第32章 libpq — C ライブラリ">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="libpq-single-row-mode.html" title="32.6. 問い合わせ結果をチャンクとして取り出す">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">32.4. 非同期コマンドの処理 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 17.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 32.6. 問い合わせ結果をチャンクとして取り出す</td></tr></table></div></body></html>

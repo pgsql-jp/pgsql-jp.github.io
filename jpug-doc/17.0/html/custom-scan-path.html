@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>59.1. カスタムスキャンパスの作成</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="custom-scan.html" title="第59章 カスタムスキャンプロバイダの作成" /><link rel="next" href="custom-scan-plan.html" title="59.2. カスタムスキャン計画の作成" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 17rc1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="custom-scan.html" title="第59章 カスタムスキャンプロバイダの作成">第59章 カスタムスキャンプロバイダの作成</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 17rc1 : custom-scan-path.html">誤訳等の報告
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>59.1. カスタムスキャンパスの作成</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="custom-scan.html" title="第59章 カスタムスキャンプロバイダの作成" /><link rel="next" href="custom-scan-plan.html" title="59.2. カスタムスキャン計画の作成" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 17.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="custom-scan.html" title="第59章 カスタムスキャンプロバイダの作成">第59章 カスタムスキャンプロバイダの作成</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 17.0 : custom-scan-path.html">誤訳等の報告
                     </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="custom-scan.html" title="第59章 カスタムスキャンプロバイダの作成">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="custom-scan.html" title="第59章 カスタムスキャンプロバイダの作成">上へ</a></td><td width="60%" align="center">59.1. カスタムスキャンパスの作成</td><td width="20%" align="right"> <a accesskey="n" href="custom-scan-plan.html" title="59.2. カスタムスキャン計画の作成">次へ</a></td></tr></table><hr /></div><div class="sect1" id="CUSTOM-SCAN-PATH"><div class="titlepage"><div><div><h2 class="title" style="clear: both">59.1. カスタムスキャンパスの作成 <a href="#CUSTOM-SCAN-PATH" class="id_link">#</a></h2></div></div></div><span class="original">
   &lt;title&gt;Creating Custom Scan Paths&lt;/title&gt;
 </span><p>
@@ -10,9 +10,8 @@
     Gather and Gather Merge paths, which are made after this call so that
     they can use partial paths added by the hook):
 </span>
-《マッチ度[90.062112]》カスタムスキャンプロバイダは、典型的には、以下のフックを設定することでベースリレーションのためのパスを追加します。
-このフックはコアのコードがそのリレーションへのすべてのアクセスパスを生成した後で呼び出されます。
-（フックの呼び出しの後に作成されるギャザーパス(Gather path)を除きます。フックが追加した部分パスをギャザーパスが利用できるようにするためです。）
+カスタムスキャンプロバイダは、典型的には、以下のフックを設定することでベースリレーションのためのパスを追加します。
+このフックはコアのコードがそのリレーションへのすべてのアクセスパスを生成した後で呼び出されます（フックが追加した部分パスを利用できるようにするためにフックの呼び出しの後に作成される、ギャザーパス(Gather path)とギャザーマージパス(Gather Merge path)を除きます）。
 </p><pre class="programlisting">
 typedef void (*set_rel_pathlist_hook_type) (PlannerInfo *root,
                                             RelOptInfo *rel,
@@ -30,12 +29,9 @@ extern PGDLLIMPORT set_rel_pathlist_hook_type set_rel_pathlist_hook;
     custom scan provider is responsible for initializing the
     &lt;structname&gt;CustomPath&lt;/structname&gt; object, which is declared like this:
 </span>
-《マッチ度[81.488934]》このフックはコアシステムが生成したパスを検査し、修正し、あるいは削除するために使うことができますが、カスタムスキャンプロバイダは、典型的には<code class="structname">CustomPath</code>オブジェクトを生成し、<code class="function">add_path</code>を使ってそれを<code class="literal">rel</code>に追加することのみを行います。
+このフックはコアシステムが生成したパスを検査し、修正し、あるいは削除するために使うことができますが、カスタムスキャンプロバイダは、典型的には<code class="structname">CustomPath</code>オブジェクトを生成し、<code class="function">add_path</code>、または、部分パスであるなら<code class="function">add_partial_path</code>を使って、それを<code class="literal">rel</code>に追加することのみを行います。
 カスタムスキャンプロバイダは<code class="structname">CustomPath</code>オブジェクトの初期化を担当します。
 このオブジェクトは以下のように宣言されています。
-《機械翻訳》このフック関数は、経路によって生成されたコアシステムを検査、変更、または削除するために使用できますが、カスタムスキャンプロバイダは通常、自分自身を生成する<code class="structname">CustomPath</code>オブジェクトに限定し、<code class="function">add_path</code>を使用して、または<code class="function">add_partial_path</code>を使用して<code class="literal">rel</code>に追加します。
-カスタムスキャンプロバイダは、<code class="structname">CustomPath</code>オブジェクトを初期化する責任があります。
-これは、次のように宣言されます。
 </p><pre class="programlisting">
 typedef struct CustomPath
 {
@@ -76,30 +72,19 @@ typedef struct CustomPath
     point to a (usually statically allocated) object implementing the required
     custom path methods, which are further detailed below.
 </span>
-《マッチ度[80.526021]》<code class="structfield">path</code>は、他のすべてのパスと同じく、行数の推定値、開始とトータルのコスト、このパスで提供されるソート順を含めて初期化される必要があります。
+<code class="structfield">path</code>は、他のすべてのパスと同じく、行数の推定値、開始とトータルのコスト、このパスで提供されるソート順を含めて初期化される必要があります。
 <code class="structfield">flags</code>はビットマスクで、スキャンプロバイダが特定のオプションをサポートできるかどうかを指定します。
 カスタムパスが逆向きスキャンをサポートできるなら<code class="literal">CUSTOMPATH_SUPPORT_BACKWARD_SCAN</code>を、マークとリストアをサポートできるなら<code class="literal">CUSTOMPATH_SUPPORT_MARK_RESTORE</code>を、プロジェクションを実行できるなら<code class="literal">CUSTOMPATH_SUPPORT_PROJECTION</code>を<code class="structfield">flags</code>に含めます。
 (<code class="literal">CUSTOMPATH_SUPPORT_PROJECTION</code>が設定されていなければ、スキャンノードはスキャンされるリレーションのVarを生成するよう依頼されるだけです。一方、そのフラグが設定されていれば、スキャンノードはこのVarのスカラ式を評価できないといけません。)
 オプションの<code class="structfield">custom_paths</code>はこのカスタムパスのノードで使用される<code class="structname">Path</code>のノードのリストです。
 プランナがこれを<code class="structname">Plan</code>のノードに変換します。
+後述するように、結合リレーションに対してもカスタムパスを作成できます。
+このような場合には、カスタムパスが置き換える結合に適用する結合句の集合を格納するために、<code class="structfield">custom_restrictinfo</code>を使用する必要があります。
+それ以外の場合はNILです。
 <code class="structfield">custom_private</code>はカスタムパスのプライベートデータを格納するために使うことができます。
 プライベートデータは<code class="literal">nodeToString</code>が処理できるような形式で格納してください。
 そうすることで、カスタムパスを出力するデバッグルーチンが設計通りに動作します。
 <code class="structfield">methods</code>は要求されるカスタムパスのメソッドのオブジェクト（通常は静的に割り当てられる）を指している必要があり、以下でさらに詳しく説明します。
-《機械翻訳》<code class="structfield">パス</code>は、このパスによって提供される行-カウントの推定値、スタートおよび総コスト、ソート順序付けを含む他のパスと同様に初期化する必要があります。
-<code class="structfield">flags</code>はビットマスクで、スキャンプロバイダが特定のオプショナル機能をサポートできるかどうかを指定します。
-<code class="structfield">flags</code>は、カスタムパスが後方スキャンをincludeできる場合は<code class="literal">CUSTOMPATH_サポート_BACKWARD_スキャン</code>、サポートマークとリストアをサポートできる場合は<code class="literal">CUSTOMPATH_サポート_マーク_リストア</code>、投影を実行できる場合は<code class="literal">CUSTOMPATH_サポート_射影</code>になります。
-<code class="literal">CUSTOMPATH_サポート_射影</code>が設定されていない場合、スキャンノードはスキャンされたリレーションの変数を生成するように要求されるだけです。
-一方、そのフラグが設定されている場合、スキャンノードはこれらの変数に対してスカラ式を評価できる必要があります。
-)オプショナル<code class="structfield">カスタム_経路</code>は、このカスタム-パスノードによって使用される<code class="structname">パス</code>ノードのリストであり、これらはプランナによって<code class="structname">プラン</code>ノードに変換される。
-後述するように、結合経路に対してもカスタムリレーションを作成することができる。
-このようなケースでは、<code class="structfield">カスタム_restrictinfo</code>を使用して、結合パスが置き換える結合に適用する一連のカスタム句を保存する必要があります。
-それ以外の場合はNILです。
-<code class="structfield">カスタム_プライベート</code>は、カスタムパスのプライベートデータを格納するために使用できます。
-プライベートデータは、<code class="literal">nodeToString</code>で処理できるフォームに格納する必要があります。
-これにより、カスタムパスをプリントしようとするデバッグルーチンが設計どおりに動作します。
-<code class="structfield">メソッド</code>は、必要なポイントオブジェクトメソッドを実装する（通常は静的に割り当てられた）カスタムにパスする必要があります。
-詳細については、以下を参照してください。
   </p><p>
 <span class="original">
    A custom scan provider can also provide join paths.  Just as for base
@@ -139,9 +124,8 @@ extern PGDLLIMPORT set_join_pathlist_hook_type set_join_pathlist_hook;
    &lt;structname&gt;CustomPath&lt;/structname&gt; path into a plan, if it is selected
    by the planner as the best path for the &lt;literal&gt;joinrel&lt;/literal&gt;.
 </span>
-《機械翻訳》ノートまた、<code class="literal">extra-&gt;restrictlist</code>として渡される結合に適用される結合条項のセットは、内部リレーションと外部地域の組み合わせによって異なります。
-<code class="literal">joinrel</code>に対して生成される<code class="structname">CustomPath</code>パスには、使用する結合句のセットが含まれている必要があります。
-プランナが<code class="literal">joinrel</code>のベストパスとして選択した場合、<code class="structname">CustomPath</code>パスをプランに変換するためにプランナによって使用されます。
+<code class="literal">extra-&gt;restrictlist</code>として渡される結合に適用される結合句のセットは、内部と外部のリレーションの組み合わせによって異なることにも注意してください。
+<code class="literal">joinrel</code>に対して生成される<code class="structname">CustomPath</code>パスには、使用する結合句の集合が含まれていなければならず、このパスをプランナが<code class="literal">joinrel</code>に対する最適パスとして選択した場合、これらは<code class="structname">CustomPath</code>パスをプランに変換するためにプランナによって使用されます。
   </p><div class="sect2" id="CUSTOM-SCAN-PATH-CALLBACKS"><div class="titlepage"><div><div><h3 class="title">59.1.1. カスタムスキャンパスのコールバック <a href="#CUSTOM-SCAN-PATH-CALLBACKS" class="id_link">#</a></h3></div></div></div><span class="original">
   &lt;title&gt;Custom Scan Path Callbacks&lt;/title&gt;
 </span><p>
@@ -181,4 +165,4 @@ List *(*ReparameterizeCustomPathByChild) (PlannerInfo *root,
 このコールバックは、指定された子リレーション<code class="literal">child_rel</code>の最上位の親によりパラメータ化されたパスを子リレーションによりパラメータ化されるよう変換する時に呼び出されます。
 コールバックはパスを再パラメータ化したり、<code class="structname">CustomPath</code>の指定された<code class="literal">custom_private</code>メンバに保存されている式ノードを変換したりするのに使われます。
 コールバックは必要に応じて<code class="literal">reparameterize_path_by_child</code>、<code class="literal">adjust_appendrel_attrs</code>または<code class="literal">adjust_appendrel_attrs_multilevel</code>を使います。
-   </p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="custom-scan.html" title="第59章 カスタムスキャンプロバイダの作成">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="custom-scan.html" title="第59章 カスタムスキャンプロバイダの作成">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="custom-scan-plan.html" title="59.2. カスタムスキャン計画の作成">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">第59章 カスタムスキャンプロバイダの作成 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 17rc1文書">ホーム</a></td><td width="40%" align="right" valign="top"> 59.2. カスタムスキャン計画の作成</td></tr></table></div></body></html>
+   </p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="custom-scan.html" title="第59章 カスタムスキャンプロバイダの作成">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="custom-scan.html" title="第59章 カスタムスキャンプロバイダの作成">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="custom-scan-plan.html" title="59.2. カスタムスキャン計画の作成">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">第59章 カスタムスキャンプロバイダの作成 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 17.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 59.2. カスタムスキャン計画の作成</td></tr></table></div></body></html>

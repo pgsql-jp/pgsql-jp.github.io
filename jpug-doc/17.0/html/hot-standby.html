@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>26.4. ホットスタンバイ</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="warm-standby-failover.html" title="26.3. フェイルオーバー" /><link rel="next" href="monitoring.html" title="第27章 データベース活動状況の監視" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 17rc1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="high-availability.html" title="第26章 高可用性、負荷分散およびレプリケーション">第26章 高可用性、負荷分散およびレプリケーション</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 17rc1 : hot-standby.html">誤訳等の報告
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>26.4. ホットスタンバイ</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="warm-standby-failover.html" title="26.3. フェイルオーバー" /><link rel="next" href="monitoring.html" title="第27章 データベース活動状況の監視" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 17.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="high-availability.html" title="第26章 高可用性、負荷分散およびレプリケーション">第26章 高可用性、負荷分散およびレプリケーション</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 17.0 : hot-standby.html">誤訳等の報告
                     </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="warm-standby-failover.html" title="26.3. フェイルオーバー">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="high-availability.html" title="第26章 高可用性、負荷分散およびレプリケーション">上へ</a></td><td width="60%" align="center">26.4. ホットスタンバイ</td><td width="20%" align="right"> <a accesskey="n" href="monitoring.html" title="第27章 データベース活動状況の監視">次へ</a></td></tr></table><hr /></div><div class="sect1" id="HOT-STANDBY"><div class="titlepage"><div><div><h2 class="title" style="clear: both">26.4. ホットスタンバイ <a href="#HOT-STANDBY" class="id_link">#</a></h2></div></div></div><span class="original">
   &lt;title&gt;Hot Standby&lt;/title&gt;
 </span><a id="id-1.6.13.24.2" class="indexterm"></a><a id="id-1.6.13.24.3" class="indexterm"></a><p>
@@ -126,7 +126,7 @@
     Therefore, the following actions will produce error messages:
 </span>
 ホットスタンバイ中に開始したトランザクションではトランザクションIDを割り当てられません。
-また、システムのログ先行書き込みに書き出すことができません。
+また、システムの先行書き込みログ（WAL）に書き出すことができません。
 このため、以下の動作はエラーメッセージを生成します。
 
     </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>
@@ -510,7 +510,8 @@ WALに記録された操作はすでにプライマリで発生したもので�
 しかし、スタンバイ側で行うべき問い合わせをプライマリサーバ上で直接実行することと比べ、こうしたクリーンアップに関する問題を優先する価値はありません。
 また、スタンバイに実行負荷を分散できるという利点があります。
 スタンバイサーバが接続、切断を頻繁に繰り返す場合、<code class="varname">hot_standby_feedback</code>によるフィードバックが提供されていなければ、その値を調整したいと思うでしょう。
-例えば、<code class="varname">max_standby_archive_delay</code>が増大し、切断している期間WALアーカイブのコンフリクト発生による問い合わせの中断が速やかに行われないことを考えてみてください。また、再接続後に速やかに問い合わせが中断されることを避けるために<code class="varname">max_standby_streaming_delay</code>を大きくすることを考えてみてください。
+例えば、<code class="varname">max_standby_archive_delay</code>を増やし、接続をしていない間、WALアーカイブファイルのコンフリクトによって問い合わせの急速な中断が起きないようにすることを考慮してください。
+また、再接続後に新しく到着したストリーミングWALエントリによる急速な中断が起きることを避けるために<code class="varname">max_standby_streaming_delay</code>を大きくすることを考えてみてください。
    </p><p>
 <span class="original">
     The number of query cancels and the reason for them can be viewed using
@@ -546,6 +547,7 @@ WALに記録された操作はすでにプライマリで発生したもので�
 </span>
 <code class="filename">postgresql.conf</code>において<code class="varname">hot_standby</code>が<code class="literal">on</code>で（これはデフォルトです）、かつ<a class="link" href="warm-standby.html#FILE-STANDBY-SIGNAL"><code class="filename">standby.signal</code></a><a id="id-1.6.13.24.8.2.5" class="indexterm"></a>が存在すれば、サーバはホットスタンバイモードで稼働します。
 しかし、サーバはまず問い合わせが実行できる程度の一貫性を持つ状態を提供するために十分なリカバリを完了させなければなりませんので、ホットスタンバイでの接続が有効になるまでに多少の時間がかかるかもしれません。
+この期間中、接続を試みるクライアントはエラーメッセージとともに拒否されます。
 サーバの準備ができたことを確認するために、アプリケーションで接続試行を繰り返すか、サーバログに以下のメッセージがあるかどうかを確認します。
 
 </p><pre class="programlisting">
@@ -729,7 +731,7 @@ HINT:  You can then restart the server after making the necessary configuration 
     Again, note that some of these commands are actually allowed during
     "read only" mode transactions on the primary.
 </span>
-繰り返しますが、これらのコマンドの一部は、プライマリサーバにおける「読み取り専用」モードのトランザクションで実際に許可されていることに注意してください。
+ここでも、これらのコマンドの一部は、プライマリサーバにおける「読み取り専用」モードのトランザクションで実際に許可されていることに注意してください。
    </p><p>
 <span class="original">
     As a result, you cannot create additional indexes that exist solely
@@ -792,13 +794,13 @@ HINT:  You can then restart the server after making the necessary configuration 
     WAL file control commands will not work during recovery,
     e.g., &lt;function&gt;pg_backup_start&lt;/function&gt;, &lt;function&gt;pg_switch_wal&lt;/function&gt; etc.
 </span>
-リカバリの間WALの制御コマンドは稼働しません。
+リカバリの間、WALファイルの制御コマンドは稼働しません。
 例えば、<code class="function">pg_backup_start</code>や<code class="function">pg_switch_wal</code>などです。
    </p><p>
 <span class="original">
     Dynamically loadable modules work, including &lt;structname&gt;pg_stat_statements&lt;/structname&gt;.
 </span>
-<code class="structname">pg_stat_statements</code>も含み、動的に読み込み可能なモジュールは稼働します。
+<code class="structname">pg_stat_statements</code>も含み、動的にロード可能なモジュールは稼働します。
    </p><p>
 <span class="original">
     Advisory locks work normally in recovery, including deadlock detection.
@@ -894,14 +896,10 @@ WALの再実行はトリガに基づいたものではありません。
     &lt;structname&gt;pg_statio_&lt;/structname&gt; views, nor will associated
     &lt;structname&gt;pg_stat_database&lt;/structname&gt; columns be incremented.
 </span>
-《マッチ度[77.817531]》リカバリの間も累積統計システムはアクティブになります。
+リカバリの間も累積統計システムはアクティブになります。
 すべてのスキャン、読み取り、ブロック、インデックスの使用などは、スタンバイサーバにおいて正常に記録されます。
 しかし、WAL再生はリレーションやデータベース固有のカウンタを増加させません。
-つまり、再生はpg_stat_all_tables列(n_tup_insなど)を増加させませんし、起動プロセスによって実行された読み取りや書き込みもpg_statioビューで追跡されませんし、関連するpg_stat_database列も増加されません。
-《機械翻訳》統計処理の累積システムは、リカバリの間のアクティブです。
-すべてのスキャン、読み取り、ブロック、インデックスの使用状況などは、通常どおりスタンバイに記録されます。
-しかし、WALリプレイはインクリメントリレーションやデータベース特有のカウンタを使用しません。
-すなわち、リプレイは<code class="structname">pg_stat_all_tables</code>列をインクリメントせず<code class="structfield">n_tup_ins</code>のように、スタートアッププロセスによって実行された読み込みや書き込みも<code class="structname">pg_statio_</code>ビューで追跡されず、関連する<code class="structname">pg_stat_database</code>列もインクリメントされません。
+つまり、再生は<code class="structname">pg_stat_all_tables</code>列(<code class="structfield">n_tup_ins</code>など)を増加させませんし、起動プロセスによって実行された読み取りや書き込みも<code class="structname">pg_statio_</code>ビューで追跡されませんし、関連する<code class="structname">pg_stat_database</code>列も増加されません。
    </p><p>
 <span class="original">
     Autovacuum is not active during recovery.  It will start normally at the
@@ -919,8 +917,8 @@ WALの再実行はトリガに基づいたものではありません。
     The &lt;command&gt;CHECKPOINT&lt;/command&gt; command is accepted during recovery,
     though it performs a restartpoint rather than a new checkpoint.
 </span>
-リカバリの間、チェックポイントプロセスとバックグラウンドライタプロセスは稼働しています。
-チェックポイントプロセスは（プライマリサーバにおけるチェックポイントに類似した）リスタートポイントを設定し、通常のブロック消去を行います。
+リカバリの間、チェックポインタプロセスとバックグラウンドライタプロセスは稼働しています。
+チェックポインタプロセスは（プライマリサーバにおけるチェックポイントに類似した）リスタートポイントを設定し、通常のブロック消去を行います。
 これはスタンバイサーバに保存されるヒントビット情報の更新を含むことができます。
 リカバリの間<code class="command">CHECKPOINT</code>コマンドは受理されますが、新規のチェックポイントではなくてリスタートポイントが設定されます。
    </p></div><div class="sect2" id="HOT-STANDBY-PARAMETERS"><div class="titlepage"><div><div><h3 class="title">26.4.4. ホットスタンバイパラメータリファレンス <a href="#HOT-STANDBY-PARAMETERS" class="id_link">#</a></h3></div></div></div><span class="original">
@@ -1012,8 +1010,8 @@ WALの再実行はトリガに基づいたものではありません。
      hot standby mode will generate an error.
 </span>
 シリアライザブルトランザクション分離レベルはまだホットスタンバイでは利用できません。
-（<a class="xref" href="transaction-iso.html#XACT-SERIALIZABLE" title="13.2.3. シリアライザブル分離レベル">13.2.3</a>および<a class="xref" href="applevel-consistency.html#SERIALIZABLE-CONSISTENCY" title="13.4.1. シリアライザブルトランザクションを用いた一貫性の強化">13.4.1</a>参照）
+（<a class="xref" href="transaction-iso.html#XACT-SERIALIZABLE" title="13.2.3. シリアライザブル分離レベル">13.2.3</a>および<a class="xref" href="applevel-consistency.html#SERIALIZABLE-CONSISTENCY" title="13.4.1. シリアライザブルトランザクションを用いた一貫性の強化">13.4.1</a>参照。）
 ホットスタンバイにおいてトランザクションをシリアライザブルトランザクション分離レベルに設定しようとすると、エラーになります。
     </p></li></ul></div><p>
 
-   </p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="warm-standby-failover.html" title="26.3. フェイルオーバー">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="high-availability.html" title="第26章 高可用性、負荷分散およびレプリケーション">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="monitoring.html" title="第27章 データベース活動状況の監視">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">26.3. フェイルオーバー </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 17rc1文書">ホーム</a></td><td width="40%" align="right" valign="top"> 第27章 データベース活動状況の監視</td></tr></table></div></body></html>
+   </p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="warm-standby-failover.html" title="26.3. フェイルオーバー">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="high-availability.html" title="第26章 高可用性、負荷分散およびレプリケーション">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="monitoring.html" title="第27章 データベース活動状況の監視">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">26.3. フェイルオーバー </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 17.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 第27章 データベース活動状況の監視</td></tr></table></div></body></html>

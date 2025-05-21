@@ -7,7 +7,7 @@ layout: default
 
 ## 最新
 
-last-updated: 2025-05-06 04:29:43 JST
+last-updated: 2025-05-21 21:00:00 JST
 
 ### 最新 PostgreSQL
 
@@ -19,7 +19,7 @@ last-updated: 2025-05-06 04:29:43 JST
 
 | HTML （オンライン）           | PDF                                           | EPUB                                         | man | 更新日     |
 |:---------------------------|:---------------------------------------------:|:--------------------------------------------:|:---:|:----------:|
-| [17.0](current/html) | [PDF](current/postgres-A4.pdf) | |  |  |
+| [17.0](jpug-doc/17.0/html/) | [PDF](jpug-doc/17.0/postgresql-17.0-A4.pdf) | [EPUB](jpug-doc/17.0/postgresql-17.0.epub) | [man.tar.gz](jpug-doc/17.0/man.tar.gz) | 2025-05-21 |
 
 ### PostgreSQL 16
 

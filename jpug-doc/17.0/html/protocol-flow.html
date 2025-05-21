@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>53.2. メッセージの流れ</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="protocol-overview.html" title="53.1. 概要" /><link rel="next" href="sasl-authentication.html" title="53.3. SASL認証" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 17rc1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="protocol.html" title="第53章 フロントエンド/バックエンドプロトコル">第53章 フロントエンド/バックエンドプロトコル</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 17rc1 : protocol-flow.html">誤訳等の報告
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>53.2. メッセージの流れ</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="protocol-overview.html" title="53.1. 概要" /><link rel="next" href="sasl-authentication.html" title="53.3. SASL認証" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 17.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="protocol.html" title="第53章 フロントエンド/バックエンドプロトコル">第53章 フロントエンド/バックエンドプロトコル</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 17.0 : protocol-flow.html">誤訳等の報告
                     </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="protocol-overview.html" title="53.1. 概要">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="protocol.html" title="第53章 フロントエンド/バックエンドプロトコル">上へ</a></td><td width="60%" align="center">53.2. メッセージの流れ</td><td width="20%" align="right"> <a accesskey="n" href="sasl-authentication.html" title="53.3. SASL認証">次へ</a></td></tr></table><hr /></div><div class="sect1" id="PROTOCOL-FLOW"><div class="titlepage"><div><div><h2 class="title" style="clear: both">53.2. メッセージの流れ <a href="#PROTOCOL-FLOW" class="id_link">#</a></h2></div></div></div><span class="original">
   &lt;title&gt;Message Flow&lt;/title&gt;
 </span><p>
@@ -1118,8 +1118,8 @@ Syncメッセージを受け取ると、ReadyForQueryを発行し、通常処理
     the command to be executed is a &lt;command&gt;COPY FROM STDIN&lt;/command&gt;.)
 </span>
 バックエンドは、コピーインモード期間中、FlushとSyncメッセージを無視します。
-その他の種類の非コピーメッセージを受け取ると、エラーになり、上述のようにコピーイン状態を中断します
-（クライアントライブラリがExecuteメッセージの後に、実行したコマンドが<code class="command">COPY FROM STDIN</code>かどうかを検査することなく、常にFlushまたはSyncを送信できる、という便利さのためにFlushとSyncは例外です）。
+その他の種類の非コピーメッセージを受け取ると、エラーになり、上述のようにコピーイン状態を中断します。
+（クライアントライブラリがExecuteメッセージの後に、実行したコマンドが<code class="command">COPY FROM STDIN</code>かどうかを検査することなく、常にFlushまたはSyncを送信できる、という便利さのためにFlushとSyncは例外です。）
    </p><p>
 <span class="original">
     Copy-out mode (data transfer from the server) is initiated when the
@@ -1185,6 +1185,7 @@ NoticeResponseおよびParameterStatusメッセージがCopyDataメッセージ�
 コピーボースモードは、walsenderモードのバックエンドが<code class="command">START_REPLICATION</code>文を実行した時に初期化されます。
 バックエンドはCopyBothResponseメッセージをフロントエンドに送信します。
 この後バックエンドとフロントエンドの両方が、接続が終了するまでの間にCopyDataメッセージを送信できるようになります。
+クライアントがCopyDoneメッセージを送信した場合、接続はコピーボースモードからコピーアウトモードに移行し、クライアントはそれ以上のCopyDataメッセージを送信できません。
 同様に、サーバがCopyDoneメッセージを送信した場合、接続はコピーインモードとなり、サーバはそれ以上のCopyDataメッセージを送信できません。
 両方の側がCopyDoneメッセージを送信した後、コピーモードは終了し、バックエンドはコマンド処理モードに戻ります。
 コピーボースモード中にバックエンドが検出したエラーのイベントにおいては、バックエンドはErrorResponseメッセージを発行し、Syncメッセージの受信までフロントエンドのメッセージを破棄し、その後ReadyForQueryを発行して通常の処理に戻ります。
@@ -1269,11 +1270,11 @@ ParameterStatusメッセージは、任意のパラメータの実際の値が�
     Accordingly, a frontend should simply ignore ParameterStatus for
     parameters that it does not understand or care about.
 </span>
-《機械翻訳》（<code class="varname">default_transaction_read_only</code>と<code class="varname">in_hot_standby</code>は14より前のリリースでは報告されませんでした。
-<code class="varname">scram_iterations</code>は16より前のリリースでは報告されませんでした。
-なお、<code class="varname">server_version</code>、<code class="varname">server_encoding</code>、<code class="varname">integer_datetimes</code>は、起動後に変更できない擬似パラメータです。
-このセットは将来変更されるかもしれないし、設定可能になるかもしれません。
-したがって、フロントエンドは、理解していない、あるいは気にかけていないパラメータに対しては、ParameterStatusを単純に無視すべきである。
+（<code class="varname">default_transaction_read_only</code>と<code class="varname">in_hot_standby</code>は14より前のリリースでは報告されませんでした。
+<code class="varname">scram_iterations</code>は16より前のリリースでは報告されませんでした。）
+なお、<code class="varname">server_version</code>、<code class="varname">server_encoding</code>、<code class="varname">integer_datetimes</code>は、起動後に変更できない擬似パラメータであることに注意してください。
+この組み合わせは将来変更されるかもしれないし、設定可能にさえなるかもしれません。
+したがって、フロントエンドは、理解していない、あるいは気にかけていないパラメータに関しては、ParameterStatusを単純に無視すべきです。
    </p><p>
 <span class="original">
     If a frontend issues a &lt;command&gt;LISTEN&lt;/command&gt; command, then the
@@ -1467,7 +1468,7 @@ CancelRequestメッセージは、接続開始段階でフロントエンドに�
 <acronym class="acronym">SSL</acronym>暗号化接続を開始するには、フロントエンドはまず、StartupMessageではなくSSLRequestを送信します。
 その後サーバはそれぞれ<acronym class="acronym">SSL</acronym>の実行を行うか行わないかを示す<code class="literal">S</code>か<code class="literal">N</code>かを持つ1バイトの応答を返します。
 フロントエンドはその応答に満足できなければ、この時点で接続を切断することができます。
-<code class="literal">S</code>の後に継続するのであれば、サーバと間で<acronym class="acronym">SSL</acronym>起動ハンドシェーク（ここでは<acronym class="acronym">SSL</acronym>の仕様に関しては説明しません）を行います。
+<code class="literal">S</code>の後に継続するのであれば、サーバと間で<acronym class="acronym">SSL</acronym>起動ハンドシェイク（ここでは<acronym class="acronym">SSL</acronym>の仕様に関しては説明しません）を行います。
 これが成功した場合、続いて通常のStartupMessageの送信を行います。
 この場合、StartupMessageおよびその後のデータは<acronym class="acronym">SSL</acronym>により暗号化されます。
 <code class="literal">N</code>の後に、通常のStartupMessageを送信することで暗号化なしで進みます。
@@ -1518,10 +1519,10 @@ CancelRequestメッセージは、接続開始段階でフロントエンドに�
      unencrypted connection or a protocol error the server will simply
      disconnect.
 </span>
-《機械翻訳》同様に、サーバはクライアントが<acronym class="acronym">SSL</acronym>要求に対するサーバの単一バイト応答を受信するまで、<acronym class="acronym">SSL</acronym>ネゴシエーションを開始しないことを期待します。
+同様に、サーバはクライアントが<acronym class="acronym">SSL</acronym>要求に対するサーバの単一バイト応答を受信するまで、<acronym class="acronym">SSL</acronym>ネゴシエーションを開始しないことを期待します。
 クライアントがサーバからの応答を待たずに直ちに <acronym class="acronym">SSL</acronym>ネゴシエーションを開始する場合、接続の待ち時間を1往復分減らすことができます。
 しかし、これは、サーバが<acronym class="acronym">SSL</acronym>リクエストに対して否定的な応答を送信する場合を処理できないという代償を伴います。
-その場合、GSSAPIや暗号化されていない接続、あるいはプロトコルエラーを続ける代わりに、サーバは単に切断するだけです。
+その場合、GSSAPIや暗号化されていない接続、あるいはプロトコルエラーで接続を続ける代わりに、サーバは単に接続を切断するだけです。
    </p><p>
 <span class="original">
     An initial SSLRequest can also be used in a connection that is being
@@ -1551,15 +1552,15 @@ CancelRequestメッセージは、接続開始段階でフロントエンドに�
      at &lt;ulink url="https://www.iana.org/assignments/tls-extensiontype-values/tls-extensiontype-values.xhtml#alpn-protocol-ids"&gt;IANA
      TLS ALPN Protocol IDs&lt;/ulink&gt; registry.
 </span>
-《機械翻訳》<acronym class="acronym">SSL</acronym>暗号化を開始するための2つ目の代替方法があります。
+<acronym class="acronym">SSL</acronym>暗号化を開始するための2つ目の代替方法があります。
 サーバは、以前のSSLRequestパケットなしで直ちに<acronym class="acronym">SSL</acronym>ネゴシエーションを開始する接続を認識します。
 <acronym class="acronym">SSL</acronym>接続が確立されると、サーバは通常の起動要求パケットを期待し、暗号化されたチャネルを介してネゴシエーションを続行します。
 この場合、他の暗号化要求は拒否されます。
 この方法は、利用可能な最良の接続暗号化をネゴシエートできないため、または暗号化されていない接続を処理できないため、汎用ツールには推奨されません。
 ただし、サーバとクライアントの両方が一緒に制御される環境では便利です。
-この場合、レイテンシの1ラウンドの往復を回避し、標準の<acronym class="acronym">SSL</acronym>接続に依存するネットワークツールの使用を可能にします。
+この場合、一往復の遅延を回避し、標準の<acronym class="acronym">SSL</acronym>接続に依存するネットワークツールの使用を可能にします。
 このスタイルの<acronym class="acronym">SSL</acronym>接続を使用する場合、クライアントは<a class="ulink" href="https://tools.ietf.org/html/rfc7301" target="_top">RFC 7301</a>で定義されたALPN拡張を使用して、プロトコルの混乱攻撃から保護する必要があります。
-<span class="productname">PostgreSQL</span>プロトコルは<a class="ulink" href="https://www.iana.org/assignments/tls-extensiontype-values/tls-extensiontype-values.xhtml#alpn-protocol-ids" target="_top">IANA TLS ALPN Protocol IDs</a>レジストリに登録された"postgresql"です。
+<span class="productname">PostgreSQL</span>プロトコルは<a class="ulink" href="https://www.iana.org/assignments/tls-extensiontype-values/tls-extensiontype-values.xhtml#alpn-protocol-ids" target="_top">IANA TLS ALPN Protocol IDs</a>レジストリに"postgresql"として登録されています。
    </p><p>
 <span class="original">
     While the protocol itself does not provide a way for the server to
@@ -1683,4 +1684,4 @@ CancelRequestメッセージは、接続開始段階でフロントエンドに�
     of authentication checking.
 </span>
 プロトコル自身はサーバに<acronym class="acronym">GSSAPI</acronym>暗号化を強制する方法を提供していませんが、管理者は認証チェックの副次的効果として暗号化されていないセッションをサーバが拒否するように設定できます。
-   </p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="protocol-overview.html" title="53.1. 概要">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="protocol.html" title="第53章 フロントエンド/バックエンドプロトコル">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="sasl-authentication.html" title="53.3. SASL認証">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">53.1. 概要 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 17rc1文書">ホーム</a></td><td width="40%" align="right" valign="top"> 53.3. SASL認証</td></tr></table></div></body></html>
+   </p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="protocol-overview.html" title="53.1. 概要">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="protocol.html" title="第53章 フロントエンド/バックエンドプロトコル">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="sasl-authentication.html" title="53.3. SASL認証">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">53.1. 概要 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 17.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 53.3. SASL認証</td></tr></table></div></body></html>

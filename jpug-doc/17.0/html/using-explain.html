@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>14.1. EXPLAINの利用</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="performance-tips.html" title="第14章 性能に関するヒント" /><link rel="next" href="planner-stats.html" title="14.2. プランナで使用される統計情報" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 17rc1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="performance-tips.html" title="第14章 性能に関するヒント">第14章 性能に関するヒント</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 17rc1 : using-explain.html">誤訳等の報告
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>14.1. EXPLAINの利用</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="performance-tips.html" title="第14章 性能に関するヒント" /><link rel="next" href="planner-stats.html" title="14.2. プランナで使用される統計情報" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 17.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="performance-tips.html" title="第14章 性能に関するヒント">第14章 性能に関するヒント</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 17.0 : using-explain.html">誤訳等の報告
                     </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="performance-tips.html" title="第14章 性能に関するヒント">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="performance-tips.html" title="第14章 性能に関するヒント">上へ</a></td><td width="60%" align="center">14.1. <code class="command">EXPLAIN</code>の利用</td><td width="20%" align="right"> <a accesskey="n" href="planner-stats.html" title="14.2. プランナで使用される統計情報">次へ</a></td></tr></table><hr /></div><div class="sect1" id="USING-EXPLAIN"><div class="titlepage"><div><div><h2 class="title" style="clear: both">14.1. <code class="command">EXPLAIN</code>の利用 <a href="#USING-EXPLAIN" class="id_link">#</a></h2></div></div></div><span class="original">
   &lt;title&gt;Using &lt;command&gt;EXPLAIN&lt;/command&gt;&lt;/title&gt;
 </span><a id="id-1.5.13.5.2" class="indexterm"></a><a id="id-1.5.13.5.3" class="indexterm"></a><a id="id-1.5.13.5.4" class="indexterm"></a><p>
@@ -29,7 +29,7 @@
     because &lt;command&gt;ANALYZE&lt;/command&gt;'s statistics are random samples rather
     than exact, and because costs are inherently somewhat platform-dependent.
 </span>
-《マッチ度[93.750000]》本節の例は、9.3の開発版ソースを用いて<code class="command">VACUUM ANALYZE</code>を実行した後でリグレッションテストデータベースから取り出したものです。
+本節の例は、v17の開発版ソースを用いて<code class="command">VACUUM ANALYZE</code>を実行した後でリグレッションテストデータベースから取り出したものです。
 実際にこの例を試すと、似たような結果になるはずですが、おそらく推定コストや行数は多少異なることになるでしょう。
 <code class="command">ANALYZE</code>による統計情報は厳密なものではなくランダムなサンプリングを行った結果であり、また、コストは本質的にプラットフォームに何かしら依存するためです。
    </p><p>
@@ -155,16 +155,11 @@ EXPLAIN SELECT * FROM tenk1;
     ignores those costs because it cannot change them by altering the
     plan.  (Every correct plan will output the same row set, we trust.)
 </span>
-《マッチ度[82.994455]》上位ノードのコストには、すべての子ノードのコストもその中に含まれていることを理解することは重要です。
+上位ノードのコストには、すべての子ノードのコストもその中に含まれていることを理解することは重要です。
 このコストはプランナが関与するコストのみ反映する点もまた重要です。
-とりわけ、結果の行をクライアントに転送するコストは、実際の処理時間の重要な要因となる可能性があるにもかかわらず、考慮されません。
-プランナは、計画をいかに変更しようと、転送コストを変えることはできないため、これを無視します。
-（正しい計画はどんなものであれ、すべて同じ行を結果として出力すると信じています。）
-《機械翻訳》上部コストノードのレベルには、そのすべての子ノードのコストが含まれることを理解することが重要です。
-また、コストはプランナが気にかけていることだけを反映していることを認識することも重要です。
-特に、コストでは、出力値をテキストフォームに変換したり、クライアントに送信したりするために費やされる時間は考慮されていない。
-これは、実際の経過時間の重要な要素となる可能性があるが、プランナでは、プランを変更しても出力値を変更できないため、これらのコストは無視される。
-（正しいプランはすべて、同じ行セットを出力します。）
+とりわけ、出力値をテキスト形式に変換したり、クライアントに送信したりするために要する時間はこのコストでは考慮されません。
+これらは実際の経過時間の重要な要素となる可能性がありますが、計画を変更しても変えることができないため、プランナはこれらのコストを無視します。
+（全ての正しい計画は同じ行セットを出力するものと期待されます。）
    </p><p>
 <span class="original">
     The &lt;literal&gt;rows&lt;/literal&gt; value is a little tricky because it is
@@ -209,10 +204,10 @@ SELECT relpages, reltuples FROM pg_class WHERE relname = 'tenk1';
     &lt;varname&gt;seq_page_cost&lt;/varname&gt; is 1.0 and &lt;varname&gt;cpu_tuple_cost&lt;/varname&gt; is 0.01,
     so the estimated cost is (345 * 1.0) + (10000 * 0.01) = 445.
 </span>
-《マッチ度[91.773779]》<code class="classname">tenk1</code>には358のディスクページと10000の行があることがわかります。
+<code class="classname">tenk1</code>には345のディスクページと10000の行があることがわかります。
 推定コストは（ディスクページ読み取り * <a class="xref" href="runtime-config-query.html#GUC-SEQ-PAGE-COST">seq_page_cost</a>）+（スキャンした行 * <a class="xref" href="runtime-config-query.html#GUC-CPU-TUPLE-COST">cpu_tuple_cost</a>）と計算されます。
 デフォルトでは、<code class="varname">seq_page_cost</code>は1.0、<code class="varname">cpu_tuple_cost</code>は0.01です。
-ですから、推定コストは(358 * 1.0) + (10000 * 0.01) = 458となります。
+ですから、推定コストは(345 * 1.0) + (10000 * 0.01) = 445となります。
    </p><p>
 <span class="original">
     Now let's modify the query to add a &lt;literal&gt;WHERE&lt;/literal&gt; condition:
@@ -255,9 +250,9 @@ EXPLAIN SELECT * FROM tenk1 WHERE unique1 &lt; 7000;
     statistics produced by &lt;command&gt;ANALYZE&lt;/command&gt; are taken from a
     randomized sample of the table.
 </span>
-《マッチ度[90.792839]》この問い合わせが選択する実際の行数は7000です。
+この問い合わせが選択する実際の行数は7000です。
 しかし、<code class="literal">rows</code>の推定行数は概算値に過ぎません。
-この実験を2回実行した場合、おそらく多少異なる推定値を得るでしょう。
+この実験を2回実行した場合、多少異なる推定値を得るかもしれません。
 もっと言うと、これは<code class="command">ANALYZE</code>コマンドを行う度に変化することがあり得ます。
 なぜなら、<code class="command">ANALYZE</code>で生成される統計情報は、テーブルのランダムな標本から取り出されるからです。
    </p><p>
@@ -324,8 +319,8 @@ EXPLAIN SELECT * FROM tenk1 WHERE unique1 &lt; 100 AND stringu1 = 'xxx';
     the rows retrieved using the index.  Thus the cost has actually gone up
     slightly to reflect this extra checking.
 </span>
-《マッチ度[90.105263]》追加された<code class="literal">stringu1 = 'xxx'</code>条件は出力行数推定値を減らしますが、同じ行集合にアクセスしなければなりませんので、コストは減りません。
-このインデックスが<code class="literal">unique1</code>列に対してのみ存在するため、<code class="literal">stringu1</code>句をインデックス条件として適用できないことに注意してください。
+追加された<code class="literal">stringu1 = 'xxx'</code>条件は出力行数推定値を減らしますが、同じ行集合にアクセスしなければなりませんので、コストは減りません。
+これは、このインデックスが<code class="literal">unique1</code>列に対してのみ存在していて、<code class="literal">stringu1</code>の句をインデックス条件として適用できないためです。
 代わりに、インデックスによって取り出される行に対するフィルタとして適用されます。
 これにより、追加の検査分を反映するため、コストは実際には少し上がります。
    </p><p>
@@ -366,9 +361,9 @@ EXPLAIN SELECT * FROM tenk1 WHERE unique1 = 42;
      implemented implicitly.  The planner may also add an explicit
      &lt;literal&gt;Sort&lt;/literal&gt; step:
 </span>
-《マッチ度[90.043290]》プランナは<code class="literal">ORDER BY</code>句をいくつかの方法で実装できます。
+プランナは<code class="literal">ORDER BY</code>句をいくつかの方法で実装できます。
 上の例ではこのような<code class="literal">ORDER BY</code>句を暗黙的に実装できることを示しています。
-プランナは明示的な<code class="literal">sort</code>ステップを追加もします。
+プランナは明示的な<code class="literal">Sort</code>ステップを追加もします。
 
 </p><pre class="screen">
 EXPLAIN SELECT * FROM tenk1 ORDER BY unique1;
@@ -385,7 +380,7 @@ EXPLAIN SELECT * FROM tenk1 ORDER BY unique1;
     required sort keys, then the planner may instead decide to use an
     &lt;literal&gt;Incremental Sort&lt;/literal&gt; step:
 </span>
-《マッチ度[91.812865]》ソートキーで必要な接頭辞の順序がプランの一部で保証されている場合、<code class="literal">インクリメンタルソート(incremental sort)</code>ステップを使用することを決定できます。
+ソートキーで必要な接頭辞の順序がプランの一部で保証されている場合、<code class="literal">インクリメンタルソート(Incremental Sort)</code>ステップを使用することを決定できます。
 
 </p><pre class="screen">
 EXPLAIN SELECT * FROM tenk1 ORDER BY hundred, ten LIMIT 100;
@@ -523,7 +518,7 @@ WHERE t1.unique1 &lt; 10 AND t1.unique2 = t2.unique2;
     scan, plus one repetition of the inner scan for each outer row (10 * 7.90,
     here), plus a little CPU time for join processing.
 </span>
-《マッチ度[93.426573]》この計画では、入力または子として２つのテーブルスキャンを持つネステッドループ結合ノードがあります。
+この計画では、入力または子として２つのテーブルスキャンを持つネステッドループ結合ノードがあります。
 計画のツリー構造を反映して、ノード要約行はインデント付けされます。
 結合の先頭、<span class="quote">「<span class="quote">外部</span>」</span>、子は以前に説明したものと似たビットマップスキャンです。
 そのコストと行数は、該当ノードに<code class="literal">unique1 &lt; 10</code> <code class="literal">WHERE</code>句が適用されるため、<code class="literal">SELECT ... WHERE unique1 &lt; 10</code>で得られたものと同じです。
@@ -532,7 +527,7 @@ WHERE t1.unique1 &lt; 10 AND t1.unique2 = t2.unique2;
 現在の外部の行からの列の値は内部スキャンに組み込まれます。
 ここで、外部行からの<code class="literal">t1.unique2</code>の値が利用できますので、上述の単純な<code class="literal">SELECT ... WHERE t2.unique2 = <em class="replaceable"><code>constant</code></em></code>の場合に示したものと似た計画とコストが得られます。
 （実際、推定コストは、<code class="literal">t2</code>に対するインデックススキャンが繰り返される間に発生することが想定されるキャッシュの結果、上で示した値よりわずかに低くなります。）
-ループノードのコストは、外部スキャンのコストと、各々の外部の行に対して内部スキャンが繰り返されることによるコスト（ここでは10 * 7.91）を加え、さらに結合処理を行うための少々のCPU時間を加えたものになります。
+ループノードのコストは、外部スキャンのコストと、各々の外部の行に対して内部スキャンが繰り返されることによるコスト（ここでは10 * 7.90）を加え、さらに結合処理を行うための少々のCPU時間を加えたものになります。
    </p><p>
 <span class="original">
     In this example the join's output row count is the same as the product
@@ -634,7 +629,7 @@ WHERE t1.unique1 &lt; 100 AND t1.unique2 = t2.unique2;
 </span>
 ここでプランナはハッシュ結合の使用を選択しました。
 片方のテーブルの行がメモリ内のハッシュテーブルに格納され、もう片方のテーブルがスキャンされた後、各行に対して一致するかどうかハッシュテーブルを探索します。
-繰り返しますが、インデント付けにより計画の構造が表されます。
+再度、インデントが計画の構造が表されていることに注意してください。
 <code class="literal">tenk1</code>に対するビットマップスキャンはハッシュノードへの入力です。
 外部の子計画から行を読み取り、各行に対してハッシュテーブルを検索します。
    </p><p>
@@ -664,13 +659,9 @@ WHERE t1.unique1 &lt; 100 AND t1.unique2 = t2.unique2;
     (Sequential-scan-and-sort frequently beats an index scan for sorting many rows,
     because of the nonsequential disk access required by the index scan.)
 </span>
-《マッチ度[59.016393]》マージ結合は、結合キーでソートされる入力データを必要とします。
-この計画では、正確な順序で行をアクセスするために<code class="literal">tenk1</code>データがインデックススキャンを用いてソートされます。
-しかし、このテーブルの中でより多くの行がアクセスされるため、<code class="literal">onek</code>ではシーケンシャルスキャンとソートが好まれています。
-（多くの行をソートする場合、インデックススキャンでは非シーケンシャルなディスクアクセスが必要となるため、シーケンシャルスキャンとソートの方がインデックススキャンより優れています。）
-《機械翻訳》マージ結合では、入力されたデータを結合キーでソートする必要があります。
-この例では、各入力はインデックススキャンを使用して正しいオーダーの行にアクセスすることによってソートされますが、シーケンシャルスキャンとソートも使用できます（シーケンシャル-スキャン-and-ソートは、並べ替えの多くの行でインデックススキャンよりも頻繁に優先されます。
-これは、インデックススキャンで必要とされるディスク・アクセスが連続していないためです）。
+マージ結合は、結合キーでソートされる入力データを必要とします。
+この例では、各入力がインデックススキャンを使用して正しい順序で行にアクセスすることでソートされますが、シーケンシャルスキャンとソートも使用できます。
+（多くの行をソートする場合、インデックススキャンでは非シーケンシャルなディスクアクセスが必要となるため、シーケンシャルスキャンとソートの方がインデックススキャンより優ります。）
    </p><p>
 <span class="original">
     One way to look at variant plans is to force the planner to disregard
@@ -681,13 +672,10 @@ WHERE t1.unique1 &lt; 100 AND t1.unique2 = t2.unique2;
     For example, if we're unconvinced that merge join is the best join
     type for the previous example, we could try
 </span>
-《マッチ度[77.078086]》<a class="xref" href="runtime-config-query.html#RUNTIME-CONFIG-QUERY-ENABLE" title="19.7.1. プランナメソッド設定">19.7.1</a>に記載したenable/disableフラグを使用して、プランナが最も良いと考えている戦略を強制的に無視させる方法により、異なった計画を観察することができます。
+<a class="xref" href="runtime-config-query.html#RUNTIME-CONFIG-QUERY-ENABLE" title="19.7.1. プランナメソッド設定">19.7.1</a>に記載したenable/disableフラグを使用して、プランナが最も良いと考えている戦略を強制的に無視させる方法により、異なった計画を観察することができます。
 （非常に原始的なツールですが、利用価値があります。
 <a class="xref" href="explicit-joins.html" title="14.3. 明示的なJOIN句でプランナを制御する">14.3</a>も参照してください。）
-例えば、前の例にて<code class="literal">onek</code>テーブルを扱う最善の方法がシーケンシャルスキャンとソートであると納得できなければ、以下を試みることができます。
-《機械翻訳》バリエーションプランを見る1つの方法は、<a class="xref" href="runtime-config-query.html#RUNTIME-CONFIG-QUERY-ENABLE" title="19.7.1. プランナメソッド設定">19.7.1</a>で説明されている有効/無効フラグを使用して、プランナが最も安いと思ったストラテジを無視するように強制することです（これは粗雑なツールですが、便利です。
-<a class="xref" href="explicit-joins.html" title="14.3. 明示的なJOIN句でプランナを制御する">14.3</a>も参照してください）。
-例の場合、マージ結合が前の例のベスト結合タイプであると確信できない場合は、トライを使用できます。
+例えば、マージ結合が前の例の最善の結合タイプであると確信できない場合は、以下を試みることができます。
 
 </p><pre class="screen">
 SET enable_mergejoin = off;
@@ -715,11 +703,8 @@ WHERE t1.unique1 &lt; 100 AND t1.unique2 = t2.unique2;
     We can investigate that using &lt;command&gt;EXPLAIN ANALYZE&lt;/command&gt;, as
     discussed &lt;link linkend="using-explain-analyze"&gt;below&lt;/link&gt;.
 </span>
-《マッチ度[57.096774]》これは、プランナが、シーケンシャルスキャンとソートよりインデックススキャンによる<code class="literal">onek</code>のソート処理がおよそ12%程高価であるとみなしたことを示します。
+これは、このケースではハッシュ結合がマージ結合よりも50%近く高価になるとプランナが考えていることを示しています。
 当然ながら、次の疑問はこれが正しいかどうかでしょう。
-後で説明する<code class="command">EXPLAIN ANALYZE</code>を使用することで調査することができます。
-《機械翻訳》これは、このケースではハッシュ結合がマージ結合よりも50%近く高くなるとプランナが考えていることを示しています。
-もちろん、次の問題は、それが正しいかどうかということです。
 <a class="link" href="using-explain.html#USING-EXPLAIN-ANALYZE" title="14.1.2. EXPLAIN ANALYZE">以下で</a>説明するように、<code class="command">EXPLAIN ANALYZE</code>を使って調べることができます。
    </p><p>
     <a id="id-1.5.13.5.8.29.1" class="indexterm"></a>
@@ -729,8 +714,8 @@ WHERE t1.unique1 &lt; 100 AND t1.unique2 = t2.unique2;
     queries can sometimes be transformed into ordinary join plans, but
     when they cannot be, we get plans like:
 </span>
-《機械翻訳》一部のクエリ・プランには、オリジナルクエリのサブ<code class="literal">セレクト</code>から発生する<em class="firstterm">サブプラン</em>が含まれています。
-このようなクエリは、通常の結合プランに変換できる場合もありますが、変換できない場合は、次のようなプランが生成されます。
+一部の問い合わせ計画には、元の問い合わせ内の副<code class="literal">SELECT</code>から発生する <em class="firstterm">副計画（subplans）</em>が含まれています。
+このような問い合わせは、通常の結合プランに変換できる場合もありますが、変換できない場合は、次のような計画が生成されます。
 
 </p><pre class="screen">
 EXPLAIN VERBOSE SELECT unique1
@@ -759,10 +744,8 @@ WHERE t.ten &lt; ALL (SELECT o.ten FROM onek o WHERE o.four = t.four);
     which refers to the &lt;replaceable&gt;N&lt;/replaceable&gt;'th output column of
     the sub-&lt;literal&gt;SELECT&lt;/literal&gt;.
 </span>
-《機械翻訳》このかなり人工的な例は、いくつかの点を説明するのに役立ちます。
-外側のプランレベルからの値はダウンをサブプランに渡すことができ（ここでは、<code class="literal">t.four</code>はダウンを渡します）、サブ-セレクトの結果は外側のプランで利用できます。
-これらの結果値は、<code class="literal"><em class="replaceable"><code>サブプラン_名前</code></em>).col<em class="replaceable"><code>N</code></em></code>のような表記で<code class="command">EXPLAIN</code>によって表示されます。
-これは、サブ<code class="literal">セレクト</code>の<em class="replaceable"><code>N</code></em>番目の出力カラムを参照します。
+このかなり人工的な例は、二つの点を説明するのに役立ちます。すなわち、外側の計画階層からの値は副計画に渡すことができて（ここでは<code class="literal">t.four</code>が渡されます）、副SELECTの結果は外側の計画で利用できます。
+これらの結果値は、<code class="command">EXPLAIN</code>で<code class="literal">(<em class="replaceable"><code>subplan_name</code></em>).col<em class="replaceable"><code>N</code></em></code>のような記法で表示され、これは副<code class="literal">SELECT</code>の<em class="replaceable"><code>N</code></em>番目の出力列を指します。
    </p><p>
     <a id="id-1.5.13.5.8.30.1" class="indexterm"></a>
 <span class="original">
@@ -771,8 +754,8 @@ WHERE t.ten &lt; ALL (SELECT o.ten FROM onek o WHERE o.four = t.four);
     high estimated cost).  Some queries can use a &lt;firstterm&gt;hashed
     subplan&lt;/firstterm&gt; to avoid that:
 </span>
-《機械翻訳》上の例では、<code class="literal">ALL</code>演算子は、外側のクエリの各行に対してサブプランを再び実行します（外側のコストは、高い推定値を占めます）。
-一部のクエリーでは、それを回避するために<em class="firstterm">ハッシュされたサブプラン</em>を使用できます:。
+上の例で、<code class="literal">ALL</code>演算子は、外側の問い合わせの各行に対して副計画を実行します（高い推定コストの原因となります）。
+一部の問い合わせでは、それを回避するために<em class="firstterm">ハッシュされた副計画（hashed subplan）</em>を使用できます。
 
 </p><pre class="screen">
 EXPLAIN SELECT *
@@ -796,8 +779,8 @@ WHERE t.unique1 NOT IN (SELECT o.unique1 FROM onek o);
     query, and that the &lt;literal&gt;ANY&lt;/literal&gt;'s comparison operator be
     amenable to hashing.
 </span>
-《機械翻訳》ここでは、サブプランが1回実行され、その出力がメモリ内のハッシュテーブルにロードされ、次に外部<code class="literal">ANY</code>演算子によってプローブされます。
-これには、サブ-<code class="literal">セレクト</code>が外部クエリの変数をリファレンスしないこと、および<code class="literal">ANY</code>の比較演算子がハッシュに従うことが必要です。
+ここでは、副計画が1回実行され、その出力がメモリ内のハッシュテーブルに置かれ、次に外側の<code class="literal">ANY</code>演算子によって検査されます。
+これには、副<code class="literal">SELECT</code>が外側の問い合わせの変数を参照しないことと、<code class="literal">ANY</code>の比較演算子がハッシュ適用できることが必要です。
    </p><p>
     <a id="id-1.5.13.5.8.31.1" class="indexterm"></a>
 <span class="original">
@@ -805,7 +788,7 @@ WHERE t.unique1 NOT IN (SELECT o.unique1 FROM onek o);
     the sub-&lt;literal&gt;SELECT&lt;/literal&gt; cannot return more than one row,
     it may instead be implemented as an &lt;firstterm&gt;initplan&lt;/firstterm&gt;:
 </span>
-《機械翻訳》外部参照の変数をクエリしないことに加えて、サブ<code class="literal">セレクト</code>が複数の行を結果できない場合は、代わりに<em class="firstterm">initplan</em>:として実装できます。
+外側の問い合わせの変数を参照しないことに加えて、副<code class="literal">SELECT</code>が複数行を返せない場合は、代わりに<em class="firstterm">initplan</em>として次のように計画作成されます。
 
 </p><pre class="screen">
 EXPLAIN VERBOSE SELECT unique1
@@ -829,9 +812,9 @@ FROM tenk1 t1 WHERE t1.ten = (SELECT (random() * 10)::integer);
     randomly-chosen integer.  That's quite different from what would
     happen without the sub-&lt;literal&gt;SELECT&lt;/literal&gt; construct.
 </span>
-《機械翻訳》initplanは外部プランの実行ごとに1回だけ実行され、その結果は外部プランの後の行で再利用するために保存されます。
-したがって、この例では<code class="literal">ランダム)</code>は1回だけ評価され、<code class="literal">t1.10</code>のすべての値がランダムに選択された同じ整数と比較されます。
-これは、サブ<code class="literal">セレクト</code>コンストラクトがない場合とは大きく異なります。
+initplanは外側の計画の実行ごとに1回だけ実行され、その結果は外側の計画の後の行で再利用するために保存されます。
+したがって、この例では<code class="literal">random()</code>は1回だけ評価され、<code class="literal">t1.10</code>のすべての値がランダムに選択された同じ整数と比較されます。
+これは、副<code class="literal">SELECT</code>構造がない場合とは大きく異なります。
    </p></div><div class="sect2" id="USING-EXPLAIN-ANALYZE"><div class="titlepage"><div><div><h3 class="title">14.1.2. <code class="command">EXPLAIN ANALYZE</code> <a href="#USING-EXPLAIN-ANALYZE" class="id_link">#</a></h3></div></div></div><p>
 <span class="original">
     It is possible to check the accuracy of the planner's estimates
@@ -889,12 +872,12 @@ WHERE t1.unique1 &lt; 10 AND t1.unique2 = t2.unique2;
     the node.  In the above example, we spent a total of 0.030 milliseconds
     executing the index scans on &lt;literal&gt;tenk2&lt;/literal&gt;.
 </span>
-《マッチ度[92.911011]》問い合わせ計画の中には、何回も副計画ノードを実行する可能性のあるものがあります。
+問い合わせ計画の中には、何回も副計画ノードを実行する可能性のあるものがあります。
 例えば、上述のネステッドループの計画では、内部インデックススキャンは外部の行ごとに一度行われます。
 このような場合、<code class="literal">loops</code>値はそのノードを実行する総回数を報告し、表示される実際の時間と行数は1実行当たりの平均です。
 これで値を表示された推定コストと比較できるようになります。
 <code class="literal">loops</code>値をかけることで、そのノードで実際に費やされた総時間を得ることができます。
-上の例では、<code class="literal">tenk2</code>に対するインデックススキャンの実行のために合計0.220ミリ秒要しています。
+上の例では、<code class="literal">tenk2</code>に対するインデックススキャンの実行のために合計0.030ミリ秒要しています。
    </p><p>
 <span class="original">
     In some cases &lt;command&gt;EXPLAIN ANALYZE&lt;/command&gt; shows additional execution
@@ -1114,8 +1097,7 @@ ROLLBACK;
     &lt;command&gt;MERGE&lt;/command&gt; command affects a partitioned table or
     inheritance hierarchy, the output might look like this:
 </span>
-《マッチ度[85.869565]》<code class="command">UPDATE</code>、<code class="command">DELETE</code>、<code class="command">MERGE</code>コマンドが継承階層に影響する場合には、出力は以下のようになるでしょう。
-《機械翻訳》<code class="command">UPDATE</code>、<code class="command">DELETE</code>、<code class="command">MERGE</code>コマンドが、分割されたテーブルまたは継承の階層に影響を与える場合、出力は次のようになります。
+<code class="command">UPDATE</code>、<code class="command">DELETE</code>、<code class="command">MERGE</code>コマンドがパーティションテーブルや継承階層に影響する場合には、出力は以下のようになるでしょう。
 
 </p><pre class="screen">
 EXPLAIN UPDATE gtest_parent SET f1 = CURRENT_DATE WHERE f2 = 101;
@@ -1143,12 +1125,9 @@ EXPLAIN UPDATE gtest_parent SET f1 = CURRENT_DATE WHERE f2 = 101;
     annotated to show the specific target tables that will be updated, in the
     same order as the corresponding subplans.
 </span>
-《マッチ度[78.512397]》この例では、Updateノードは元々言及されている親テーブルに加えて3つの子テーブルを考慮することが必要です。
-そのため、テーブル毎に1つ、4つの入力スキャン副計画があります。
+この例では、Updateノードは3つの子テーブルを考慮しますが、元の問い合わせに記述されていたパーティションテーブルを考慮しません（そこにデータ格納されることはないため）。
+そのため、テーブル毎に3つの入力スキャン副計画があります。
 明確にするため、Updateノードには対応する副計画と同じ順に更新される特定の対象テーブルを示す注釈が付けられています。
-《機械翻訳》この例では、更新ノードニーズは3つの子テーブルを考慮しますが、最初に説明したパーティション化されたテーブルは考慮しません（データを格納しないため）。
-したがって、テーブルごとに1つずつ、3つの入力スキャンサブプランがあります。
-明確にするために、更新ノードには、対応するサブプランと同じオーダーで、更新される特定のターゲットテーブルを示す注釈が付けられています。
    </p><p>
 <span class="original">
     The &lt;literal&gt;Planning time&lt;/literal&gt; shown by &lt;command&gt;EXPLAIN
@@ -1189,9 +1168,9 @@ EXPLAIN UPDATE gtest_parent SET f1 = CURRENT_DATE WHERE f2 = 101;
     be shown separately, and it's also included in the
     total &lt;literal&gt;Execution time&lt;/literal&gt;.
 </span>
-《機械翻訳》トップ-レベルノードに表示される時間は、クエリの出力データを表示可能なフォームに変換したり、クライアントに送信したりするために必要な時間ではありません。
-include<code class="command">EXPLAIN ANALYZE</code>はデータをクライアントに送信することはありませんが、<code class="literal">SERIALIZE</code>オプションを指定することで、クエリの出力データを表示可能なフォームに変換し、そのために必要な時間を測定するように指示できます。
-その時間は別に表示され、合計<code class="literal">実行時間</code>にも含まれます。
+最上位ノードに表示される時間には、問い合わせの出力データを表示可能な形式に変換したり、それをクライアントに送信したりするのに要する時間は含まれません。
+<code class="command">EXPLAIN ANALYZE</code>はデータをクライアントに送信することはありませんが、<code class="literal">SERIALIZE</code>オプションを指定することで、問い合わせの出力データを表示可能な形式に変換し、そのために必要な時間を測定するように指示できます。
+その時間は分けて表示され、また、それは合計の<code class="literal">Execution time</code>にも含まれます。
    </p></div><div class="sect2" id="USING-EXPLAIN-CAVEATS"><div class="titlepage"><div><div><h3 class="title">14.1.3. 警告 <a href="#USING-EXPLAIN-CAVEATS" class="id_link">#</a></h3></div></div></div><span class="original">
    &lt;title&gt;Caveats&lt;/title&gt;
 </span><p>
@@ -1207,15 +1186,11 @@ include<code class="command">EXPLAIN ANALYZE</code>はデータをクライア�
     &lt;xref linkend="pgtesttiming"/&gt; tool to measure the overhead of timing
     on your system.
 </span>
-《マッチ度[84.169279]》<code class="command">EXPLAIN ANALYZE</code>により測定される実行時間が同じ問い合わせを普通に実行する場合と大きくそれる可能性がある、２つの重大な点があります。
-１つ目は、出力行がクライアントに配信されませんので、ネットワーク転送コストとI/O変換に関するコストが含まれないことです。
+<code class="command">EXPLAIN ANALYZE</code>により測定される実行時間が同じ問い合わせを普通に実行する場合と大きくそれる可能性がある、２つの重大な点があります。
+１つ目は、出力行がクライアントに配信されませんので、ネットワーク転送コストが含まれないことです。
+I/O変換のコストも、<code class="literal">SERIALIZE</code>が指定されない限り、含まれません。
 ２つ目は、<code class="command">EXPLAIN ANALYZE</code>によって加わる測定オーバーヘッドが大きくなることが、特に<code class="function">gettimeofday()</code>オペレーティングシステムコールが低速なマシンであり得ることです。
 <a class="xref" href="pgtesttiming.html" title="pg_test_timing"><span class="refentrytitle"><span class="application">pg_test_timing</span></span></a>を用いて、使用中のシステムの時間測定にかかるオーバーヘッドを測ることができます。
-《機械翻訳》<code class="command">EXPLAIN ANALYZE</code>によって測定される実行時間が、同じクエリの通常の実行から逸脱する可能性がある重要な方法が2つあります。
-第1に、出力行はクライアントに配信されないため、ネットワークの伝送コストは含まれない。
-<code class="literal">SERIALIZE</code>が指定されていない限り、入出力変換コストも含まれません。
-第2に、<code class="command">EXPLAINオーバーヘッド</code>によって追加された計測ANALYZEは、特に<code class="function">gettimeofday()</code>操作システム呼び出しが遅いマシンでは重要になります。
-<a class="xref" href="pgtesttiming.html" title="pg_test_timing"><span class="refentrytitle"><span class="application">pg_test_timing</span></span></a>ツールを使用して、システムのタイミングのオーバーヘッドを計測できます。
    </p><p>
 <span class="original">
     &lt;command&gt;EXPLAIN&lt;/command&gt; results should not be extrapolated to situations
@@ -1317,6 +1292,6 @@ EXPLAIN ANALYZE SELECT * FROM tenk1 WHERE unique1 &lt; 100 AND unique2 &gt; 9000
 </span>
 通常<code class="command">EXPLAIN</code>はプランナが生成したすべてのプランノードを表示します。
 しかし、プラン時にパラメータ値が入手できずそのノードが行を生成できないために、エグゼキュータがあるノードが実行不要であると判断できるケースがあります。
-（今の所、これはパーティションテーブルを走査しているAppendあるいはMergeAppendノードの子ノードでのみ起きることがあります。）
+（今の所、これはパーティションテーブルをスキャンしているAppendあるいはMergeAppendノードの子ノードでのみ起きることがあります。）
 これが起きると、これらのプランノードは<code class="command">EXPLAIN</code>の出力から削除され、<code class="literal">Subplans Removed: <em class="replaceable"><code>N</code></em></code>という注釈が代わりに表示されます。
-   </p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="performance-tips.html" title="第14章 性能に関するヒント">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="performance-tips.html" title="第14章 性能に関するヒント">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="planner-stats.html" title="14.2. プランナで使用される統計情報">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">第14章 性能に関するヒント </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 17rc1文書">ホーム</a></td><td width="40%" align="right" valign="top"> 14.2. プランナで使用される統計情報</td></tr></table></div></body></html>
+   </p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="performance-tips.html" title="第14章 性能に関するヒント">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="performance-tips.html" title="第14章 性能に関するヒント">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="planner-stats.html" title="14.2. プランナで使用される統計情報">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">第14章 性能に関するヒント </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 17.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 14.2. プランナで使用される統計情報</td></tr></table></div></body></html>
