@@ -151,7 +151,7 @@
 指定プロセスIDのバックエンドのメモリコンテキストを記録することを要求します。
 この関数はバックエンドとロガー以外の外部プロセスに要求を送ることができます。
 メモリコンテキストは<code class="literal">LOG</code>メッセージレベルでログされます。
-ログは、ログ設定（詳細は<a class="xref" href="runtime-config-logging.html" title="19.8. エラー報告とログ取得">19.8</a>を参照）に基づきサーバログに現れますが、<a class="xref" href="runtime-config-client.html#GUC-CLIENT-MIN-MESSAGES">client_min_messages</a>に関わらずクライアントには送られません。
+ログは、ログ設定（詳細は<a class="xref" href="runtime-config-logging.html" title="19.8. エラー報告とログ出力">19.8</a>を参照）に基づきサーバログに現れますが、<a class="xref" href="runtime-config-client.html#GUC-CLIENT-MIN-MESSAGES">client_min_messages</a>に関わらずクライアントには送られません。
        </p></td></tr><tr><td class="func_table_entry"><p class="func_signature">
         <a id="id-1.5.8.36.4.6.2.2.3.1.1.1" class="indexterm"></a>
         <code class="function">pg_reload_conf</code> ()
@@ -1097,7 +1097,7 @@ bgwriterやcheckpointerがログするのを待たずに、実行中のトラン
 3番目のオプションパラメータ<em class="parameter"><code>temporary</code></em>をtrueに設定すると、このスロットを永続的にディスクに保存するべきではなく、現在のセッションでのみ使われることを意図します。
 また、一時スロットはエラーが起きると解放されます。
 オプションの4つ目の引数<em class="parameter"><code>twophase</code></em>がtrueならば、準備されたトランザクションのデコードがこのスロットで可能になります。
-オプションの5番目の引数<em class="parameter"><code>failover</code></em>がtrueならば、このスロットがスタンバイに同期化できるようになり、フェイルオーバー後に論理的な複製を再開できるようになります。
+オプションの5番目の引数<em class="parameter"><code>failover</code></em>がtrueならば、このスロットがスタンバイに同期化できるようになり、フェイルオーバー後に論理レプリケーションを再開できるようになります。
 この関数の呼び出しはレプリケーションプロトコルコマンドの<code class="literal">CREATE_REPLICATION_SLOT ... LOGICAL</code>と同じ効果があります。
        </p></td></tr><tr><td class="func_table_entry"><p class="func_signature">
         <a id="id-1.5.8.36.8.5.2.2.4.1.1.1" class="indexterm"></a>
@@ -1168,7 +1168,7 @@ bgwriterやcheckpointerがログするのを待たずに、実行中のトラン
         have confirmed WAL receipt.
 </span>
 変更が最後に消費された時点から開始して、スロット<em class="parameter"><code>slot_name</code></em>の変更を返します。
-<em class="parameter"><code>upto_lsn</code></em>と<em class="parameter"><code>upto_nchanges</code></em>がNULLならば論理デコードはWALの最後まで続きます。
+<em class="parameter"><code>upto_lsn</code></em>と<em class="parameter"><code>upto_nchanges</code></em>がNULLならばロジカルデコーディングはWALの最後まで続きます。
 <em class="parameter"><code>upto_lsn</code></em>が非NULLであれば、デコードは指定されたLSNより前にコミットされたトランザクションのみを含みます。
 <em class="parameter"><code>upto_nchanges</code></em>が非NULLであれば、デコードにより生成された行の数が指定された値を越えたときに、デコードは止まります。
 しかしながら、新しいトランザクションの各コミットをデコードして生成された行を追加した後でしかこの制限は確認されませんので、実際に返される行の数は大きいかもしれないことに注意してください。
@@ -1414,10 +1414,10 @@ bgwriterやcheckpointerがログするのを待たずに、実行中のトラン
         with &lt;parameter&gt;transactional&lt;/parameter&gt;, as the message's WAL
         record is flushed along with its transaction.
 </span>
-論理デコードのメッセージを送出します
-これは汎用的なメッセージをWALを通して論理デコードのプラグインに渡すのに使うことができます。
-パラメータ<em class="parameter"><code>transactional</code></em>は、メッセージが現在のトランザクションの一部なのか、あるいはすぐに書き込み、論理デコードがレコードを読んだらすぐにデコードされるべきものなのかを指定します。
-<em class="parameter"><code>prefix</code></em>パラメータは文字通りの接頭辞で、論理デコードのプラグインが、自分にとって関心のあるメッセージを容易に認識できるように使われます。
+ロジカルデコーディングのメッセージを送出します
+これは汎用的なメッセージをWALを通してロジカルデコーディングのプラグインに渡すのに使うことができます。
+パラメータ<em class="parameter"><code>transactional</code></em>は、メッセージが現在のトランザクションの一部なのか、あるいはすぐに書き込み、ロジカルデコーディングがレコードを読んだらすぐにデコードされるべきものなのかを指定します。
+<em class="parameter"><code>prefix</code></em>パラメータは文字通りの接頭辞で、ロジカルデコーディングのプラグインが、自分にとって関心のあるメッセージを容易に認識できるように使われます。
 <em class="parameter"><code>content</code></em>パラメータはメッセージの内容で、テキストまたはバイナリ形式で与えられます。
 <em class="parameter"><code>flush</code></em>（デフォルトは<code class="literal">false</code>）は、メッセージを即座にWALに吐き出すかどうかを制御します。
 <em class="parameter"><code>flush</code></em>は<em class="parameter"><code>transactional</code></em>では効果がありません。メッセージのWALレコードはトランザクションと共に吐き出されるからです。
@@ -1440,7 +1440,7 @@ bgwriterやcheckpointerがログするのを待たずに、実行中のトラン
 </span>
 プライマリサーバからスタンバイサーバへの論理フェイルオーバーレプリケーションスロットを同期します。
 この機能は、スタンバイサーバでのみ実行できます。
-一時的に同期されたスロットは、ロジカルでコーディングに使用できず、昇格後に破棄する必要があります。
+一時的に同期されたスロットは、ロジカルデコーディングに使用できず、昇格後に破棄する必要があります。
 詳細は<a class="xref" href="logicaldecoding-explanation.html#LOGICALDECODING-REPLICATION-SLOTS-SYNCHRONIZATION" title="47.2.3. レプリケーションスロットの同期">47.2.3</a>を参照してください。
 <a class="link" href="runtime-config-replication.html#GUC-SYNC-REPLICATION-SLOTS"><code class="varname"> sync_replication_slots</code></a>が有効で、スロットの同期を実行するためにスロット同期ワーカーがすでに実行中の場合、この関数は実行できないことに注意してください。
        </p>
