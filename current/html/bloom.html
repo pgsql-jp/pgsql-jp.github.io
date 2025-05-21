@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>F.6. bloom — ブルームフィルタインデックスアクセスメソッド</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="basic-archive.html" title="F.5. basic_archive — WALアーカイブモジュールの例" /><link rel="next" href="btree-gin.html" title="F.7. btree_gin — GIN演算子クラスとB-tree動作" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 17.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="contrib.html" title="付録F 追加で提供されるモジュールと拡張">付録F 追加で提供されるモジュールと拡張</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 17.0 : bloom.html">誤訳等の報告
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>F.6. bloom — ブルームフィルタインデックスアクセスメソッド</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="basic-archive.html" title="F.5. basic_archive — WALアーカイブモジュールの例" /><link rel="next" href="btree-gin.html" title="F.7. btree_gin — GIN演算子クラスとB-tree動作" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 17.5文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="contrib.html" title="付録F 追加で提供されるモジュールと拡張">付録F 追加で提供されるモジュールと拡張</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 17.5 : bloom.html">誤訳等の報告
                     </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="basic-archive.html" title="F.5. basic_archive — WALアーカイブモジュールの例">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="contrib.html" title="付録F 追加で提供されるモジュールと拡張">上へ</a></td><td width="60%" align="center">F.6. bloom — ブルームフィルタインデックスアクセスメソッド</td><td width="20%" align="right"> <a accesskey="n" href="btree-gin.html" title="F.7. btree_gin — GIN演算子クラスとB-tree動作">次へ</a></td></tr></table><hr /></div><div class="sect1" id="BLOOM"><div class="titlepage"><div><div><h2 class="title" style="clear: both">F.6. bloom — ブルームフィルタインデックスアクセスメソッド <a href="#BLOOM" class="id_link">#</a></h2></div></div></div><span class="original">
  &lt;title&gt;bloom &amp;mdash; bloom filter index access method&lt;/title&gt;
 </span><a id="id-1.11.7.16.2" class="indexterm"></a><p>
@@ -121,11 +121,11 @@ SELECT 10000000
 =# EXPLAIN ANALYZE SELECT * FROM tbloom WHERE i2 = 898732 AND i5 = 123451;
                                               QUERY PLAN
 -------------------------------------------------------------------​-----------------------------------
- Seq Scan on tbloom  (cost=0.00..2137.14 rows=3 width=24) (actual time=16.971..16.971 rows=0 loops=1)
+ Seq Scan on tbloom  (cost=0.00..213744.00 rows=250 width=24) (actual time=357.059..357.059 rows=0 loops=1)
    Filter: ((i2 = 898732) AND (i5 = 123451))
-   Rows Removed by Filter: 100000
+   Rows Removed by Filter: 10000000
  Planning Time: 0.346 ms
- Execution Time: 16.988 ms
+ Execution Time: 357.076 ms
 (5 rows)
 </pre><p>
   </p><p>
@@ -140,16 +140,16 @@ CREATE INDEX
 =# SELECT pg_size_pretty(pg_relation_size('btreeidx'));
  pg_size_pretty
 ----------------
- 3976 kB
+ 386 MB
 (1 row)
 =# EXPLAIN ANALYZE SELECT * FROM tbloom WHERE i2 = 898732 AND i5 = 123451;
                                               QUERY PLAN
 -------------------------------------------------------------------​-----------------------------------
- Seq Scan on tbloom  (cost=0.00..2137.00 rows=2 width=24) (actual time=12.805..12.805 rows=0 loops=1)
+ Seq Scan on tbloom  (cost=0.00..213744.00 rows=2 width=24) (actual time=351.016..351.017 rows=0 loops=1)
    Filter: ((i2 = 898732) AND (i5 = 123451))
-   Rows Removed by Filter: 100000
+   Rows Removed by Filter: 10000000
  Planning Time: 0.138 ms
- Execution Time: 12.817 ms
+ Execution Time: 351.035 ms
 (5 rows)
 </pre><p>
   </p><p>
@@ -164,19 +164,19 @@ CREATE INDEX
 =# SELECT pg_size_pretty(pg_relation_size('bloomidx'));
  pg_size_pretty
 ----------------
- 1584 kB
+ 153 MB
 (1 row)
 =# EXPLAIN ANALYZE SELECT * FROM tbloom WHERE i2 = 898732 AND i5 = 123451;
                                                      QUERY PLAN
 -------------------------------------------------------------------​--------------------------------------------------
- Bitmap Heap Scan on tbloom  (cost=1792.00..1799.69 rows=2 width=24) (actual time=0.388..0.388 rows=0 loops=1)
+ Bitmap Heap Scan on tbloom  (cost=1792.00..1799.69 rows=2 width=24) (actual time=22.605..22.606 rows=0 loops=1)
    Recheck Cond: ((i2 = 898732) AND (i5 = 123451))
-   Rows Removed by Index Recheck: 29
-   Heap Blocks: exact=28
-   -&gt;  Bitmap Index Scan on bloomidx  (cost=0.00..1792.00 rows=2 width=0) (actual time=0.356..0.356 rows=29 loops=1)
+   Rows Removed by Index Recheck: 2300
+   Heap Blocks: exact=2256
+   -&gt;  Bitmap Index Scan on bloomidx  (cost=0.00..178436.00 rows=1 width=0) (actual time=20.005..20.005 rows=2300 loops=1)
          Index Cond: ((i2 = 898732) AND (i5 = 123451))
  Planning Time: 0.099 ms
- Execution Time: 0.408 ms
+ Execution Time: 22.632 ms
 (8 rows)
 </pre><p>
   </p><p>
@@ -205,25 +205,27 @@ CREATE INDEX
 =# EXPLAIN ANALYZE SELECT * FROM tbloom WHERE i2 = 898732 AND i5 = 123451;
                                                         QUERY PLAN
 -------------------------------------------------------------------​--------------------------------------------------------
- Bitmap Heap Scan on tbloom  (cost=24.34..32.03 rows=2 width=24) (actual time=0.028..0.029 rows=0 loops=1)
+ Bitmap Heap Scan on tbloom  (cost=9.29..13.30 rows=1 width=24) (actual time=0.032..0.033 rows=0 loops=1)
    Recheck Cond: ((i5 = 123451) AND (i2 = 898732))
-   -&gt;  BitmapAnd  (cost=24.34..24.34 rows=2 width=0) (actual time=0.027..0.027 rows=0 loops=1)
-         -&gt;  Bitmap Index Scan on btreeidx5  (cost=0.00..12.04 rows=500 width=0) (actual time=0.026..0.026 rows=0 loops=1)
+   -&gt;  BitmapAnd  (cost=9.29..9.29 rows=1 width=0) (actual time=0.047..0.047 rows=0 loops=1)
+         -&gt;  Bitmap Index Scan on btreeidx5  (cost=0.00..4.52 rows=11 width=0) (actual time=0.026..0.026 rows=7 loops=1)
                Index Cond: (i5 = 123451)
-         -&gt;  Bitmap Index Scan on btreeidx2  (cost=0.00..12.04 rows=500 width=0) (never executed)
+         -&gt;  Bitmap Index Scan on btreeidx2  (cost=0.00..4.52 rows=11 width=0) (actual time=0.007..0.007 rows=8 loops=1)
                Index Cond: (i2 = 898732)
- Planning Time: 0.491 ms
- Execution Time: 0.055 ms
+ Planning Time: 0.264 ms
+ Execution Time: 0.047 ms
 (9 rows)
 </pre><p>
 <span class="original">
    Although this query runs much faster than with either of the single
    indexes, we pay a penalty in index size.  Each of the single-column
-   btree indexes occupies 2 MB, so the total space needed is 12 MB,
-   eight times the space used by the bloom index.
+   btree indexes occupies 88.5 MB, so the total space needed is 531 MB,
+   over three times the space used by the bloom index.
 </span>
-個別のインデックスのどれかを使うよりもこの問い合わせはずっと高速に実行できますが、インデックスのサイズにペナルティを払わなければなりません。
+《マッチ度[89.803922]》個別のインデックスのどれかを使うよりもこの問い合わせはずっと高速に実行できますが、インデックスのサイズにペナルティを払わなければなりません。
 各々の単一カラムのbtreeインデックスは、2MBになります。ですから、全体で必要なスペースは12MBです。ブルームインデックスで使用するスペースの8倍以上です。
+《機械翻訳》このクエリはどちらの単一インデックスよりもはるかに高速ですが、インデックスサイズではペナルティを支払います。
+単一カラムのBツリーインデックスはそれぞれ88.5メガバイトを占有するため、必要なスペースの合計は531メガバイトになり、ブルームインデックスが使用するスペースの3倍以上になります。
   </p></div><div class="sect2" id="BLOOM-OPERATOR-CLASS-INTERFACE"><div class="titlepage"><div><div><h3 class="title">F.6.3. 演算子クラスインタフェース <a href="#BLOOM-OPERATOR-CLASS-INTERFACE" class="id_link">#</a></h3></div></div></div><span class="original">
   &lt;title&gt;Operator Class Interface&lt;/title&gt;
 </span><p>
@@ -280,4 +282,4 @@ DEFAULT FOR TYPE text USING bloom AS
   </p><p>
    Oleg Bartunov <code class="email">&lt;<a class="email" href="mailto:obartunov@postgrespro.ru">obartunov@postgrespro.ru</a>&gt;</code>,
    Postgres Professional, Moscow, Russia
-  </p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="basic-archive.html" title="F.5. basic_archive — WALアーカイブモジュールの例">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="contrib.html" title="付録F 追加で提供されるモジュールと拡張">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="btree-gin.html" title="F.7. btree_gin — GIN演算子クラスとB-tree動作">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">F.5. basic_archive — WALアーカイブモジュールの例 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 17.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> F.7. btree_gin — GIN演算子クラスとB-tree動作</td></tr></table></div></body></html>
+  </p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="basic-archive.html" title="F.5. basic_archive — WALアーカイブモジュールの例">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="contrib.html" title="付録F 追加で提供されるモジュールと拡張">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="btree-gin.html" title="F.7. btree_gin — GIN演算子クラスとB-tree動作">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">F.5. basic_archive — WALアーカイブモジュールの例 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 17.5文書">ホーム</a></td><td width="40%" align="right" valign="top"> F.7. btree_gin — GIN演算子クラスとB-tree動作</td></tr></table></div></body></html>
