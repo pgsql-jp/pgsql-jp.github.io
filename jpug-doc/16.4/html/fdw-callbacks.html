@@ -446,7 +446,7 @@ AddForeignUpdateTargets(PlannerInfo *root,
 </span>
 <code class="command">UPDATE</code>と<code class="command">DELETE</code>の操作は、テーブルスキャン関数によって事前にフェッチされた行に対して実行されます。
 FDWは、更新や削除の対象行を厳密に識別できるように行IDや主キー列の値といった追加情報を必要とするかもしれません。
-それをサポートするために、この関数は<code class="command">UPDATE</code>や<code class="command">DELETE</code>の間に外部テーブルから取得される列のリストに追加の隠された(または<span class="quote">「<span class="quote">ジャンクの</span>」</span>)ターゲット列を追加することができます。
+それをサポートするために、この関数は<code class="command">UPDATE</code>や<code class="command">DELETE</code>の間に外部テーブルから取得される列のリストに追加の隠された(または<span class="quote">「<span class="quote">ジャンクの</span>」</span>)対象列を追加できます。
     </p><p>
 <span class="original">
      To do that, construct a &lt;structname&gt;Var&lt;/structname&gt; representing
@@ -475,7 +475,8 @@ FDWは、更新や削除の対象行を厳密に識別できるように行IDや
      junk column besides these, it might be wise to choose a name prefixed
      with your extension name, to avoid conflicts against other FDWs.
 </span>
-それを行うには、必要な追加の値を表す<code class="structname">Var</code>を作成し、それをジャンク列の名前とともに<code class="function">add_row_identity_var</code>に渡します。（複数の列が必要な場合は、これを二回以上実行できます。）
+それを行うには、必要な追加の値を表す<code class="structname">Var</code>を作成し、それをジャンク列の名前とともに<code class="function">add_row_identity_var</code>に渡します。
+（複数の列が必要な場合は、これを二回以上実行できます。）
 必要とするそれぞれの<code class="structname">Var</code>に個別のジャンク列名を選択する必要があります。ただし、<code class="structname">Var</code>が<code class="structfield">varno</code>フィールドを除いて同一である場合は、列名を共有することができるのでそうすべきです。
 コアシステムは、テーブルの<code class="structfield">tableoid</code>列をジャンク列名<code class="literal">tableoid</code>に、<code class="literal">ctid</code>または<code class="literal">ctid<em class="replaceable"><code>N</code></em></code>を<code class="structfield">ctid</code>に使用し、<code class="structfield">vartype</code> = <code class="type">RECORD</code>と記された行全体の<code class="structname">Var</code>を<code class="literal">wholerow</code>に、<code class="structfield">vartype</code>を記された行全体の<code class="structname">Var</code>を<code class="literal">wholerow<em class="replaceable"><code>N</code></em></code>使用しており、テーブルで宣言された行型が同じです。
 できる限りこれらの名前を再利用してください（プランナは同一のジャンク列に対する重複したリクエストを結合します）。
@@ -488,7 +489,7 @@ FDWは、更新や削除の対象行を厳密に識別できるように行IDや
      operations, though &lt;command&gt;UPDATE&lt;/command&gt; may still be feasible if the FDW
      relies on an unchanging primary key to identify rows.)
 </span>
-もし<code class="function">AddForeignUpdateTargets</code>ポインタが<code class="literal">NULL</code>に設定されている場合は、追加のターゲット式は追加されません。
+もし<code class="function">AddForeignUpdateTargets</code>ポインタが<code class="literal">NULL</code>に設定されている場合は、追加の対象式は追加されません。
 (FDWが行を識別するのに不変の主キーに依存するのであれば<code class="command">UPDATE</code>は依然として実現可能かもしれませんが、<code class="command">DELETE</code>操作を実装することは不可能になるでしょう。)
     </p><p>
 </p><pre class="programlisting">
@@ -524,7 +525,7 @@ PlanForeignModify(PlannerInfo *root,
 <code class="literal">plan</code>は<code class="structfield">fdwPrivLists</code>フィールドを除いて完成している<code class="structname">ModifyTable</code>プランノードです。
 <code class="literal">resultRelation</code>は対象の外部テーブルをレンジテーブルの添字で識別します。
 <code class="literal">subplan_index</code>は<code class="structname">ModifyTable</code>プランノードの対象がどれであるかを0始まりで識別します。
-これは、<code class="literal">plan</code>ノードのターゲットリレーションごとのサブ構造にインデックスを付けたい場合に使用してください。
+これは、<code class="literal">plan</code>ノードの対象リレーションごとのサブ構造にインデックスを付けたい場合に使用してください。
     </p><p>
 <span class="original">
      See &lt;xref linkend="fdw-planning"/&gt; for additional information.
@@ -946,7 +947,7 @@ BeginForeignInsert(ModifyTableState *mtstate,
 </span>
 <code class="literal">mtstate</code>は、実行中の<code class="structname">ModifyTable</code>プランノードの全体的な状態です。
 プランのグローバルデータと実行状態がこの構造体を通じて得られます。
-<code class="literal">rinfo</code>は<code class="structname">ResultRelInfo</code>構造体で、ターゲットの外部テーブルを記述します。
+<code class="literal">rinfo</code>は<code class="structname">ResultRelInfo</code>構造体で、対象の外部テーブルを記述します。
 （この操作中に必要なFDWのプライベート状態を保存するために<code class="structname">ResultRelInfo</code>の<code class="structfield">ri_FdwState</code>フィールドが利用可能です。）
     </p><p>
 <span class="original">
