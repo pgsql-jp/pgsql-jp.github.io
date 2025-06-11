@@ -895,13 +895,10 @@ HINT:  Execute a database-wide VACUUM in that database.
      scans will occur even if autovacuum is nominally disabled. The members storage
      area can grow up to about 20GB before reaching wraparound.
 </span>
-《マッチ度[76.470588]》安全装置として、<a class="xref" href="runtime-config-autovacuum.html#GUC-AUTOVACUUM-MULTIXACT-FREEZE-MAX-AGE">autovacuum_multixact_freeze_max_age</a>よりもそのマルチトランザクション年代が大きいどのテーブルに対しても、積極的なバキュームスキャンが起こります。
-また、マルチトランザクションメンバによるストレージの占有が2GBを超えた場合にも、積極的なバキュームスキャンは、マルチトランザクション年代の一番古いものから始めて、すべてのテーブルに対してより頻繁に起こります。
+安全装置として、<a class="xref" href="runtime-config-autovacuum.html#GUC-AUTOVACUUM-MULTIXACT-FREEZE-MAX-AGE">autovacuum_multixact_freeze_max_age</a>よりもそのマルチトランザクション年代が大きいどのテーブルに対しても、積極的なバキュームスキャンが起こります。
+また、マルチトランザクションメンバによる記憶領域の占有が約10GBを超えた場合にも、積極的なバキュームスキャンは、マルチトランザクション年代の一番古いものから始めて、すべてのテーブルに対してより頻繁に起こります。
 この種の積極的スキャンはどちらも、自動バキュームが名目上は無効にされていても発生します。
-《機械翻訳》安全なデバイスとして、積極的なバキュームスキャンは複数トランザクションがより大きい<a class="xref" href="runtime-config-autovacuum.html#GUC-AUTOVACUUM-MULTIXACT-FREEZE-MAX-AGE">autovacuum_multixact_freeze_max_age</a>であるすべてのテーブルに対して発生します。
-また、複数トランザクションメンバが占めるストレージが約10ギガバイトを超える場合、積極的なバキュームスキャンはすべての表に対してより頻繁に発生し、最も古い複数トランザクション年齢を持つ表から開始されます。
-これらの積極的なスキャンは、オートバキュームが名目上無効になっていても発生します。
-メンバ格納領域は約20ギガバイト前まで成長し、周回に達します。
+メンバ格納領域は、周回に達する前に、約20GBまで成長することがあります。
     </p><p>
 <span class="original">
      Similar to the XID case, if autovacuum fails to clear old MXIDs from a table, the
@@ -1010,7 +1007,7 @@ MXIDが枯渇したときの通常の動作は、XIDが枯渇したときとほ�
     table is vacuumed.  The vacuum threshold is defined as:
 </span>
 テーブルの<code class="structfield">relfrozenxid</code>値が<a class="xref" href="runtime-config-autovacuum.html#GUC-AUTOVACUUM-FREEZE-MAX-AGE">autovacuum_freeze_max_age</a>トランザクション年齢よりも古い場合、そのテーブルは常にバキュームされます
-（これはfreeze max ageがストレージパラメータにより変更されたテーブルに対しても適用されます。以下を参照）。
+（これはfreeze max ageが格納パラメータにより変更されたテーブルに対しても適用されます。以下を参照）。
 さもなければ、直前の<code class="command">VACUUM</code>の後に不要となったタプル数が<span class="quote">「<span class="quote">バキューム閾値</span>」</span>を超えると、テーブルはバキュームされます。
 このバキューム閾値は以下のように定義されます。
 </p><pre class="programlisting">
@@ -1123,7 +1120,7 @@ analyze threshold = analyze base threshold + analyze scale factor * number of tu
 </span>
 デフォルトの閾値と規模係数は、<code class="filename">postgresql.conf</code>から取られますが、(他の多くの自動バキューム制御パラメータと合わせて)テーブル毎に上書きすることができます。
 より詳細な情報は<a class="xref" href="sql-createtable.html#SQL-CREATETABLE-STORAGE-PARAMETERS" title="格納パラメータ">格納パラメータ</a>を参照してください。
-テーブルのストレージパラメータで設定が変更されると、そのテーブルを処理する時にその値が使用されます。
+テーブルの格納パラメータで設定が変更されると、そのテーブルを処理する時にその値が使用されます。
 そうでなければ、全体設定が使われます。
 全体設定についての詳細な情報は<a class="xref" href="runtime-config-autovacuum.html" title="19.10. 自動Vacuum作業">19.10</a>を参照してください。
    </p><p>
@@ -1139,7 +1136,7 @@ analyze threshold = analyze base threshold + analyze scale factor * number of tu
 </span>
 複数のワーカープロセスが実行している場合、自動バキュームコスト遅延パラメータ(<a class="xref" href="runtime-config-resource.html#RUNTIME-CONFIG-RESOURCE-VACUUM-COST" title="19.4.4. コストに基づくVacuum遅延">19.4.4</a>を参照してください)は実行中のワーカー全体に<span class="quote">「<span class="quote">振り分け</span>」</span>られます。
 このため、ワーカーの実稼働数に関らず、システムに与えるI/Oの総影響は変わりありません。
-しかし、テーブル毎の<code class="literal">autovacuum_vacuum_cost_delay</code>または<code class="literal">autovacuum_vacuum_cost_limit</code>ストレージパラメータが設定されたテーブルを処理するワーカーは振り分けアルゴリズムでは考慮されません。
+しかし、テーブル毎の<code class="literal">autovacuum_vacuum_cost_delay</code>または<code class="literal">autovacuum_vacuum_cost_limit</code>格納パラメータが設定されたテーブルを処理するワーカーは振り分けアルゴリズムでは考慮されません。
    </p><p>
 <span class="original">
     Autovacuum workers generally don't block other commands.  If a process
