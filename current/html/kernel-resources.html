@@ -122,11 +122,11 @@ System V <acronym class="acronym">IPC</acronym>機能は、通常システム全
     which are usually confusingly worded &lt;quote&gt;No space
     left on device&lt;/quote&gt;, from the function &lt;function&gt;semget&lt;/function&gt;.
 </span>
-《マッチ度[93.288136]》System V セマフォを使用している場合、<span class="productname">PostgreSQL</span>は、許可した接続（<a class="xref" href="runtime-config-connection.html#GUC-MAX-CONNECTIONS">max_connections</a>）、許可したオートバキュームワーカープロセス（<a class="xref" href="runtime-config-autovacuum.html#GUC-AUTOVACUUM-MAX-WORKERS">autovacuum_max_workers</a>）、許可したWAL送信プロセス（<a class="xref" href="runtime-config-replication.html#GUC-MAX-WAL-SENDERS">max_wal_senders</a>）、許可したバックエンドプロセス(<a class="xref" href="runtime-config-resource.html#GUC-MAX-WORKER-PROCESSES">max_worker_processes</a>)ごとに1つのセマフォを使用し、16個のセマフォをセットとして扱います。
-それぞれそのようなセットは、他のアプリケーションに使われているセマフォセットとの衝突を検出するための<span class="quote">「<span class="quote">マジックナンバー</span>」</span>が含まれている17個目のセマフォを持っています。
-システム内のセマフォの最大数は<code class="varname">SEMMNS</code>によって設定され、その結果としてその値は少なくとも<code class="varname">max_connections</code>＋<code class="varname">autovacuum_max_workers</code>＋<code class="varname">max_wal_senders</code>＋<code class="varname">max_worker_processes</code>と同じ、ただし、許可された接続とワーカー16個ごとに余分な1個を加えた値以上はなければいけません（<a class="xref" href="kernel-resources.html#SYSVIPC-PARAMETERS" title="表18.1 System V IPCパラメータ">表 18.1</a>の公式を参照してください）。
+System V セマフォを使用している場合、<span class="productname">PostgreSQL</span>は、許可した接続（<a class="xref" href="runtime-config-connection.html#GUC-MAX-CONNECTIONS">max_connections</a>）、許可したオートバキュームワーカープロセス（<a class="xref" href="runtime-config-autovacuum.html#GUC-AUTOVACUUM-MAX-WORKERS">autovacuum_max_workers</a>）、許可したWAL送信プロセス（<a class="xref" href="runtime-config-replication.html#GUC-MAX-WAL-SENDERS">max_wal_senders</a>）、許可したバックエンドプロセス(<a class="xref" href="runtime-config-resource.html#GUC-MAX-WORKER-PROCESSES">max_worker_processes</a>)ごとに1つのセマフォを使用し、19個のセマフォをセットとして扱います。
+それぞれそのようなセットは、他のアプリケーションに使われているセマフォセットとの衝突を検出するための<span class="quote">「<span class="quote">マジックナンバー</span>」</span>が含まれている20個目のセマフォを持っています。
+システム内のセマフォの最大数は<code class="varname">SEMMNS</code>によって設定され、その結果としてその値は少なくとも<code class="varname">max_connections</code>＋<code class="varname">autovacuum_max_workers</code>＋<code class="varname">max_wal_senders</code>＋<code class="varname">max_worker_processes</code>と同じ、ただし、許可された接続とワーカー19個ごとに余分な1個を加えた値以上はなければいけません（<a class="xref" href="kernel-resources.html#SYSVIPC-PARAMETERS" title="表18.1 System V IPCパラメータ">表 18.1</a>の公式を参照してください）。
 <code class="varname">SEMMNI</code>パラメータはシステム上に同時に存在できるセマフォ集合の数の上限を決定します。
-ですから、このパラメータは少なくとも<code class="literal">ceil((max_connections + autovacuum_max_workers + max_wal_senders + max_worker_processes + 7) / 16)</code>以上はなくてはいけません。
+ですから、このパラメータは少なくとも<code class="literal">ceil((max_connections + autovacuum_max_workers + max_wal_senders + max_worker_processes + 7) / 19)</code>以上はなくてはいけません。
 一時的な失敗の回避策としては許可される接続の数を下げることができますが、<span class="quote">「<span class="quote">No space left on device</span>」</span>という紛らわしい言葉が<code class="function">semget</code>関数から表示されます。
    </p><p>
 <span class="original">
@@ -783,18 +783,11 @@ export PG_OOM_ADJUST_VALUE=0
     of huge pages required.  This parameter can be viewed before starting the
     server with a &lt;command&gt;postgres&lt;/command&gt; command like:
 </span>
-《マッチ度[66.431594]》<span class="productname">PostgreSQL</span>のように、メモリの大きな連続チャンクを使用するとき、特に<a class="xref" href="runtime-config-resource.html#GUC-SHARED-BUFFERS">shared_buffers</a>の値が大きい場合に、huge pagesを使用するとオーバーヘッドが減少します。
+<span class="productname">PostgreSQL</span>のように、メモリの大きな連続チャンクを使用するとき、特に<a class="xref" href="runtime-config-resource.html#GUC-SHARED-BUFFERS">shared_buffers</a>の値が大きい場合に、huge pagesを使用するとオーバーヘッドが減少します。
 <span class="productname">PostgreSQL</span>でこの機能を有効にするには、<code class="varname">CONFIG_HUGETLBFS=y</code>および<code class="varname">CONFIG_HUGETLB_PAGE=y</code>としたカーネルが必要です。
 また、要求される十分な量だけhuge pagesを提供するようにオペレーティングシステムを調整する必要があるでしょう。
-必要なhuge pages数を決定するには、<code class="command">postgres</code>コマンドを起動して<a class="xref" href="runtime-config-preset.html#GUC-SHARED-MEMORY-SIZE-IN-HUGE-PAGES">shared_memory_size_in_huge_pages</a>の値を調べます。
-実行時に計算されたこのパラメータを見るためには、サーバを停止しなければならないことに注意してください。
-これは以下のような感じになるでしょう。
-《機械翻訳》huge pagesを使用すると、<span class="productname">PostgreSQL</span>のようにオーバーヘッドの連続したチャンクを使用する場合、特に<a class="xref" href="runtime-config-resource.html#GUC-SHARED-BUFFERS">shared_buffers</a>のラージ値を使用する場合に、メモリが削減されます。
-この機能を<span class="productname">PostgreSQL</span>で使用するには、<code class="varname">CONFIG_HUGETLBFS=y</code>と<code class="varname">CONFIG_HUGETLB_PAGE=y</code>を含むカーネルが必要です。
-また、必要なサイズの十分なhuge pagesを提供するようにオペレーティングシステムを構成する必要があります。
-ランタイムで計算されたパラメータ<a class="xref" href="runtime-config-preset.html#GUC-SHARED-MEMORY-SIZE-IN-HUGE-PAGES">shared_memory_size_in_huge_pages</a>は、必要なhuge pagesの数をレポートします。
-このパラメータは、前で<code class="command">postgres</code>?のようなコマンドで始まるで表示できます。
-サーバラージ
+実行時に計算されるパラメータ<a class="xref" href="runtime-config-preset.html#GUC-SHARED-MEMORY-SIZE-IN-HUGE-PAGES">shared_memory_size_in_huge_pages</a>は、要求されるhuge pages数を報告します。
+このパラメータは、サーバの開始前に<code class="command">postgres</code>コマンドで次のようにして見ることができます。
 </p><pre class="programlisting">
 $ <strong class="userinput"><code>postgres -D $PGDATA -C shared_memory_size_in_huge_pages</code></strong>
 3170
