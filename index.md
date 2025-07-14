@@ -19,7 +19,7 @@ last-updated: 2025-07-12 04:30:08 JST
 
 | HTML （オンライン）           | PDF                                           | EPUB                                         | man | 更新日     |
 |:---------------------------|:---------------------------------------------:|:--------------------------------------------:|:---:|:----------:|
-| [17.5](current/html)        | [PDF](current/postgres-A4.pdf)              |                                            |                                        | <em id="update">2025-07-12</em> |
+| [17.5](jpug-doc/17.5/html)  | [PDF](jpug-doc/17.5/postgresql-17.5-A4.pdf) | [EPUB](jpug-doc/17.5/postgresql-17.5.epub) | [man.tar.gz](jpug-doc/17.5/man.tar.gz) | 2025-07-14 |
 | [17.0](jpug-doc/17.0/html/) | [PDF](jpug-doc/17.0/postgresql-17.0-A4.pdf) | [EPUB](jpug-doc/17.0/postgresql-17.0.epub) | [man.tar.gz](jpug-doc/17.0/man.tar.gz) | 2025-05-21 |
 
 ### PostgreSQL 16
