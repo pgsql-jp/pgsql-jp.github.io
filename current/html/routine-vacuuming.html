@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>24.1. 定常的なバキューム作業</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="maintenance.html" title="第24章 定常的なデータベース保守作業" /><link rel="next" href="routine-reindex.html" title="24.2. 定常的なインデックスの再作成" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 17.5文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="maintenance.html" title="第24章 定常的なデータベース保守作業">第24章 定常的なデータベース保守作業</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 17.5 : routine-vacuuming.html">誤訳等の報告
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>24.1. 定常的なバキューム作業</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="maintenance.html" title="第24章 定常的なデータベース保守作業" /><link rel="next" href="routine-reindex.html" title="24.2. 定常的なインデックスの再作成" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 17.6文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="maintenance.html" title="第24章 定常的なデータベース保守作業">第24章 定常的なデータベース保守作業</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 17.6 : routine-vacuuming.html">誤訳等の報告
                     </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="maintenance.html" title="第24章 定常的なデータベース保守作業">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="maintenance.html" title="第24章 定常的なデータベース保守作業">上へ</a></td><td width="60%" align="center">24.1. 定常的なバキューム作業</td><td width="20%" align="right"> <a accesskey="n" href="routine-reindex.html" title="24.2. 定常的なインデックスの再作成">次へ</a></td></tr></table><hr /></div><div class="sect1" id="ROUTINE-VACUUMING"><div class="titlepage"><div><div><h2 class="title" style="clear: both">24.1. 定常的なバキューム作業 <a href="#ROUTINE-VACUUMING" class="id_link">#</a></h2></div></div></div><span class="original">
   &lt;title&gt;Routine Vacuuming&lt;/title&gt;
 </span><a id="id-1.6.11.12.2" class="indexterm"></a><a id="id-1.6.11.12.3" class="indexterm"></a><p>
@@ -844,13 +844,24 @@ HINT:  Execute a database-wide VACUUM in that database.
      careful aging management, storage cleanup, and wraparound handling.
      There is a separate storage area which holds the list of members in
      each multixact, which also uses a 32-bit counter and which must also
-     be managed.
+     be managed.  The system function
+     &lt;function&gt;pg_get_multixact_members()&lt;/function&gt; described in
+     &lt;xref linkend="functions-pg-snapshot"/&gt; can be used to examine the
+     transaction IDs associated with a multixact ID.
 </span>
-<em class="firstterm">マルチトランザクションID</em>は複数のトランザクションによる行ロックをサポートするのに使われます。
+《マッチ度[76.733977]》<em class="firstterm">マルチトランザクションID</em>は複数のトランザクションによる行ロックをサポートするのに使われます。
 タプルヘッダにはロック情報を格納するために限られた容量しかありませんので、二つ以上のトランザクションが同時に行をロックする時には必ず、その情報は<span class="quote">「<span class="quote">マルチプル（訳注:複数の）トランザクションID</span>」</span>、略してマルチトランザクションID、にエンコードされます。
 あるマルチトランザクションIDにどのトランザクションIDが含まれているかという情報は<code class="filename">pg_multixact</code>サブディレクトリに別に格納されており、マルチトランザクションIDのみがタプルヘッダの<code class="structfield">xmax</code>フィールドに現れます。
 トランザクションIDと同様に、マルチトランザクションIDは32ビットカウンタと対応する記憶領域として実装されており、どちらも注意深い年代管理や記憶領域の整理、周回の取り扱いが必要です。
 各マルチトランザクションにはメンバの一覧を保持する独立した記憶領域があり、そこでも32ビットカウンタを使っているので同じように管理しなければなりません。
+《機械翻訳》<em class="firstterm">マルチxact ID</em>は、行トランザクションによるサポートマルチプルロックに使用されます。
+スペース情報を格納するタプルヘッダ内のは限られているため、1つの行を同時にロックしているトランザクションが複数存在する場合は常に、その情報は<span class="quote">「<span class="quote">マルチプルトランザクションID</span>」</span>、または略してマルチトランザクションIDとしてエンコードされます。
+特定のマルチトランザクションIDにどのトランザクションIDが含まれているかについての情報は<code class="filename">pg_multixact</code>サブディレクトリに個別に格納され、タプルヘッダの<code class="structfield">xmax</code>フィールドにはマルチトランザクションIDのみが表示されます。
+トランザクションIDと同様に、マルチxact IDは32-ビットカウンタおよび対応するストレージとして実装されます。
+これらすべてには、慎重な時間の経過に応じた管理、ストレージクリーンアップ、およびを必要とします。
+各マルチxact内ののを保持する個別のがあり、これも32-を使用しますが、これも管理する必要があります。
+<a class="xref" href="functions-info.html#FUNCTIONS-PG-SNAPSHOT" title="表9.82 トランザクションIDとスナップショット情報関数">表 9.82</a>で説明されているincluded <code class="function">pg_get_multixact_members()</code>を使用して、に関連付けられたIDを調べることができます。
+格納領域メンバ関数トランザクションロック周回ハンドリングリストビットカウンタシステムマルチトランザクションID
     </p><p>
 <span class="original">
      Whenever &lt;command&gt;VACUUM&lt;/command&gt; scans any part of a table, it will replace
@@ -1160,4 +1171,4 @@ analyze threshold = analyze base threshold + analyze scale factor * number of tu
      effectively prevent autovacuums from ever completing.
 </span>
 <code class="literal">SHARE UPDATE EXCLUSIVE</code>ロックと衝突するロックを獲得する、定期的に動作するコマンド(例えばANALYZE)により、自動バキュームが実質的に終わらなくなることがあります。
-    </p></div></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="maintenance.html" title="第24章 定常的なデータベース保守作業">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="maintenance.html" title="第24章 定常的なデータベース保守作業">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="routine-reindex.html" title="24.2. 定常的なインデックスの再作成">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">第24章 定常的なデータベース保守作業 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 17.5文書">ホーム</a></td><td width="40%" align="right" valign="top"> 24.2. 定常的なインデックスの再作成</td></tr></table></div></body></html>
+    </p></div></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="maintenance.html" title="第24章 定常的なデータベース保守作業">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="maintenance.html" title="第24章 定常的なデータベース保守作業">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="routine-reindex.html" title="24.2. 定常的なインデックスの再作成">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">第24章 定常的なデータベース保守作業 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 17.6文書">ホーム</a></td><td width="40%" align="right" valign="top"> 24.2. 定常的なインデックスの再作成</td></tr></table></div></body></html>
