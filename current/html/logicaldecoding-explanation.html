@@ -59,7 +59,7 @@
      The Replication Progress Tracking feature is designed for this purpose,
      refer to &lt;link linkend="replication-origins"&gt;replication origins&lt;/link&gt;.
 </span>
-《マッチ度[92.258065]》ロジカルスロットは、通常の操作においては、各々の変更操作を一度だけ送出します。
+ロジカルスロットは、通常の操作においては、各々の変更操作を一度だけ送出します。
 それぞれのスロットにおける現在位置は、チェックポイントのときにだけ永続的になります。
 ですからクラッシュすると、スロットは以前のLSNに戻ってしまうかもしれませんし、サーバの再起動時には最近の変更が再送されることになります。
 ロジカルデコーディングのクライアントは、同じメッセージを複数回扱うことによる好ましくない結果を避けることに対して責任を追っています。
@@ -185,9 +185,10 @@
      in &lt;varname&gt;synchronized_standby_slots&lt;/varname&gt;, have confirmed
      receiving the WAL up to the latest flushed position on the primary server.
 </span>
-《マッチ度[90.189727]》プライマリ上の論理レプリケーションスロットは、ホットスタンバイと同期させることができます。
-これは、スロットの作成時に<a class="link" href="functions-admin.html#PG-CREATE-LOGICAL-REPLICATION-SLOT"><code class="function">pg_create_logical_replication_slot</code></a>の<code class="literal">failover</code>パラメータを指定するか、<code class="command">CREATE SUBSCRIPTION</code>の<a class="link" href="sql-createsubscription.html#SQL-CREATESUBSCRIPTION-PARAMS-WITH-FAILOVER"><code class="literal">failover</code></a>オプションを指定したうえで、スタンバイで<a class="link" href="functions-admin.html#PG-SYNC-REPLICATION-SLOTS"><code class="function">pg_sync_replication_slots</code></a>を呼び出すことで可能です。
-スタンバイで<a class="link" href="runtime-config-replication.html#GUC-SYNC-REPLICATION-SLOTS"><code class="varname">sync_replication_slots</code></a>を設定すると、フェイルオーバースロットをスロット同期ワーカーによって定期的に同期させることができます。
+プライマリ上の論理レプリケーションスロットは、ホットスタンバイと同期させることができます。
+これは、スロットの作成時に<a class="link" href="functions-admin.html#PG-CREATE-LOGICAL-REPLICATION-SLOT"><code class="function">pg_create_logical_replication_slot</code></a>の<code class="literal">failover</code>パラメータを指定するか、<code class="command">CREATE SUBSCRIPTION</code>の<a class="link" href="sql-createsubscription.html#SQL-CREATESUBSCRIPTION-PARAMS-WITH-FAILOVER"><code class="literal">failover</code></a>オプションを指定することで可能です。
+さらに、スタンバイで<a class="link" href="runtime-config-replication.html#GUC-SYNC-REPLICATION-SLOTS"><code class="varname">sync_replication_slots</code></a>を有効にする必要があります。
+スタンバイで<a class="link" href="runtime-config-replication.html#GUC-SYNC-REPLICATION-SLOTS"><code class="varname">sync_replication_slots</code></a>を有効にすると、フェイルオーバースロットをスロット同期ワーカーによって定期的に同期させることができます。
 同期を機能させるには、プライマリとスタンバイの間に物理レプリケーションスロットが必要であり（つまり、スタンバイで<a class="link" href="runtime-config-replication.html#GUC-PRIMARY-SLOT-NAME"><code class="varname">primary_slot_name</code></a>が設定されている必要があります）、スタンバイでは<a class="link" href="runtime-config-replication.html#GUC-HOT-STANDBY-FEEDBACK"><code class="varname">hot_standby_feedback</code></a>が有効になっている必要があります。
 また、<a class="link" href="runtime-config-replication.html#GUC-PRIMARY-CONNINFO"><code class="varname">primary_conninfo</code></a>に有効な<code class="literal">dbname</code>を指定する必要があります。
 この物理レプリケーションスロットを、プライマリの<a class="link" href="runtime-config-replication.html#GUC-SYNCHRONIZED-STANDBY-SLOTS"><code class="varname">synchronized_standby_slots</code></a>リスト内に指定することを強くお勧めします。
@@ -211,12 +212,12 @@
       updates, enabling seamless failover and supporting high availability.
       Therefore, it is the recommended method for synchronizing slots.
 </span>
-《機械翻訳》<a class="link" href="runtime-config-replication.html#GUC-SYNC-REPLICATION-SLOTS"><code class="varname">sync_replication_slots</code></a>を有効にすると、フェイルオーバースロットの定期的な自動同期が可能になりますが、スタンバイ上の<a class="link" href="functions-admin.html#PG-SYNC-REPLICATION-SLOTS"><code class="function">pg_sync_replication_slots</code></a>関数を使用して手動で同期することもできます。
-ただし、この関数は主にテストとデバッグを目的としているため、注意して使用する必要があります。
-自動同期とは異なり、includeの周期的な再試行は行われないため、同期が失敗しやすくなります。
-特に、スロットに必要なWALファイルまたはカタログ行がすでに削除されているか、スタンバイ上でリスクに削除されている可能性がある初期同期のシナリオではその傾向が強くなります。
-対照的に、<code class="varname">sync_replication_slots</code>を介した自動同期は連続スロットを更新し、シームレスなフェイルオーバーを可能にし、高可用性をサポートします。
-したがって、スロットの同期にはメソッドを推奨します。
+<a class="link" href="runtime-config-replication.html#GUC-SYNC-REPLICATION-SLOTS"><code class="varname">sync_replication_slots</code></a>を有効にすると、フェイルオーバースロットの定期的な自動同期が可能になりますが、スタンバイ上で<a class="link" href="functions-admin.html#PG-SYNC-REPLICATION-SLOTS"><code class="function">pg_sync_replication_slots</code></a>関数を使用して手動で同期することもできます。
+ただし、この関数は主にテストとデバッグを目的としており、注意して使用する必要があります。
+自動同期とは異なり、周期的な再試行が行われないため、同期が失敗しやすくなります。
+特に、スロットに必要なWALファイルまたはカタログ行がすでに削除されているか、スタンバイ上で削除されている可能性がある初期同期のシナリオではその傾向が強くなります。
+それとは対照的に、<code class="varname">sync_replication_slots</code>を介した自動同期はスロットを継続的に更新するため、シームレスなフェイルオーバーと高可用性を実現します。
+そのため、スロットの同期には自動同期を推奨します。
      </p></div><p>
 <span class="original">
      When slot synchronization is configured as recommended,
@@ -231,10 +232,9 @@
      standby, the slot will not be persisted to avoid data loss. In such
      cases, the following log message may appear:
 </span>
-《機械翻訳》スロット同期化が推奨どおりに構成され、初期同期がpg_sync_レプリケーション_スロットを介して自動または手動で実行される場合、次の条件が満たされる場合にのみ、スタンバイは同期されたスロットを永続化できます。
-プライマリの論理レプリケーションスロットは、スタンバイで使用可能なWALおよびシステムカタログ行を保持する必要があります。
-これにより、データの整合性が確保され、昇格後も論理レプリケーションが円滑に処理されます。
-必要なWALまたはカタログ行がスタンバイからすでにパージされている場合、スロットはデータロスを回避するために永続化されません。
+スロットの同期が推奨通りに設定され、初期同期が自動的に、またはpg_sync_replication_slotを介して手動で行われた場合、次の条件を満たした場合にのみ、スタンバイは同期されたスロットを永続化できます：プライマリ上の論理レプリケーションスロットが、スタンバイ上で必要なWALおよびシステムカタログ行を保持している必要があります。
+これにより、データの整合性が確保され、昇格後も論理レプリケーションをスムーズに継続できます。
+必要なWALまたはカタログ行がスタンバイからすでに削除されている場合、スロットはデータ損失を回避するために永続化されません。
 このような場合、次のログメッセージが表示されることがあります。
 </p><pre class="programlisting">
 LOG:  could not synchronize replication slot "failover_slot"
@@ -251,10 +251,9 @@ DETAIL:  Synchronization could lead to data loss, because the remote slot needs 
      &lt;function&gt;pg_logical_slot_get_binary_changes&lt;/function&gt;&lt;/link&gt;,
      allowing synchronization to proceed.
 </span>
-《機械翻訳》論理レプリケーションスロットがコンシューマによってアクティブに使用されている場合、マニュアルの介入は必要ありません。
+論理レプリケーションスロットが消費者によって活発に使用されている場合、手作業による介入は必要ありません。
 スロットは自動的に進み、同期は次のサイクルで再開されます。
-ただし、コンシューマが設定されていない場合は、<a class="link" href="functions-admin.html#PG-LOGICAL-SLOT-GET-CHANGES"><code class="function">pg_logical_slot_get_changes</code>または<code class="function">pg_logical_slot_get_binary_changes</code>を使用してプライマリのスロットを手動で進め、同期を続行できるようにすることをお勧めします。
-</a>
+ただし、消費者が設定されていない場合は、<a class="link" href="functions-admin.html#PG-LOGICAL-SLOT-GET-CHANGES"><code class="function">pg_logical_slot_get_changes</code></a>または<a class="link" href="functions-admin.html#PG-LOGICAL-SLOT-GET-BINARY-CHANGES"><code class="function">pg_logical_slot_get_binary_changes</code></a>を使用してプライマリ上のスロットを手動で進め、同期を続行できるようにすることをお勧めします。
     </p><p>
 <span class="original">
      The ability to resume logical replication after failover depends upon the
@@ -331,5 +330,5 @@ DETAIL:  Synchronization could lead to data loss, because the remote slot needs 
      snapshot export may suppress it with the &lt;literal&gt;SNAPSHOT 'nothing'&lt;/literal&gt;
      option.
 </span>
-《機械翻訳》snapshotエクスポートを必要としないアプリケーションは、<code class="literal">SNAPSHOT 'nothing'</code>オプションでそれを抑制することができます。
+スナップショットのエクスポートが必要ないアプリケーションは、<code class="literal">SNAPSHOT 'nothing'</code>オプションを使ってスナップショットのエクスポートを抑止できます。
     </p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="logicaldecoding-example.html" title="47.1. ロジカルデコーディングの例">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="logicaldecoding.html" title="第47章 ロジカルデコーディング">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="logicaldecoding-walsender.html" title="47.3. ストリーミングレプリケーションプロトコルインタフェース">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">47.1. ロジカルデコーディングの例 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 17.6文書">ホーム</a></td><td width="40%" align="right" valign="top"> 47.3. ストリーミングレプリケーションプロトコルインタフェース</td></tr></table></div></body></html>
