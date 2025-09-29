@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>ALTER TABLE</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="sql-altersystem.html" title="ALTER SYSTEM" /><link rel="next" href="sql-altertablespace.html" title="ALTER TABLESPACE" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 17.6文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="sql-commands.html" title="SQLコマンド">SQLコマンド</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 17.6 : sql-altertable.html">誤訳等の報告
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>ALTER TABLE</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="sql-altersystem.html" title="ALTER SYSTEM" /><link rel="next" href="sql-altertablespace.html" title="ALTER TABLESPACE" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 18.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="sql-commands.html" title="SQLコマンド">SQLコマンド</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 18.0 : sql-altertable.html">誤訳等の報告
                     </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="sql-altersystem.html" title="ALTER SYSTEM">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="sql-commands.html" title="SQLコマンド">上へ</a></td><td width="60%" align="center">ALTER TABLE</td><td width="20%" align="right"> <a accesskey="n" href="sql-altertablespace.html" title="ALTER TABLESPACE">次へ</a></td></tr></table><hr /></div><div class="refentry" id="SQL-ALTERTABLE"><div class="titlepage"></div><a id="id-1.9.3.35.1" class="indexterm"></a><div class="refnamediv"><h2><span class="refentrytitle">ALTER TABLE</span></h2><p>ALTER TABLE<span class="original">
   &lt;refpurpose&gt;change the definition of a table&lt;/refpurpose&gt;
 </span> — テーブル定義を変更する</p></div><div class="refsynopsisdiv"><h2>概要</h2><pre class="synopsis">
@@ -43,7 +43,8 @@ ALTER TABLE [ IF EXISTS ] <em class="replaceable"><code>name</code></em>
     ALTER [ COLUMN ] <em class="replaceable"><code>column_name</code></em> SET COMPRESSION <em class="replaceable"><code>compression_method</code></em>
     ADD <em class="replaceable"><code>table_constraint</code></em> [ NOT VALID ]
     ADD <em class="replaceable"><code>table_constraint_using_index</code></em>
-    ALTER CONSTRAINT <em class="replaceable"><code>constraint_name</code></em> [ DEFERRABLE | NOT DEFERRABLE ] [ INITIALLY DEFERRED | INITIALLY IMMEDIATE ]
+    ALTER CONSTRAINT <em class="replaceable"><code>constraint_name</code></em> [ DEFERRABLE | NOT DEFERRABLE ] [ INITIALLY DEFERRED | INITIALLY IMMEDIATE ] [ ENFORCED | NOT ENFORCED ]
+    ALTER CONSTRAINT <em class="replaceable"><code>constraint_name</code></em> [ INHERIT | NO INHERIT ]
     VALIDATE CONSTRAINT <em class="replaceable"><code>constraint_name</code></em>
     DROP CONSTRAINT [ IF EXISTS ]  <em class="replaceable"><code>constraint_name</code></em> [ RESTRICT | CASCADE ]
     DISABLE TRIGGER [ <em class="replaceable"><code>trigger_name</code></em> | ALL | USER ]
@@ -89,17 +90,17 @@ WITH ( MODULUS <em class="replaceable"><code>numeric_literal</code></em>, REMAIN
 <span class="phrase">また、<em class="replaceable"><code>column_constraint</code></em>は以下の通りです。</span>
 
 [ CONSTRAINT <em class="replaceable"><code>constraint_name</code></em> ]
-{ NOT NULL |
+{ NOT NULL [ NO INHERIT ] |
   NULL |
   CHECK ( <em class="replaceable"><code>expression</code></em> ) [ NO INHERIT ] |
   DEFAULT <em class="replaceable"><code>default_expr</code></em> |
-  GENERATED ALWAYS AS ( <em class="replaceable"><code>generation_expr</code></em> ) STORED |
+  GENERATED ALWAYS AS ( <em class="replaceable"><code>generation_expr</code></em> ) [ STORED | VIRTUAL ] |
   GENERATED { ALWAYS | BY DEFAULT } AS IDENTITY [ ( <em class="replaceable"><code>sequence_options</code></em> ) ] |
   UNIQUE [ NULLS [ NOT ] DISTINCT ] <em class="replaceable"><code>index_parameters</code></em> |
   PRIMARY KEY <em class="replaceable"><code>index_parameters</code></em> |
   REFERENCES <em class="replaceable"><code>reftable</code></em> [ ( <em class="replaceable"><code>refcolumn</code></em> ) ] [ MATCH FULL | MATCH PARTIAL | MATCH SIMPLE ]
     [ ON DELETE <em class="replaceable"><code>referential_action</code></em> ] [ ON UPDATE <em class="replaceable"><code>referential_action</code></em> ] }
-[ DEFERRABLE | NOT DEFERRABLE ] [ INITIALLY DEFERRED | INITIALLY IMMEDIATE ]
+[ DEFERRABLE | NOT DEFERRABLE ] [ INITIALLY DEFERRED | INITIALLY IMMEDIATE ] [ ENFORCED | NOT ENFORCED ]
 
 <span class="original">
 &lt;phrase&gt;and &lt;replaceable class="parameter"&gt;table_constraint&lt;/replaceable&gt; is:&lt;/phrase&gt;
@@ -108,12 +109,13 @@ WITH ( MODULUS <em class="replaceable"><code>numeric_literal</code></em>, REMAIN
 
 [ CONSTRAINT <em class="replaceable"><code>constraint_name</code></em> ]
 { CHECK ( <em class="replaceable"><code>expression</code></em> ) [ NO INHERIT ] |
-  UNIQUE [ NULLS [ NOT ] DISTINCT ] ( <em class="replaceable"><code>column_name</code></em> [, ... ] ) <em class="replaceable"><code>index_parameters</code></em> |
-  PRIMARY KEY ( <em class="replaceable"><code>column_name</code></em> [, ... ] ) <em class="replaceable"><code>index_parameters</code></em> |
+  NOT NULL <em class="replaceable"><code>column_name</code></em> [ NO INHERIT ] |
+  UNIQUE [ NULLS [ NOT ] DISTINCT ] ( <em class="replaceable"><code>column_name</code></em> [, ... ] [, <em class="replaceable"><code>column_name</code></em> WITHOUT OVERLAPS ] ) <em class="replaceable"><code>index_parameters</code></em> |
+  PRIMARY KEY ( <em class="replaceable"><code>column_name</code></em> [, ... ] [, <em class="replaceable"><code>column_name</code></em> WITHOUT OVERLAPS ] ) <em class="replaceable"><code>index_parameters</code></em> |
   EXCLUDE [ USING <em class="replaceable"><code>index_method</code></em> ] ( <em class="replaceable"><code>exclude_element</code></em> WITH <em class="replaceable"><code>operator</code></em> [, ... ] ) <em class="replaceable"><code>index_parameters</code></em> [ WHERE ( <em class="replaceable"><code>predicate</code></em> ) ] |
-  FOREIGN KEY ( <em class="replaceable"><code>column_name</code></em> [, ... ] ) REFERENCES <em class="replaceable"><code>reftable</code></em> [ ( <em class="replaceable"><code>refcolumn</code></em> [, ... ] ) ]
+  FOREIGN KEY ( <em class="replaceable"><code>column_name</code></em> [, ... ] [, PERIOD <em class="replaceable"><code>column_name</code></em> ] ) REFERENCES <em class="replaceable"><code>reftable</code></em> [ ( <em class="replaceable"><code>refcolumn</code></em> [, ... ]  [, PERIOD <em class="replaceable"><code>refcolumn</code></em> ] ) ]
     [ MATCH FULL | MATCH PARTIAL | MATCH SIMPLE ] [ ON DELETE <em class="replaceable"><code>referential_action</code></em> ] [ ON UPDATE <em class="replaceable"><code>referential_action</code></em> ] }
-[ DEFERRABLE | NOT DEFERRABLE ] [ INITIALLY DEFERRED | INITIALLY IMMEDIATE ]
+[ DEFERRABLE | NOT DEFERRABLE ] [ INITIALLY DEFERRED | INITIALLY IMMEDIATE ] [ ENFORCED | NOT ENFORCED ]
 
 <span class="original">
 &lt;phrase&gt;and &lt;replaceable class="parameter"&gt;table_constraint_using_index&lt;/replaceable&gt; is:&lt;/phrase&gt;
@@ -216,8 +218,13 @@ WITH ( MODULUS <em class="replaceable"><code>numeric_literal</code></em>, REMAIN
       When this form is used, the column's statistics are removed,
       so running &lt;link linkend="sql-analyze"&gt;&lt;command&gt;ANALYZE&lt;/command&gt;&lt;/link&gt;
       on the table afterwards is recommended.
+      For a virtual generated column, &lt;command&gt;ANALYZE&lt;/command&gt;
+      is not necessary because such columns never have statistics.
 </span>
-この形式を使用すると、列の統計情報が削除されるので、後でテーブルに対して<a class="link" href="sql-analyze.html" title="ANALYZE"><code class="command">ANALYZE</code></a>を実行することをお勧めします。
+《マッチ度[52.901024]》この形式を使用すると、列の統計情報が削除されるので、後でテーブルに対して<a class="link" href="sql-analyze.html" title="ANALYZE"><code class="command">ANALYZE</code></a>を実行することをお勧めします。
+《機械翻訳》このフォームが使用される場合、カラムの統計処理は削除されるため、後でテーブルに対して<a class="link" href="sql-analyze.html" title="ANALYZE"><code class="command">ANALYZE</code></a>を実行することをお薦めします。
+仮想的に生成されたカラムでは、<code class="command">ANALYZE</code>は必要ありません。
+なぜなら、このような列は統計処理を持たないからです。
      </p></dd><dt id="SQL-ALTERTABLE-DESC-SET-DROP-DEFAULT"><span class="term"><code class="literal">SET</code>/<code class="literal">DROP DEFAULT</code></span> <a href="#SQL-ALTERTABLE-DESC-SET-DROP-DEFAULT" class="id_link">#</a></dt><dd><p>
 <span class="original">
       These forms set or remove the default value for a column (where
@@ -241,14 +248,21 @@ WITH ( MODULUS <em class="replaceable"><code>numeric_literal</code></em>, REMAIN
       provided none of the records in the table contain a
       &lt;literal&gt;NULL&lt;/literal&gt; value for the column.  Ordinarily this is
       checked during the &lt;literal&gt;ALTER TABLE&lt;/literal&gt; by scanning the
-      entire table;
+      entire table, unless &lt;literal&gt;NOT VALID&lt;/literal&gt; is specified;
       however, if a valid &lt;literal&gt;CHECK&lt;/literal&gt; constraint exists
       (and is not dropped in the same command) which proves no
       &lt;literal&gt;NULL&lt;/literal&gt; can exist, then the table scan is skipped.
+      If a column has an invalid not-null constraint,
+      &lt;literal&gt;SET NOT NULL&lt;/literal&gt; validates it.
 </span>
-<code class="literal">SET NOT NULL</code>は、テーブルの項目でその列が<code class="literal">NULL</code>値であるものが1つもない場合にのみ、その列に設定可能です。
+《マッチ度[68.866328]》<code class="literal">SET NOT NULL</code>は、テーブルの項目でその列が<code class="literal">NULL</code>値であるものが1つもない場合にのみ、その列に設定可能です。
 通常これは<code class="literal">ALTER TABLE</code>がテーブル全体をスキャンする際に確認されます。
 しかしながら、<code class="literal">NULL</code>が存在できないことを示す有効な<code class="literal">CHECK</code>制約（同じコマンドで削除されない）が存在すれば、テーブルスキャンは省略されます。
+《機械翻訳》<code class="literal">SET NOT NULL</code>は、カラムのレコードに<code class="literal">NULL</code>テーブルの値が含まれていない場合にのみ、そのカラムに適用できます。
+通常、これは<code class="literal">ALTER TABLE</code>が指定されていない限り、テーブル全体をスキャンすることによって中にチェックされます。
+ただし、有効な<code class="literal">CHECK</code>制約が存在し、同じコマンドで削除されていない場合は、<code class="literal">NULL</code>存在できないことが証明されるため、そのテーブルスキャンはスキップされたになります。
+カラムに無効な非NULL制約がある場合は、<code class="literal">SET NOT NULL</code>それを検証します。
+<code class="literal">NOT VALID</code>
      </p><p>
 <span class="original">
       If this table is a partition, one cannot perform &lt;literal&gt;DROP NOT NULL&lt;/literal&gt;
@@ -258,27 +272,42 @@ WITH ( MODULUS <em class="replaceable"><code>numeric_literal</code></em>, REMAIN
       table.  Even if there is no &lt;literal&gt;NOT NULL&lt;/literal&gt; constraint on the
       parent, such a constraint can still be added to individual partitions,
       if desired; that is, the children can disallow nulls even if the parent
-      allows them, but not the other way around.
+      allows them, but not the other way around.  It is also possible to drop
+      the &lt;literal&gt;NOT NULL&lt;/literal&gt; constraint from &lt;literal&gt;ONLY&lt;/literal&gt;
+      the parent table, which does not remove it from the children.
 </span>
-このテーブルがパーティションの場合、親テーブルで<code class="literal">NOT NULL</code>の印がつけられている列について<code class="literal">DROP NOT NULL</code>を実行することはできません。
+《マッチ度[70.140845]》このテーブルがパーティションの場合、親テーブルで<code class="literal">NOT NULL</code>の印がつけられている列について<code class="literal">DROP NOT NULL</code>を実行することはできません。
 すべてのパーティションから<code class="literal">NOT NULL</code>制約を削除するには、親テーブルで<code class="literal">DROP NOT NULL</code>を実行してください。
 親テーブルに<code class="literal">NOT NULL</code>制約がない場合でも、望むなら各パーティションにそのような制約を追加することができます。
 つまり、親テーブルがNULLを許していても子テーブルでNULLを禁止することができますが、その逆はできません。
+《機械翻訳》このテーブルがパーティションである場合、<code class="literal">NOT NULL</code>マークされているカラムで親テーブルでを実行することはできません。
+<code class="literal">NOT NULL</code>制約をすべてのパーティションから削除するには、<code class="literal">DROP NOT NULL</code>親テーブルでを実行します。
+<code class="literal">NOT NULL</code>制約が親にない場合でも、そのような制約は必要に応じて個々のパーティションに追加できます。
+つまり、親がNULLを許可している場合でも、子はNULLを許可しないことができますが、その逆はできません。
+<code class="literal">ONLY</code>親テーブルから<code class="literal">NOT NULL</code>制約を削除しないを削除することもできます。
+<code class="literal">DROP NOT NULL</code>
      </p></dd><dt id="SQL-ALTERTABLE-DESC-SET-EXPRESSION"><span class="term"><code class="literal">SET EXPRESSION AS</code></span> <a href="#SQL-ALTERTABLE-DESC-SET-EXPRESSION" class="id_link">#</a></dt><dd><p>
 <span class="original">
       This form replaces the expression of a generated column.  Existing data
-      in the column is rewritten and all the future changes will apply the new
-      generation expression.
+      in a stored generated column is rewritten and all the future changes
+      will apply the new generation expression.
 </span>
-この構文は、生成列の式を置き換えます。
+《マッチ度[83.425414]》この構文は、生成列の式を置き換えます。
 列の既存のデータは書き換えられ、以後の変更はすべて新しい生成式を適用します。
+《機械翻訳》このフォームは、生成された式のカラムを置き換えます。
+格納されている生成されたデータの既存のカラムは書き換えられ、その後のすべての変更は新しい生成された式に適用されます。
      </p><p>
 <span class="original">
-      When this form is used, the column's statistics are removed,
-      so running &lt;link linkend="sql-analyze"&gt;&lt;command&gt;ANALYZE&lt;/command&gt;&lt;/link&gt;
+      When this form is used on a stored generated column, its statistics
+      are removed, so running
+      &lt;link linkend="sql-analyze"&gt;&lt;command&gt;ANALYZE&lt;/command&gt;&lt;/link&gt;
       on the table afterwards is recommended.
+      For a virtual generated column, &lt;command&gt;ANALYZE&lt;/command&gt;
+      is not necessary because such columns never have statistics.
 </span>
-この形式を使用すると、列の統計情報が削除されるので、後でテーブルに対して<a class="link" href="sql-analyze.html" title="ANALYZE"><code class="command">ANALYZE</code></a>を実行することをお勧めします。
+《機械翻訳》このフォームが保管された生成カラムで使用される場合、その統計処理は削除されるため、後でテーブルに対して<a class="link" href="sql-analyze.html" title="ANALYZE"><code class="command">ANALYZE</code></a>を実行することをお薦めします。
+仮想的に生成されたカラムの場合、<code class="command">ANALYZE</code>は必要ありません。
+これは、このような列には統計処理がないためです。
      </p></dd><dt id="SQL-ALTERTABLE-DESC-DROP-EXPRESSION"><span class="term"><code class="literal">DROP EXPRESSION [ IF EXISTS ]</code></span> <a href="#SQL-ALTERTABLE-DESC-DROP-EXPRESSION" class="id_link">#</a></dt><dd><p>
 <span class="original">
       This form turns a stored generated column into a normal base column.
@@ -289,12 +318,20 @@ WITH ( MODULUS <em class="replaceable"><code>numeric_literal</code></em>, REMAIN
 列の既存のデータは保持されますが、以後の変更はもはや生成式を適用しません。
      </p><p>
 <span class="original">
-      If &lt;literal&gt;DROP EXPRESSION IF EXISTS&lt;/literal&gt; is specified and the
-      column is not a stored generated column, no error is thrown.  In this
-      case a notice is issued instead.
+      This form is currently only supported for stored generated columns (not
+      virtual ones).
 </span>
-<code class="literal">DROP EXPRESSION IF EXISTS</code>が指定され、その列が格納された生成列でない場合は、エラーを発生させません。
+《機械翻訳》このフォームは現在、（仮想列ではなく）格納された生成列に対してのみサポートされています。
+     </p><p>
+<span class="original">
+      If &lt;literal&gt;DROP EXPRESSION IF EXISTS&lt;/literal&gt; is specified and the
+      column is not a generated column, no error is thrown.  In this case a
+      notice is issued instead.
+</span>
+《マッチ度[84.049080]》<code class="literal">DROP EXPRESSION IF EXISTS</code>が指定され、その列が格納された生成列でない場合は、エラーを発生させません。
 この場合、注意メッセージが発行されます。
+《機械翻訳》<code class="literal">DROP EXPRESSION IF EXISTS</code>が指定され、そのカラムが生成されたカラムでない場合、エラーはスローされません。
+このケースでは、代わりに通知が発行されます。
      </p></dd><dt id="SQL-ALTERTABLE-DESC-GENERATED-IDENTITY"><span class="term"><code class="literal">ADD GENERATED { ALWAYS | BY DEFAULT } AS IDENTITY</code><br /></span><span class="term"><code class="literal">SET GENERATED { ALWAYS | BY DEFAULT }</code><br /></span><span class="term"><code class="literal">DROP IDENTITY [ IF EXISTS ]</code></span> <a href="#SQL-ALTERTABLE-DESC-GENERATED-IDENTITY" class="id_link">#</a></dt><dd><p>
 <span class="original">
       These forms change whether a column is an identity column or change the
@@ -431,7 +468,7 @@ WITH ( MODULUS <em class="replaceable"><code>numeric_literal</code></em>, REMAIN
 <code class="literal">EXTERNAL</code>を使用すると、非常に長い<code class="type">text</code>および<code class="type">bytea</code>列に対する部分文字列操作の処理速度が向上しますが、必要な保管容量が増えるというデメリットがあります。
 <code class="literal">ALTER TABLE ... SET STORAGE</code>自体はテーブルをまったく変更しないことに注意してください。
 以後のテーブルの更新時に遂行する戦略を設定するだけです。
-詳細は<a class="xref" href="storage-toast.html" title="65.2. TOAST">65.2</a>を参照してください。
+詳細は<a class="xref" href="storage-toast.html" title="66.2. TOAST">66.2</a>を参照してください。
      </p></dd><dt id="SQL-ALTERTABLE-DESC-SET-COMPRESSION"><span class="term">
      <code class="literal">SET COMPRESSION <em class="replaceable"><code>compression_method</code></em></code>
     </span> <a href="#SQL-ALTERTABLE-DESC-SET-COMPRESSION" class="id_link">#</a></dt><dd><p>
@@ -468,17 +505,19 @@ WITH ( MODULUS <em class="replaceable"><code>numeric_literal</code></em>, REMAIN
 <span class="original">
       This form adds a new constraint to a table using the same constraint
       syntax as &lt;link linkend="sql-createtable"&gt;&lt;command&gt;CREATE TABLE&lt;/command&gt;&lt;/link&gt;, plus the option &lt;literal&gt;NOT
-      VALID&lt;/literal&gt;, which is currently only allowed for foreign key
-      and CHECK constraints.
+      VALID&lt;/literal&gt;, which is currently only allowed for foreign-key,
+      &lt;literal&gt;CHECK&lt;/literal&gt;, and not-null constraints.
 </span>
-この構文は、<a class="link" href="sql-createtable.html" title="CREATE TABLE"><code class="command">CREATE TABLE</code></a>と同じ制約構文に加え、現時点では外部キー制約と検査制約でのみ許される<code class="literal">NOT VALID</code>オプションを使って新しい制約をテーブルに追加します。
+《マッチ度[82.154882]》この構文は、<a class="link" href="sql-createtable.html" title="CREATE TABLE"><code class="command">CREATE TABLE</code></a>と同じ制約構文に加え、現時点では外部キー制約と検査制約でのみ許される<code class="literal">NOT VALID</code>オプションを使って新しい制約をテーブルに追加します。
+《機械翻訳》このフォームは、<a class="link" href="sql-createtable.html" title="CREATE TABLE"><code class="command">CREATE TABLE</code></a>と同じ制約構文を使用してテーブルに新しい制約を追加します。
+プラスオプション<code class="literal">NOT VALID</code>、これは現在、外部キー制約、<code class="literal">CHECK</code>、および非NULL制約でのみ許可されています。
      </p><p>
 <span class="original">
       Normally, this form will cause a scan of the table to verify that all
       existing rows in the table satisfy the new constraint.  But if
       the &lt;literal&gt;NOT VALID&lt;/literal&gt; option is used, this
       potentially-lengthy scan is skipped.  The constraint will still be
-      enforced against subsequent inserts or updates (that is, they'll fail
+      applied against subsequent inserts or updates (that is, they'll fail
       unless there is a matching row in the referenced table, in the case
       of foreign keys, or they'll fail unless the new row matches the
       specified check condition).  But the
@@ -488,11 +527,16 @@ WITH ( MODULUS <em class="replaceable"><code>numeric_literal</code></em>, REMAIN
       See &lt;xref linkend="sql-altertable-notes"/&gt; below for more information
       about using the &lt;literal&gt;NOT VALID&lt;/literal&gt; option.
 </span>
-通常この構文は、テーブルの既存の行が新しい制約を満たすか確認するため、テーブルのスキャンの原因となります。
+《マッチ度[88.715953]》通常この構文は、テーブルの既存の行が新しい制約を満たすか確認するため、テーブルのスキャンの原因となります。
 しかし、<code class="literal">NOT VALID</code>オプションが使われていれば、時間がかかるかもしれないこのスキャンは省略されます。
 それでも、制約はその後の挿入や更新に対して強制されます（つまり、外部キー制約の場合、被参照テーブルに一致する行が存在しない限り失敗します。指定された検査制約に一致する新しい行が存在しない限り失敗します）。
 しかしデータベースは、<code class="literal">VALIDATE CONSTRAINT</code>オプションを使用して検証されるまで、テーブル内のすべての行で制約が保持されているとみなしません。
 <code class="literal">NOT VALID</code>オプションを使うことに関する更なる情報は<a class="xref" href="sql-altertable.html#SQL-ALTERTABLE-NOTES" title="注釈">注釈</a>以下を参照してください。
+《機械翻訳》通常、このフォームは、テーブルのスキャンに、テーブル内の既存のすべての行が新しい制約を満たすことを確認させます。
+しかし、<code class="literal">NOT VALID</code>オプションが使用される場合、この潜在的に長いスキャンはスキップされたです。
+制約は、その後の挿入または更新にも適用されます（つまり、被参照テーブル内、外部キーのケース内にマッチング行がない限り失敗し、新しい行が指定されたチェック条件に一致しない限り失敗します）。
+しかし、データベースは、<code class="literal">VALIDATE CONSTRAINT</code>オプションを使用して検証されるまで、テーブル内のすべての行に制約が保持されるとは想定しません。
+<code class="literal">NOT VALID</code>オプションの使用の詳細については、後述の<a class="xref" href="sql-altertable.html#SQL-ALTERTABLE-NOTES" title="注釈">注釈</a>を参照してください。
      </p><p>
 <span class="original">
       Although most forms of &lt;literal&gt;ADD
@@ -510,12 +554,9 @@ WITH ( MODULUS <em class="replaceable"><code>numeric_literal</code></em>, REMAIN
 <span class="original">
       Additional restrictions apply when unique or primary key constraints
       are added to partitioned tables; see &lt;link linkend="sql-createtable"&gt;&lt;command&gt;CREATE TABLE&lt;/command&gt;&lt;/link&gt;.
-      Also, foreign key constraints on partitioned
-      tables may not be declared &lt;literal&gt;NOT VALID&lt;/literal&gt; at present.
 </span>
-一意性制約や主キー制約がパーティションテーブルに追加されるときには、追加的な制限が適用されます。
+《機械翻訳》ユニークまたは主キーの制約がテーブルパーティションに追加されると、追加の制限が適用されます。
 <a class="link" href="sql-createtable.html" title="CREATE TABLE"><code class="command">CREATE TABLE</code></a>を参照してください。
-また、今のところ、パーティションテーブルでの外部キー制約では<code class="literal">NOT VALID</code>と宣言できません。
      </p></dd><dt id="SQL-ALTERTABLE-DESC-ADD-TABLE-CONSTRAINT-USING-INDEX"><span class="term"><code class="literal">ADD <em class="replaceable"><code>table_constraint_using_index</code></em></code></span> <a href="#SQL-ALTERTABLE-DESC-ADD-TABLE-CONSTRAINT-USING-INDEX" class="id_link">#</a></dt><dd><p>
 <span class="original">
       This form adds a new &lt;literal&gt;PRIMARY KEY&lt;/literal&gt; or &lt;literal&gt;UNIQUE&lt;/literal&gt;
@@ -583,22 +624,47 @@ WITH ( MODULUS <em class="replaceable"><code>numeric_literal</code></em>, REMAIN
       </p></div></dd><dt id="SQL-ALTERTABLE-DESC-ALTER-CONSTRAINT"><span class="term"><code class="literal">ALTER CONSTRAINT</code></span> <a href="#SQL-ALTERTABLE-DESC-ALTER-CONSTRAINT" class="id_link">#</a></dt><dd><p>
 <span class="original">
       This form alters the attributes of a constraint that was previously
-      created. Currently only foreign key constraints may be altered.
+      created. Currently only foreign key constraints may be altered in
+      this fashion, but see below.
 </span>
-この構文は以前に作成された制約の属性を変更します。
+《マッチ度[73.456790]》この構文は以前に作成された制約の属性を変更します。
 現在は外部キー制約のみを変更できます。
-     </p></dd><dt id="SQL-ALTERTABLE-DESC-VALIDATE-CONSTRAINT"><span class="term"><code class="literal">VALIDATE CONSTRAINT</code></span> <a href="#SQL-ALTERTABLE-DESC-VALIDATE-CONSTRAINT" class="id_link">#</a></dt><dd><p>
+《機械翻訳》このフォームは、以前に作成された制約の属性を変更します。
+現在、この方法で変更できるのは外部キー制約のみですが、以下を参照してください。
+     </p></dd><dt id="SQL-ALTERTABLE-DESC-ALTER-CONSTRAINT-INHERIT"><span class="term"><code class="literal">ALTER CONSTRAINT ... INHERIT</code><br /></span><span class="term"><code class="literal">ALTER CONSTRAINT ... NO INHERIT</code></span> <a href="#SQL-ALTERTABLE-DESC-ALTER-CONSTRAINT-INHERIT" class="id_link">#</a></dt><dd><p>
 <span class="original">
-      This form validates a foreign key or check constraint that was
+      These forms modify a inheritable constraint so that it becomes not
+      inheritable, or vice-versa. Only not-null constraints may be altered
+      in this fashion at present.
+      In addition to changing the inheritability status of the constraint,
+      in the case where a non-inheritable constraint is being marked
+      inheritable, if the table has children, an equivalent constraint
+      will be added to them. If marking an inheritable constraint as
+      non-inheritable on a table with children, then the corresponding
+      constraint on children will be marked as no longer inherited,
+      but not removed.
+</span>
+《機械翻訳》これらの形式は、継承可能制約を形成して非継承可能NULLにするか、またはその逆にします。
+非継承可能ステータスのみ、現在この方法で変更できます。
+制約の継承可能性を変更することに加えて、非継承可能制約が継承可能としてマークされているケースでは、テーブルに子がある場合、同等の制約が追加されます。
+マーキングが、子を持つ表で継承可能制約を非継承可能としてマークした場合、子の対応する制約は継承されないとしてマークされますが、削除はされません。
+      </p></dd><dt id="SQL-ALTERTABLE-DESC-VALIDATE-CONSTRAINT"><span class="term"><code class="literal">VALIDATE CONSTRAINT</code></span> <a href="#SQL-ALTERTABLE-DESC-VALIDATE-CONSTRAINT" class="id_link">#</a></dt><dd><p>
+<span class="original">
+      This form validates a foreign key, check, or not-null constraint that was
       previously created as &lt;literal&gt;NOT VALID&lt;/literal&gt;, by scanning the
       table to ensure there are no rows for which the constraint is not
-      satisfied.  Nothing happens if the constraint is already marked valid.
+      satisfied.  If the constraint was set to &lt;literal&gt;NOT ENFORCED&lt;/literal&gt;, an error is thrown.
+      Nothing happens if the constraint is already marked valid.
       (See &lt;xref linkend="sql-altertable-notes"/&gt; below for an explanation
       of the usefulness of this command.)
 </span>
-この構文は、以前に<code class="literal">NOT VALID</code>として作成された外部キー制約または検査制約を、これらの制約を満たさない行が存在しないことを確認するためにテーブルをスキャンして、検証します。
+《マッチ度[72.413793]》この構文は、以前に<code class="literal">NOT VALID</code>として作成された外部キー制約または検査制約を、これらの制約を満たさない行が存在しないことを確認するためにテーブルをスキャンして、検証します。
 制約がすでに有効であると記録されている場合は何も起こりません。
 (このコマンドの有用性の説明は<a class="xref" href="sql-altertable.html#SQL-ALTERTABLE-NOTES" title="注釈">注釈</a>以下を参照してください。)
+《機械翻訳》このフォームは、以前にとして作成された外部キー、チェックまたは非NULL制約を検証します<code class="literal">NOT VALID</code>テーブルを保証にスキャンすることで、制約が満たされない行はありません。
+制約が<code class="literal">NOT ENFORCED</code>に設定されている場合、エラーがスローされます。
+制約がすでに有効とマークされている場合は、何も起こりません。
+(このコマンドの便利な点については、後述の<a class="xref" href="sql-altertable.html#SQL-ALTERTABLE-NOTES" title="注釈">注釈</a>を参照してください。
      </p><p>
 <span class="original">
       This command acquires a &lt;literal&gt;SHARE UPDATE EXCLUSIVE&lt;/literal&gt; lock.
@@ -774,7 +840,7 @@ clusterオプションの変更は<code class="literal">SHARE UPDATE EXCLUSIVE</
       See &lt;xref linkend="tableam"/&gt; for more information.
 </span>
 この構文は、指定のアクセスメソッドを使ってテーブルのアクセスメソッドを書き換えることにより変更します。<code class="literal">DEFAULT</code>を指定すると、<a class="xref" href="runtime-config-client.html#GUC-DEFAULT-TABLE-ACCESS-METHOD">default_table_access_method</a>設定パラメータとして設定されたアクセスメソッドが選ばれます。
-詳細は<a class="xref" href="tableam.html" title="第61章 テーブルアクセスメソッドのインタフェース定義">第61章</a>を参照してください。
+詳細は<a class="xref" href="tableam.html" title="第62章 テーブルアクセスメソッドのインタフェース定義">第62章</a>を参照してください。
      </p><p>
 <span class="original">
       When applied to a partitioned table, there is no data to rewrite,
@@ -840,6 +906,12 @@ clusterオプションの変更は<code class="literal">SHARE UPDATE EXCLUSIVE</
 </span>
 これは、テーブルにリンクされたシーケンス(ID列またはシリアル列)の永続性も変更します。
 一方、このようなシーケンスの永続性を個別に変更することもできます。
+     </p><p>
+<span class="original">
+      This form is not supported for partitioned tables.
+</span>
+《マッチ度[64.000000]》この形式は今のところパーティションテーブルではサポートされません。
+《機械翻訳》このフォームはテーブルパーティションに対応していません。
      </p></dd><dt id="SQL-ALTERTABLE-DESC-SET-STORAGE-PARAMETER"><span class="term"><code class="literal">SET ( <em class="replaceable"><code>storage_parameter</code></em> [= <em class="replaceable"><code>value</code></em>] [, ... ] )</code></span> <a href="#SQL-ALTERTABLE-DESC-SET-STORAGE-PARAMETER" class="id_link">#</a></dt><dd><p>
 <span class="original">
       This form changes one or more storage parameters for the table.  See
@@ -882,32 +954,31 @@ fillfactor、TOAST、およびautovacuumのストレージパラメータおよ�
       table.  Subsequently, queries against the parent will include records
       of the target table.  To be added as a child, the target table must
       already contain all the same columns as the parent (it could have
-      additional columns, too).  The columns must have matching data types,
-      and if they have &lt;literal&gt;NOT NULL&lt;/literal&gt; constraints in the parent
-      then they must also have &lt;literal&gt;NOT NULL&lt;/literal&gt; constraints in the
-      child.
+      additional columns, too).  The columns must have matching data types.
 </span>
-この構文は、対象テーブルを指定した親テーブルの子テーブルとして追加します。
-その後に行われる親テーブルへの問い合わせには対象テーブルの項目も含まれます。
-子テーブルとして追加するためには、対象テーブルには親テーブルと同じ列がすべて含まれていなければなりません。
-（この他の列を持つこともできます。）
-これらの列のデータ型は一致している必要があり、親テーブルで<code class="literal">NOT NULL</code>制約がある場合は、子テーブルでも同様に<code class="literal">NOT NULL</code>制約を持たなければなりません。
+《機械翻訳》このフォームは、指定したターゲットテーブルの新しい子として親テーブルを追加します。
+その後、親に対する問い合わせを実行すると、ターゲットテーブルのレコードがincludeされます。
+子として追加するには、ターゲットテーブルにすでに親と同じ列がすべて含まれている必要があります（列が追加される場合もあります）。
+列にはマッチングデータタイプが必要です。
      </p><p>
 <span class="original">
-      There must also be matching child-table constraints for all
-      &lt;literal&gt;CHECK&lt;/literal&gt; constraints of the parent, except those
-      marked non-inheritable (that is, created with &lt;literal&gt;ALTER TABLE ... ADD CONSTRAINT ... NO INHERIT&lt;/literal&gt;)
-      in the parent, which are ignored; all child-table constraints matched
-      must not be marked non-inheritable.
-      Currently
+      In addition, all &lt;literal&gt;CHECK&lt;/literal&gt; and &lt;literal&gt;NOT NULL&lt;/literal&gt;
+      constraints on the parent must also exist on the child, except those
+      marked non-inheritable (that is, created with
+      &lt;literal&gt;ALTER TABLE ... ADD CONSTRAINT ... NO INHERIT&lt;/literal&gt;), which
+      are ignored.  All child-table constraints matched must not be marked
+      non-inheritable.  Currently
       &lt;literal&gt;UNIQUE&lt;/literal&gt;, &lt;literal&gt;PRIMARY KEY&lt;/literal&gt;, and
       &lt;literal&gt;FOREIGN KEY&lt;/literal&gt; constraints are not considered, but
       this might change in the future.
 </span>
-また、親テーブルの<code class="literal">CHECK</code>制約すべてについても、一致する制約が子テーブルに存在しなければなりません。
+《マッチ度[70.712909]》また、親テーブルの<code class="literal">CHECK</code>制約すべてについても、一致する制約が子テーブルに存在しなければなりません。
 ただし、親テーブルにおいて継承不可と印付けされている（つまり<code class="literal">ALTER TABLE ... ADD CONSTRAINT ... NO INHERIT</code>付きで作成された）制約は除きます（これらは無視されます）。
 一致する子テーブルの制約はすべて継承不可であってはなりません。
 現時点では<code class="literal">UNIQUE</code>、<code class="literal">PRIMARY KEY</code>、<code class="literal">FOREIGN KEY</code>制約は無視されますが、将来変更されるかもしれません。
+《機械翻訳》さらに、親のすべての<code class="literal">CHECK</code>および<code class="literal">NOT NULL</code>制約は、無視される非継承可能とマークされたもの<code class="literal">ALTER TABLE ... ADD CONSTRAINT ... NO INHERIT</code>で作成されたものを除き、子にも存在する必要があります。
+一致するすべての子-テーブル制約は、非継承可能とマークできません。
+現在、<code class="literal">UNIQUE</code>、<code class="literal">PRIMARY KEY</code>および<code class="literal">FOREIGN KEY</code>制約は考慮されませんが、将来変更される可能性があります。
      </p></dd><dt id="SQL-ALTERTABLE-DESC-NO-INHERIT"><span class="term"><code class="literal">NO INHERIT <em class="replaceable"><code>parent_table</code></em></code></span> <a href="#SQL-ALTERTABLE-DESC-NO-INHERIT" class="id_link">#</a></dt><dd><p>
 <span class="original">
       This form removes the target table from the list of children of the
@@ -956,11 +1027,13 @@ fillfactor、TOAST、およびautovacuumのストレージパラメータおよ�
 このオプションは、論理レプリケーションが使用されている場合を除いて何の効果もありません。
      </p><div class="variablelist"><dl class="variablelist"><dt id="SQL-ALTERTABLE-REPLICA-IDENTITY-DEFAULT"><span class="term"><code class="literal">DEFAULT</code></span> <a href="#SQL-ALTERTABLE-REPLICA-IDENTITY-DEFAULT" class="id_link">#</a></dt><dd><p>
 <span class="original">
-         Records the old values of the columns of the primary key, if any.
+         Records the old values of the columns of the primary key.
          This is the default for non-system tables.
+         When there is no primary key, the behavior is the same as &lt;literal&gt;NOTHING&lt;/literal&gt;.
 </span>
-主キーの列に古い値がある場合、それを記録します。
-これは、非システムテーブルのデフォルトです。
+《機械翻訳》主キーの列の古い値を記録します。
+これは、システム以外の表のデフォルトです。
+主キーがない場合、動作は<code class="literal">NOTHING</code>.
         </p></dd><dt id="SQL-ALTERTABLE-REPLICA-IDENTITY-USING-INDEX"><span class="term"><code class="literal">USING INDEX <em class="replaceable"><code>index_name</code></em></code></span> <a href="#SQL-ALTERTABLE-REPLICA-IDENTITY-USING-INDEX" class="id_link">#</a></dt><dd><p>
 <span class="original">
          Records the old values of the columns covered by the named index,
@@ -1165,8 +1238,8 @@ fillfactor、TOAST、およびautovacuumのストレージパラメータおよ�
      </p></dd></dl></div><p>
   </p><p>
 <span class="original">
-   All the forms of ALTER TABLE that act on a single table, except
-   &lt;literal&gt;RENAME&lt;/literal&gt;, &lt;literal&gt;SET SCHEMA&lt;/literal&gt;,
+   All the forms of &lt;command&gt;ALTER TABLE&lt;/command&gt; that act on a single table,
+   except &lt;literal&gt;RENAME&lt;/literal&gt;, &lt;literal&gt;SET SCHEMA&lt;/literal&gt;,
    &lt;literal&gt;ATTACH PARTITION&lt;/literal&gt;, and
    &lt;literal&gt;DETACH PARTITION&lt;/literal&gt; can be combined into
    a list of multiple alterations to be applied together.  For example, it
@@ -1174,7 +1247,7 @@ fillfactor、TOAST、およびautovacuumのストレージパラメータおよ�
    columns in a single command.  This is particularly useful with large
    tables, since only one pass over the table need be made.
 </span>
-<code class="literal">RENAME</code>、<code class="literal">SET SCHEMA</code>、<code class="literal">ATTACH PARTITION</code>、<code class="literal">DETACH PARTITION</code>は、複数の変更リストに結合して、まとめて処理することができますが、それらを除き、ALTER TABLEのすべての構文は１つだけのテーブルに対して作用します。
+《マッチ度[91.035857]》<code class="literal">RENAME</code>、<code class="literal">SET SCHEMA</code>、<code class="literal">ATTACH PARTITION</code>、<code class="literal">DETACH PARTITION</code>は、複数の変更リストに結合して、まとめて処理することができますが、それらを除き、ALTER TABLEのすべての構文は１つだけのテーブルに対して作用します。
 例えば、複数の列の追加、型の変更を単一のコマンドで実行することができます。
 これは特に巨大なテーブルでは便利です。変更のために必要なテーブル全体のスキャンが1回で済むからです。
   </p><p>
@@ -1360,49 +1433,83 @@ fillfactor、TOAST、およびautovacuumのストレージパラメータおよ�
    </p><p>
 <span class="original">
     When a column is added with &lt;literal&gt;ADD COLUMN&lt;/literal&gt; and a
-    non-volatile &lt;literal&gt;DEFAULT&lt;/literal&gt; is specified, the default is
+    non-volatile &lt;literal&gt;DEFAULT&lt;/literal&gt; is specified, the default value is
     evaluated at the time of the statement and the result stored in the
-    table's metadata.  That value will be used for the column for all existing
-    rows.  If no &lt;literal&gt;DEFAULT&lt;/literal&gt; is specified, NULL is used.  In
-    neither case is a rewrite of the table required.
+    table's metadata, where it will be returned when any existing rows are
+    accessed.  The value will be only applied when the table is rewritten,
+    making the &lt;command&gt;ALTER TABLE&lt;/command&gt; very fast even on large tables.
+    If no column constraints are specified, NULL is used as the
+    &lt;literal&gt;DEFAULT&lt;/literal&gt;.  In neither case is a rewrite of the table
+    required.
 </span>
-<code class="literal">ADD COLUMN</code>で列が追加され、非変動性の<code class="literal">DEFAULT</code>が指定されたときには、デフォルトは宣言時に評価されてテーブルのメタデータに格納された結果です。
+《マッチ度[59.001783]》<code class="literal">ADD COLUMN</code>で列が追加され、非変動性の<code class="literal">DEFAULT</code>が指定されたときには、デフォルトは宣言時に評価されてテーブルのメタデータに格納された結果です。
 この値は全ての既存行の列に使われます。
 <code class="literal">DEFAULT</code>が指定されなかった場合にはNULLが使われます。
 どちらの場合もテーブルを書き直す必要はありません。
+《機械翻訳》カラムに<code class="literal">ADD COLUMN</code>を指定し、かつ不揮発性<code class="literal">DEFAULT</code>を指定すると、デフォルト値はステートメント時に評価され、結果はテーブルのメタデータに格納されます。
+既存の行がアクセスされると結果が返されます。
+値はテーブルが書き換えられた時にのみ適用され、ラージテーブルに対しても<code class="command">ALTER TABLE</code>非常に高速になります。
+カラム制約が指定されていない場合、NULLは<code class="literal">DEFAULT</code>として使用されます。
+どちらのケースでもテーブルの書き換えは必要ありません。
    </p><p>
 <span class="original">
-    Adding a column with a volatile &lt;literal&gt;DEFAULT&lt;/literal&gt; or
-    changing the type of an existing column will require the entire table and
-    its indexes to be rewritten. As an exception, when changing the type of an
-    existing column, if the &lt;literal&gt;USING&lt;/literal&gt; clause does not change
-    the column contents and the old type is either binary coercible to the new
-    type or an unconstrained domain over the new type, a table rewrite is not
-    needed. However, indexes must always be rebuilt unless the system can
-    verify that the new index would be logically equivalent to the existing
-    one.  For example, if the collation for a column has been changed, an index
-    rebuild is always required because the new sort order might be different.
-    However, in the absence of a collation change, a column can be changed
-    from &lt;type&gt;text&lt;/type&gt; to &lt;type&gt;varchar&lt;/type&gt; (or vice versa) without
-    rebuilding the indexes because these data types sort identically.
-    Table and/or index rebuilds may take a
-    significant amount of time for a large table; and will temporarily require
-    as much as double the disk space.
+    Adding a column with a volatile &lt;literal&gt;DEFAULT&lt;/literal&gt;
+    (e.g., &lt;function&gt;clock_timestamp()&lt;/function&gt;), a stored generated column,
+    an identity column, or a column with a domain data type that has
+    constraints will cause the entire table and its indexes to be rewritten.
+    Adding a virtual generated column never requires a rewrite.
 </span>
-変動性の<code class="literal">DEFAULT</code>句を持つ列を追加したり、既存の列の型を変更するには、テーブルとインデックス全体の書き換えが必要になります。
+《機械翻訳》volatile<code class="literal">カラム</code>を持つデフォルト<code class="function">clock_timestamp()</code>例:、stored generatedカラム、identityカラム、制約を持つドメインデータタイプを持つカラムを追加すると、テーブル全体とそのインデックスが書き換えられます。
+virtual generatedカラムを追加しても、書き換えられることはありません。
+   </p><p>
+<span class="original">
+    Changing the type of an existing column will normally cause the entire table
+    and its indexes to be rewritten.
+    As an exception, when changing the type of an existing column,
+    if the &lt;literal&gt;USING&lt;/literal&gt; clause does not change the column
+    contents and the old type is either binary coercible to the new type
+    or an unconstrained domain over the new type, a table rewrite is not
+    needed.  However, indexes will still be rebuilt unless the system
+    can verify that the new index would be logically equivalent to the
+    existing one.  For example, if the collation for a column has been
+    changed, an index rebuild is required because the new sort
+    order might be different.  However, in the absence of a collation
+    change, a column can be changed from &lt;type&gt;text&lt;/type&gt; to
+    &lt;type&gt;varchar&lt;/type&gt; (or vice versa) without rebuilding the indexes
+    because these data types sort identically.
+</span>
+《マッチ度[64.821223]》変動性の<code class="literal">DEFAULT</code>句を持つ列を追加したり、既存の列の型を変更するには、テーブルとインデックス全体の書き換えが必要になります。
 例外として、既存列の型を変更するとき、<code class="literal">USING</code>句が列の内容を変更せず、かつ、古い型が新しい型とバイナリ変換可能であるか新しい型全体に対する制約のないドメインである場合、テーブルの書き換えは必要ありません。
 しかし、新しいインデックスが既存のものと論理的に等しいとシステムが確認できないのであれば、インデックスは常に再構築しなければなりません。
 例えば、列の照合順序が変更された場合には、新しいソート順が異なるかもしれませんので、インデックスの再構築は常に必要です。
 しかし、照合順序の変更がなければ、インデックスの再構築なしで列を<code class="type">text</code>から<code class="type">varchar</code>へ(またはその逆)と変更できます。データ型のソートが同一だからです。
 テーブルが巨大な場合、テーブル、インデックスまたはその両方の再構築には非常に時間がかかる可能性があります。
 また、一時的に2倍のディスク容量が必要とされます。
+《機械翻訳》既存のタイプのカラムを変更すると、通常、テーブル全体とそのインデックスが書き換えられます。
+例外として、既存のカラムのタイプを変更するときに、<code class="literal">USING</code>句がカラムの内容を変更せず、古いタイプが新しいタイプへのバイナリ強制互換か、新しいタイプへの制約のないドメインのいずれかである場合、テーブルの書き直しは必要ありません。
+ただし、システムが新しいインデックスが既存のと論理的に同等であることを確認できない限り、インデックスは再構築されます。
+例の場合、カラムの照合順序が変更された場合、新しいソートオーダーが異なる可能性があるため、インデックスの再構築が必要です。
+ただし、照合順序の変更がない場合は、インデックスを再構築しなくてもカラムを<code class="type">text</code>から<code class="type">varchar</code>に（またはその逆）に変更できます。
+これは、データの種類がと同じであるためです。
+ソート
    </p><p>
 <span class="original">
-    Adding a &lt;literal&gt;CHECK&lt;/literal&gt; or &lt;literal&gt;NOT NULL&lt;/literal&gt; constraint requires
-    scanning the table to verify that existing rows meet the constraint,
-    but does not require a table rewrite.
+    Table and/or index
+    rebuilds may take a significant amount of time for a large table,
+    and will temporarily require as much as double the disk space.
 </span>
-<code class="literal">CHECK</code>あるいは<code class="literal">NOT NULL</code>制約を追加する時は、既存の行が制約に従うかどうかを検証するためにテーブルのスキャンが必要になりますが、テーブルの書き換えは必要ありません。
+《機械翻訳》テーブルおよび/またはインデックスの復旧には、ラージテーブルではかなりの時間がかかる場合があり、一時的にはディスクスペースの2倍の時間が必要になります。
+   </p><p>
+<span class="original">
+    Adding a &lt;literal&gt;CHECK&lt;/literal&gt; or &lt;literal&gt;NOT NULL&lt;/literal&gt;
+    constraint requires scanning the table to verify that existing rows meet the
+    constraint, but does not require a table rewrite.  If a &lt;literal&gt;CHECK&lt;/literal&gt;
+    constraint is added as &lt;literal&gt;NOT ENFORCED&lt;/literal&gt;, no verification will
+    be performed.
+</span>
+《マッチ度[57.371795]》<code class="literal">CHECK</code>あるいは<code class="literal">NOT NULL</code>制約を追加する時は、既存の行が制約に従うかどうかを検証するためにテーブルのスキャンが必要になりますが、テーブルの書き換えは必要ありません。
+《機械翻訳》<code class="literal">CHECK</code>または<code class="literal">NOT NULL</code>制約を追加するには、テーブルをスキャンして既存の行が制約を満たしていることを確認する必要がありますが、テーブルの書き換えは必要ありません。
+<code class="literal">CHECK</code>制約が<code class="literal">NOT ENFORCED</code>として追加された場合、確認は実行されません。
    </p><p>
 <span class="original">
     Similarly, when attaching a new partition it may be scanned to verify that
@@ -1418,7 +1525,7 @@ fillfactor、TOAST、およびautovacuumのストレージパラメータおよ�
 単一の<code class="command">ALTER TABLE</code>内に複数の変更を指定できるオプションを提供する主な理由は、複数のテーブルスキャンや書き換えを1回のテーブルスキャンにまとめることができるようにすることです。
    </p><p>
 <span class="original">
-    Scanning a large table to verify a new foreign key or check constraint
+    Scanning a large table to verify new foreign-key, check, or not-null constraints
     can take a long time, and other updates to the table are locked out
     until the &lt;command&gt;ALTER TABLE ADD CONSTRAINT&lt;/command&gt; command is
     committed.  The main purpose of the &lt;literal&gt;NOT VALID&lt;/literal&gt;
@@ -1442,7 +1549,7 @@ fillfactor、TOAST、およびautovacuumのストレージパラメータおよ�
     at leisure until &lt;literal&gt;VALIDATE CONSTRAINT&lt;/literal&gt; finally
     succeeds.
 </span>
-新しい外部キーや検査制約を検証するために大きなテーブルをスキャンするのは長い時間が掛かる可能性があり、<code class="command">ALTER TABLE ADD CONSTRAINT</code>コマンドがコミットされるまで、そのテーブルのその他の更新は締め出されます。
+《マッチ度[92.002688]》新しい外部キーや検査制約を検証するために大きなテーブルをスキャンするのは長い時間が掛かる可能性があり、<code class="command">ALTER TABLE ADD CONSTRAINT</code>コマンドがコミットされるまで、そのテーブルのその他の更新は締め出されます。
 <code class="literal">NOT VALID</code>制約オプションの主な目的は、同時実行中の更新に制約を追加する影響を減らすことです。
 <code class="literal">NOT VALID</code>を付ければ、<code class="command">ADD CONSTRAINT</code>コマンドはテーブルをスキャンせず、すぐにコミットされます。
 その後で、<code class="literal">VALIDATE CONSTRAINT</code>コマンドを発行して、既存の行が制約を満たすか検証できます。
@@ -1857,18 +1964,28 @@ ALTER TABLE measurement
   &lt;title&gt;Compatibility&lt;/title&gt;
 </span><p>
 <span class="original">
-   The forms &lt;literal&gt;ADD&lt;/literal&gt; (without &lt;literal&gt;USING INDEX&lt;/literal&gt;),
+   The forms &lt;literal&gt;ADD [COLUMN]&lt;/literal&gt;,
    &lt;literal&gt;DROP [COLUMN]&lt;/literal&gt;, &lt;literal&gt;DROP IDENTITY&lt;/literal&gt;, &lt;literal&gt;RESTART&lt;/literal&gt;,
    &lt;literal&gt;SET DEFAULT&lt;/literal&gt;, &lt;literal&gt;SET DATA TYPE&lt;/literal&gt; (without &lt;literal&gt;USING&lt;/literal&gt;),
    &lt;literal&gt;SET GENERATED&lt;/literal&gt;, and &lt;literal&gt;SET &lt;replaceable&gt;sequence_option&lt;/replaceable&gt;&lt;/literal&gt;
-   conform with the SQL standard.  The other forms are
+   conform with the SQL standard.
+   The form &lt;literal&gt;ADD &lt;replaceable&gt;table_constraint&lt;/replaceable&gt;&lt;/literal&gt;
+   conforms with the SQL standard when the &lt;literal&gt;USING INDEX&lt;/literal&gt; and
+   &lt;literal&gt;NOT VALID&lt;/literal&gt; clauses are omitted and the constraint type is
+   one of &lt;literal&gt;CHECK&lt;/literal&gt;, &lt;literal&gt;UNIQUE&lt;/literal&gt;, &lt;literal&gt;PRIMARY KEY&lt;/literal&gt;,
+   or &lt;literal&gt;REFERENCES&lt;/literal&gt;.
+   The other forms are
    &lt;productname&gt;PostgreSQL&lt;/productname&gt; extensions of the SQL standard.
    Also, the ability to specify more than one manipulation in a single
    &lt;command&gt;ALTER TABLE&lt;/command&gt; command is an extension.
 </span>
-（<code class="literal">USING INDEX</code>がない）<code class="literal">ADD</code>、<code class="literal">DROP [COLUMN]</code>、<code class="literal">DROP IDENTITY</code>、<code class="literal">RESTART</code>、<code class="literal">SET DEFAULT</code>、（<code class="literal">USING</code>のない）<code class="literal">SET DATA TYPE</code>、<code class="literal">SET GENERATED</code>、<code class="literal">SET <em class="replaceable"><code>sequence_option</code></em></code>構文は標準SQLに準拠しています。
+《マッチ度[56.535600]》（<code class="literal">USING INDEX</code>がない）<code class="literal">ADD</code>、<code class="literal">DROP [COLUMN]</code>、<code class="literal">DROP IDENTITY</code>、<code class="literal">RESTART</code>、<code class="literal">SET DEFAULT</code>、（<code class="literal">USING</code>のない）<code class="literal">SET DATA TYPE</code>、<code class="literal">SET GENERATED</code>、<code class="literal">SET <em class="replaceable"><code>sequence_option</code></em></code>構文は標準SQLに準拠しています。
 他の構文は標準SQLに対する<span class="productname">PostgreSQL</span>の拡張です。
 また、単一の<code class="command">ALTER TABLE</code>コマンド内に複数の操作を指定する機能も<span class="productname">PostgreSQL</span>の拡張です。
+《機械翻訳》形式<code class="literal">ADD [COLUMN]</code>,<code class="literal">DROP [COLUMN]</code>,<code class="literal">DROP IDENTITY</code>,<code class="literal">RESTART</code>,<code class="literal">SET DEFAULT</code>,<code class="literal">SET DATA TYPE</code> <code class="literal">USING</code>なし,<code class="literal">SET GENERATED</code>,<code class="literal">SET <em class="replaceable"><code>sequence_option</code></em></code>は、標準SQLに準拠しています。
+<code class="literal">USING INDEX</code>および<code class="literal">NOT VALID</code>節を省略し、フォームタイプ <code class="literal">ADD <em class="replaceable"><code>table_constraint</code></em></code>が<code class="literal">CHECK</code>,<code class="literal">UNIQUE</code>,<code class="literal">PRIMARY KEY</code>,<code class="literal">REFERENCES</code>のいずれかである場合は、標準SQLに準拠しています。
+他の形式は、標準SQLの<span class="productname">PostgreSQL</span>拡張です。
+また、単一の<code class="command">ALTER TABLE</code>コマンドで複数の操作を指定する機能も拡張です。
   </p><p>
 <span class="original">
    &lt;command&gt;ALTER TABLE DROP COLUMN&lt;/command&gt; can be used to drop the only
@@ -1879,4 +1996,4 @@ ALTER TABLE measurement
 これは<span class="productname">PostgreSQL</span>の拡張です。SQLでは、列を持たないテーブルは認められていません。
   </p></div><div class="refsect1" id="id-1.9.3.35.10"><h2>関連項目</h2><span class="original">
   &lt;title&gt;See Also&lt;/title&gt;
-</span><span class="simplelist"><a class="xref" href="sql-createtable.html" title="CREATE TABLE"><span class="refentrytitle">CREATE TABLE</span></a></span></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="sql-altersystem.html" title="ALTER SYSTEM">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="sql-commands.html" title="SQLコマンド">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="sql-altertablespace.html" title="ALTER TABLESPACE">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">ALTER SYSTEM </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 17.6文書">ホーム</a></td><td width="40%" align="right" valign="top"> ALTER TABLESPACE</td></tr></table></div></body></html>
+</span><span class="simplelist"><a class="xref" href="sql-createtable.html" title="CREATE TABLE"><span class="refentrytitle">CREATE TABLE</span></a></span></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="sql-altersystem.html" title="ALTER SYSTEM">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="sql-commands.html" title="SQLコマンド">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="sql-altertablespace.html" title="ALTER TABLESPACE">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">ALTER SYSTEM </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 18.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> ALTER TABLESPACE</td></tr></table></div></body></html>

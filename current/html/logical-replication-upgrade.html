@@ -1,0 +1,740 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>29.13. Upgrade</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="logical-replication-config.html" title="29.12. 構成設定" /><link rel="next" href="logical-replication-quick-setup.html" title="29.14. 簡単な設定" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 18.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="logical-replication.html" title="第29章 論理レプリケーション">第29章 論理レプリケーション</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 18.0 : logical-replication-upgrade.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="logical-replication-config.html" title="29.12. 構成設定">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="logical-replication.html" title="第29章 論理レプリケーション">上へ</a></td><td width="60%" align="center">29.13. Upgrade</td><td width="20%" align="right"> <a accesskey="n" href="logical-replication-quick-setup.html" title="29.14. 簡単な設定">次へ</a></td></tr></table><hr /></div><div class="sect1" id="LOGICAL-REPLICATION-UPGRADE"><div class="titlepage"><div><div><h2 class="title" style="clear: both">29.13. Upgrade <a href="#LOGICAL-REPLICATION-UPGRADE" class="id_link">#</a></h2></div></div></div><p>
+<span class="original">
+   Migration of &lt;glossterm linkend="glossary-logical-replication-cluster"&gt;logical replication clusters&lt;/glossterm&gt;
+   is possible only when all the members of the old logical replication
+   clusters are version 17.0 or later.
+</span>
+《機械翻訳》<a class="glossterm" href="glossary.html#GLOSSARY-LOGICAL-REPLICATION-CLUSTER"><em class="glossterm"><a class="glossterm" href="glossary.html#GLOSSARY-LOGICAL-REPLICATION-CLUSTER" title="Logical replication cluster">論理レプリケーション群</a></em></a>の移行は、旧論理レプリケーション群のメンバが全てバージョン17.0以降の場合のみ可能。
+  </p><div class="sect2" id="PREPARE-PUBLISHER-UPGRADES"><div class="titlepage"><div><div><h3 class="title">29.13.1. 《機械翻訳》パブリッシャーのアップグレードの準備 <a href="#PREPARE-PUBLISHER-UPGRADES" class="id_link">#</a></h3></div></div></div><span class="original">
+   &lt;title&gt;Prepare for Publisher Upgrades&lt;/title&gt;
+</span><p>
+<span class="original">
+    &lt;application&gt;pg_upgrade&lt;/application&gt; attempts to migrate logical
+    slots. This helps avoid the need for manually defining the same
+    logical slots on the new publisher. Migration of logical slots is
+    only supported when the old cluster is version 17.0 or later.
+    Logical slots on clusters before version 17.0 will silently be
+    ignored.
+</span>
+《機械翻訳》<span class="application">pg_upgrade</span>ロジカルスロットを移行しようとします。
+これにより、新しいロジカルで同じパブリッシャースロットを手動で定義する必要がなくなります。
+ロジカルスロットの移行は、古いクラスタがバージョン17.0以降の場合にのみサポートされます。
+クラスタ上のロジカルスロット前バージョン17.0は暗黙的に無視されます。
+   </p><p>
+<span class="original">
+    Before you start upgrading the publisher cluster, ensure that the
+    subscription is temporarily disabled, by executing
+    &lt;link linkend="sql-altersubscription"&gt;&lt;command&gt;ALTER SUBSCRIPTION ... DISABLE&lt;/command&gt;&lt;/link&gt;.
+    Re-enable the subscription after the upgrade.
+</span>
+《機械翻訳》前スタートアップグレード処理<a class="link" href="sql-altersubscription.html" title="ALTER SUBSCRIPTION"><code class="command">ALTER SUBSCRIPTION ... DISABLE</code></a>を実行して、サブスクリプションが一時的に無効になっている保証パブリッシャークラスタ。
+アップグレードの後にサブスクリプションを再度有効にします。
+   </p><p>
+<span class="original">
+    There are some prerequisites for &lt;application&gt;pg_upgrade&lt;/application&gt; to
+    be able to upgrade the logical slots. If these are not met an error
+    will be reported.
+</span>
+《機械翻訳》<span class="application">pg_upgrade</span>ロジカル枠をアップグレードできるようにするにはいくつかの前提条件があります。
+これらが満たされない場合、エラーが報告されます。
+   </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>
+<span class="original">
+      The new cluster must have
+      &lt;link linkend="guc-wal-level"&gt;&lt;varname&gt;wal_level&lt;/varname&gt;&lt;/link&gt; as
+      &lt;literal&gt;logical&lt;/literal&gt;.
+</span>
+《マッチ度[68.032787]》<a class="link" href="runtime-config-wal.html#GUC-WAL-LEVEL"><code class="varname">wal_level</code></a>は<code class="literal">logical</code>に設定することが必要です。
+《機械翻訳》新しいクラスタは<a class="link" href="runtime-config-wal.html#GUC-WAL-LEVEL"><code class="varname">wal_level</code></a>を<code class="literal">logical</code>として持つ必要があります。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      The new cluster must have
+      &lt;link linkend="guc-max-replication-slots"&gt;&lt;varname&gt;max_replication_slots&lt;/varname&gt;&lt;/link&gt;
+      configured to a value greater than or equal to the number of slots
+      present in the old cluster.
+</span>
+《機械翻訳》新しいクラスタの<a class="link" href="runtime-config-replication.html#GUC-MAX-REPLICATION-SLOTS"><code class="varname">max_replication_slots</code></a>は、以上の値を古いクラスタに存在するスロットの数に設定する必要があります。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      The output plugins referenced by the slots on the old cluster must be
+      installed in the new PostgreSQL executable directory.
+</span>
+《機械翻訳》古いクラスタのスロットで参照される出力プラグインは、新しいPostgreSQLの実行ファイル格納ディレクトリにインストールする必要があります。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      The old cluster has replicated all the transactions and logical decoding
+      messages to subscribers.
+</span>
+《機械翻訳》古いクラスタは、すべてのトランザクションとロジカルデコーディングメッセージをサブスクライバーに複製します。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      All slots on the old cluster must be usable, i.e., there are no slots
+      whose
+      &lt;link linkend="view-pg-replication-slots"&gt;pg_replication_slots&lt;/link&gt;.&lt;structfield&gt;conflicting&lt;/structfield&gt;
+      is not &lt;literal&gt;true&lt;/literal&gt;.
+</span>
+《機械翻訳》古いクラスタのスロットは全て使用可能でなければなりません。
+つまり、<a class="link" href="view-pg-replication-slots.html" title="53.20. pg_replication_slots">pg_replication_slots</a>.<code class="structfield">conflicting</code>が<code class="literal">true</code>ではないスロットは存在しません。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      The new cluster must not have permanent logical slots, i.e.,
+      there must be no slots where
+      &lt;link linkend="view-pg-replication-slots"&gt;pg_replication_slots&lt;/link&gt;.&lt;structfield&gt;temporary&lt;/structfield&gt;
+      is &lt;literal&gt;false&lt;/literal&gt;.
+</span>
+《機械翻訳》新しいクラスタは永続的なロジカルスロットを持つことはできません。
+つまり、<a class="link" href="view-pg-replication-slots.html" title="53.20. pg_replication_slots">pg_replication_slots</a>.<code class="structfield">一時的</code>が<code class="literal">false</code>であるようなスロットがあってはなりません。
+     </p></li></ul></div></div><div class="sect2" id="PREPARE-SUBSCRIBER-UPGRADES"><div class="titlepage"><div><div><h3 class="title">29.13.2. 《機械翻訳》サブスクライバーのアップグレードの準備 <a href="#PREPARE-SUBSCRIBER-UPGRADES" class="id_link">#</a></h3></div></div></div><span class="original">
+   &lt;title&gt;Prepare for Subscriber Upgrades&lt;/title&gt;
+</span><p>
+<span class="original">
+    Setup the &lt;link linkend="logical-replication-config-subscriber"&gt;
+    subscriber configurations&lt;/link&gt; in the new subscriber.
+    &lt;application&gt;pg_upgrade&lt;/application&gt; attempts to migrate subscription
+    dependencies which includes the subscription's table information present in
+    &lt;link linkend="catalog-pg-subscription-rel"&gt;pg_subscription_rel&lt;/link&gt;
+    system catalog and also the subscription's replication origin. This allows
+    logical replication on the new subscriber to continue from where the
+    old subscriber was up to. Migration of subscription dependencies is only
+    supported when the old cluster is version 17.0 or later. Subscription
+    dependencies on clusters before version 17.0 will silently be ignored.
+</span>
+《機械翻訳》新しいサブスクライバーの<a class="link" href="logical-replication-config.html#LOGICAL-REPLICATION-CONFIG-SUBSCRIBER" title="29.12.2. サブスクライバー">サブスクライバーの設定</a>をセットアップします。
+<span class="application">pg_upgrade</span><a class="link" href="catalog-pg-subscription-rel.html" title="52.55. pg_subscription_rel">pg_subscription_rel</a>システムカタログとサブスクリプションの複製起点に存在するサブスクリプションのテーブル情報を含むサブスクリプションの依存性を移行しようとします。
+これにより、新しいサブスクライバーの論理レプリケーションは古いサブスクライバーがあった場所から継続することができます。
+サブスクリプションの移行の依存性は古いクラスタがバージョン17.0以降の場合にのみサポートされます。
+前バージョン17.0のクラスタ上のサブスクリプションの依存性は黙って無視されます。
+   </p><p>
+<span class="original">
+    There are some prerequisites for &lt;application&gt;pg_upgrade&lt;/application&gt; to
+    be able to upgrade the subscriptions. If these are not met an error
+    will be reported.
+</span>
+《機械翻訳》<span class="application">pg_upgrade</span>定期購読をアップグレードできるようにするにはいくつかの前提条件があります。
+これらが満たされない場合、エラーが報告されます。
+   </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>
+<span class="original">
+      All the subscription tables in the old subscriber should be in state
+      &lt;literal&gt;i&lt;/literal&gt; (initialize) or &lt;literal&gt;r&lt;/literal&gt; (ready). This
+      can be verified by checking &lt;link linkend="catalog-pg-subscription-rel"&gt;pg_subscription_rel&lt;/link&gt;.&lt;structfield&gt;srsubstate&lt;/structfield&gt;.
+</span>
+《機械翻訳》古いサブスクリプション内の全てのサブスクライバーテーブルは<code class="literal">i</code> initializeもしくは<code class="literal">r</code> readyの状態である必要があります。
+これは<a class="link" href="catalog-pg-subscription-rel.html" title="52.55. pg_subscription_rel">pg_subscription_rel</a>をチェックすることで検証することができます。
+<code class="structfield">srsubstate</code>.
+     </p></li><li class="listitem"><p>
+<span class="original">
+      The replication origin entry corresponding to each of the subscriptions
+      should exist in the old cluster. This can be found by checking
+      &lt;link linkend="catalog-pg-subscription"&gt;pg_subscription&lt;/link&gt; and
+      &lt;link linkend="catalog-pg-replication-origin"&gt;pg_replication_origin&lt;/link&gt;
+      system tables.
+</span>
+《機械翻訳》各サブスクリプションに対応する複製起点エントリは、古いクラスタに存在する必要があります。
+これは、<a class="link" href="catalog-pg-subscription.html" title="52.54. pg_subscription">pg_subscription</a>と<a class="link" href="catalog-pg-replication-origin.html" title="52.44. pg_replication_origin">pg_replication_origin</a>システムテーブルを調べることで見つけることができます。
+     </p></li><li class="listitem"><p>
+<span class="original">
+      The new cluster must have
+      &lt;link linkend="guc-max-active-replication-origins"&gt;&lt;varname&gt;max_active_replication_origins&lt;/varname&gt;&lt;/link&gt;
+      configured to a value greater than or equal to the number of
+      subscriptions present in the old cluster.
+</span>
+《機械翻訳》新しいクラスタは、古い以上に存在する加入数に対するクラスタの値に設定されている必要があります<a class="link" href="runtime-config-replication.html#GUC-MAX-ACTIVE-REPLICATION-ORIGINS"><code class="varname">max_active_replication_origins</code></a>。
+     </p></li></ul></div></div><div class="sect2" id="UPGRADING-LOGICAL-REPLICATION-CLUSTERS"><div class="titlepage"><div><div><h3 class="title">29.13.3. 《機械翻訳》論理レプリケーションクラスタのアップグレード <a href="#UPGRADING-LOGICAL-REPLICATION-CLUSTERS" class="id_link">#</a></h3></div></div></div><span class="original">
+   &lt;title&gt;Upgrading Logical Replication Clusters&lt;/title&gt;
+</span><p>
+<span class="original">
+    While upgrading a subscriber, write operations can be performed in the
+    publisher. These changes will be replicated to the subscriber once the
+    subscriber upgrade is completed.
+</span>
+《機械翻訳》アップグレード処理がサブスクライバーである間、書き込み操作はパブリッシャーで実行できます。
+これらの変更は、サブスクライバーアップグレードが完了するとサブスクライバーに複製されます。
+   </p><div class="note"><h3 class="title">注記</h3><p>
+<span class="original">
+     The logical replication restrictions apply to logical replication cluster
+     upgrades also. See &lt;xref linkend="logical-replication-restrictions"/&gt; for
+     details.
+</span>
+《機械翻訳》論理レプリケーションの制限は、論理レプリケーションクラスタのアップグレードにも適用されます。
+詳細は<a class="xref" href="logical-replication-restrictions.html" title="29.8. 制限事項">29.8</a>を参照してください。
+    </p><p>
+<span class="original">
+     The prerequisites of publisher upgrade apply to logical replication
+     cluster upgrades also. See &lt;xref linkend="prepare-publisher-upgrades"/&gt;
+     for details.
+</span>
+《機械翻訳》パブリッシャーアップグレードの前提条件は、論理レプリケーションクラスタのアップグレードにも適用されます。
+詳細は<a class="xref" href="logical-replication-upgrade.html#PREPARE-PUBLISHER-UPGRADES" title="29.13.1. 《機械翻訳》パブリッシャーのアップグレードの準備">29.13.1</a>を参照してください。
+    </p><p>
+<span class="original">
+     The prerequisites of subscriber upgrade apply to logical replication
+     cluster upgrades also. See &lt;xref linkend="prepare-subscriber-upgrades"/&gt;
+     for details.
+</span>
+《機械翻訳》サブスクライバーアップグレードの前提条件は、論理レプリケーションクラスタのアップグレードにも適用されます。
+詳細は<a class="xref" href="logical-replication-upgrade.html#PREPARE-SUBSCRIBER-UPGRADES" title="29.13.2. 《機械翻訳》サブスクライバーのアップグレードの準備">29.13.2</a>を参照してください。
+    </p></div><div class="warning"><h3 class="title">警告</h3><p>
+<span class="original">
+     Upgrading logical replication cluster requires multiple steps to be
+     performed on various nodes. Because not all operations are
+     transactional, the user is advised to take backups as described in
+     &lt;xref linkend="backup-base-backup"/&gt;.
+</span>
+《機械翻訳》アップグレード処理論理レプリケーションクラスタでは、様々なノードでマルチプル手順を実行する必要があります。
+すべての操作がトランザクションではないため、ユーザは<a class="xref" href="continuous-archiving.html#BACKUP-BASE-BACKUP" title="25.3.2. ベースバックアップの作成">25.3.2</a>の説明に従ってバックアップを作成することをお薦めします。
+    </p></div><p>
+<span class="original">
+    The steps to upgrade the following logical replication clusters are
+    detailed below:
+</span>
+《機械翻訳》次の論理レプリケーションクラスタをアップグレードする手順は以下に詳述されています。
+    </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>
+<span class="original">
+       Follow the steps specified in
+       &lt;xref linkend="steps-two-node-logical-replication-cluster"/&gt; to upgrade
+       a two-node logical replication cluster.
+</span>
+《機械翻訳》<a class="xref" href="logical-replication-upgrade.html#STEPS-TWO-NODE-LOGICAL-REPLICATION-CLUSTER" title="29.13.3.1. 《機械翻訳》2ノード論理レプリケーションクラスタをアップグレードする手順">29.13.3.1</a>で指定された手順に従って、アップグレードa 2-ノード論理レプリケーションクラスタまで行きます。
+      </p></li><li class="listitem"><p>
+<span class="original">
+       Follow the steps specified in
+       &lt;xref linkend="steps-cascaded-logical-replication-cluster"/&gt; to upgrade
+       a cascaded logical replication cluster.
+</span>
+《機械翻訳》<a class="xref" href="logical-replication-upgrade.html#STEPS-CASCADED-LOGICAL-REPLICATION-CLUSTER" title="29.13.3.2. 《機械翻訳》カスケード論理レプリケーションクラスタをアップグレードする手順">29.13.3.2</a>で指定されている手順に従って、カスケード論理レプリケーションクラスタをアップグレードします。
+      </p></li><li class="listitem"><p>
+<span class="original">
+       Follow the steps specified in
+       &lt;xref linkend="steps-two-node-circular-logical-replication-cluster"/&gt;
+       to upgrade a two-node circular logical replication cluster.
+</span>
+《機械翻訳》<a class="xref" href="logical-replication-upgrade.html#STEPS-TWO-NODE-CIRCULAR-LOGICAL-REPLICATION-CLUSTER" title="29.13.3.3. 《機械翻訳》2ノード環状論理レプリケーションクラスタをアップグレードする手順">29.13.3.3</a>で指定されている手順に従って、2ノード環状論理レプリケーションクラスタをアップグレードまで行きます。
+      </p></li></ul></div><p>
+   </p><div class="sect3" id="STEPS-TWO-NODE-LOGICAL-REPLICATION-CLUSTER"><div class="titlepage"><div><div><h4 class="title">29.13.3.1. 《機械翻訳》2ノード論理レプリケーションクラスタをアップグレードする手順 <a href="#STEPS-TWO-NODE-LOGICAL-REPLICATION-CLUSTER" class="id_link">#</a></h4></div></div></div><span class="original">
+    &lt;title&gt;Steps to Upgrade a Two-node Logical Replication Cluster&lt;/title&gt;
+</span><p>
+<span class="original">
+      Let's say publisher is in &lt;literal&gt;node1&lt;/literal&gt; and subscriber is
+      in &lt;literal&gt;node2&lt;/literal&gt;. The subscriber &lt;literal&gt;node2&lt;/literal&gt; has
+      a subscription &lt;literal&gt;sub1_node1_node2&lt;/literal&gt; which is subscribing
+      the changes from &lt;literal&gt;node1&lt;/literal&gt;.
+</span>
+《機械翻訳》パブリッシャーが<code class="literal">node1</code>にあり、サブスクライバーが<code class="literal">node2</code>にあるとします。
+サブスクライバーには<code class="literal">node1</code>からの変更をサブスクライブしているサブスクリプションがあります。
+<code class="literal">node2</code> <code class="literal">sub1_node1_node2</code>
+     </p><div class="procedure"><ol class="procedure" type="1"><li class="step" id="TWO-NODE-CLUSTER-DISABLE-SUBSCRIPTIONS-NODE2"><p>
+<span class="original">
+        Disable all the subscriptions on &lt;literal&gt;node2&lt;/literal&gt; that are
+        subscribing the changes from &lt;literal&gt;node1&lt;/literal&gt; by using
+        &lt;link linkend="sql-altersubscription-params-disable"&gt;&lt;command&gt;ALTER SUBSCRIPTION ... DISABLE&lt;/command&gt;&lt;/link&gt;,
+        e.g.:
+</span>
+《機械翻訳》<code class="literal">node1</code>からの変更をサブスクライブしている<code class="literal">node2</code>上のすべてのサブスクリプションを無効にします<a class="link" href="sql-altersubscription.html#SQL-ALTERSUBSCRIPTION-PARAMS-DISABLE"><code class="command">ALTER SUBSCRIPTION ... DISABLE</code></a>を使用、例:。
+</p><pre class="programlisting">
+/* node2 # */ ALTER SUBSCRIPTION sub1_node1_node2 DISABLE;
+</pre><p>
+       </p></li><li class="step"><p>
+<span class="original">
+        Stop the publisher server in &lt;literal&gt;node1&lt;/literal&gt;, e.g.:
+</span>
+《機械翻訳》パブリッシャーサーバを停止します<code class="literal">node1</code>例:。
+</p><pre class="programlisting">
+pg_ctl -D /opt/PostgreSQL/data1 stop
+</pre><p>
+       </p></li><li class="step"><p>
+<span class="original">
+        Initialize &lt;literal&gt;data1_upgraded&lt;/literal&gt; instance by using the
+        required newer version.
+</span>
+《機械翻訳》必要な新しいインスタンスを使用して、<code class="literal">data1_upgraded</code>バージョンを初期化します。
+       </p></li><li class="step"><p>
+<span class="original">
+        Upgrade the publisher &lt;literal&gt;node1&lt;/literal&gt;'s server to the
+        required newer version, e.g.:
+</span>
+《機械翻訳》パブリッシャーのアップグレード<code class="literal">node1</code>例えば、必要とされるより新しいサーバへのバージョン。
+</p><pre class="programlisting">
+pg_upgrade
+        --old-datadir "/opt/PostgreSQL/postgres/17/data1"
+        --new-datadir "/opt/PostgreSQL/postgres/18/data1_upgraded"
+        --old-bindir "/opt/PostgreSQL/postgres/17/bin"
+        --new-bindir "/opt/PostgreSQL/postgres/18/bin"
+</pre><p>
+       </p></li><li class="step"><p>
+<span class="original">
+        Start the upgraded publisher server in &lt;literal&gt;node1&lt;/literal&gt;, e.g.:
+</span>
+《機械翻訳》スタートのアップグレードされたパブリッシャーサーバ<code class="literal">node1</code>例:。
+</p><pre class="programlisting">
+pg_ctl -D /opt/PostgreSQL/data1_upgraded start -l logfile
+</pre><p>
+       </p></li><li class="step"><p>
+<span class="original">
+        Stop the subscriber server in &lt;literal&gt;node2&lt;/literal&gt;, e.g.:
+</span>
+《機械翻訳》サブスクライバーサーバを停止します<code class="literal">node2</code>例:。
+</p><pre class="programlisting">
+pg_ctl -D /opt/PostgreSQL/data2 stop
+</pre><p>
+       </p></li><li class="step"><p>
+<span class="original">
+        Initialize &lt;literal&gt;data2_upgraded&lt;/literal&gt; instance by using the
+        required newer version.
+</span>
+《機械翻訳》必要な新しいインスタンスを使用して、<code class="literal">data2_upgraded</code>バージョンを初期化します。
+       </p></li><li class="step"><p>
+<span class="original">
+        Upgrade the subscriber &lt;literal&gt;node2&lt;/literal&gt;'s server to
+        the required new version, e.g.:
+</span>
+《機械翻訳》サブスクライバーをアップグレードしてください<code class="literal">node2</code>例えば、必要な新しいバージョンまでのサーバ。
+</p><pre class="programlisting">
+pg_upgrade
+       --old-datadir "/opt/PostgreSQL/postgres/17/data2"
+       --new-datadir "/opt/PostgreSQL/postgres/18/data2_upgraded"
+       --old-bindir "/opt/PostgreSQL/postgres/17/bin"
+       --new-bindir "/opt/PostgreSQL/postgres/18/bin"
+</pre><p>
+       </p></li><li class="step"><p>
+<span class="original">
+        Start the upgraded subscriber server in &lt;literal&gt;node2&lt;/literal&gt;, e.g.:
+</span>
+《機械翻訳》スタートのアップグレードされたサブスクライバーサーバ<code class="literal">node2</code>例:。
+</p><pre class="programlisting">
+pg_ctl -D /opt/PostgreSQL/data2_upgraded start -l logfile
+</pre><p>
+       </p></li><li class="step"><p>
+<span class="original">
+        On &lt;literal&gt;node2&lt;/literal&gt;, create any tables that were created in
+        the upgraded publisher &lt;literal&gt;node1&lt;/literal&gt; server between
+        &lt;xref linkend="two-node-cluster-disable-subscriptions-node2"/&gt;
+        and now, e.g.:
+</span>
+《機械翻訳》<code class="literal">node2</code>で、アップグレードされたパブリッシャー<code class="literal">node1</code><a class="xref" href="logical-replication-upgrade.html#TWO-NODE-CLUSTER-DISABLE-SUBSCRIPTIONS-NODE2" title="ステップ 1">ステップ 1</a>と現在の間のサーバで作成されたテーブルを作成します。
+例:。
+</p><pre class="programlisting">
+/* node2 # */ CREATE TABLE distributors (did integer PRIMARY KEY, name varchar(40));
+</pre><p>
+       </p></li><li class="step"><p>
+<span class="original">
+        Enable all the subscriptions on &lt;literal&gt;node2&lt;/literal&gt; that are
+        subscribing the changes from &lt;literal&gt;node1&lt;/literal&gt; by using
+        &lt;link linkend="sql-altersubscription-params-enable"&gt;&lt;command&gt;ALTER SUBSCRIPTION ... ENABLE&lt;/command&gt;&lt;/link&gt;,
+        e.g.:
+</span>
+《機械翻訳》から変更をサブスクライブしている上のすべてのサブスクリプションを有効にします<code class="literal">node1</code><a class="link" href="sql-altersubscription.html#SQL-ALTERSUBSCRIPTION-PARAMS-ENABLE"><code class="command">ALTER SUBSCRIPTION ... ENABLE</code>を使用、例:。
+<code class="literal">node2</code></a>
+</p><pre class="programlisting">
+/* node2 # */ ALTER SUBSCRIPTION sub1_node1_node2 ENABLE;
+</pre><p>
+       </p></li><li class="step"><p>
+<span class="original">
+        Refresh the &lt;literal&gt;node2&lt;/literal&gt; subscription's publications using
+        &lt;link linkend="sql-altersubscription-params-refresh-publication"&gt;&lt;command&gt;ALTER SUBSCRIPTION ... REFRESH PUBLICATION&lt;/command&gt;&lt;/link&gt;,
+        e.g.:
+</span>
+《機械翻訳》リフレッシュ<code class="literal">node2</code><a class="link" href="sql-altersubscription.html#SQL-ALTERSUBSCRIPTION-PARAMS-REFRESH-PUBLICATION"><code class="command">ALTER SUBSCRIPTION ... REFRESH PUBLICATION</code></a>を使用したサブスクリプションの出版物、例えば:。
+</p><pre class="programlisting">
+/* node2 # */ ALTER SUBSCRIPTION sub1_node1_node2 REFRESH PUBLICATION;
+</pre><p>
+       </p></li></ol></div><div class="note"><h3 class="title">注記</h3><p>
+<span class="original">
+       In the steps described above, the publisher is upgraded first, followed
+       by the subscriber. Alternatively, the user can use similar steps to
+       upgrade the subscriber first, followed by the publisher.
+</span>
+《機械翻訳》前述の手順では、パブリッシャーが最初にアップグレードされ、次にサブスクライバーがアップグレードされます。
+または、ユーザも同様の手順を使用して、サブスクライバーが最初にアップグレードされ、次にパブリッシャーがアップグレードされます。
+      </p></div></div><div class="sect3" id="STEPS-CASCADED-LOGICAL-REPLICATION-CLUSTER"><div class="titlepage"><div><div><h4 class="title">29.13.3.2. 《機械翻訳》カスケード論理レプリケーションクラスタをアップグレードする手順 <a href="#STEPS-CASCADED-LOGICAL-REPLICATION-CLUSTER" class="id_link">#</a></h4></div></div></div><span class="original">
+     &lt;title&gt;Steps to Upgrade a Cascaded Logical Replication Cluster&lt;/title&gt;
+</span><p>
+<span class="original">
+      Let's say we have a cascaded logical replication setup
+      &lt;literal&gt;node1&lt;/literal&gt;-&gt;&lt;literal&gt;node2&lt;/literal&gt;-&gt;&lt;literal&gt;node3&lt;/literal&gt;.
+      Here &lt;literal&gt;node2&lt;/literal&gt; is subscribing the changes from
+      &lt;literal&gt;node1&lt;/literal&gt; and &lt;literal&gt;node3&lt;/literal&gt; is subscribing
+      the changes from &lt;literal&gt;node2&lt;/literal&gt;. The &lt;literal&gt;node2&lt;/literal&gt;
+      has a subscription &lt;literal&gt;sub1_node1_node2&lt;/literal&gt; which is
+      subscribing the changes from &lt;literal&gt;node1&lt;/literal&gt;. The
+      &lt;literal&gt;node3&lt;/literal&gt; has a subscription
+      &lt;literal&gt;sub1_node2_node3&lt;/literal&gt; which is subscribing the changes from
+      &lt;literal&gt;node2&lt;/literal&gt;.
+</span>
+《機械翻訳》カスケードされた論理レプリケーションセットアップ<code class="literal">node1</code>-&gt;<code class="literal">node2</code>-&gt;<code class="literal">node3</code>があるとします。
+ここで、<code class="literal">node2</code>は<code class="literal">node1</code>からの変更をサブスクライブしており、<code class="literal">node3</code>は<code class="literal">node2</code>からの変更をサブスクライブしています。
+<code class="literal">node2</code>には<code class="literal">node1</code>からの変更をサブスクライブしている<code class="literal">sub1_node1_node2</code>サブスクリプションがあります。
+<code class="literal">node3</code>には<code class="literal">node2</code>からの変更をサブスクライブしている<code class="literal">sub1_node2_node3</code>サブスクリプションがあります。
+<code class="literal">node3</code>
+     </p><div class="procedure"><ol class="procedure" type="1"><li class="step" id="CASCADED-CLUSTER-DISABLE-SUB-NODE1-NODE2"><p>
+<span class="original">
+        Disable all the subscriptions on &lt;literal&gt;node2&lt;/literal&gt; that are
+        subscribing the changes from &lt;literal&gt;node1&lt;/literal&gt; by using
+        &lt;link linkend="sql-altersubscription-params-disable"&gt;&lt;command&gt;ALTER SUBSCRIPTION ... DISABLE&lt;/command&gt;&lt;/link&gt;,
+        e.g.:
+</span>
+《機械翻訳》からの変更をサブスクライブしている上のすべてのサブスクリプションを無効にします<code class="literal">node1</code><a class="link" href="sql-altersubscription.html#SQL-ALTERSUBSCRIPTION-PARAMS-DISABLE"><code class="command">ALTER SUBSCRIPTION ... DISABLE</code>を使用、例:。
+<code class="literal">node2</code></a>
+</p><pre class="programlisting">
+/* node2 # */ ALTER SUBSCRIPTION sub1_node1_node2 DISABLE;
+</pre><p>
+       </p></li><li class="step"><p>
+<span class="original">
+        Stop the server in &lt;literal&gt;node1&lt;/literal&gt;, e.g.:
+</span>
+《機械翻訳》サーバを停止します<code class="literal">node1</code>例:。
+</p><pre class="programlisting">
+pg_ctl -D /opt/PostgreSQL/data1 stop
+</pre><p>
+       </p></li><li class="step"><p>
+<span class="original">
+        Initialize &lt;literal&gt;data1_upgraded&lt;/literal&gt; instance by using the
+        required newer version.
+</span>
+《機械翻訳》必要な新しいインスタンスを使用して、<code class="literal">data1_upgraded</code>バージョンを初期化します。
+       </p></li><li class="step"><p>
+<span class="original">
+        Upgrade the &lt;literal&gt;node1&lt;/literal&gt;'s server to the required newer
+        version, e.g.:
+</span>
+《機械翻訳》例えば、<code class="literal">node1</code>のサーバを、必要とされるより新しいバージョンまでアップグレードしてください。
+</p><pre class="programlisting">
+pg_upgrade
+        --old-datadir "/opt/PostgreSQL/postgres/17/data1"
+        --new-datadir "/opt/PostgreSQL/postgres/18/data1_upgraded"
+        --old-bindir "/opt/PostgreSQL/postgres/17/bin"
+        --new-bindir "/opt/PostgreSQL/postgres/18/bin"
+</pre><p>
+       </p></li><li class="step"><p>
+<span class="original">
+        Start the upgraded server in &lt;literal&gt;node1&lt;/literal&gt;, e.g.:
+</span>
+《機械翻訳》スタートアップグレードされたサーバ<code class="literal">node1</code>例:。
+</p><pre class="programlisting">
+pg_ctl -D /opt/PostgreSQL/data1_upgraded start -l logfile
+</pre><p>
+       </p></li><li class="step" id="CASCADED-CLUSTER-DISABLE-SUB-NODE2-NODE3"><p>
+<span class="original">
+        Disable all the subscriptions on &lt;literal&gt;node3&lt;/literal&gt; that are
+        subscribing the changes from &lt;literal&gt;node2&lt;/literal&gt; by using
+        &lt;link linkend="sql-altersubscription-params-disable"&gt;&lt;command&gt;ALTER SUBSCRIPTION ... DISABLE&lt;/command&gt;&lt;/link&gt;,
+        e.g.:
+</span>
+《機械翻訳》からの変更をサブスクライブしている上のすべてのサブスクリプションを無効にします<code class="literal">node2</code><a class="link" href="sql-altersubscription.html#SQL-ALTERSUBSCRIPTION-PARAMS-DISABLE"><code class="command">ALTER SUBSCRIPTION ... DISABLE</code>を使用、例:。
+<code class="literal">node3</code></a>
+</p><pre class="programlisting">
+/* node3 # */ ALTER SUBSCRIPTION sub1_node2_node3 DISABLE;
+</pre><p>
+       </p></li><li class="step"><p>
+<span class="original">
+        Stop the server in &lt;literal&gt;node2&lt;/literal&gt;, e.g.:
+</span>
+《機械翻訳》サーバを停止します<code class="literal">node2</code>例:。
+</p><pre class="programlisting">
+pg_ctl -D /opt/PostgreSQL/data2 stop
+</pre><p>
+       </p></li><li class="step"><p>
+<span class="original">
+        Initialize &lt;literal&gt;data2_upgraded&lt;/literal&gt; instance by using the
+        required newer version.
+</span>
+《機械翻訳》必要な新しいインスタンスを使用して、<code class="literal">data2_upgraded</code>バージョンを初期化します。
+       </p></li><li class="step"><p>
+<span class="original">
+        Upgrade the &lt;literal&gt;node2&lt;/literal&gt;'s server to the required
+        new version, e.g.:
+</span>
+《機械翻訳》例えば、<code class="literal">node2</code>のサーバから必要な新しいバージョンまでアップグレードします。
+</p><pre class="programlisting">
+pg_upgrade
+        --old-datadir "/opt/PostgreSQL/postgres/17/data2"
+        --new-datadir "/opt/PostgreSQL/postgres/18/data2_upgraded"
+        --old-bindir "/opt/PostgreSQL/postgres/17/bin"
+        --new-bindir "/opt/PostgreSQL/postgres/18/bin"
+</pre><p>
+       </p></li><li class="step"><p>
+<span class="original">
+        Start the upgraded server in &lt;literal&gt;node2&lt;/literal&gt;, e.g.:
+</span>
+《機械翻訳》スタートアップグレードされたサーバ<code class="literal">node2</code>例:。
+</p><pre class="programlisting">
+pg_ctl -D /opt/PostgreSQL/data2_upgraded start -l logfile
+</pre><p>
+       </p></li><li class="step"><p>
+<span class="original">
+        On &lt;literal&gt;node2&lt;/literal&gt;, create any tables that were created in
+        the upgraded publisher &lt;literal&gt;node1&lt;/literal&gt; server between
+        &lt;xref linkend="cascaded-cluster-disable-sub-node1-node2"/&gt;
+        and now, e.g.:
+</span>
+《機械翻訳》<code class="literal">node2</code>で、アップグレードされたパブリッシャー<code class="literal">node1</code><a class="xref" href="logical-replication-upgrade.html#CASCADED-CLUSTER-DISABLE-SUB-NODE1-NODE2" title="ステップ 1">ステップ 1</a>と現在の間のサーバで作成されたテーブルを作成します。
+例:。
+</p><pre class="programlisting">
+/* node2 # */ CREATE TABLE distributors (did integer PRIMARY KEY, name varchar(40));
+</pre><p>
+       </p></li><li class="step"><p>
+<span class="original">
+        Enable all the subscriptions on &lt;literal&gt;node2&lt;/literal&gt; that are
+        subscribing the changes from &lt;literal&gt;node1&lt;/literal&gt; by using
+        &lt;link linkend="sql-altersubscription-params-enable"&gt;&lt;command&gt;ALTER SUBSCRIPTION ... ENABLE&lt;/command&gt;&lt;/link&gt;,
+        e.g.:
+</span>
+《機械翻訳》から変更をサブスクライブしている上のすべてのサブスクリプションを有効にします<code class="literal">node1</code><a class="link" href="sql-altersubscription.html#SQL-ALTERSUBSCRIPTION-PARAMS-ENABLE"><code class="command">ALTER SUBSCRIPTION ... ENABLE</code>を使用、例:。
+<code class="literal">node2</code></a>
+</p><pre class="programlisting">
+/* node2 # */ ALTER SUBSCRIPTION sub1_node1_node2 ENABLE;
+</pre><p>
+       </p></li><li class="step"><p>
+<span class="original">
+        Refresh the &lt;literal&gt;node2&lt;/literal&gt; subscription's publications using
+        &lt;link linkend="sql-altersubscription-params-refresh-publication"&gt;&lt;command&gt;ALTER SUBSCRIPTION ... REFRESH PUBLICATION&lt;/command&gt;&lt;/link&gt;,
+        e.g.:
+</span>
+《機械翻訳》リフレッシュ<code class="literal">node2</code><a class="link" href="sql-altersubscription.html#SQL-ALTERSUBSCRIPTION-PARAMS-REFRESH-PUBLICATION"><code class="command">ALTER SUBSCRIPTION ... REFRESH PUBLICATION</code></a>を使用したサブスクリプションの出版物、例えば:。
+</p><pre class="programlisting">
+/* node2 # */ ALTER SUBSCRIPTION sub1_node1_node2 REFRESH PUBLICATION;
+</pre><p>
+       </p></li><li class="step"><p>
+<span class="original">
+        Stop the server in &lt;literal&gt;node3&lt;/literal&gt;, e.g.:
+</span>
+《機械翻訳》サーバを停止します<code class="literal">node3</code>例:。
+</p><pre class="programlisting">
+pg_ctl -D /opt/PostgreSQL/data3 stop
+</pre><p>
+       </p></li><li class="step"><p>
+<span class="original">
+        Initialize &lt;literal&gt;data3_upgraded&lt;/literal&gt; instance by using the
+        required newer version.
+</span>
+《機械翻訳》必要な新しいインスタンスを使用して、<code class="literal">data3_upgraded</code>バージョンを初期化します。
+       </p></li><li class="step"><p>
+<span class="original">
+        Upgrade the &lt;literal&gt;node3&lt;/literal&gt;'s server to the required
+        new version, e.g.:
+</span>
+《機械翻訳》例えば、<code class="literal">node3</code>のサーバから必要な新しいバージョンまでアップグレードします。
+</p><pre class="programlisting">
+pg_upgrade
+        --old-datadir "/opt/PostgreSQL/postgres/17/data3"
+        --new-datadir "/opt/PostgreSQL/postgres/18/data3_upgraded"
+        --old-bindir "/opt/PostgreSQL/postgres/17/bin"
+        --new-bindir "/opt/PostgreSQL/postgres/18/bin"
+</pre><p>
+       </p></li><li class="step"><p>
+<span class="original">
+        Start the upgraded server in &lt;literal&gt;node3&lt;/literal&gt;, e.g.:
+</span>
+《機械翻訳》スタートアップグレードされたサーバ<code class="literal">node3</code>例:。
+</p><pre class="programlisting">
+pg_ctl -D /opt/PostgreSQL/data3_upgraded start -l logfile
+</pre><p>
+       </p></li><li class="step"><p>
+<span class="original">
+        On &lt;literal&gt;node3&lt;/literal&gt;, create any tables that were created in
+        the upgraded &lt;literal&gt;node2&lt;/literal&gt; between
+        &lt;xref linkend="cascaded-cluster-disable-sub-node2-node3"/&gt; and now,
+        e.g.:
+</span>
+《機械翻訳》<code class="literal">node3</code>,上で、アップグレードされた<code class="literal">node2</code><a class="xref" href="logical-replication-upgrade.html#CASCADED-CLUSTER-DISABLE-SUB-NODE2-NODE3" title="ステップ 6">ステップ 6</a>と現在の間の、例えば以下のようなで作成されたテーブルを作成します。
+</p><pre class="programlisting">
+/* node3 # */ CREATE TABLE distributors (did integer PRIMARY KEY, name varchar(40));
+</pre><p>
+       </p></li><li class="step"><p>
+<span class="original">
+        Enable all the subscriptions on &lt;literal&gt;node3&lt;/literal&gt; that are
+        subscribing the changes from &lt;literal&gt;node2&lt;/literal&gt; by using
+        &lt;link linkend="sql-altersubscription-params-enable"&gt;&lt;command&gt;ALTER SUBSCRIPTION ... ENABLE&lt;/command&gt;&lt;/link&gt;,
+        e.g.:
+</span>
+《機械翻訳》<code class="literal">node2</code>から変更をサブスクライブしている<code class="literal">node3</code>上のすべてのサブスクリプションを有効にします<a class="link" href="sql-altersubscription.html#SQL-ALTERSUBSCRIPTION-PARAMS-ENABLE"><code class="command">ALTER SUBSCRIPTION ... ENABLE</code></a>を使用、例:。
+</p><pre class="programlisting">
+/* node3 # */ ALTER SUBSCRIPTION sub1_node2_node3 ENABLE;
+</pre><p>
+       </p></li><li class="step"><p>
+<span class="original">
+        Refresh the &lt;literal&gt;node3&lt;/literal&gt; subscription's publications using
+        &lt;link linkend="sql-altersubscription-params-refresh-publication"&gt;&lt;command&gt;ALTER SUBSCRIPTION ... REFRESH PUBLICATION&lt;/command&gt;&lt;/link&gt;,
+        e.g.:
+</span>
+《機械翻訳》リフレッシュ<code class="literal">node3</code><a class="link" href="sql-altersubscription.html#SQL-ALTERSUBSCRIPTION-PARAMS-REFRESH-PUBLICATION"><code class="command">ALTER SUBSCRIPTION ... REFRESH PUBLICATION</code></a>を使用したサブスクリプションの出版物、例えば:。
+</p><pre class="programlisting">
+/* node3 # */ ALTER SUBSCRIPTION sub1_node2_node3 REFRESH PUBLICATION;
+</pre><p>
+       </p></li></ol></div></div><div class="sect3" id="STEPS-TWO-NODE-CIRCULAR-LOGICAL-REPLICATION-CLUSTER"><div class="titlepage"><div><div><h4 class="title">29.13.3.3. 《機械翻訳》2ノード環状論理レプリケーションクラスタをアップグレードする手順 <a href="#STEPS-TWO-NODE-CIRCULAR-LOGICAL-REPLICATION-CLUSTER" class="id_link">#</a></h4></div></div></div><span class="original">
+     &lt;title&gt;Steps to Upgrade a Two-node Circular Logical Replication Cluster&lt;/title&gt;
+</span><p>
+<span class="original">
+      Let's say we have a circular logical replication setup
+      &lt;literal&gt;node1&lt;/literal&gt;-&gt;&lt;literal&gt;node2&lt;/literal&gt; and
+      &lt;literal&gt;node2&lt;/literal&gt;-&gt;&lt;literal&gt;node1&lt;/literal&gt;. Here
+      &lt;literal&gt;node2&lt;/literal&gt; is subscribing the changes from
+      &lt;literal&gt;node1&lt;/literal&gt; and &lt;literal&gt;node1&lt;/literal&gt; is subscribing
+      the changes from &lt;literal&gt;node2&lt;/literal&gt;. The &lt;literal&gt;node1&lt;/literal&gt;
+      has a subscription &lt;literal&gt;sub1_node2_node1&lt;/literal&gt; which is
+      subscribing the changes from &lt;literal&gt;node2&lt;/literal&gt;. The
+      &lt;literal&gt;node2&lt;/literal&gt; has a subscription
+      &lt;literal&gt;sub1_node1_node2&lt;/literal&gt; which is subscribing the changes from
+      &lt;literal&gt;node1&lt;/literal&gt;.
+</span>
+《機械翻訳》円形の論理レプリケーションセットアップ<code class="literal">node1</code>-&gt;<code class="literal">node2</code>および<code class="literal">node2</code>-&gt;<code class="literal">node1</code>ここで<code class="literal">node2</code>は<code class="literal">node1</code>からの変更をサブスクライブしており、<code class="literal">node1</code>は<code class="literal">node2</code>からの変更をサブスクライブしています。
+<code class="literal">node1</code>は<code class="literal">node2</code>からの変更をサブスクライブしているサブスクリプション<code class="literal">sub1_node2_node1</code>を持っています。
+<code class="literal">node2</code>は<code class="literal">node1</code>からの変更をサブスクライブしているサブスクリプション<code class="literal">sub1_node1_node2</code>を持っています。
+     </p><div class="procedure"><ol class="procedure" type="1"><li class="step" id="CIRCULAR-CLUSTER-DISABLE-SUB-NODE2"><p>
+<span class="original">
+        Disable all the subscriptions on &lt;literal&gt;node2&lt;/literal&gt; that are
+        subscribing the changes from &lt;literal&gt;node1&lt;/literal&gt; by using
+        &lt;link linkend="sql-altersubscription-params-disable"&gt;&lt;command&gt;ALTER SUBSCRIPTION ... DISABLE&lt;/command&gt;&lt;/link&gt;,
+        e.g.:
+</span>
+《機械翻訳》からの変更をサブスクライブしている上のすべてのサブスクリプションを無効にします<code class="literal">node1</code><a class="link" href="sql-altersubscription.html#SQL-ALTERSUBSCRIPTION-PARAMS-DISABLE"><code class="command">ALTER SUBSCRIPTION ... DISABLE</code>を使用、例:。
+<code class="literal">node2</code></a>
+</p><pre class="programlisting">
+/* node2 # */ ALTER SUBSCRIPTION sub1_node1_node2 DISABLE;
+</pre><p>
+       </p></li><li class="step"><p>
+<span class="original">
+        Stop the server in &lt;literal&gt;node1&lt;/literal&gt;, e.g.:
+</span>
+《機械翻訳》サーバを停止します<code class="literal">node1</code>例:。
+</p><pre class="programlisting">
+pg_ctl -D /opt/PostgreSQL/data1 stop
+</pre><p>
+       </p></li><li class="step"><p>
+<span class="original">
+        Initialize &lt;literal&gt;data1_upgraded&lt;/literal&gt; instance by using the
+        required newer version.
+</span>
+《機械翻訳》必要な新しいインスタンスを使用して、<code class="literal">data1_upgraded</code>バージョンを初期化します。
+       </p></li><li class="step"><p>
+<span class="original">
+        Upgrade the &lt;literal&gt;node1&lt;/literal&gt;'s server to the required
+        newer version, e.g.:
+</span>
+《機械翻訳》例えば、<code class="literal">node1</code>のサーバを、必要とされるより新しいバージョンまでアップグレードしてください。
+</p><pre class="programlisting">
+pg_upgrade
+        --old-datadir "/opt/PostgreSQL/postgres/17/data1"
+        --new-datadir "/opt/PostgreSQL/postgres/18/data1_upgraded"
+        --old-bindir "/opt/PostgreSQL/postgres/17/bin"
+        --new-bindir "/opt/PostgreSQL/postgres/18/bin"
+</pre><p>
+       </p></li><li class="step"><p>
+<span class="original">
+        Start the upgraded server in &lt;literal&gt;node1&lt;/literal&gt;, e.g.:
+</span>
+《機械翻訳》スタートアップグレードされたサーバ<code class="literal">node1</code>例:。
+</p><pre class="programlisting">
+pg_ctl -D /opt/PostgreSQL/data1_upgraded start -l logfile
+</pre><p>
+       </p></li><li class="step"><p>
+<span class="original">
+        Enable all the subscriptions on &lt;literal&gt;node2&lt;/literal&gt; that are
+        subscribing the changes from &lt;literal&gt;node1&lt;/literal&gt; by using
+        &lt;link linkend="sql-altersubscription-params-enable"&gt;&lt;command&gt;ALTER SUBSCRIPTION ... ENABLE&lt;/command&gt;&lt;/link&gt;,
+        e.g.:
+</span>
+《機械翻訳》<code class="literal">node1</code>から変更をサブスクライブしている<code class="literal">node2</code>上のすべてのサブスクリプションを有効にします<a class="link" href="sql-altersubscription.html#SQL-ALTERSUBSCRIPTION-PARAMS-ENABLE"><code class="command">ALTER SUBSCRIPTION ... ENABLE</code></a>を使用、例:。
+</p><pre class="programlisting">
+/* node2 # */ ALTER SUBSCRIPTION sub1_node1_node2 ENABLE;
+</pre><p>
+       </p></li><li class="step"><p>
+<span class="original">
+        On &lt;literal&gt;node1&lt;/literal&gt;, create any tables that were created in
+        &lt;literal&gt;node2&lt;/literal&gt; between &lt;xref linkend="circular-cluster-disable-sub-node2"/&gt;
+        and now, e.g.:
+</span>
+《機械翻訳》<code class="literal">node1</code>,上で、<code class="literal">node2</code><a class="xref" href="logical-replication-upgrade.html#CIRCULAR-CLUSTER-DISABLE-SUB-NODE2" title="ステップ 1">ステップ 1</a>と現在の間、例:で作成されたテーブルを作成します。
+</p><pre class="programlisting">
+/* node1 # */ CREATE TABLE distributors (did integer PRIMARY KEY, name varchar(40));
+</pre><p>
+       </p></li><li class="step"><p>
+<span class="original">
+        Refresh the &lt;literal&gt;node1&lt;/literal&gt; subscription's publications to
+        copy initial table data from &lt;literal&gt;node2&lt;/literal&gt; using
+        &lt;link linkend="sql-altersubscription-params-refresh-publication"&gt;&lt;command&gt;ALTER SUBSCRIPTION ... REFRESH PUBLICATION&lt;/command&gt;&lt;/link&gt;,
+        e.g.:
+</span>
+《機械翻訳》リフレッシュ<code class="literal">node1</code>コピーの最初のテーブルデータへのサブスクリプションの出版物<code class="literal">node2</code><a class="link" href="sql-altersubscription.html#SQL-ALTERSUBSCRIPTION-PARAMS-REFRESH-PUBLICATION"><code class="command">ALTER SUBSCRIPTION ... REFRESH PUBLICATION</code></a>を使用、例えば:。
+</p><pre class="programlisting">
+/* node1 # */ ALTER SUBSCRIPTION sub1_node2_node1 REFRESH PUBLICATION;
+</pre><p>
+       </p></li><li class="step" id="CIRCULAR-CLUSTER-DISABLE-SUB-NODE1"><p>
+<span class="original">
+        Disable all the subscriptions on &lt;literal&gt;node1&lt;/literal&gt; that are
+        subscribing the changes from &lt;literal&gt;node2&lt;/literal&gt; by using
+        &lt;link linkend="sql-altersubscription-params-disable"&gt;&lt;command&gt;ALTER SUBSCRIPTION ... DISABLE&lt;/command&gt;&lt;/link&gt;,
+        e.g.:
+</span>
+《機械翻訳》<code class="literal">node2</code>からの変更をサブスクライブしている<code class="literal">node1</code>上のすべてのサブスクリプションを無効にします<a class="link" href="sql-altersubscription.html#SQL-ALTERSUBSCRIPTION-PARAMS-DISABLE"><code class="command">ALTER SUBSCRIPTION ... DISABLE</code></a>を使用、例:。
+</p><pre class="programlisting">
+/* node1 # */ ALTER SUBSCRIPTION sub1_node2_node1 DISABLE;
+</pre><p>
+       </p></li><li class="step"><p>
+<span class="original">
+        Stop the server in &lt;literal&gt;node2&lt;/literal&gt;, e.g.:
+</span>
+《機械翻訳》サーバを停止します<code class="literal">node2</code>例:。
+</p><pre class="programlisting">
+pg_ctl -D /opt/PostgreSQL/data2 stop
+</pre><p>
+       </p></li><li class="step"><p>
+<span class="original">
+        Initialize &lt;literal&gt;data2_upgraded&lt;/literal&gt; instance by using the
+        required newer version.
+</span>
+《機械翻訳》必要な新しいインスタンスを使用して、<code class="literal">data2_upgraded</code>バージョンを初期化します。
+       </p></li><li class="step"><p>
+<span class="original">
+        Upgrade the &lt;literal&gt;node2&lt;/literal&gt;'s server to the required
+        new version, e.g.:
+</span>
+《機械翻訳》例えば、<code class="literal">node2</code>のサーバから必要な新しいバージョンまでアップグレードします。
+</p><pre class="programlisting">
+pg_upgrade
+        --old-datadir "/opt/PostgreSQL/postgres/17/data2"
+        --new-datadir "/opt/PostgreSQL/postgres/18/data2_upgraded"
+        --old-bindir "/opt/PostgreSQL/postgres/17/bin"
+        --new-bindir "/opt/PostgreSQL/postgres/18/bin"
+</pre><p>
+       </p></li><li class="step"><p>
+<span class="original">
+        Start the upgraded server in &lt;literal&gt;node2&lt;/literal&gt;, e.g.:
+</span>
+《機械翻訳》スタートアップグレードされたサーバ<code class="literal">node2</code>例:。
+</p><pre class="programlisting">
+pg_ctl -D /opt/PostgreSQL/data2_upgraded start -l logfile
+</pre><p>
+       </p></li><li class="step"><p>
+<span class="original">
+        Enable all the subscriptions on &lt;literal&gt;node1&lt;/literal&gt; that are
+        subscribing the changes from &lt;literal&gt;node2&lt;/literal&gt; by using
+        &lt;link linkend="sql-altersubscription-params-enable"&gt;&lt;command&gt;ALTER SUBSCRIPTION ... ENABLE&lt;/command&gt;&lt;/link&gt;,
+        e.g.:
+</span>
+《機械翻訳》<code class="literal">node2</code>から変更をサブスクライブしている<code class="literal">node1</code>上のすべてのサブスクリプションを有効にします<a class="link" href="sql-altersubscription.html#SQL-ALTERSUBSCRIPTION-PARAMS-ENABLE"><code class="command">ALTER SUBSCRIPTION ... ENABLE</code></a>を使用、例:。
+</p><pre class="programlisting">
+/* node1 # */ ALTER SUBSCRIPTION sub1_node2_node1 ENABLE;
+</pre><p>
+       </p></li><li class="step"><p>
+<span class="original">
+        On &lt;literal&gt;node2&lt;/literal&gt;, create any tables that were created in
+        the upgraded &lt;literal&gt;node1&lt;/literal&gt; between &lt;xref linkend="circular-cluster-disable-sub-node1"/&gt;
+        and now, e.g.:
+</span>
+《機械翻訳》<code class="literal">node2</code>,上で、アップグレードされた<code class="literal">node1</code><a class="xref" href="logical-replication-upgrade.html#CIRCULAR-CLUSTER-DISABLE-SUB-NODE1" title="ステップ 9">ステップ 9</a>と現在の間の、例えば以下のようなで作成されたテーブルを作成します。
+</p><pre class="programlisting">
+/* node2 # */ CREATE TABLE distributors (did integer PRIMARY KEY, name varchar(40));
+</pre><p>
+       </p></li><li class="step"><p>
+<span class="original">
+        Refresh the &lt;literal&gt;node2&lt;/literal&gt; subscription's publications to
+        copy initial table data from &lt;literal&gt;node1&lt;/literal&gt; using
+        &lt;link linkend="sql-altersubscription-params-refresh-publication"&gt;&lt;command&gt;ALTER SUBSCRIPTION ... REFRESH PUBLICATION&lt;/command&gt;&lt;/link&gt;,
+        e.g.:
+</span>
+《機械翻訳》リフレッシュ<code class="literal">node2</code>コピーの最初のテーブルデータへのサブスクリプションの出版物<code class="literal">node1</code><a class="link" href="sql-altersubscription.html#SQL-ALTERSUBSCRIPTION-PARAMS-REFRESH-PUBLICATION"><code class="command">ALTER SUBSCRIPTION ... REFRESH PUBLICATION</code></a>を使用、例えば:。
+</p><pre class="programlisting">
+/* node2 # */ ALTER SUBSCRIPTION sub1_node1_node2 REFRESH PUBLICATION;
+</pre><p>
+       </p></li></ol></div></div></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="logical-replication-config.html" title="29.12. 構成設定">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="logical-replication.html" title="第29章 論理レプリケーション">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="logical-replication-quick-setup.html" title="29.14. 簡単な設定">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">29.12. 構成設定 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 18.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 29.14. 簡単な設定</td></tr></table></div></body></html>

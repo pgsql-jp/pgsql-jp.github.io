@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>47.2. ロジカルデコーディングのコンセプト</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="logicaldecoding-example.html" title="47.1. ロジカルデコーディングの例" /><link rel="next" href="logicaldecoding-walsender.html" title="47.3. ストリーミングレプリケーションプロトコルインタフェース" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 17.6文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="logicaldecoding.html" title="第47章 ロジカルデコーディング">第47章 ロジカルデコーディング</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 17.6 : logicaldecoding-explanation.html">誤訳等の報告
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>47.2. ロジカルデコーディングのコンセプト</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="logicaldecoding-example.html" title="47.1. ロジカルデコーディングの例" /><link rel="next" href="logicaldecoding-walsender.html" title="47.3. ストリーミングレプリケーションプロトコルインタフェース" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 18.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="logicaldecoding.html" title="第47章 ロジカルデコーディング">第47章 ロジカルデコーディング</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 18.0 : logicaldecoding-explanation.html">誤訳等の報告
                     </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="logicaldecoding-example.html" title="47.1. ロジカルデコーディングの例">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="logicaldecoding.html" title="第47章 ロジカルデコーディング">上へ</a></td><td width="60%" align="center">47.2. ロジカルデコーディングのコンセプト</td><td width="20%" align="right"> <a accesskey="n" href="logicaldecoding-walsender.html" title="47.3. ストリーミングレプリケーションプロトコルインタフェース">次へ</a></td></tr></table><hr /></div><div class="sect1" id="LOGICALDECODING-EXPLANATION"><div class="titlepage"><div><div><h2 class="title" style="clear: both">47.2. ロジカルデコーディングのコンセプト <a href="#LOGICALDECODING-EXPLANATION" class="id_link">#</a></h2></div></div></div><span class="original">
    &lt;title&gt;Logical Decoding Concepts&lt;/title&gt;
 </span><div class="sect2" id="LOGICALDECODING-EXPLANATION-LOG-DEC"><div class="titlepage"><div><div><h3 class="title">47.2.1. ロジカルデコーディング <a href="#LOGICALDECODING-EXPLANATION-LOG-DEC" class="id_link">#</a></h3></div></div></div><span class="original">
@@ -222,20 +222,25 @@
 <span class="original">
      When slot synchronization is configured as recommended,
      and the initial synchronization is performed either automatically or
-     manually via pg_sync_replication_slot, the standby can persist the
-     synchronized slot only if the following condition is met: The logical
-     replication slot on the primary must retain WALs and system catalog
-     rows that are still available on the standby. This ensures data
+     manually via &lt;function&gt;pg_sync_replication_slots&lt;/function&gt;, the standby
+     can persist the synchronized slot only if the following condition is met:
+     The logical replication slot on the primary must retain WALs and system
+     catalog rows that are still available on the standby. This ensures data
      integrity and allows logical replication to continue smoothly after
      promotion.
      If the required WALs or catalog rows have already been purged from the
      standby, the slot will not be persisted to avoid data loss. In such
      cases, the following log message may appear:
 </span>
-スロットの同期が推奨通りに設定され、初期同期が自動的に、またはpg_sync_replication_slotを介して手動で行われた場合、次の条件を満たした場合にのみ、スタンバイは同期されたスロットを永続化できます：プライマリ上の論理レプリケーションスロットが、スタンバイ上で必要なWALおよびシステムカタログ行を保持している必要があります。
+《マッチ度[88.643068]》スロットの同期が推奨通りに設定され、初期同期が自動的に、またはpg_sync_replication_slotを介して手動で行われた場合、次の条件を満たした場合にのみ、スタンバイは同期されたスロットを永続化できます：プライマリ上の論理レプリケーションスロットが、スタンバイ上で必要なWALおよびシステムカタログ行を保持している必要があります。
 これにより、データの整合性が確保され、昇格後も論理レプリケーションをスムーズに継続できます。
 必要なWALまたはカタログ行がスタンバイからすでに削除されている場合、スロットはデータ損失を回避するために永続化されません。
 このような場合、次のログメッセージが表示されることがあります。
+《機械翻訳》スロットの同期化が推奨どおりに構成され、初期同期化が<code class="function">pg_sync_replication_slots</code>を介して自動または手動で実行される場合、スタンバイが同期化されたスロットを保持できるのは、次の条件が満たされる場合のみです。
+プライマリの論理レプリケーションスロットは、スタンバイで使用可能なシステムカタログ行およびWALを保持する必要があります。
+これにより、データの整合性が確保され、昇格後も論理レプリケーションを円滑に続行できます。
+必要なWALまたはカタログ行がすでにスタンバイからパージされている場合、データロスを回避するためにスロットは保持されません。
+この場合、ログメッセージは次のように表示されます。
 </p><pre class="programlisting">
 LOG:  could not synchronize replication slot "failover_slot"
 DETAIL:  Synchronization could lead to data loss, because the remote slot needs WAL at LSN 0/3003F28 and catalog xmin 754, but the standby has LSN 0/3003F28 and catalog xmin 756.
@@ -267,7 +272,7 @@ DETAIL:  Synchronization could lead to data loss, because the remote slot needs 
      disabled subscription, then the subscription cannot be resumed after
      failover even when it is enabled.
 </span>
-フェイルオーバー後に論理レプリケーションを再開できるかどうかは、フェイルオーバー時のスタンバイ上で同期されていたスロットの持つ<a class="link" href="view-pg-replication-slots.html" title="52.19. pg_replication_slots">pg_replication_slots</a>.<code class="structfield">synced</code>の値によって決まります。
+フェイルオーバー後に論理レプリケーションを再開できるかどうかは、フェイルオーバー時のスタンバイ上で同期されていたスロットの持つ<a class="link" href="view-pg-replication-slots.html" title="53.20. pg_replication_slots">pg_replication_slots</a>.<code class="structfield">synced</code>の値によって決まります。
 フェイルオーバー前に、スタンバイで同期状態が真となっている永続スロットだけが、フェイルオーバー後の論理レプリケーションに使用できます。
 同期されていた一時スロットはロジカルデコーディングには使用できないため、これらのスロットによる論理レプリケーションは再開できません。
 例えば、サブスクリプション無効になっているため、同期されたスロットがスタンバイ上で永続化できなかった場合、フェイルオーバー後にサブスクリプションを有効にしても、そのサブスクリプションは再利用できません。
@@ -331,4 +336,4 @@ DETAIL:  Synchronization could lead to data loss, because the remote slot needs 
      option.
 </span>
 スナップショットのエクスポートが必要ないアプリケーションは、<code class="literal">SNAPSHOT 'nothing'</code>オプションを使ってスナップショットのエクスポートを抑止できます。
-    </p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="logicaldecoding-example.html" title="47.1. ロジカルデコーディングの例">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="logicaldecoding.html" title="第47章 ロジカルデコーディング">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="logicaldecoding-walsender.html" title="47.3. ストリーミングレプリケーションプロトコルインタフェース">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">47.1. ロジカルデコーディングの例 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 17.6文書">ホーム</a></td><td width="40%" align="right" valign="top"> 47.3. ストリーミングレプリケーションプロトコルインタフェース</td></tr></table></div></body></html>
+    </p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="logicaldecoding-example.html" title="47.1. ロジカルデコーディングの例">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="logicaldecoding.html" title="第47章 ロジカルデコーディング">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="logicaldecoding-walsender.html" title="47.3. ストリーミングレプリケーションプロトコルインタフェース">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">47.1. ロジカルデコーディングの例 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 18.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 47.3. ストリーミングレプリケーションプロトコルインタフェース</td></tr></table></div></body></html>

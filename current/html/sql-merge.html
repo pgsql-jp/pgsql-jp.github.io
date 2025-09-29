@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>MERGE</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="sql-lock.html" title="LOCK" /><link rel="next" href="sql-move.html" title="MOVE" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 17.6文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="sql-commands.html" title="SQLコマンド">SQLコマンド</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 17.6 : sql-merge.html">誤訳等の報告
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>MERGE</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="sql-lock.html" title="LOCK" /><link rel="next" href="sql-move.html" title="MOVE" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 18.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="sql-commands.html" title="SQLコマンド">SQLコマンド</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 18.0 : sql-merge.html">誤訳等の報告
                     </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="sql-lock.html" title="LOCK">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="sql-commands.html" title="SQLコマンド">上へ</a></td><td width="60%" align="center">MERGE</td><td width="20%" align="right"> <a accesskey="n" href="sql-move.html" title="MOVE">次へ</a></td></tr></table><hr /></div><div class="refentry" id="SQL-MERGE"><div class="titlepage"></div><a id="id-1.9.3.156.1" class="indexterm"></a><div class="refnamediv"><h2><span class="refentrytitle">MERGE</span></h2><p>MERGE<span class="original">
   &lt;refpurpose&gt;conditionally insert, update, or delete rows of a table&lt;/refpurpose&gt;
 </span> — テーブルの行を条件付きでINSERT、UPDATE、DELETEする</p></div><div class="refsynopsisdiv"><h2>概要</h2><pre class="synopsis">
@@ -7,7 +7,8 @@
 MERGE INTO [ ONLY ] <em class="replaceable"><code>target_table_name</code></em> [ * ] [ [ AS ] <em class="replaceable"><code>target_alias</code></em> ]
     USING <em class="replaceable"><code>data_source</code></em> ON <em class="replaceable"><code>join_condition</code></em>
     <em class="replaceable"><code>when_clause</code></em> [...]
-    [ RETURNING { * | <em class="replaceable"><code>output_expression</code></em> [ [ AS ] <em class="replaceable"><code>output_name</code></em> ] } [, ...] ]
+    [ RETURNING [ WITH ( { OLD | NEW } AS <em class="replaceable"><code>output_alias</code></em> [, ...] ) ]
+                { * | <em class="replaceable"><code>output_expression</code></em> [ [ AS ] <em class="replaceable"><code>output_name</code></em> ] } [, ...] ]
 
 <span class="phrase">where <em class="replaceable"><code>data_source</code></em> is:</span>
 
@@ -96,18 +97,24 @@ MERGE INTO [ ONLY ] <em class="replaceable"><code>target_table_name</code></em> 
    to compute and return value(s) based on each row inserted, updated, or
    deleted.  Any expression using the source or target table's columns, or
    the &lt;link linkend="merge-action"&gt;&lt;function&gt;merge_action()&lt;/function&gt;&lt;/link&gt;
-   function can be computed.  When an &lt;command&gt;INSERT&lt;/command&gt; or
+   function can be computed.  By default, when an &lt;command&gt;INSERT&lt;/command&gt; or
    &lt;command&gt;UPDATE&lt;/command&gt; action is performed, the new values of the target
-   table's columns are used.  When a &lt;command&gt;DELETE&lt;/command&gt; is performed,
-   the old values of the target table's columns are used.  The syntax of the
+   table's columns are used, and when a &lt;command&gt;DELETE&lt;/command&gt; is performed,
+   the old values of the target table's columns are used, but it is also
+   possible to explicitly request old and new values.  The syntax of the
    &lt;literal&gt;RETURNING&lt;/literal&gt; list is identical to that of the output list
    of &lt;command&gt;SELECT&lt;/command&gt;.
 </span>
-オプションの<code class="literal">RETURNING</code>句は、挿入、更新、削除された各行に基づいて値を計算し、返すように<code class="command">MERGE</code>を設定します。
+《マッチ度[85.175553]》オプションの<code class="literal">RETURNING</code>句は、挿入、更新、削除された各行に基づいて値を計算し、返すように<code class="command">MERGE</code>を設定します。
 元となるテーブルまたは対象テーブルの列、あるいは<a class="link" href="functions-merge-support.html#MERGE-ACTION"><code class="function">merge_action()</code></a>関数を使用する式が計算可能です。
 <code class="command">INSERT</code>または<code class="command">UPDATE</code>アクションが実行されると、対象テーブルの列の新しい値が使用されます。
 <code class="command">DELETE</code>が実行されると、対象テーブルの列の古い値が使用されます。
 <code class="literal">RETURNING</code>リストの構文は、<code class="command">SELECT</code>の出力リストと同じです。
+《機械翻訳》オプショナル<code class="literal">RETURNING</code>句では、挿入、更新、または削除された行ごとに<code class="command">MERGE</code>1つ以上の値を計算して返します。
+式またはターゲットテーブルの列を使用するソース、または<a class="link" href="functions-merge-support.html#MERGE-ACTION"><code class="function">merge_action()</code>関数を計算できます。
+デフォルトでは、<code class="command">INSERT</code>または<code class="command">UPDATE</code>アクションが実行されると、ターゲットテーブルの列の新しい値が使用され、<code class="command">DELETE</code>が実行されると、ターゲットテーブルの列の古い値が使用されますが、古い値と新しい値を明示的にリクエストすることもできます。
+<code class="literal">RETURNING</code>リストの構文は<code class="command">SELECT</code>のと同じです。
+リスト</a>
   </p><p>
 <span class="original">
    There is no separate &lt;literal&gt;MERGE&lt;/literal&gt; privilege.
@@ -489,6 +496,26 @@ MERGE INTO [ ONLY ] <em class="replaceable"><code>target_table_name</code></em> 
 行が返されない場合は、NULL値が対象列に割り当てられます。
 <code class="literal">WHEN MATCHED</code>句で使用する場合、副問い合わせは、対象テーブルの元の行からの値と<em class="replaceable"><code>data_source</code></em>行からの値を参照できます。
 <code class="literal">WHEN NOT MATCHED BY SOURCE</code>句で使用する場合、副問い合わせは、対象テーブルの元の行からの値のみを参照できます。
+     </p></dd><dt><span class="term"><em class="replaceable"><code>output_alias</code></em></span></dt><dd><p>
+<span class="original">
+      An optional substitute name for &lt;literal&gt;OLD&lt;/literal&gt; or
+      &lt;literal&gt;NEW&lt;/literal&gt; rows in the &lt;literal&gt;RETURNING&lt;/literal&gt; list.
+</span>
+《機械翻訳》オプショナルは、<code class="literal">RETURNING</code>リストの中のまたは<code class="literal">NEW</code>行を名前に置き換えます。
+<code class="literal">OLD</code>
+     </p><p>
+<span class="original">
+      By default, old values from the target table can be returned by writing
+      &lt;literal&gt;OLD.&lt;replaceable class="parameter"&gt;column_name&lt;/replaceable&gt;&lt;/literal&gt;
+      or &lt;literal&gt;OLD.*&lt;/literal&gt;, and new values can be returned by writing
+      &lt;literal&gt;NEW.&lt;replaceable class="parameter"&gt;column_name&lt;/replaceable&gt;&lt;/literal&gt;
+      or &lt;literal&gt;NEW.*&lt;/literal&gt;.  When an alias is provided, these names are
+      hidden and the old or new rows must be referred to using the alias.
+      For example &lt;literal&gt;RETURNING WITH (OLD AS o, NEW AS n) o.*, n.*&lt;/literal&gt;.
+</span>
+《機械翻訳》デフォルトでは、ターゲットテーブルの古い値は、<code class="literal">OLD.<em class="replaceable"><code>column_name</code></em></code>または<code class="literal">OLD.*</code>を記述することで、新しい値は<code class="literal">NEW.<em class="replaceable"><code>column_name</code></em></code>または<code class="literal">NEW.*</code>を記述することで返すことができます。
+別名が提供されている場合、これらの名前は隠され、新旧の行は別名を使用して参照する必要があります。
+例<code class="literal">RETURNING WITH (OLD AS o, NEW AS n) o.*, n.*</code>の場合。
      </p></dd><dt><span class="term"><em class="replaceable"><code>output_expression</code></em></span></dt><dd><p>
 <span class="original">
       An expression to be computed and returned by the &lt;command&gt;MERGE&lt;/command&gt;
@@ -511,6 +538,21 @@ MERGE INTO [ ONLY ] <em class="replaceable"><code>target_table_name</code></em> 
 <code class="literal">*</code>を指定すると、元となるテーブルのすべての列が返され、その後に対象テーブルのすべての列が返されます。
 多くの場合、元となるテーブルと対象テーブルは同じ列を多く持つため、この方法では重複が多くなります。
 この問題を回避するには、元となるテーブルまたは対象テーブルの名前または別名で<code class="literal">*</code>を修飾します。
+     </p><p>
+<span class="original">
+      A column name or &lt;literal&gt;*&lt;/literal&gt; may also be qualified using
+      &lt;literal&gt;OLD&lt;/literal&gt; or &lt;literal&gt;NEW&lt;/literal&gt;, or the corresponding
+      &lt;replaceable class="parameter"&gt;output_alias&lt;/replaceable&gt; for
+      &lt;literal&gt;OLD&lt;/literal&gt; or &lt;literal&gt;NEW&lt;/literal&gt;, to cause old or new
+      values from the target table to be returned.  An unqualified column
+      name from the target table, or a column name or &lt;literal&gt;*&lt;/literal&gt;
+      qualified using the target table name or alias will return new values
+      for &lt;literal&gt;INSERT&lt;/literal&gt; and &lt;literal&gt;UPDATE&lt;/literal&gt; actions, and
+      old values for &lt;literal&gt;DELETE&lt;/literal&gt; actions.
+</span>
+《機械翻訳》カラム名前or <code class="literal">*</code>または<code class="literal">NEW</code>または対応する<em class="replaceable"><code>output_別名</code></em>for <code class="literal">OLD</code>または<code class="literal">NEW</code>を使用して修飾して、ターゲットテーブルの古い値または新しい値を戻すこともできます。
+ターゲットテーブルの修飾されていないカラム名前、またはターゲットテーブル名前または別名を使用して修飾されたカラム名前または<code class="literal">*</code>は、<code class="literal">INSERT</code>および<code class="literal">UPDATE</code>アクションの新しい値、<code class="literal">DELETE</code>アクションの古い値を結果にします。
+<code class="literal">OLD</code>
      </p></dd><dt><span class="term"><em class="replaceable"><code>output_name</code></em></span></dt><dd><p>
 <span class="original">
       A name to use for a returned column.
@@ -723,24 +765,6 @@ WHEN NOT MATCHED THEN
 </pre><p>
   </p><p>
 <span class="original">
-   Notice that this would be exactly equivalent to the following
-   statement because the &lt;literal&gt;MATCHED&lt;/literal&gt; result does not change
-   during execution.
-</span>
-<code class="literal">MATCHED</code>の結果は実行中に変更されないため、これは次の文とまったく同じになることに注意してください。
-
-</p><pre class="programlisting">
-MERGE INTO customer_account ca
-USING (SELECT customer_id, transaction_value FROM recent_transactions) AS t
-ON t.customer_id = ca.customer_id
-WHEN MATCHED THEN
-  UPDATE SET balance = balance + transaction_value
-WHEN NOT MATCHED THEN
-  INSERT (customer_id, balance)
-  VALUES (t.customer_id, t.transaction_value);
-</pre><p>
-  </p><p>
-<span class="original">
    Attempt to insert a new stock item along with the quantity of stock. If
    the item already exists, instead update the stock count of the existing
    item. Don't allow entries that have zero stock. Return details of all
@@ -760,7 +784,7 @@ WHEN MATCHED AND w.stock + s.stock_delta &gt; 0 THEN
   UPDATE SET stock = w.stock + s.stock_delta
 WHEN MATCHED THEN
   DELETE
-RETURNING merge_action(), w.*;
+RETURNING merge_action(), w.winename, old.stock AS old_stock, new.stock AS new_stock;
 </pre><p>
 
 <span class="original">
@@ -802,4 +826,4 @@ WHEN NOT MATCHED BY SOURCE THEN
     &lt;acronym&gt;SQL&lt;/acronym&gt; standard.
 </span>
 <code class="literal">WITH</code>句、<code class="literal">WHEN NOT MATCHED</code>の<code class="literal">BY SOURCE</code>および<code class="literal">BY TARGET</code>修飾子、<code class="literal">DO NOTHING</code>アクションおよび<code class="literal">RETURNING</code>句は、標準<acronym class="acronym">SQL</acronym>の拡張です。
-  </p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="sql-lock.html" title="LOCK">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="sql-commands.html" title="SQLコマンド">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="sql-move.html" title="MOVE">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">LOCK </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 17.6文書">ホーム</a></td><td width="40%" align="right" valign="top"> MOVE</td></tr></table></div></body></html>
+  </p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="sql-lock.html" title="LOCK">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="sql-commands.html" title="SQLコマンド">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="sql-move.html" title="MOVE">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">LOCK </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 18.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> MOVE</td></tr></table></div></body></html>

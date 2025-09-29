@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>37.1. トリガ動作の概要</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="triggers.html" title="第37章 トリガ" /><link rel="next" href="trigger-datachanges.html" title="37.2. データ変更の可視性" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 17.6文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="triggers.html" title="第37章 トリガ">第37章 トリガ</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 17.6 : trigger-definition.html">誤訳等の報告
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>37.1. トリガ動作の概要</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="triggers.html" title="第37章 トリガ" /><link rel="next" href="trigger-datachanges.html" title="37.2. データ変更の可視性" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 18.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="triggers.html" title="第37章 トリガ">第37章 トリガ</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 18.0 : trigger-definition.html">誤訳等の報告
                     </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="triggers.html" title="第37章 トリガ">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="triggers.html" title="第37章 トリガ">上へ</a></td><td width="60%" align="center">37.1. トリガ動作の概要</td><td width="20%" align="right"> <a accesskey="n" href="trigger-datachanges.html" title="37.2. データ変更の可視性">次へ</a></td></tr></table><hr /></div><div class="sect1" id="TRIGGER-DEFINITION"><div class="titlepage"><div><div><h2 class="title" style="clear: both">37.1. トリガ動作の概要 <a href="#TRIGGER-DEFINITION" class="id_link">#</a></h2></div></div></div><span class="original">
    &lt;title&gt;Overview of Trigger Behavior&lt;/title&gt;
 </span><p>
@@ -134,9 +134,16 @@
     In all cases, a trigger is executed as part of the same transaction as
     the statement that triggered it, so if either the statement or the
     trigger causes an error, the effects of both will be rolled back.
+    Also, the trigger will always run as the role that queued the trigger
+    event, unless the trigger function is marked as &lt;literal&gt;SECURITY
+    DEFINER&lt;/literal&gt;, in which case it will run as the function owner.
 </span>
-<em class="firstterm">制約トリガ</em>として定義されている場合、<code class="literal">AFTER</code>トリガの実行は、トリガ実行を文の終わりではなく、トランザクションの終わりまで保留することができます。
+《マッチ度[62.684124]》<em class="firstterm">制約トリガ</em>として定義されている場合、<code class="literal">AFTER</code>トリガの実行は、トリガ実行を文の終わりではなく、トランザクションの終わりまで保留することができます。
 すべての場合において、トリガはトリガが引き金となった文と同じトランザクションの一部として実行されるため、文またはトリガのいずれかがエラーを引き起こした場合、両方の結果がロールバックされます。
+《機械翻訳》<code class="literal">AFTER</code>トリガの実行は、<em class="firstterm">遅延</em>として定義されている場合、トランザクションの最後ではなく、ステートメントの最後まで制約トリガにすることができます。
+いずれの場合も、トリガは、トリガしたステートメントと同じトランザクションのパートとして実行されるため、ステートメントまたはトリガのいずれかがエラーを引き起こした場合、両方の影響がロールバックされます。
+また、トリガは常にトリガイベントのキューに入ったロールとして実行されます。
+ただし、トリガ関数が<code class="literal">SECURITY DEFINER</code>であるとマークされている場合は、ケースは関数所有者として実行されます。
    </p><p>
 <span class="original">
     If an &lt;command&gt;INSERT&lt;/command&gt; contains an &lt;literal&gt;ON CONFLICT
@@ -327,13 +334,27 @@
     &lt;literal&gt;BEFORE&lt;/literal&gt; trigger.  Changes to the value of a generated
     column in a &lt;literal&gt;BEFORE&lt;/literal&gt; trigger are ignored and will be
     overwritten.
+    Virtual generated columns are never computed when triggers fire.  In the C
+    language interface, their content is undefined in a trigger function.
+    Higher-level programming languages should prevent access to virtual
+    generated columns in triggers.
 </span>
-生成列に対してはいくつか考慮が必要です。<a id="id-1.8.4.6.19.1" class="indexterm"></a>
+《マッチ度[74.621849]》生成列に対してはいくつか考慮が必要です。<a id="id-1.8.4.6.19.1" class="indexterm"></a>
 格納された生成列は、<code class="literal">BEFORE</code>トリガの後、<code class="literal">AFTER</code>トリガの前に計算されます。
 そのため、生成される値は<code class="literal">AFTER</code>トリガで調べることができます。
 <code class="literal">BEFORE</code>トリガでは、皆さんが期待している通り<code class="literal">OLD</code>行は以前の生成された値を含んでいますが、<code class="literal">NEW</code>行は新しく生成される値をまだ含んでおらず、アクセスすべきではありません。
 C言語インタフェースでは、この時点では列の内容は未定義です。高レベルプログラム言語は、<code class="literal">BEFORE</code>トリガ内では<code class="literal">NEW</code>行の生成列へのアクセスを避けるべきです。
 <code class="literal">BEFORE</code>トリガでの生成列の値の変更は無視され、上書きされます。
+《機械翻訳》生成列に適用される考慮事項がいくつかあります。
+<a id="id-1.8.4.6.19.11" class="indexterm"></a>保管された生成列は<code class="literal">BEFORE</code> triggersと前<code class="literal">AFTER</code> triggersの後で計算されます。
+したがって、生成値は<code class="literal">AFTER</code> triggersで検査できます。
+<code class="literal">BEFORE</code> triggersでは、<code class="literal">OLD</code>行包含は期待されるように古い生成値ですが、<code class="literal">NEW</code>行はまだ新しい生成値を含んでいないため、アクセスすべきではありません。
+C言語インタフェースでは、カラムのコンテンツはこのポイントでは定義されていません。
+より高いレベルのプログラミング言語では、アクセスが<code class="literal">BEFORE</code>トリガの<code class="literal">NEW</code>行に保管された生成カラムになることを防ぐ必要があります。
+<code class="literal">BEFORE</code>トリガの生成カラムの値を変更した場合は無視され、上書きされます。
+仮想生成列は、トリガが起動したときに計算されることはありません。
+C言語インタフェースでは、トリガ関数ではコンテンツが定義されていません。
+より高いレベルプログラミング言語では、アクセスがトリガの仮想生成列になることを防ぐ必要があります。
    </p><p>
 <span class="original">
     If more than one trigger is defined for the same event on the same
@@ -425,16 +446,21 @@ C言語インタフェースでは、この時点では列の内容は未定義�
 <span class="original">
     If a foreign key constraint specifies referential actions (that
     is, cascading updates or deletes), those actions are performed via
-    ordinary SQL update or delete commands on the referencing table.
+    ordinary SQL &lt;command&gt;UPDATE&lt;/command&gt; or &lt;command&gt;DELETE&lt;/command&gt;
+    commands on the referencing table.
     In particular, any triggers that exist on the referencing table
     will be fired for those changes.  If such a trigger modifies or
     blocks the effect of one of these commands, the end result could
     be to break referential integrity.  It is the trigger programmer's
     responsibility to avoid that.
 </span>
-外部キー制約が参照アクション（すなわち、カスケード更新または削除）を指定している場合、これらのアクションは、参照テーブル上の通常のSQL更新または削除コマンドを介して実行されます。
+《マッチ度[84.452975]》外部キー制約が参照アクション（すなわち、カスケード更新または削除）を指定している場合、これらのアクションは、参照テーブル上の通常のSQL更新または削除コマンドを介して実行されます。
 特に、参照テーブルに存在するトリガは、これらの変更に対して起動されます。
 このようなトリガがこれらのコマンドのいずれかの効果を変更またはブロックすると、最終的に参照整合性を破壊する可能性があります。
+それを回避するのはトリガプログラマの責任です。
+《機械翻訳》外部キー制約が参照アクション<code class="command">UPDATE</code>つまり、連鎖更新または連鎖削除を指定する場合、それらのアクションは通常のSQLまたは参照テーブルの<code class="command">DELETE</code>コマンドを介して実行されます。
+特に、参照テーブルに存在するトリガは、それらの変更に対して起動されます。
+そのようなトリガがこれらのコマンドの1つの効果を変更またはブロックする場合、最終的な結果は参照整合性を壊すことになる可能性があります。
 それを回避するのはトリガプログラマの責任です。
    </p><p>
     <a id="id-1.8.4.6.25.1" class="indexterm"></a>
@@ -494,4 +520,4 @@ C言語インタフェースでは、この時点では列の内容は未定義�
 しかし、トリガがアクセスできる影響を受けた行の集合を作成するために、<code class="literal">AFTER STATEMENT</code>トリガは、<em class="firstterm">遷移テーブル(transition tables)</em>の作成を依頼することができます。
 <code class="literal">AFTER ROW</code>トリガも遷移テーブルを依頼できるので、発動中の個々の行における変更だけでなく、テーブル全体におけるすべての変更を見ることができます。
 遷移テーブルを検査する方法も使用中のプログラミング言語に依存しますが、典型的な方法は、トリガ関数の中で発行するSQLコマンドでアクセスできる、読み込み専用の一時テーブルのように振る舞う遷移テーブルを作成することです。
-   </p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="triggers.html" title="第37章 トリガ">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="triggers.html" title="第37章 トリガ">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="trigger-datachanges.html" title="37.2. データ変更の可視性">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">第37章 トリガ </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 17.6文書">ホーム</a></td><td width="40%" align="right" valign="top"> 37.2. データ変更の可視性</td></tr></table></div></body></html>
+   </p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="triggers.html" title="第37章 トリガ">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="triggers.html" title="第37章 トリガ">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="trigger-datachanges.html" title="37.2. データ変更の可視性">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">第37章 トリガ </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 18.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 37.2. データ変更の可視性</td></tr></table></div></body></html>

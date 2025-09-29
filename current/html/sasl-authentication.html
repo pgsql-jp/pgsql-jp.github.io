@@ -1,20 +1,25 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>53.3. SASL認証</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="protocol-flow.html" title="53.2. メッセージの流れ" /><link rel="next" href="protocol-replication.html" title="53.4. ストリーミングレプリケーションプロトコル" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 17.6文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="protocol.html" title="第53章 フロントエンド/バックエンドプロトコル">第53章 フロントエンド/バックエンドプロトコル</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 17.6 : sasl-authentication.html">誤訳等の報告
-                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="protocol-flow.html" title="53.2. メッセージの流れ">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="protocol.html" title="第53章 フロントエンド/バックエンドプロトコル">上へ</a></td><td width="60%" align="center">53.3. SASL認証</td><td width="20%" align="right"> <a accesskey="n" href="protocol-replication.html" title="53.4. ストリーミングレプリケーションプロトコル">次へ</a></td></tr></table><hr /></div><div class="sect1" id="SASL-AUTHENTICATION"><div class="titlepage"><div><div><h2 class="title" style="clear: both">53.3. SASL認証 <a href="#SASL-AUTHENTICATION" class="id_link">#</a></h2></div></div></div><span class="original">
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>54.3. SASL認証</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="protocol-flow.html" title="54.2. メッセージの流れ" /><link rel="next" href="protocol-replication.html" title="54.4. ストリーミングレプリケーションプロトコル" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 18.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="protocol.html" title="第54章 フロントエンド/バックエンドプロトコル">第54章 フロントエンド/バックエンドプロトコル</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 18.0 : sasl-authentication.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="protocol-flow.html" title="54.2. メッセージの流れ">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="protocol.html" title="第54章 フロントエンド/バックエンドプロトコル">上へ</a></td><td width="60%" align="center">54.3. SASL認証</td><td width="20%" align="right"> <a accesskey="n" href="protocol-replication.html" title="54.4. ストリーミングレプリケーションプロトコル">次へ</a></td></tr></table><hr /></div><div class="sect1" id="SASL-AUTHENTICATION"><div class="titlepage"><div><div><h2 class="title" style="clear: both">54.3. SASL認証 <a href="#SASL-AUTHENTICATION" class="id_link">#</a></h2></div></div></div><span class="original">
   &lt;title&gt;SASL Authentication&lt;/title&gt;
 </span><p>
 <span class="original">
    &lt;firstterm&gt;SASL&lt;/firstterm&gt; is a framework for authentication in connection-oriented
-   protocols. At the moment, &lt;productname&gt;PostgreSQL&lt;/productname&gt; implements two SASL
-   authentication mechanisms, SCRAM-SHA-256 and SCRAM-SHA-256-PLUS. More
-   might be added in the future. The below steps illustrate how SASL
-   authentication is performed in general, while the next subsection gives
-   more details on SCRAM-SHA-256 and SCRAM-SHA-256-PLUS.
+   protocols. At the moment, &lt;productname&gt;PostgreSQL&lt;/productname&gt; implements three
+   SASL authentication mechanisms: SCRAM-SHA-256, SCRAM-SHA-256-PLUS, and
+   OAUTHBEARER. More might be added in the future. The below steps illustrate how SASL
+   authentication is performed in general, while the next subsections give
+   more details on particular mechanisms.
 </span>
-<em class="firstterm">SASL</em>は接続指向のプロトコルでの認証のためのフレームワークです。
+《マッチ度[81.438515]》<em class="firstterm">SASL</em>は接続指向のプロトコルでの認証のためのフレームワークです。
 現時点では<span class="productname">PostgreSQL</span>は2つのSASLの認証機構、SCRAM-SHA-256とSCRAM-SHA-256-PLUSを実装しています。
 将来には他の機構が追加されるかもしれません。
 以下の手順は、SASLの認証が一般的にどのように行われるかを示したものですが、次の副節ではSCRAM-SHA-256とSCRAM-SHA-256-PLUSにおけるより詳細について説明します。
+《機械翻訳》<em class="firstterm">SASL</em>は、コネクション指向のプロトコルにおける認証のフレームワークです。
+現在、<span class="productname">PostgreSQL</span>は、SCRAM-SHA-256、SCRAM-SHA-256-プラス、およびOAUTHBEARERの3つのSASL認証メカニズムを実装しています。
+将来、さらに追加される可能性があります。
+次の手順では、SASL認証が一般的にどのように実行されるかを示します。
+一方、次のサブセクションでは、特定のメカニズムの詳細を示します。
   </p><div class="procedure" id="id-1.10.6.9.3"><p class="title"><strong>SASL認証のメッセージフロー</strong></p><span class="original">
    &lt;title&gt;SASL Authentication Message Flow&lt;/title&gt;
 </span><ol class="procedure" type="1"><li class="step" id="SASL-AUTH-BEGIN"><p>
@@ -47,14 +52,14 @@ SASL認証の交換を開始するため、サーバはAuthenticationSASLメッ�
     </p></li><li class="step" id="SASL-AUTH-END"><p>
 <span class="original">
      Finally, when the authentication exchange is completed successfully, the
-     server sends an AuthenticationSASLFinal message, followed
+     server sends an optional AuthenticationSASLFinal message, followed
      immediately by an AuthenticationOk message. The AuthenticationSASLFinal
      contains additional server-to-client data, whose content is particular to the
      selected authentication mechanism. If the authentication mechanism doesn't
      use additional data that's sent at completion, the AuthenticationSASLFinal
      message is not sent.
 </span>
-最後に、認証の交換が成功裏に終了すると、サーバはAuthenticationSASLFinalメッセージを送信し、その直後にAuthenticationOkメッセージを送信します。
+《マッチ度[90.434783]》最後に、認証の交換が成功裏に終了すると、サーバはAuthenticationSASLFinalメッセージを送信し、その直後にAuthenticationOkメッセージを送信します。
 AuthenticationSASLFinalにはサーバからクライアントへの追加のデータが含まれ、その内容は選択した認証機構毎に異なります。
 完了時に送信する追加データを認証機構が使用していない場合、AuthenticationSASLFinalメッセージは送信されません。
     </p></li></ol></div><p>
@@ -63,18 +68,20 @@ AuthenticationSASLFinalにはサーバからクライアントへの追加のデ
    ErrorMessage.
 </span>
 エラーが発生したときは、サーバは認証を任意の段階で終了してErrorMessageを送信することができます。
-  </p><div class="sect2" id="SASL-SCRAM-SHA-256"><div class="titlepage"><div><div><h3 class="title">53.3.1. SCRAM-SHA-256 認証 <a href="#SASL-SCRAM-SHA-256" class="id_link">#</a></h3></div></div></div><span class="original">
+  </p><div class="sect2" id="SASL-SCRAM-SHA-256"><div class="titlepage"><div><div><h3 class="title">54.3.1. SCRAM-SHA-256 認証 <a href="#SASL-SCRAM-SHA-256" class="id_link">#</a></h3></div></div></div><span class="original">
    &lt;title&gt;SCRAM-SHA-256 Authentication&lt;/title&gt;
 </span><p>
 <span class="original">
-    The implemented SASL mechanisms at the moment
-    are &lt;literal&gt;SCRAM-SHA-256&lt;/literal&gt; and its variant with channel
-    binding &lt;literal&gt;SCRAM-SHA-256-PLUS&lt;/literal&gt;. They are described in
+    &lt;literal&gt;SCRAM-SHA-256&lt;/literal&gt;, and its variant with channel
+    binding &lt;literal&gt;SCRAM-SHA-256-PLUS&lt;/literal&gt;, are password-based
+    authentication mechanisms. They are described in
     detail in &lt;ulink url="https://datatracker.ietf.org/doc/html/rfc7677"&gt;RFC 7677&lt;/ulink&gt;
     and &lt;ulink url="https://datatracker.ietf.org/doc/html/rfc5802"&gt;RFC 5802&lt;/ulink&gt;.
 </span>
-今のところ実装されているSASL機構は<code class="literal">SCRAM-SHA-256</code>とチャネルバインディングを伴う変種の<code class="literal">SCRAM-SHA-256-PLUS</code>です。
+《マッチ度[65.988372]》今のところ実装されているSASL機構は<code class="literal">SCRAM-SHA-256</code>とチャネルバインディングを伴う変種の<code class="literal">SCRAM-SHA-256-PLUS</code>です。
 詳細は<a class="ulink" href="https://datatracker.ietf.org/doc/html/rfc7677" target="_top">RFC 7677</a>および<a class="ulink" href="https://datatracker.ietf.org/doc/html/rfc5802" target="_top">RFC 5802</a>で説明されています。
+《機械翻訳》<code class="literal">SCRAM-SHA-256</code>、およびそのチャネルバインディング版<code class="literal">SCRAM-SHA-256-PLUS</code>、はパスワードベースの認証メカニズムです。
+<a class="ulink" href="https://datatracker.ietf.org/doc/html/rfc7677" target="_top">RFC 7677およびRFC 5802で詳細に説明されています</a>。
    </p><p>
 <span class="original">
     When SCRAM-SHA-256 is used in PostgreSQL, the server will ignore the user name
@@ -189,4 +196,125 @@ Initial Clientの応答フィールドでは、メッセージにSCRAMの<code c
       an AuthenticationOk message.
 </span>
 サーバがSCRAMの<code class="structname">server-final-message</code>を含むAuthenticationSASLFinalメッセージを送信し、その直後にAuthenticationOkメッセージを送信します。
-     </p></li></ol></div></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="protocol-flow.html" title="53.2. メッセージの流れ">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="protocol.html" title="第53章 フロントエンド/バックエンドプロトコル">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="protocol-replication.html" title="53.4. ストリーミングレプリケーションプロトコル">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">53.2. メッセージの流れ </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 17.6文書">ホーム</a></td><td width="40%" align="right" valign="top"> 53.4. ストリーミングレプリケーションプロトコル</td></tr></table></div></body></html>
+     </p></li></ol></div></div><div class="sect2" id="SASL-OAUTHBEARER"><div class="titlepage"><div><div><h3 class="title">54.3.2. OAUTHBEARER Authentication <a href="#SASL-OAUTHBEARER" class="id_link">#</a></h3></div></div></div><p>
+<span class="original">
+    &lt;literal&gt;OAUTHBEARER&lt;/literal&gt; is a token-based mechanism for federated
+    authentication. It is described in detail in
+    &lt;ulink url="https://datatracker.ietf.org/doc/html/rfc7628"&gt;RFC 7628&lt;/ulink&gt;.
+</span>
+《機械翻訳》<code class="literal">OAUTHBEARER</code>は、トークンを拠点とする認証連合のメカニズムです。
+詳細は<a class="ulink" href="https://datatracker.ietf.org/doc/html/rfc7628" target="_top">RFC 7628に記載されています</a>。
+   </p><p>
+<span class="original">
+    A typical exchange differs depending on whether or not the client already
+    has a bearer token cached for the current user. If it does not, the exchange
+    will take place over two connections: the first "discovery" connection to
+    obtain OAuth metadata from the server, and the second connection to send
+    the token after the client has obtained it. (libpq does not currently
+    implement a caching method as part of its builtin flow, so it uses the
+    two-connection exchange.)
+</span>
+《機械翻訳》一般的な交換は、クライアントがすでに現在トークン用にキャッシュされたベアラユーザを持っているかどうかによって異なります。
+持っていない場合、交換は2つの接続で行われます。
+最初の「ディスカバリ」コネクションはサーバからOAuthメタデータを取得し、2番目のコネクションはクライアントがそれを取得した後にトークンを送信します（libpqは現在、組み込みフローのパートとしてキャッシングメソッドを実装していないため、2つのコネクション交換を使用します）。
+   </p><p>
+<span class="original">
+    This mechanism is client-initiated, like SCRAM. The client initial response
+    consists of the standard "GS2" header used by SCRAM, followed by a list of
+    &lt;literal&gt;key=value&lt;/literal&gt; pairs. The only key currently supported by
+    the server is &lt;literal&gt;auth&lt;/literal&gt;, which contains the bearer token.
+    &lt;literal&gt;OAUTHBEARER&lt;/literal&gt; additionally specifies three optional
+    components of the client initial response (the &lt;literal&gt;authzid&lt;/literal&gt; of
+    the GS2 header, and the &lt;structfield&gt;host&lt;/structfield&gt; and
+    &lt;structfield&gt;port&lt;/structfield&gt; keys) which are currently ignored by the
+    server.
+</span>
+《機械翻訳》このメカニズムは、SCRAMと同様にクライアント主導型です。
+クライアント初期応答は、SCRAMで使用される標準の「GS2」ヘッダと、それに続く<code class="literal">key=value</code>ペアのリストで構成されます。
+現在サーバでサポートされている唯一のキーは<code class="literal">auth</code>で、包含はベアラトークンです。
+<code class="literal">OAUTHBEARER</code>さらに、クライアント初期応答の3つのオプショナルコンポーネント（GS2ヘッダの<code class="literal">authzid</code>と、現在サーバで無視されている<code class="structfield">host</code>および<code class="structfield">port</code>キー）を指定します。
+   </p><p>
+<span class="original">
+    &lt;literal&gt;OAUTHBEARER&lt;/literal&gt; does not support channel binding, and there
+    is no "OAUTHBEARER-PLUS" mechanism. This mechanism does not make use of
+    server data during a successful authentication, so the
+    AuthenticationSASLFinal message is not used in the exchange.
+</span>
+《機械翻訳》<code class="literal">OAUTHBEARER</code>サポートチャネルバインディングではなく、「OAUTHBEARER-プラス」メカニズムもありません。
+このメカニズムは、認証の成功時にサーバデータをmakeで使用しないため、AuthenticationSASLFinalメッセージは交換で使用されません。
+   </p><div class="procedure" id="id-1.10.6.9.6.6"><p class="title"><strong>例</strong></p><span class="original">
+    &lt;title&gt;Example&lt;/title&gt;
+</span><ol class="procedure" type="1"><li class="step"><p>
+<span class="original">
+      During the first exchange, the server sends an AuthenticationSASL message
+      with the &lt;literal&gt;OAUTHBEARER&lt;/literal&gt; mechanism advertised.
+</span>
+《機械翻訳》最初の交換中に、サーバはAuthenticationSASLメッセージを<code class="literal">OAUTHBEARER</code>メカニズムがアドバタイズされたとともに送信します。
+     </p></li><li class="step"><p>
+<span class="original">
+      The client responds by sending a SASLInitialResponse message which
+      indicates the &lt;literal&gt;OAUTHBEARER&lt;/literal&gt; mechanism. Assuming the
+      client does not already have a valid bearer token for the current user,
+      the &lt;structfield&gt;auth&lt;/structfield&gt; field is empty, indicating a discovery
+      connection.
+</span>
+《機械翻訳》クライアントは、<code class="literal">OAUTHBEARER</code>メッセージを示すSASLInitialResponseメカニズムを送信することで応答します。
+クライアントがまだ現在ユーザの有効なbearerトークンを持っていないと仮定すると、<code class="structfield">auth</code>フィールドは空であり、ディスカバリコネクションを示します。
+     </p></li><li class="step"><p>
+<span class="original">
+      Server sends an AuthenticationSASLContinue message containing an error
+      &lt;literal&gt;status&lt;/literal&gt; alongside a well-known URI and scopes that the
+      client should use to conduct an OAuth flow.
+</span>
+《機械翻訳》サーバは、メッセージを含むAuthenticationSASLContinueエラーを<code class="literal">status</code>よく知られたURIと、クライアントがOAuthフローを実行するために使用すべきスコープとともに送信する。
+     </p></li><li class="step"><p>
+<span class="original">
+      Client sends a SASLResponse message containing the empty set (a single
+      &lt;literal&gt;0x01&lt;/literal&gt; byte) to finish its half of the discovery
+      exchange.
+</span>
+《機械翻訳》クライアントは、空のセットを含むSASLResponseメッセージ<code class="literal">0x01</code>単一のバイトを送信して、ディスカバリ交換の半分を終了します。
+     </p></li><li class="step"><p>
+<span class="original">
+      Server sends an ErrorMessage to fail the first exchange.
+</span>
+《機械翻訳》サーバはErrorMessageを送信して最初の交換を失敗させます。
+     </p><p>
+<span class="original">
+      At this point, the client conducts one of many possible OAuth flows to
+      obtain a bearer token, using any metadata that it has been configured with
+      in addition to that provided by the server. (This description is left
+      deliberately vague; &lt;literal&gt;OAUTHBEARER&lt;/literal&gt; does not specify or
+      mandate any particular method for obtaining a token.)
+</span>
+《機械翻訳》このポイントで、クライアントは、サーバによって提供されるものに加えて、設定されている任意のトークンを使用して、ベアラメタデータを取得するために多くの可能なOAuthフローの1つを実行します。
+<code class="literal">OAUTHBEARER</code>この説明は意図的に曖昧にされています。
+トークンを取得するための特定のメソッドを指定または義務付けていません。
+     </p><p>
+<span class="original">
+      Once it has a token, the client reconnects to the server for the final
+      exchange:
+</span>
+《機械翻訳》トークンが発生すると、クライアントは最終的な交換のためにサーバに再接続されます。
+     </p></li><li class="step"><p>
+<span class="original">
+      The server once again sends an AuthenticationSASL message with the
+      &lt;literal&gt;OAUTHBEARER&lt;/literal&gt; mechanism advertised.
+</span>
+《機械翻訳》サーバは再びAuthenticationSASLメッセージを<code class="literal">OAUTHBEARER</code>メカニズムをアドバタイズして送信します。
+     </p></li><li class="step"><p>
+<span class="original">
+      The client responds by sending a SASLInitialResponse message, but this
+      time the &lt;structfield&gt;auth&lt;/structfield&gt; field in the message contains the
+      bearer token that was obtained during the client flow.
+</span>
+《機械翻訳》クライアントはSASLInitialResponseメッセージを送信することで応答しますが、今回は<code class="structfield">auth</code>メッセージ包含のフィールドはクライアントフロー中に取得されたベアラトークンです。
+     </p></li><li class="step"><p>
+<span class="original">
+      The server validates the token according to the instructions of the
+      token provider. If the client is authorized to connect, it sends an
+      AuthenticationOk message to end the SASL exchange.
+</span>
+《機械翻訳》サーバは、トークンプロバイダの指示に従ってトークンを検証します。
+クライアントが接続を許可されている場合は、AuthenticationOkメッセージを送信してSASL交換を終了します。
+     </p></li></ol></div></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="protocol-flow.html" title="54.2. メッセージの流れ">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="protocol.html" title="第54章 フロントエンド/バックエンドプロトコル">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="protocol-replication.html" title="54.4. ストリーミングレプリケーションプロトコル">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">54.2. メッセージの流れ </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 18.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 54.4. ストリーミングレプリケーションプロトコル</td></tr></table></div></body></html>

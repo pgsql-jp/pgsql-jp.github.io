@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>39.3. マテリアライズドビュー</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="rules-views.html" title="39.2. ビューとルールシステム" /><link rel="next" href="rules-update.html" title="39.4. INSERT、UPDATE、DELETEについてのルール" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 17.6文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="rules.html" title="第39章 ルールシステム">第39章 ルールシステム</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 17.6 : rules-materializedviews.html">誤訳等の報告
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>39.3. マテリアライズドビュー</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="rules-views.html" title="39.2. ビューとルールシステム" /><link rel="next" href="rules-update.html" title="39.4. INSERT、UPDATE、DELETEについてのルール" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 18.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="rules.html" title="第39章 ルールシステム">第39章 ルールシステム</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 18.0 : rules-materializedviews.html">誤訳等の報告
                     </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="rules-views.html" title="39.2. ビューとルールシステム">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="rules.html" title="第39章 ルールシステム">上へ</a></td><td width="60%" align="center">39.3. マテリアライズドビュー</td><td width="20%" align="right"> <a accesskey="n" href="rules-update.html" title="39.4. INSERT、UPDATE、DELETEについてのルール">次へ</a></td></tr></table><hr /></div><div class="sect1" id="RULES-MATERIALIZEDVIEWS"><div class="titlepage"><div><div><h2 class="title" style="clear: both">39.3. マテリアライズドビュー <a href="#RULES-MATERIALIZEDVIEWS" class="id_link">#</a></h2></div></div></div><span class="original">
 &lt;title&gt;Materialized Views&lt;/title&gt;
 </span><a id="id-1.8.6.9.2" class="indexterm"></a><a id="id-1.8.6.9.3" class="indexterm"></a><a id="id-1.8.6.9.4" class="indexterm"></a><a id="id-1.8.6.9.5" class="indexterm"></a><a id="id-1.8.6.9.6" class="indexterm"></a><a id="id-1.8.6.9.7" class="indexterm"></a><p>
@@ -165,8 +165,8 @@ SELECT count(*) FROM words WHERE word = 'caterpiler';
 <code class="command">EXPLAIN ANALYZE</code>によれば以下の通りです:
 
 </p><pre class="programlisting">
- Aggregate  (cost=21763.99..21764.00 rows=1 width=0) (actual time=188.180..188.181 rows=1 loops=1)
-   -&gt;  Foreign Scan on words  (cost=0.00..21761.41 rows=1032 width=0) (actual time=188.177..188.177 rows=0 loops=1)
+ Aggregate  (cost=21763.99..21764.00 rows=1 width=0) (actual time=188.180..188.181 rows=1.00 loops=1)
+   -&gt;  Foreign Scan on words  (cost=0.00..21761.41 rows=1032 width=0) (actual time=188.177..188.177 rows=0.00 loops=1)
          Filter: (word = 'caterpiler'::text)
          Rows Removed by Filter: 479829
          Foreign File: /usr/share/dict/words
@@ -181,10 +181,11 @@ SELECT count(*) FROM words WHERE word = 'caterpiler';
 代わりにマテリアライズドビューを使った場合、問い合わせは非常に速くなります。
 
 </p><pre class="programlisting">
- Aggregate  (cost=4.44..4.45 rows=1 width=0) (actual time=0.042..0.042 rows=1 loops=1)
-   -&gt;  Index Only Scan using wrd_word on wrd  (cost=0.42..4.44 rows=1 width=0) (actual time=0.039..0.039 rows=0 loops=1)
+ Aggregate  (cost=4.44..4.45 rows=1 width=0) (actual time=0.042..0.042 rows=1.00 loops=1)
+   -&gt;  Index Only Scan using wrd_word on wrd  (cost=0.42..4.44 rows=1 width=0) (actual time=0.039..0.039 rows=0.00 loops=1)
          Index Cond: (word = 'caterpiler'::text)
          Heap Fetches: 0
+         Index Searches: 1
  Planning time: 0.164 ms
  Execution time: 0.117 ms
 </pre><p>
@@ -216,11 +217,11 @@ SELECT word FROM words ORDER BY word &lt;-&gt; 'caterpiler' LIMIT 10;
 </pre><p>
 
 </p><pre class="programlisting">
- Limit  (cost=11583.61..11583.64 rows=10 width=32) (actual time=1431.591..1431.594 rows=10 loops=1)
-   -&gt;  Sort  (cost=11583.61..11804.76 rows=88459 width=32) (actual time=1431.589..1431.591 rows=10 loops=1)
+ Limit  (cost=11583.61..11583.64 rows=10 width=32) (actual time=1431.591..1431.594 rows=10.00 loops=1)
+   -&gt;  Sort  (cost=11583.61..11804.76 rows=88459 width=32) (actual time=1431.589..1431.591 rows=10.00 loops=1)
          Sort Key: ((word &lt;-&gt; 'caterpiler'::text))
          Sort Method: top-N heapsort  Memory: 25kB
-         -&gt;  Foreign Scan on words  (cost=0.00..9672.05 rows=88459 width=32) (actual time=0.057..1286.455 rows=479829 loops=1)
+         -&gt;  Foreign Scan on words  (cost=0.00..9672.05 rows=88459 width=32) (actual time=0.057..1286.455 rows=479829.00 loops=1)
                Foreign File: /usr/share/dict/words
                Foreign File Size: 4953699
  Planning time: 0.128 ms
@@ -233,9 +234,10 @@ SELECT word FROM words ORDER BY word &lt;-&gt; 'caterpiler' LIMIT 10;
 マテリアライズドビューを使用した場合:
 
 </p><pre class="programlisting">
- Limit  (cost=0.29..1.06 rows=10 width=10) (actual time=187.222..188.257 rows=10 loops=1)
-   -&gt;  Index Scan using wrd_trgm on wrd  (cost=0.29..37020.87 rows=479829 width=10) (actual time=187.219..188.252 rows=10 loops=1)
+ Limit  (cost=0.29..1.06 rows=10 width=10) (actual time=187.222..188.257 rows=10.00 loops=1)
+   -&gt;  Index Scan using wrd_trgm on wrd  (cost=0.29..37020.87 rows=479829 width=10) (actual time=187.219..188.252 rows=10.00 loops=1)
          Order By: (word &lt;-&gt; 'caterpiler'::text)
+         Index Searches: 1
  Planning time: 0.196 ms
  Execution time: 198.640 ms
 </pre><p>
@@ -245,4 +247,4 @@ SELECT word FROM words ORDER BY word &lt;-&gt; 'caterpiler' LIMIT 10;
     database, the performance benefit can be substantial.
 </span>
 定期的にリモートのデータをローカルに更新せねばならない事を許容できるのであれば、代わりに性能上の便益を得られることでしょう。
-</p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="rules-views.html" title="39.2. ビューとルールシステム">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="rules.html" title="第39章 ルールシステム">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="rules-update.html" title="39.4. INSERT、UPDATE、DELETEについてのルール">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">39.2. ビューとルールシステム </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 17.6文書">ホーム</a></td><td width="40%" align="right" valign="top"> 39.4. <code class="command">INSERT</code>、<code class="command">UPDATE</code>、<code class="command">DELETE</code>についてのルール</td></tr></table></div></body></html>
+</p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="rules-views.html" title="39.2. ビューとルールシステム">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="rules.html" title="第39章 ルールシステム">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="rules-update.html" title="39.4. INSERT、UPDATE、DELETEについてのルール">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">39.2. ビューとルールシステム </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 18.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 39.4. <code class="command">INSERT</code>、<code class="command">UPDATE</code>、<code class="command">DELETE</code>についてのルール</td></tr></table></div></body></html>

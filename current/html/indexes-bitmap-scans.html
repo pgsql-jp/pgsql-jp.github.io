@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>11.5. 複数のインデックスの組み合わせ</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="indexes-ordering.html" title="11.4. インデックスとORDER BY" /><link rel="next" href="indexes-unique.html" title="11.6. 一意インデックス" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 17.6文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="indexes.html" title="第11章 インデックス">第11章 インデックス</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 17.6 : indexes-bitmap-scans.html">誤訳等の報告
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>11.5. 複数のインデックスの組み合わせ</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="indexes-ordering.html" title="11.4. インデックスとORDER BY" /><link rel="next" href="indexes-unique.html" title="11.6. 一意インデックス" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 18.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="indexes.html" title="第11章 インデックス">第11章 インデックス</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 18.0 : indexes-bitmap-scans.html">誤訳等の報告
                     </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="indexes-ordering.html" title="11.4. インデックスとORDER BY">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="indexes.html" title="第11章 インデックス">上へ</a></td><td width="60%" align="center">11.5. 複数のインデックスの組み合わせ</td><td width="20%" align="right"> <a accesskey="n" href="indexes-unique.html" title="11.6. 一意インデックス">次へ</a></td></tr></table><hr /></div><div class="sect1" id="INDEXES-BITMAP-SCANS"><div class="titlepage"><div><div><h2 class="title" style="clear: both">11.5. 複数のインデックスの組み合わせ <a href="#INDEXES-BITMAP-SCANS" class="id_link">#</a></h2></div></div></div><span class="original">
   &lt;title&gt;Combining Multiple Indexes&lt;/title&gt;
 </span><a id="id-1.5.10.9.2" class="indexterm"></a><a id="id-1.5.10.9.3" class="indexterm"></a><a id="id-1.5.10.9.4" class="indexterm"></a><a id="id-1.5.10.9.5" class="indexterm"></a><p>
@@ -75,9 +75,13 @@
    multicolumn index on &lt;literal&gt;(x, y)&lt;/literal&gt;.  This index would typically be
    more efficient than index combination for queries involving both
    columns, but as discussed in &lt;xref linkend="indexes-multicolumn"/&gt;, it
-   would be almost useless for queries involving only &lt;literal&gt;y&lt;/literal&gt;, so it
-   should not be the only index.  A combination of the multicolumn index
-   and a separate index on &lt;literal&gt;y&lt;/literal&gt; would serve reasonably well.  For
+   would be less useful for queries involving only &lt;literal&gt;y&lt;/literal&gt;.  Just
+   how useful will depend on how effective the B-tree index skip scan
+   optimization is; if &lt;literal&gt;x&lt;/literal&gt; has no more than several hundred
+   distinct values, skip scan will make searches for specific
+   &lt;literal&gt;y&lt;/literal&gt; values execute reasonably efficiently.  A combination
+   of a multicolumn index on &lt;literal&gt;(x, y)&lt;/literal&gt; and a separate index on
+   &lt;literal&gt;y&lt;/literal&gt; might also serve reasonably well.  For
    queries involving only &lt;literal&gt;x&lt;/literal&gt;, the multicolumn index could be
    used, though it would be larger and hence slower than an index on
    &lt;literal&gt;x&lt;/literal&gt; alone.  The last alternative is to create all three
@@ -87,7 +91,7 @@
    others, you'd probably settle for creating just the two indexes that
    best match the common types.
 </span>
-もっとも単純なアプリケーション以外のほとんどすべてのアプリケーションでは、インデックスの有用な組み合わせはいろいろあります。
+《マッチ度[81.438999]》もっとも単純なアプリケーション以外のほとんどすべてのアプリケーションでは、インデックスの有用な組み合わせはいろいろあります。
 このため、データベース開発者は妥協点を探してどのようなインデックスを提供するかを決定しなければなりません。
 複数列インデックスが最善な場合がありますし、別々のインデックスを作成し、インデックスの組み合わせ機能に依存する方が優れている場合もあります。
 例えば、作業に<code class="literal">x</code>列のみを含む場合と<code class="literal">y</code>列のみを含む場合、両方の列を含む場合が混在する問い合わせが含まれる場合、<code class="literal">x</code>と<code class="literal">y</code>に対し、別個に2つのインデックスを作成し、両方の列を使用する問い合わせを処理する時にインデックスの組み合わせに依存することを選ぶことができます。
@@ -101,4 +105,16 @@
 最後の別方法は、3つのインデックスすべてを作成することです。
 しかしこれはおそらく、テーブルの検索頻度が更新頻度よりもかなり高く、3種類の問い合わせすべてが良く使用される場合のみ合理的です。
 問い合わせの中の1つの頻度が他よりも少なければ、おそらく良く使用される種類にもっとも合うように2つだけインデックスを作成した方がよいでしょう。
-  </p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="indexes-ordering.html" title="11.4. インデックスとORDER BY">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="indexes.html" title="第11章 インデックス">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="indexes-unique.html" title="11.6. 一意インデックス">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">11.4. インデックスと<code class="literal">ORDER BY</code> </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 17.6文書">ホーム</a></td><td width="40%" align="right" valign="top"> 11.6. 一意インデックス</td></tr></table></div></body></html>
+《機械翻訳》最も単純なアプリケーションを除くほとんどのアプリケーションでは、有用なインデックスのさまざまな組み合わせがあり、データベースの開発者はどのインデックスを提供するかを決定するためにmakeのトレードオフを行う必要があります。
+複数列のインデックスがベストである場合もありますが、個別のインデックスを作成してインデックスの組み合わせの機能に依存する方がよい場合もあります。
+例では、カラムのみ<code class="literal">x</code>カラムのみ<code class="literal">y</code>両方の列を含む場合もあるを含む問い合わせが混在しているワークロードの場合、<code class="literal">x</code>と<code class="literal">y</code>の両方の列を含む場合もあるに対して2つの個別のインデックスを作成することを選択できます。
+<code class="literal">(x, y)</code>の両方の列を含む問い合わせをプロセスするためにインデックスの組み合わせに依存します。
+に複数列インデックスを作成することもできます。
+このインデックスは通常、両方の列を含む問い合わせに対してインデックスの組み合わせよりも効率的ですが、<a class="xref" href="indexes-multicolumn.html" title="11.3. 複数列インデックス">11.3</a>で説明したように、<code class="literal">y</code>のみを含む問い合わせに対してはあまり有用ではありません。
+どの程度有用であるかは、B-ツリーインデックススキップスキャン最適化がどれだけ効果的であるかに依存します。
+<code class="literal">x</code>が数百を超える異なる値を持たない場合、スキップスキャンは合理的に効率的に特定の<code class="literal">y</code>値実行の値を検索します。
+<code class="literal">(x, y)</code>のインデックスと<code class="literal">y</code>の個別のの組み合わせも合理的によく機能します。
+<code class="literal">x</code>のみを含む問い合わせに対しては、のを使用できますが、これは<code class="literal">x</code>単独のよりも大きく、したがって低速になります。
+最後の選択肢は3つのインデックスすべてを作成することですが、これはおそらく、更新されるよりもはるかに頻繁に検索され、の3つのタイプすべてが一般的である場合にのみ合理的です。
+マッチ複数列問い合わせインデックステーブルベストmakeインデックスインデックス問い合わせ複数列
+  </p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="indexes-ordering.html" title="11.4. インデックスとORDER BY">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="indexes.html" title="第11章 インデックス">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="indexes-unique.html" title="11.6. 一意インデックス">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">11.4. インデックスと<code class="literal">ORDER BY</code> </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 18.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 11.6. 一意インデックス</td></tr></table></div></body></html>

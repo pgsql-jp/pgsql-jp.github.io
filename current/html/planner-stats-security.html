@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>68.3. プランナの統計情報とセキュリティ</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="multivariate-statistics-examples.html" title="68.2. 多変量統計の例" /><link rel="next" href="backup-manifest-format.html" title="第69章 バックアップマニフェスト書式" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 17.6文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="planner-stats-details.html" title="第68章 プランナは統計情報をどのように使用するか">第68章 プランナは統計情報をどのように使用するか</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 17.6 : planner-stats-security.html">誤訳等の報告
-                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="multivariate-statistics-examples.html" title="68.2. 多変量統計の例">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="planner-stats-details.html" title="第68章 プランナは統計情報をどのように使用するか">上へ</a></td><td width="60%" align="center">68.3. プランナの統計情報とセキュリティ</td><td width="20%" align="right"> <a accesskey="n" href="backup-manifest-format.html" title="第69章 バックアップマニフェスト書式">次へ</a></td></tr></table><hr /></div><div class="sect1" id="PLANNER-STATS-SECURITY"><div class="titlepage"><div><div><h2 class="title" style="clear: both">68.3. プランナの統計情報とセキュリティ <a href="#PLANNER-STATS-SECURITY" class="id_link">#</a></h2></div></div></div><span class="original">
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>69.3. プランナの統計情報とセキュリティ</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="multivariate-statistics-examples.html" title="69.2. 多変量統計の例" /><link rel="next" href="backup-manifest-format.html" title="第70章 バックアップマニフェスト書式" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 18.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="planner-stats-details.html" title="第69章 プランナは統計情報をどのように使用するか">第69章 プランナは統計情報をどのように使用するか</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 18.0 : planner-stats-security.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="multivariate-statistics-examples.html" title="69.2. 多変量統計の例">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="planner-stats-details.html" title="第69章 プランナは統計情報をどのように使用するか">上へ</a></td><td width="60%" align="center">69.3. プランナの統計情報とセキュリティ</td><td width="20%" align="right"> <a accesskey="n" href="backup-manifest-format.html" title="第70章 バックアップマニフェスト書式">次へ</a></td></tr></table><hr /></div><div class="sect1" id="PLANNER-STATS-SECURITY"><div class="titlepage"><div><div><h2 class="title" style="clear: both">69.3. プランナの統計情報とセキュリティ <a href="#PLANNER-STATS-SECURITY" class="id_link">#</a></h2></div></div></div><span class="original">
   &lt;title&gt;Planner Statistics and Security&lt;/title&gt;
 </span><p>
 <span class="original">
@@ -35,10 +35,17 @@
    accurately, the function that the operator is based on).  If not, then the
    selectivity estimator will behave as if no statistics are available, and
    the planner will proceed with default or fall-back assumptions.
+   The &lt;xref linkend="app-psql"/&gt; program's
+   &lt;command&gt;&lt;link linkend="app-psql-meta-command-do-lc"&gt;\do+&lt;/link&gt;&lt;/command&gt;
+   meta-command is useful to determine which operators are marked as leakproof.
 </span>
-このことを防ぐため、すべての組み込みの選択性推定関数には以下のことが適用されます。
+《マッチ度[70.485175]》このことを防ぐため、すべての組み込みの選択性推定関数には以下のことが適用されます。
 問い合わせの計画を作成するとき、保存されている統計情報を使用できるためには、現在のユーザはテーブルあるいは対象の列に<code class="literal">SELECT</code>権限を持っている必要がある、あるいは使用する演算子（正確には、演算子の元となる関数）が<code class="literal">LEAKPROOF</code>である必要があります。
 そうでないときは、選択性推定はあたかも利用可能な統計情報がないかのような動作をし、プランナはデフォルトあるいは代替の推定に従って処理をします。
+《機械翻訳》これを防ぐために、オーダーでは、すべての組込み選択性見積関数に次のことが適用されます。
+問い合わせを計画する場合、保管されている統計処理をオーダーで使用できるようにするには、現在ユーザが<code class="literal">SELECT</code>テーブルまたは関連する列の権限であるか、使用される演算子が<code class="literal">LEAKPROOF</code>(より正確には、演算子のベースとなる関数である必要があります。
+そうでない場合、選択性推定量は統計処理が使用できないかのように動作し、プランナはデフォルトまたはフォールバックの仮定で続行します。
+<a class="xref" href="app-psql.html" title="psql"><span class="refentrytitle"><span class="application">psql</span></span></a>プログラムの<code class="command"><a class="link" href="app-psql.html#APP-PSQL-META-COMMAND-DO-LC">\do+</a></code>メタ-コマンドは、どの演算子が漏れ防止としてマークされているかを判断するのに役立ちます。
   </p><p>
 <span class="original">
    If a user does not have the required privilege on the table or columns,
@@ -46,13 +53,13 @@
    error, in which case this mechanism is invisible in practice.  But if the
    user is reading from a security-barrier view, then the planner might wish
    to check the statistics of an underlying table that is otherwise
-   inaccessible to the user.  In that case, the operator should be leak-proof
+   inaccessible to the user.  In that case, the operator should be leakproof
    or the statistics will not be used.  There is no direct feedback about
    that, except that the plan might be suboptimal.  If one suspects that this
    is the case, one could try running the query as a more privileged user,
    to see if a different plan results.
 </span>
-ユーザがテーブルや列について必要な権限を持っていない場合、最終的には権限不足のエラーを受け取ることが多いでしょう。
+《マッチ度[94.860499]》ユーザがテーブルや列について必要な権限を持っていない場合、最終的には権限不足のエラーを受け取ることが多いでしょう。
 この場合、上記の仕組みは実際にはユーザからはわかりません。
 しかし、ユーザがセキュリティバリアビューから読み取ろうとしている場合、プランナはそのビューの元となっているテーブルの統計情報を検査したいと思うかもしれず、またユーザはそのテーブルにはアクセス権がないかもしれません。
 その場合は、演算子がリークプルーフ(leak-proof)でなければ、統計情報は使用されません。
@@ -77,4 +84,4 @@
 </span>
 サードパーティの拡張に含まれる選択性推定関数で、ユーザ定義演算子で統計情報の演算をする可能性のあるものは、同じセキュリティ規則に従うべきです。
 そのための手引については、PostgreSQLのソースコードを参照してください。
-  </p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="multivariate-statistics-examples.html" title="68.2. 多変量統計の例">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="planner-stats-details.html" title="第68章 プランナは統計情報をどのように使用するか">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="backup-manifest-format.html" title="第69章 バックアップマニフェスト書式">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">68.2. 多変量統計の例 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 17.6文書">ホーム</a></td><td width="40%" align="right" valign="top"> 第69章 バックアップマニフェスト書式</td></tr></table></div></body></html>
+  </p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="multivariate-statistics-examples.html" title="69.2. 多変量統計の例">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="planner-stats-details.html" title="第69章 プランナは統計情報をどのように使用するか">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="backup-manifest-format.html" title="第70章 バックアップマニフェスト書式">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">69.2. 多変量統計の例 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 18.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 第70章 バックアップマニフェスト書式</td></tr></table></div></body></html>

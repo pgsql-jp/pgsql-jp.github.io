@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>ALTER DEFAULT PRIVILEGES</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="sql-alterdatabase.html" title="ALTER DATABASE" /><link rel="next" href="sql-alterdomain.html" title="ALTER DOMAIN" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 17.6文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="sql-commands.html" title="SQLコマンド">SQLコマンド</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 17.6 : sql-alterdefaultprivileges.html">誤訳等の報告
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>ALTER DEFAULT PRIVILEGES</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="sql-alterdatabase.html" title="ALTER DATABASE" /><link rel="next" href="sql-alterdomain.html" title="ALTER DOMAIN" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 18.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="sql-commands.html" title="SQLコマンド">SQLコマンド</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 18.0 : sql-alterdefaultprivileges.html">誤訳等の報告
                     </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="sql-alterdatabase.html" title="ALTER DATABASE">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="sql-commands.html" title="SQLコマンド">上へ</a></td><td width="60%" align="center">ALTER DEFAULT PRIVILEGES</td><td width="20%" align="right"> <a accesskey="n" href="sql-alterdomain.html" title="ALTER DOMAIN">次へ</a></td></tr></table><hr /></div><div class="refentry" id="SQL-ALTERDEFAULTPRIVILEGES"><div class="titlepage"></div><a id="id-1.9.3.8.1" class="indexterm"></a><div class="refnamediv"><h2><span class="refentrytitle">ALTER DEFAULT PRIVILEGES</span></h2><p>ALTER DEFAULT PRIVILEGES<span class="original">
   &lt;refpurpose&gt;define default access privileges&lt;/refpurpose&gt;
 </span> — デフォルトのアクセス権限を定義する</p></div><div class="refsynopsisdiv"><h2>概要</h2><pre class="synopsis">
@@ -36,6 +36,11 @@ GRANT { { USAGE | CREATE }
     ON SCHEMAS
     TO { [ GROUP ] <em class="replaceable"><code>role_name</code></em> | PUBLIC } [, ...] [ WITH GRANT OPTION ]
 
+GRANT { { SELECT | UPDATE }
+    [, ...] | ALL [ PRIVILEGES ] }
+    ON LARGE OBJECTS
+    TO { [ GROUP ] <em class="replaceable"><code>role_name</code></em> | PUBLIC } [, ...] [ WITH GRANT OPTION ]
+
 REVOKE [ GRANT OPTION FOR ]
     { { SELECT | INSERT | UPDATE | DELETE | TRUNCATE | REFERENCES | TRIGGER | MAINTAIN }
     [, ...] | ALL [ PRIVILEGES ] }
@@ -66,6 +71,13 @@ REVOKE [ GRANT OPTION FOR ]
     { { USAGE | CREATE }
     [, ...] | ALL [ PRIVILEGES ] }
     ON SCHEMAS
+    FROM { [ GROUP ] <em class="replaceable"><code>role_name</code></em> | PUBLIC } [, ...]
+    [ CASCADE | RESTRICT ]
+
+REVOKE [ GRANT OPTION FOR ]
+    { { SELECT | UPDATE }
+    [, ...] | ALL [ PRIVILEGES ] }
+    ON LARGE OBJECTS
     FROM { [ GROUP ] <em class="replaceable"><code>role_name</code></em> | PUBLIC } [, ...]
     [ CASCADE | RESTRICT ]
 </pre></div><div class="refsect1" id="SQL-ALTERDEFAULTPRIVILEGES-DESCRIPTION"><h2>説明</h2><span class="original">
@@ -106,8 +118,8 @@ REVOKE [ GRANT OPTION FOR ]
 <span class="original">
    Currently,
    only the privileges for schemas, tables (including views and foreign
-   tables), sequences, functions, and types (including domains) can be
-   altered.  For this command, functions include aggregates and procedures.
+   tables), sequences, functions, types (including domains), and large objects
+   can be altered.  For this command, functions include aggregates and procedures.
    The words &lt;literal&gt;FUNCTIONS&lt;/literal&gt; and &lt;literal&gt;ROUTINES&lt;/literal&gt; are
    equivalent in this command.  (&lt;literal&gt;ROUTINES&lt;/literal&gt; is preferred
    going forward as the standard term for functions and procedures taken
@@ -115,7 +127,7 @@ REVOKE [ GRANT OPTION FOR ]
    word &lt;literal&gt;FUNCTIONS&lt;/literal&gt; was allowed.  It is not possible to set
    default privileges for functions and procedures separately.)
 </span>
-現時点ではスキーマ、テーブル（ビュー、外部テーブルを含む）、シーケンス、関数、型（ドメインを含む）用の権限のみを変更可能です。
+《マッチ度[91.482650]》現時点ではスキーマ、テーブル（ビュー、外部テーブルを含む）、シーケンス、関数、型（ドメインを含む）用の権限のみを変更可能です。
 このコマンドでは、関数は集約とプロシージャを含みます。
 <code class="literal">FUNCTIONS</code>と<code class="literal">ROUTINES</code>は、このコマンドでは同じです。
 (<code class="literal">ROUTINES</code>が、関数とプロシージャを合わせた標準の用語ですので、今後は好まれます。
@@ -150,12 +162,18 @@ PostgreSQLの以前のリリースでは<code class="literal">FUNCTIONS</code>�
       If &lt;literal&gt;IN SCHEMA&lt;/literal&gt; is omitted, the global default privileges
       are altered.
       &lt;literal&gt;IN SCHEMA&lt;/literal&gt; is not allowed when setting privileges
-      for schemas, since schemas can't be nested.
+      for schemas and large objects, since schemas can't be nested and
+      large objects don't belong to a schema.
 </span>
-既存のスキーマの名前です。
+《マッチ度[74.607330]》既存のスキーマの名前です。
 指定された場合、そのスキーマ内で後に作成されるオブジェクトに対するデフォルト権限が変更されます。
 <code class="literal">IN SCHEMA</code>を省略した場合、大域的なデフォルト権限が変更されます。
 スキーマはネストできないため、スキーマに対する権限を設定する場合には<code class="literal">IN SCHEMA</code>を指定できません。
+《機械翻訳》既存のスキーマの名前です。
+これを指定すると、そのスキーマで後から作成するオブジェクトのデフォルト権限が変更されます。
+<code class="literal">IN SCHEMA</code>を省略すると、グローバルのデフォルト権限が変更されます。
+スキーマとラージオブジェクトの権限を設定する場合は<code class="literal">IN SCHEMA</code>は使用できません。
+スキーマは入れ子にすることができず、ラージオブジェクトはスキーマに属しません。
      </p></dd><dt><span class="term"><em class="replaceable"><code>role_name</code></em></span></dt><dd><p>
 <span class="original">
       The name of an existing role to grant or revoke privileges for.
@@ -249,4 +267,4 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA public REVOKE EXECUTE ON FUNCTIONS FROM PUBLI
 標準SQLには<code class="command">ALTER DEFAULT PRIVILEGES</code>文はありません。
   </p></div><div class="refsect1" id="id-1.9.3.8.9"><h2>関連項目</h2><span class="original">
   &lt;title&gt;See Also&lt;/title&gt;
-</span><span class="simplelist"><a class="xref" href="sql-grant.html" title="GRANT"><span class="refentrytitle">GRANT</span></a>, <a class="xref" href="sql-revoke.html" title="REVOKE"><span class="refentrytitle">REVOKE</span></a></span></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="sql-alterdatabase.html" title="ALTER DATABASE">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="sql-commands.html" title="SQLコマンド">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="sql-alterdomain.html" title="ALTER DOMAIN">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">ALTER DATABASE </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 17.6文書">ホーム</a></td><td width="40%" align="right" valign="top"> ALTER DOMAIN</td></tr></table></div></body></html>
+</span><span class="simplelist"><a class="xref" href="sql-grant.html" title="GRANT"><span class="refentrytitle">GRANT</span></a>, <a class="xref" href="sql-revoke.html" title="REVOKE"><span class="refentrytitle">REVOKE</span></a></span></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="sql-alterdatabase.html" title="ALTER DATABASE">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="sql-commands.html" title="SQLコマンド">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="sql-alterdomain.html" title="ALTER DOMAIN">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">ALTER DATABASE </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 18.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> ALTER DOMAIN</td></tr></table></div></body></html>
