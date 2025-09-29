@@ -1,0 +1,262 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>pg_combinebackup</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="pgbench.html" title="pgbench" /><link rel="next" href="app-pgconfig.html" title="pg_config" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 17.6文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="reference-client.html" title="PostgreSQLクライアントアプリケーション">PostgreSQLクライアントアプリケーション</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 17.6 : app-pgcombinebackup.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="pgbench.html" title="pgbench">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="reference-client.html" title="PostgreSQLクライアントアプリケーション">上へ</a></td><td width="60%" align="center"><span class="application">pg_combinebackup</span></td><td width="20%" align="right"> <a accesskey="n" href="app-pgconfig.html" title="pg_config">次へ</a></td></tr></table><hr /></div><div class="refentry" id="APP-PGCOMBINEBACKUP"><div class="titlepage"></div><a id="id-1.9.4.12.1" class="indexterm"></a><div class="refnamediv"><h2><span class="refentrytitle"><span class="application">pg_combinebackup</span></span></h2><p>pg_combinebackup<span class="original">
+  &lt;refpurpose&gt;reconstruct a full backup from an incremental backup and dependent backups&lt;/refpurpose&gt;
+</span> — 増分バックアップと依存するバックアップ群からフルバックアップを再構築する</p></div><div class="refsynopsisdiv"><h2>概要</h2><div class="cmdsynopsis"><p id="id-1.9.4.12.4.1"><code class="command">pg_combinebackup</code> [<em class="replaceable"><code>option</code></em>...] [<em class="replaceable"><code>backup_directory</code></em>...]</p></div></div><div class="refsect1" id="id-1.9.4.12.5"><h2>説明</h2><span class="original">
+  &lt;title&gt;Description&lt;/title&gt;
+</span><p>
+<span class="original">
+   &lt;application&gt;pg_combinebackup&lt;/application&gt; is used to reconstruct a
+   synthetic full backup from an
+   &lt;link linkend="backup-incremental-backup"&gt;incremental backup&lt;/link&gt; and the
+   earlier backups upon which it depends.
+</span>
+<span class="application">pg_combinebackup</span>は、<a class="link" href="continuous-archiving.html#BACKUP-INCREMENTAL-BACKUP" title="25.3.3. 増分バックアップを作成する">増分バックアップ</a>とそれが依存する以前のバックアップから、合成フルバックアップを再構築するために使用されます。
+  </p><p>
+<span class="original">
+   Specify all of the required backups on the command line from oldest to newest.
+   That is, the first backup directory should be the path to the full backup, and
+   the last should be the path to the final incremental backup
+   that you wish to restore. The reconstructed backup will be written to the
+   output directory specified by the &lt;option&gt;-o&lt;/option&gt; option.
+</span>
+コマンドラインで、古いバックアップから最新のバックアップまで、必要なすべてのバックアップを指定します。
+つまり、最初のバックアップディレクトリはフルバックアップへのパスでなければならず、最後のバックアップはリストアしたい最後の増分バックアップへのパスでなければなりません。
+再構築されたバックアップは、<code class="option">-o</code>オプションで指定された出力ディレクトリに書き込まれます。
+  </p><p>
+<span class="original">
+   &lt;application&gt;pg_combinebackup&lt;/application&gt; will attempt to verify
+   that the backups you specify form a legal backup chain from which a correct
+   full backup can be reconstructed. However, it is not designed to help you
+   keep track of which backups depend on which other backups. If you remove
+   one or more of the previous backups upon which your incremental
+   backup relies, you will not be able to restore it. Moreover,
+   &lt;application&gt;pg_combinebackup&lt;/application&gt; only attempts to verify that the
+   backups have the correct relationship to each other, not that each
+   individual backup is intact; for that, use
+   &lt;xref linkend="app-pgverifybackup" /&gt;.
+</span>
+<span class="application">pg_combinebackup</span>は、指定したバックアップが正しいフルバックアップを再構築できる正当なバックアップチェーンを形成しているかどうかを検証します。
+ただし、どのバックアップがどのバックアップに依存しているかを追跡するための機能は備えていません。
+増分バックアップが依存する以前のバックアップを1つでも削除すると、その増分バックアップはリストアできなくなります。
+さらに、<span class="application">pg_combinebackup</span>は、バックアップが互いに正しい関係を持っているかどうかを検証するだけで、個々のバックアップが損なわれていないかどうかは検証しません。そのためには<a class="xref" href="app-pgverifybackup.html" title="pg_verifybackup"><span class="refentrytitle"><span class="application">pg_verifybackup</span></span></a>を使用してください。
+  </p><p>
+<span class="original">
+   Since the output of &lt;application&gt;pg_combinebackup&lt;/application&gt; is a
+   synthetic full backup, it can be used as an input to a future invocation of
+   &lt;application&gt;pg_combinebackup&lt;/application&gt;. The synthetic full backup would
+   be specified on the command line in lieu of the chain of backups from which
+   it was reconstructed.
+</span>
+<span class="application">pg_combinebackup</span>の出力は合成フルバックアップであるため、将来の<span class="application">pg_combinebackup</span>の呼び出しの入力として使用できます。
+再構築に使われたバックアップチェーンの代わりに合成フルバックアップをコマンドラインで指定します。
+  </p></div><div class="refsect1" id="id-1.9.4.12.6"><h2>オプション</h2><span class="original">
+  &lt;title&gt;Options&lt;/title&gt;
+</span><p>
+    </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="option">-d</code><br /></span><span class="term"><code class="option">--debug</code></span></dt><dd><p>
+<span class="original">
+        Print lots of debug logging output on &lt;filename&gt;stderr&lt;/filename&gt;.
+</span>
+<code class="filename">stderr</code>に大量のデバッグログを出力します。
+       </p></dd><dt><span class="term"><code class="option">-n</code><br /></span><span class="term"><code class="option">--dry-run</code></span></dt><dd><p>
+<span class="original">
+        The &lt;option&gt;-n&lt;/option&gt;/&lt;option&gt;&amp;#45;-dry-run&lt;/option&gt; option instructs
+        &lt;command&gt;pg_combinebackup&lt;/command&gt; to figure out what would be done
+        without actually creating the target directory or any output files.
+        It is particularly useful in combination with &lt;option&gt;&amp;#45;-debug&lt;/option&gt;.
+</span>
+<code class="option">-n</code>/<code class="option">--dry-run</code>オプションは、ターゲットディレクトリや出力ファイルを実際には作成せずに、<code class="command">pg_combinebackup</code>が何を行うかを報告します。
+これは<code class="option">--debug</code>と組み合わせて使用すると特に便利です。
+       </p></dd><dt><span class="term"><code class="option">-N</code><br /></span><span class="term"><code class="option">--no-sync</code></span></dt><dd><p>
+<span class="original">
+        By default, &lt;command&gt;pg_combinebackup&lt;/command&gt; will wait for all files
+        to be written safely to disk.  This option causes
+        &lt;command&gt;pg_combinebackup&lt;/command&gt; to return without waiting, which is
+        faster, but means that a subsequent operating system crash can leave
+        the output backup corrupt.  Generally, this option is useful for testing
+        but should not be used when creating a production installation.
+</span>
+デフォルトでは、<code class="command">pg_combinebackup</code>はすべてのファイルがディスクに安全に書き込まれるまで待機します。
+このオプションを指定すると、<code class="command">pg_combinebackup</code>は待機せずに返ります。
+これは高速ですが、後続のオペレーティングシステムのクラッシュによって出力バックアップが破損する可能性があります。
+通常、このオプションは試験用では有用ですが、実用のインストレーションを作成する際に使用すべきではありません。
+       </p></dd><dt><span class="term"><code class="option">-o <em class="replaceable"><code>outputdir</code></em></code><br /></span><span class="term"><code class="option">--output=<em class="replaceable"><code>outputdir</code></em></code></span></dt><dd><p>
+<span class="original">
+        Specifies the output directory to which the synthetic full backup
+        should be written. Currently, this argument is required.
+</span>
+合成フルバックアップを書き込む出力ディレクトリを指定します。
+現在、この引数は必須です。
+       </p></dd><dt><span class="term"><code class="option">-T <em class="replaceable"><code>olddir</code></em>=<em class="replaceable"><code>newdir</code></em></code><br /></span><span class="term"><code class="option">--tablespace-mapping=<em class="replaceable"><code>olddir</code></em>=<em class="replaceable"><code>newdir</code></em></code></span></dt><dd><p>
+<span class="original">
+        Relocates the tablespace in directory &lt;replaceable&gt;olddir&lt;/replaceable&gt;
+        to &lt;replaceable&gt;newdir&lt;/replaceable&gt; during the backup.
+        &lt;replaceable&gt;olddir&lt;/replaceable&gt; is the absolute path of the tablespace
+        as it exists in the final backup specified on the command line,
+        and &lt;replaceable&gt;newdir&lt;/replaceable&gt; is the absolute path to use for the
+        tablespace in the reconstructed backup.  If either path needs to contain
+        an equal sign (&lt;literal&gt;=&lt;/literal&gt;), precede that with a backslash.
+        This option can be specified multiple times for multiple tablespaces.
+</span>
+バックアップ時にディレクトリ<em class="replaceable"><code>olddir</code></em>内のテーブル空間を<em class="replaceable"><code>newdir</code></em>に再配置します。
+<em class="replaceable"><code>olddir</code></em>はコマンドラインで指定された最終バックアップに存在するテーブル空間の絶対パスで、<em class="replaceable"><code>newdir</code></em>は再構築されたバックアップでテーブル空間に使用される絶対パスです。
+どちらかのパスに等号(<code class="literal">=</code>)が含まれる場合、その前にバックスラッシュを置きます。
+このオプションは、複数のテーブル空間に対して複数回指定できます。
+       </p></dd><dt><span class="term"><code class="option">--clone</code></span></dt><dd><p>
+<span class="original">
+        Use efficient file cloning (also known as &lt;quote&gt;reflinks&lt;/quote&gt; on
+        some systems) instead of copying files to the new data directory,
+        which can result in near-instantaneous copying of the data files.
+</span>
+新しいデータディレクトリにファイルをコピーする代わりに、効率的なファイルクローニング（一部のシステムでは<span class="quote">「<span class="quote">reflinks</span>」</span>とも呼ばれます）を使用します。これによりデータファイルをほぼ瞬時にコピーすることができます。
+       </p><p>
+<span class="original">
+        If a backup manifest is not available or does not contain checksum of
+        the right type, file cloning will be used to copy the file, but the
+        file will be also read block-by-block for the checksum calculation.
+</span>
+バックアップマニフェストが使用できない場合、または正しいタイプのチェックサムが含まれていない場合、ファイルコピーのためにクローニングが使われますが、ファイルはチェックサム計算のためにブロックごとに読み取られます。
+       </p><p>
+<span class="original">
+        File cloning is only supported on some operating systems and file
+        systems.  If it is selected but not supported, the
+        &lt;application&gt;pg_combinebackup&lt;/application&gt; run will error.  At present,
+        it is supported on Linux (kernel 4.5 or later) with Btrfs and XFS (on
+        file systems created with reflink support), and on macOS with APFS.
+</span>
+ファイルのクローニングは、一部のオペレーティングシステムおよびファイルシステムでのみサポートされています。
+選択されているけれどもサポートされていない場合、<span class="application">pg_combinebackup</span>の実行はエラーになります。
+現在、Linux（カーネル4.5以上）のBtrfsと、XFS（reflinkを有効にして作成されたファイルシステム）、および、macOSのAPFSでサポートされています。
+       </p></dd><dt><span class="term"><code class="option">--copy</code></span></dt><dd><p>
+<span class="original">
+        Perform regular file copy.  This is the default.  (See also
+        &lt;option&gt;&amp;#45;-copy-file-range&lt;/option&gt; and &lt;option&gt;&amp;#45;-clone&lt;/option&gt;.)
+</span>
+通常のファイルコピーを行います。
+これがデフォルトです（<code class="option">--copy-file-range</code>および<code class="option">--clone</code>も参照してください。）
+       </p></dd><dt><span class="term"><code class="option">--copy-file-range</code></span></dt><dd><p>
+<span class="original">
+        Use the &lt;function&gt;copy_file_range&lt;/function&gt; system call for efficient
+        copying.  On some file systems this gives results similar to
+        &lt;option&gt;&amp;#45;-clone&lt;/option&gt;, sharing physical disk blocks, while on others
+        it may still copy blocks, but do so via an optimized path.  At present,
+        it is supported on Linux and FreeBSD.
+</span>
+システムコール<code class="function">copy_file_range</code>を使用して、効率的なコピーを行います。
+ファイルシステムによって、物理ディスクブロックを共有して<code class="option">--clone</code>と似た効果を得られるものもあれば、依然としてブロックをコピーするものの最適化されたパスを介して動作するものもあります。
+現在、LinuxとFreeBSDでサポートされています。
+       </p><p>
+<span class="original">
+        If a backup manifest is not available or does not contain checksum of
+        the right type, &lt;function&gt;copy_file_range&lt;/function&gt; will be used to
+        copy the file, but the file will be also read block-by-block for the
+        checksum calculation.
+</span>
+バックアップマニフェストが利用できないか、正しいタイプのチェックサムを含んでいない場合、<code class="function">copy_file_range</code>はファイルをコピーするために使用されますが、ファイルはチェックサム計算のためにブロックごとに読み取られます。
+       </p></dd><dt><span class="term"><code class="option">--manifest-checksums=<em class="replaceable"><code>algorithm</code></em></code></span></dt><dd><p>
+<span class="original">
+        Like &lt;xref linkend="app-pgbasebackup"/&gt;,
+        &lt;application&gt;pg_combinebackup&lt;/application&gt; writes a backup manifest
+        in the output directory. This option specifies the checksum algorithm
+        that should be applied to each file included in the backup manifest.
+        Currently, the available algorithms are &lt;literal&gt;NONE&lt;/literal&gt;,
+        &lt;literal&gt;CRC32C&lt;/literal&gt;, &lt;literal&gt;SHA224&lt;/literal&gt;,
+        &lt;literal&gt;SHA256&lt;/literal&gt;, &lt;literal&gt;SHA384&lt;/literal&gt;,
+        and &lt;literal&gt;SHA512&lt;/literal&gt;.  The default is &lt;literal&gt;CRC32C&lt;/literal&gt;.
+</span>
+<a class="xref" href="app-pgbasebackup.html" title="pg_basebackup"><span class="refentrytitle"><span class="application">pg_basebackup</span></span></a>と同様に、<span class="application">pg_combinebackup</span>はバックアップマニフェストを出力ディレクトリに書き込みます。
+このオプションは、バックアップマニフェストに含まれる各ファイルに適用されるチェックサムアルゴリズムを指定します。
+現在利用可能なアルゴリズムは、<code class="literal">NONE</code>、<code class="literal">CRC32C</code>、<code class="literal">SHA224</code>、<code class="literal">SHA256</code>、<code class="literal">SHA384</code>、<code class="literal">SHA512</code>です。
+デフォルトは<code class="literal">CRC32C</code>です。
+       </p></dd><dt><span class="term"><code class="option">--no-manifest</code></span></dt><dd><p>
+<span class="original">
+        Disables generation of a backup manifest. If this option is not
+        specified, a backup manifest for the reconstructed backup will be
+        written to the output directory.
+</span>
+バックアップマニフェストの生成を無効にします。
+このオプションを指定しない場合、再構築されたバックアップのバックアップマニフェストが出力ディレクトリに書き込まれます。
+       </p></dd><dt><span class="term"><code class="option">--sync-method=<em class="replaceable"><code>method</code></em></code></span></dt><dd><p>
+<span class="original">
+        When set to &lt;literal&gt;fsync&lt;/literal&gt;, which is the default,
+        &lt;command&gt;pg_combinebackup&lt;/command&gt; will recursively open and synchronize
+        all files in the backup directory.  When the plain format is used, the
+        search for files will follow symbolic links for the WAL directory and
+        each configured tablespace.
+</span>
+デフォルトの<code class="literal">fsync</code>に設定すると、<code class="command">pg_combinebackup</code>はバックアップディレクトリ内の全てのファイルを再帰的にオープンして同期します。
+plain形式を使用する場合、ファイルの検索はWALディレクトリと設定された各テーブル空間のシンボリックリンクをたどります。
+       </p><p>
+<span class="original">
+        On Linux, &lt;literal&gt;syncfs&lt;/literal&gt; may be used instead to ask the
+        operating system to synchronize the whole file system that contains the
+        backup directory.  When the plain format is used,
+        &lt;command&gt;pg_combinebackup&lt;/command&gt; will also synchronize the file systems
+        that contain the WAL files and each tablespace.  See
+        &lt;xref linkend="guc-recovery-init-sync-method"/&gt; for information about
+        the caveats to be aware of when using &lt;literal&gt;syncfs&lt;/literal&gt;.
+</span>
+Linuxでは、<code class="literal">syncfs</code>を代わりに使用して、バックアップディレクトリを含むファイルシステム全体を同期するようにオペレーティングシステムに要求できます。
+plain形式を使用する場合、<code class="command">pg_combinebackup</code>はWALファイルと各テーブル空間を含むファイルシステムも同期させます。
+<code class="literal">syncfs</code>を使用する際に注意すべき注意事項については、<a class="xref" href="runtime-config-error-handling.html#GUC-RECOVERY-INIT-SYNC-METHOD">recovery_init_sync_method</a>を参照してください。
+       </p><p>
+<span class="original">
+        This option has no effect when &lt;option&gt;&amp;#45;-no-sync&lt;/option&gt; is used.
+</span>
+このオプションは<code class="option">--no-sync</code>が使われている場合は効果がありません。
+       </p></dd><dt><span class="term"><code class="option">-V</code><br /></span><span class="term"><code class="option">--version</code></span></dt><dd><p>
+<span class="original">
+        Prints the &lt;application&gt;pg_combinebackup&lt;/application&gt; version and
+        exits.
+</span>
+<span class="application">pg_combinebackup</span>のバージョンを出力して終了します。
+       </p></dd><dt><span class="term"><code class="option">-?</code><br /></span><span class="term"><code class="option">--help</code></span></dt><dd><p>
+<span class="original">
+        Shows help about &lt;application&gt;pg_combinebackup&lt;/application&gt; command
+        line arguments, and exits.
+</span>
+<span class="application">pg_combinebackup</span>コマンドライン引数についてのヘルプを表示して終了します。
+       </p></dd></dl></div><p>
+   </p></div><div class="refsect1" id="APP-PGCOMBINEBACKUP-LIMITATIONS"><h2>制限事項</h2><span class="original">
+  &lt;title&gt;Limitations&lt;/title&gt;
+</span><p>
+<span class="original">
+   &lt;literal&gt;pg_combinebackup&lt;/literal&gt; does not recompute page checksums when
+   writing the output directory. Therefore, if any of the backups used for
+   reconstruction were taken with checksums disabled, but the final backup was
+   taken with checksums enabled, the resulting directory may contain pages
+   with invalid checksums.
+</span>
+<code class="literal">pg_combinebackup</code>は出力ディレクトリを書き込む際にページチェックサムを再計算しません。
+したがって、再構築に使用されたバックアップのいずれかがチェックサム無効で取得され、最終バックアップがチェックサム有効で取得された場合、結果のディレクトリは無効なチェックサムを持つページを含む可能性があります。
+  </p><p>
+<span class="original">
+   To avoid this problem, taking a new full backup after changing the checksum
+   state of the cluster using &lt;xref linkend="app-pgchecksums "/&gt; is
+   recommended. Otherwise, you can disable and then optionally reenable
+   checksums on the directory produced by &lt;literal&gt;pg_combinebackup&lt;/literal&gt;
+   in order to correct the problem.
+</span>
+この問題を回避するには、<a class="xref" href="app-pgchecksums.html" title="pg_checksums"><span class="refentrytitle"><span class="application">pg_checksums</span></span></a>を使用してクラスタのチェックサム状態を変更した後に新しいフルバックアップを取ることをお勧めします。
+別な方法としては、問題を修正するために<code class="literal">pg_combinebackup</code>によって生成されたディレクトリのチェックサムを無効にした後、必要に応じて再度有効にすることができます。
+  </p></div><div class="refsect1" id="id-1.9.4.12.8"><h2>環境</h2><span class="original">
+  &lt;title&gt;Environment&lt;/title&gt;
+</span><p>
+<span class="original">
+   This utility, like most other &lt;productname&gt;PostgreSQL&lt;/productname&gt; utilities,
+   uses the environment variables supported by &lt;application&gt;libpq&lt;/application&gt;
+   (see &lt;xref linkend="libpq-envars"/&gt;).
+</span>
+このユーティリティは、他のほとんどの<span class="productname">PostgreSQL</span>ユーティリティと同様、<span class="application">libpq</span>でサポートされる環境変数を使用します（<a class="xref" href="libpq-envars.html" title="32.15. 環境変数">32.15</a>を参照してください）。
+  </p><p>
+<span class="original">
+   The environment variable &lt;envar&gt;PG_COLOR&lt;/envar&gt; specifies whether to use
+   color in diagnostic messages. Possible values are
+   &lt;literal&gt;always&lt;/literal&gt;, &lt;literal&gt;auto&lt;/literal&gt; and
+   &lt;literal&gt;never&lt;/literal&gt;.
+</span>
+環境変数<code class="envar">PG_COLOR</code>は診断メッセージで色を使うかどうかを指定します。
+指定可能な値は<code class="literal">always</code>、<code class="literal">auto</code>、<code class="literal">never</code>です。
+  </p></div><div class="refsect1" id="id-1.9.4.12.9"><h2>関連項目</h2><span class="original">
+  &lt;title&gt;See Also&lt;/title&gt;
+</span><span class="simplelist"><a class="xref" href="app-pgbasebackup.html" title="pg_basebackup"><span class="refentrytitle"><span class="application">pg_basebackup</span></span></a></span></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="pgbench.html" title="pgbench">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="reference-client.html" title="PostgreSQLクライアントアプリケーション">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="app-pgconfig.html" title="pg_config">次へ</a></td></tr><tr><td width="40%" align="left" valign="top"><span class="application">pgbench</span> </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 17.6文書">ホーム</a></td><td width="40%" align="right" valign="top"> <span class="application">pg_config</span></td></tr></table></div></body></html>

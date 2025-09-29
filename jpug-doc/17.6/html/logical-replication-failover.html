@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>29.3. 論理レプリケーションのフェイルオーバー</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="logical-replication-subscription.html" title="29.2. サブスクリプション" /><link rel="next" href="logical-replication-row-filter.html" title="29.4. 行フィルタ" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 17.6文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="logical-replication.html" title="第29章 論理レプリケーション">第29章 論理レプリケーション</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 17.6 : logical-replication-failover.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="logical-replication-subscription.html" title="29.2. サブスクリプション">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="logical-replication.html" title="第29章 論理レプリケーション">上へ</a></td><td width="60%" align="center">29.3. 論理レプリケーションのフェイルオーバー</td><td width="20%" align="right"> <a accesskey="n" href="logical-replication-row-filter.html" title="29.4. 行フィルタ">次へ</a></td></tr></table><hr /></div><div class="sect1" id="LOGICAL-REPLICATION-FAILOVER"><div class="titlepage"><div><div><h2 class="title" style="clear: both">29.3. 論理レプリケーションのフェイルオーバー <a href="#LOGICAL-REPLICATION-FAILOVER" class="id_link">#</a></h2></div></div></div><span class="original">
+  &lt;title&gt;Logical Replication Failover&lt;/title&gt;
+</span><p>
+<span class="original">
+   To allow subscriber nodes to continue replicating data from the publisher
+   node even when the publisher node goes down, there must be a physical standby
+   corresponding to the publisher node. The logical slots on the primary server
+   corresponding to the subscriptions can be synchronized to the standby server by
+   specifying &lt;literal&gt;failover = true&lt;/literal&gt; when creating subscriptions. See
+   &lt;xref linkend="logicaldecoding-replication-slots-synchronization"/&gt; for details.
+   Enabling the
+   &lt;link linkend="sql-createsubscription-params-with-failover"&gt;&lt;literal&gt;failover&lt;/literal&gt;&lt;/link&gt;
+   parameter ensures a seamless transition of those subscriptions after the
+   standby is promoted. They can continue subscribing to publications on the
+   new primary server.
+</span>
+パブリッシャーノードがダウンした場合でも、サブスクライバーノードがパブリッシャーノードからのデータの複製を継続できるようにするには、パブリッシャーノードに対応する物理スタンバイが必要です。
+サブスクリプションに対応するプライマリサーバの論理スロットは、サブスクリプションの作成時に<code class="literal">failover = true</code>を指定することで、スタンバイサーバと同期させることができます。
+詳細は<a class="xref" href="logicaldecoding-explanation.html#LOGICALDECODING-REPLICATION-SLOTS-SYNCHRONIZATION" title="47.2.3. レプリケーションスロットの同期">47.2.3</a>を参照してください。
+<a class="link" href="sql-createsubscription.html#SQL-CREATESUBSCRIPTION-PARAMS-WITH-FAILOVER"><code class="literal">failover</code></a>パラメータを有効にすると、スタンバイ昇格後のサブスクリプションのシームレスな移行が保証されます。
+サブスクリプションは新しいプライマリサーバ上のパブリケーションへのサブスクライブを継続できます。
+  </p><p>
+<span class="original">
+   Because the slot synchronization logic copies asynchronously, it is
+   necessary to confirm that replication slots have been synced to the standby
+   server before the failover happens. To ensure a successful failover, the
+   standby server must be ahead of the subscriber. This can be achieved by
+   configuring
+   &lt;link linkend="guc-synchronized-standby-slots"&gt;&lt;varname&gt;synchronized_standby_slots&lt;/varname&gt;&lt;/link&gt;.
+</span>
+スロット同期ロジックは非同期にコピーを行うため、フェイルオーバーが発生する前にレプリケーションスロットがスタンバイサーバに同期されているかを確認する必要があります。
+フェイルオーバーの成功を保証するためには、スタンバイサーバはサブスクライバーよりも先行していなければいけません。
+これは<a class="link" href="runtime-config-replication.html#GUC-SYNCHRONIZED-STANDBY-SLOTS"><code class="varname">synchronized_standby_slots</code></a>を設定することで実現できます。
+  </p><p>
+<span class="original">
+   To confirm that the standby server is indeed ready for failover for a given subscriber, follow these
+   steps to verify that all the logical replication slots required by that subscriber have been
+   synchronized to the standby server:
+</span>
+スタンバイサーバがフェイルオーバーの準備ができていることを確認するためには、次の手順に従って、サブスクライバーに必要なすべての論理レプリケーションスロットがスタンバイサーバと同期されていることを検証します。
+  </p><div class="procedure"><ol class="procedure" type="1"><li class="step"><p>
+<span class="original">
+     On the subscriber node, use the following SQL to identify which replication
+     slots should be synced to the standby that we plan to promote. This query
+     will return the relevant replication slots associated with the
+     failover-enabled subscriptions.
+</span>
+サブスクライバーノードで、次のSQLを使用して、昇格する予定のスタンバイに同期する必要があるレプリケーションスロットを特定します。
+このクエリは、フェイルオーバーが有効になっているサブスクリプションと関連付けられている、関連するレプリケーションスロットを返します。
+</p><pre class="programlisting">
+test_sub=# SELECT
+               array_agg(quote_literal(s.subslotname)) AS slots
+           FROM  pg_subscription s
+           WHERE s.subfailover AND
+                 s.subslotname IS NOT NULL;
+ slots
+-------
+ {'sub1','sub2','sub3'}
+(1 row)
+</pre></li><li class="step"><p>
+<span class="original">
+     On the subscriber node, use the following SQL to identify which table
+     synchronization slots should be synced to the standby that we plan to promote.
+     This query needs to be run on each database that includes the failover-enabled
+     subscription(s). Note that the table sync slot should be synced to the standby
+     server only if the table copy is finished
+     (See &lt;xref linkend="catalog-pg-subscription-rel"/&gt;).
+     We don't need to ensure that the table sync slots are synced in other scenarios
+     as they will either be dropped or re-created on the new primary server in those
+     cases.
+</span>
+サブスクライバーノードで、次のSQLを使用して、昇格する予定のスタンバイに同期する必要があるテーブル同期スロットを特定します。
+このクエリは、フェイルオーバーが有効になっているサブスクリプションを持つ各データベースで実行する必要があります。
+テーブル同期スロットは、テーブル同期が終了している場合にのみ同期されることに注意してください（<a class="xref" href="catalog-pg-subscription-rel.html" title="51.55. pg_subscription_rel">51.55</a>を参照）。
+その他の場合では、テーブル同期スロットが同期されることを保証する必要はありません。これらは破棄されるか、新しいプライマリサーバで再作成されるためです。
+</p><pre class="programlisting">
+test_sub=# SELECT
+               array_agg(quote_literal(slot_name)) AS slots
+           FROM
+           (
+               SELECT CONCAT('pg_', srsubid, '_sync_', srrelid, '_', ctl.system_identifier) AS slot_name
+               FROM pg_control_system() ctl, pg_subscription_rel r, pg_subscription s
+               WHERE r.srsubstate = 'f' AND s.oid = r.srsubid AND s.subfailover
+           );
+ slots
+-------
+ {'pg_16394_sync_16385_7394666715149055164'}
+(1 row)
+</pre></li><li class="step"><p>
+<span class="original">
+     Check that the logical replication slots identified above exist on
+     the standby server and are ready for failover.
+</span>
+上記で特定した論理レプリケーションスロットがスタンバイに存在し、フェイルオーバーの準備ができていることを確認します。
+</p><pre class="programlisting">
+test_standby=# SELECT slot_name, (synced AND NOT temporary AND invalidation_reason IS NULL) AS failover_ready
+               FROM pg_replication_slots
+               WHERE slot_name IN
+                   ('sub1','sub2','sub3', 'pg_16394_sync_16385_7394666715149055164');
+  slot_name                                 | failover_ready
+--------------------------------------------+----------------
+  sub1                                      | t
+  sub2                                      | t
+  sub3                                      | t
+  pg_16394_sync_16385_7394666715149055164   | t
+(4 rows)
+</pre></li></ol></div><p>
+<span class="original">
+   If all the slots are present on the standby server and the result
+   (&lt;literal&gt;failover_ready&lt;/literal&gt;) of the above SQL query is true, then
+   existing subscriptions can continue subscribing to publications on the new
+   primary server.
+</span>
+すべてのスロットがスタンバイサーバに存在し、上記のSQLクエリの結果（<code class="literal">failover_ready</code>）が真である場合、既存のサブスクリプションは、新しいプライマリサーバ上のパブリケーションへのサブスクライブを継続できます。
+  </p><p>
+<span class="original">
+   The first two steps in the above procedure are meant for a
+   &lt;productname&gt;PostgreSQL&lt;/productname&gt; subscriber. It is recommended to run
+   these steps on each subscriber node, that will be served by the designated
+   standby after failover, to obtain the complete list of replication
+   slots. This list can then be verified in Step 3 to ensure failover readiness.
+   Non-&lt;productname&gt;PostgreSQL&lt;/productname&gt; subscribers, on the other hand, may
+   use their own methods to identify the replication slots used by their
+   respective subscriptions.
+</span>
+前述の手続きのうち最初の2つの手順は、<span class="productname">PostgreSQL</span>サブスクライバーを対象としています。
+これらの手順は、フェイルオーバーの後に指定されたスタンバイに接続する各サブスクライバーノード上で実行することをお勧めします。これにより、レプリケーションスロットの完全なリストを取得できます。
+このリストはフェイルオーバーの準備状況の確認のため、手順3で検証されます
+一方、非<span class="productname">PostgreSQL</span>サブスクライバーは、独自の方法を使用して、それぞれのサブスクリプションで使用されるレプリケーションスロットを識別できます。
+  </p><p>
+<span class="original">
+   In some cases, such as during a planned failover, it is necessary to confirm
+   that all subscribers, whether &lt;productname&gt;PostgreSQL&lt;/productname&gt; or
+   non-&lt;productname&gt;PostgreSQL&lt;/productname&gt;, will be able to continue
+   replication after failover to a given standby server. In such cases, use the
+   following SQL, instead of performing the first two steps above, to identify
+   which replication slots on the primary need to be synced to the standby that
+   is intended for promotion. This query returns the relevant replication slots
+   associated with all the failover-enabled subscriptions.
+</span>
+計画的なフェイルオーバー中など、場合によっては、<span class="productname">PostgreSQL</span>または非<span class="productname">PostgreSQL</span>のすべてのサブスクライバーが、特定のスタンバイサーバへのフェイルオーバーの後にレプリケーションを継続できることを確認する必要があります。
+このような場合は、最初の2つの手順の代わりに以下のSQLを使用して、プライマリ上のどのレプリケーションスロットを昇格対象のスタンバイに同期する必要があるかを特定します。
+この問い合わせは、すべてのフェイルオーバーが有効なサブスクリプションに紐づけられた関連するレプリケーションスロットを返します。
+  </p><p>
+</p><pre class="programlisting">
+/* primary # */ SELECT array_agg(quote_literal(r.slot_name)) AS slots
+               FROM pg_replication_slots r
+               WHERE r.failover AND NOT r.temporary;
+ slots
+-------
+ {'sub1','sub2','sub3', 'pg_16394_sync_16385_7394666715149055164'}
+(1 row)
+</pre></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="logical-replication-subscription.html" title="29.2. サブスクリプション">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="logical-replication.html" title="第29章 論理レプリケーション">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="logical-replication-row-filter.html" title="29.4. 行フィルタ">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">29.2. サブスクリプション </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 17.6文書">ホーム</a></td><td width="40%" align="right" valign="top"> 29.4. 行フィルタ</td></tr></table></div></body></html>

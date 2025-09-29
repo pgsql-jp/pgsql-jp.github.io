@@ -1,0 +1,334 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>47.2. ロジカルデコーディングのコンセプト</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="logicaldecoding-example.html" title="47.1. ロジカルデコーディングの例" /><link rel="next" href="logicaldecoding-walsender.html" title="47.3. ストリーミングレプリケーションプロトコルインタフェース" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 17.6文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="logicaldecoding.html" title="第47章 ロジカルデコーディング">第47章 ロジカルデコーディング</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 17.6 : logicaldecoding-explanation.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="logicaldecoding-example.html" title="47.1. ロジカルデコーディングの例">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="logicaldecoding.html" title="第47章 ロジカルデコーディング">上へ</a></td><td width="60%" align="center">47.2. ロジカルデコーディングのコンセプト</td><td width="20%" align="right"> <a accesskey="n" href="logicaldecoding-walsender.html" title="47.3. ストリーミングレプリケーションプロトコルインタフェース">次へ</a></td></tr></table><hr /></div><div class="sect1" id="LOGICALDECODING-EXPLANATION"><div class="titlepage"><div><div><h2 class="title" style="clear: both">47.2. ロジカルデコーディングのコンセプト <a href="#LOGICALDECODING-EXPLANATION" class="id_link">#</a></h2></div></div></div><span class="original">
+   &lt;title&gt;Logical Decoding Concepts&lt;/title&gt;
+</span><div class="sect2" id="LOGICALDECODING-EXPLANATION-LOG-DEC"><div class="titlepage"><div><div><h3 class="title">47.2.1. ロジカルデコーディング <a href="#LOGICALDECODING-EXPLANATION-LOG-DEC" class="id_link">#</a></h3></div></div></div><span class="original">
+    &lt;title&gt;Logical Decoding&lt;/title&gt;
+</span><a id="id-1.8.14.9.2.2" class="indexterm"></a><a id="id-1.8.14.9.2.3" class="indexterm"></a><p>
+<span class="original">
+     Logical decoding is the process of extracting all persistent changes
+     to a database's tables into a coherent, easy to understand format which
+     can be interpreted without detailed knowledge of the database's internal
+     state.
+</span>
+ロジカルデコーディングは、データベースのテーブルへの恒久的な更新を、一貫性があって、データベース内部の状態に関する詳細な知識がなくても容易に理解できる形式として取得するプロセスです。
+    </p><p>
+<span class="original">
+     In &lt;productname&gt;PostgreSQL&lt;/productname&gt;, logical decoding is implemented
+     by decoding the contents of the &lt;link linkend="wal"&gt;write-ahead
+     log&lt;/link&gt;, which describe changes on a storage level, into an
+     application-specific form such as a stream of tuples or SQL statements.
+</span>
+<span class="productname">PostgreSQL</span>においてロジカルデコーディングは、記憶装置のレベルで更新を記述する<a class="link" href="wal.html" title="第28章 信頼性と先行書き込みログ（WAL）">先行書き込みログ（WAL）</a>の内容を、タプルやSQL文のストリームといったアプリケーション固有の形式にデコードすることによって実装されています。
+    </p></div><div class="sect2" id="LOGICALDECODING-REPLICATION-SLOTS"><div class="titlepage"><div><div><h3 class="title">47.2.2. レプリケーションスロット <a href="#LOGICALDECODING-REPLICATION-SLOTS" class="id_link">#</a></h3></div></div></div><span class="original">
+    &lt;title&gt;Replication Slots&lt;/title&gt;
+</span><a id="id-1.8.14.9.3.2" class="indexterm"></a><a id="id-1.8.14.9.3.3" class="indexterm"></a><p>
+<span class="original">
+     In the context of logical replication, a slot represents a stream of
+     changes that can be replayed to a client in the order they were made on
+     the origin server. Each slot streams a sequence of changes from a single
+     database.
+</span>
+論理レプリケーションの文脈ではスロットは、元のサーバで行われた変更と同じ順序でクライアント上でリプレイできるようなストリームを表します。
+それぞれのスロットは、単一のデータベース上の変更操作の連鎖をストリームとして流します。
+    </p><div class="note"><h3 class="title">注記</h3><span class="original">
+     &lt;para&gt;&lt;productname&gt;PostgreSQL&lt;/productname&gt; also has streaming replication slots
+     (see &lt;xref linkend="streaming-replication"/&gt;), but they are used somewhat
+     differently there.
+</span><p>また<span class="productname">PostgreSQL</span>には、ストリーミングレプリケーションスロットがあります
+(<a class="xref" href="warm-standby.html#STREAMING-REPLICATION" title="26.2.5. ストリーミングレプリケーション">26.2.5</a>参照)。しかし、ここでの説明とは少し違う使い方がされています。
+     </p></div><p>
+<span class="original">
+     A replication slot has an identifier that is unique across all databases
+     in a &lt;productname&gt;PostgreSQL&lt;/productname&gt; cluster. Slots persist
+     independently of the connection using them and are crash-safe.
+</span>
+それぞれのレプリケーションスロットは<span class="productname">PostgreSQL</span>クラスタの中で一意な識別子を持っています。
+スロットは、そのために使用される接続とは独立しており、クラッシュセーフです。
+    </p><p>
+<span class="original">
+     A logical slot will emit each change just once in normal operation.
+     The current position of each slot is persisted only at checkpoint, so in
+     the case of a crash the slot might return to an earlier LSN, which will
+     then cause recent changes to be sent again when the server restarts.
+     Logical decoding clients are responsible for avoiding ill effects from
+     handling the same message more than once.  Clients may wish to record
+     the last LSN they saw when decoding and skip over any repeated data or
+     (when using the replication protocol) request that decoding start from
+     that LSN rather than letting the server determine the start point.
+     The Replication Progress Tracking feature is designed for this purpose,
+     refer to &lt;link linkend="replication-origins"&gt;replication origins&lt;/link&gt;.
+</span>
+ロジカルスロットは、通常の操作においては、各々の変更操作を一度だけ送出します。
+それぞれのスロットにおける現在位置は、チェックポイントのときにだけ永続的になります。
+ですからクラッシュすると、スロットは以前のLSNに戻ってしまうかもしれませんし、サーバの再起動時には最近の変更が再送されることになります。
+ロジカルデコーディングのクライアントは、同じメッセージを複数回扱うことによる好ましくない結果を避けることに対して責任を追っています。
+クライアントはデコーディングの際に最後に確認したLSNを記録し、繰り返されるデータをスキップしたり、（レプリケーションプロトコルを使う場合に）サーバに開始時点を決めさせるのではなく、記録しておいたLSNからデコーディングを始めるように要求するかもしれません。
+レプリケーション進捗追跡機能はこの目的のために設計されています。
+<a class="link" href="replication-origins.html" title="第48章 レプリケーション進捗の追跡">replication origins</a>を参照してください。
+    </p><p>
+<span class="original">
+     Multiple independent slots may exist for a single database. Each slot has
+     its own state, allowing different consumers to receive changes from
+     different points in the database change stream. For most applications, a
+     separate slot will be required for each consumer.
+</span>
+単一のデータベース中に、お互いに独立した複数のスロットが存在しても構いません。
+それぞれのスロットは自分自身の状態を持っており、データベース更新のストリーム上の別の場所から変更データを受信する異なる消費者があり得ます。
+多くのアプリケーションにとっては、各消費者に対して個別のスロットが必要となるでしょう。
+    </p><p>
+<span class="original">
+     A logical replication slot knows nothing about the state of the
+     receiver(s).  It's even possible to have multiple different receivers using
+     the same slot at different times; they'll just get the changes following
+     on from when the last receiver stopped consuming them. Only one receiver
+     may consume changes from a slot at any given time.
+</span>
+論理レプリケーションスロットは、受信者の状態については関知しません。
+同時にでなければ、同じスロットを使う複数の異なる受信者を持つことさえできます。
+その場合は、直近の受信者がストリームの消費を終了した時点から更新データを受信するだけです。
+どの時点でも1つのスロットからの変更を消費できるのは1つの受信側だけです。
+    </p><p>
+<span class="original">
+     A logical replication slot can also be created on a hot standby. To prevent
+     &lt;command&gt;VACUUM&lt;/command&gt; from removing required rows from the system
+     catalogs, &lt;varname&gt;hot_standby_feedback&lt;/varname&gt; should be set on the
+     standby. In spite of that, if any required rows get removed, the slot gets
+     invalidated. It's highly recommended to use a physical slot between the
+     primary and the standby. Otherwise, &lt;varname&gt;hot_standby_feedback&lt;/varname&gt;
+     will work but only while the connection is alive (for example a node
+     restart would break it). Then, the primary may delete system catalog rows
+     that could be needed by the logical decoding on the standby (as it does
+     not know about the &lt;literal&gt;catalog_xmin&lt;/literal&gt; on the standby).
+     Existing logical slots on standby also get invalidated if
+     &lt;varname&gt;wal_level&lt;/varname&gt; on the primary is reduced to less than
+     &lt;literal&gt;logical&lt;/literal&gt;.
+     This is done as soon as the standby detects such a change in the WAL stream.
+     It means that, for walsenders that are lagging (if any), some WAL records up
+     to the &lt;varname&gt;wal_level&lt;/varname&gt; parameter change on the primary won't be
+     decoded.
+</span>
+論理レプリケーションスロットは、ホットスタンバイ上でも作成できます。
+システムカタログから必要な行を<code class="command">VACUUM</code>が削除するのを防ぐためには、スタンバイ上で<code class="varname">hot_standby_feedback</code>を設定する必要があります。
+それでも、必要な行が削除されると、スロットは無効になります。
+プライマリとスタンバイの間に物理スロットを使用することを強くお勧めします。
+そうしないと、<code class="varname">hot_standby_feedback</code>が動作するのは接続が生きている間だけです（たとえばノードの再起動で破壊されます）。
+その場合、プライマリはスタンバイ上のロジカルデコーディングが必要とするシステムカタログ行を削除するかもしれません（スタンバイ上の<code class="literal">catalog_xmin</code>については知らないため）。
+既存のスタンバイ上のロジカルスロットも、プライマリ上の<code class="varname">wal_level</code>が<code class="literal">logical</code>よりも小さくなると無効になります。
+これはスタンバイがWALストリームでそのような変更を検出したときにすぐに行われます。
+これは、遅れているwalsender（もしあれば）に対して、プライマリでの<code class="varname">wal_level</code>パラメータの変更までの一部のWALレコードがデコードされないことを意味します。
+    </p><p>
+<span class="original">
+     Creation of a logical slot requires information about all the currently
+     running transactions. On the primary, this information is available
+     directly, but on a standby, this information has to be obtained from
+     primary. Thus, slot creation may need to wait for some activity to happen
+     on the primary. If the primary is idle, creating a logical slot on
+     standby may take noticeable time. This can be sped up by calling the
+     &lt;function&gt;pg_log_standby_snapshot&lt;/function&gt; function on the primary.
+</span>
+ロジカルスロットの作成には、現在実行中のすべてのトランザクションに関する情報が必要です。
+プライマリではこの情報は直接利用できますが、スタンバイではこの情報をプライマリから取得する必要があります。
+したがって、スロットの作成はプライマリで何らかのアクティビティが発生するのを待つ必要があるかもしれません。
+プライマリがアイドル状態の場合、スタンバイ上でのロジカルスロットの作成にはかなりの時間がかかるかもしれません。
+これは、プライマリで<code class="function">pg_log_standby_snapshot</code>関数を呼び出すことで高速化できます。
+    </p><div class="caution"><h3 class="title">注意</h3><p>
+<span class="original">
+      Replication slots persist across crashes and know nothing about the state
+      of their consumer(s). They will prevent removal of required resources
+      even when there is no connection using them. This consumes storage
+      because neither required WAL nor required rows from the system catalogs
+      can be removed by &lt;command&gt;VACUUM&lt;/command&gt; as long as they are required by a replication
+      slot.  In extreme cases this could cause the database to shut down to prevent
+      transaction ID wraparound (see &lt;xref linkend="vacuum-for-wraparound"/&gt;).
+      So if a slot is no longer required it should be dropped.
+</span>
+レプリケーションスロットは、クラッシュをまたがって永続し、消費者の状態については関知しません。
+スロットを使う接続がない場合でも、消費者が必要としているリソースが削除されることを防ぎます。
+これによりストレージが消費されます。何故ならば、関連するWALもシステムカタログの行も、レプリケーションスロットが必要とする限り<code class="command">VACUUM</code>によって削除されないからです。
+極端な場合、トランザクションIDの周回（<a class="xref" href="routine-vacuuming.html#VACUUM-FOR-WRAPAROUND" title="24.1.5. トランザクションIDの周回エラーの防止">24.1.5</a>を参照）を防ぐためのデータベース停止をもたらす可能性があります。
+したがって、必要でなくなったスロットは削除すべきです。
+     </p></div></div><div class="sect2" id="LOGICALDECODING-REPLICATION-SLOTS-SYNCHRONIZATION"><div class="titlepage"><div><div><h3 class="title">47.2.3. レプリケーションスロットの同期 <a href="#LOGICALDECODING-REPLICATION-SLOTS-SYNCHRONIZATION" class="id_link">#</a></h3></div></div></div><span class="original">
+    &lt;title&gt;Replication Slot Synchronization&lt;/title&gt;
+</span><p>
+<span class="original">
+     The logical replication slots on the primary can be synchronized to
+     the hot standby by using the &lt;literal&gt;failover&lt;/literal&gt; parameter of
+     &lt;link linkend="pg-create-logical-replication-slot"&gt;
+     &lt;function&gt;pg_create_logical_replication_slot&lt;/function&gt;&lt;/link&gt;, or by
+     using the &lt;link linkend="sql-createsubscription-params-with-failover"&gt;
+     &lt;literal&gt;failover&lt;/literal&gt;&lt;/link&gt; option of
+     &lt;command&gt;CREATE SUBSCRIPTION&lt;/command&gt; during slot creation.
+     Additionally, enabling &lt;link linkend="guc-sync-replication-slots"&gt;
+     &lt;varname&gt;sync_replication_slots&lt;/varname&gt;&lt;/link&gt; on the standby
+     is required. By enabling &lt;link linkend="guc-sync-replication-slots"&gt;
+     &lt;varname&gt;sync_replication_slots&lt;/varname&gt;&lt;/link&gt;
+     on the standby, the failover slots can be synchronized periodically in
+     the slotsync worker. For the synchronization to work, it is mandatory to
+     have a physical replication slot between the primary and the standby (i.e.,
+     &lt;link linkend="guc-primary-slot-name"&gt;&lt;varname&gt;primary_slot_name&lt;/varname&gt;&lt;/link&gt;
+     should be configured on the standby), and
+     &lt;link linkend="guc-hot-standby-feedback"&gt;&lt;varname&gt;hot_standby_feedback&lt;/varname&gt;&lt;/link&gt;
+     must be enabled on the standby. It is also necessary to specify a valid
+     &lt;literal&gt;dbname&lt;/literal&gt; in the
+     &lt;link linkend="guc-primary-conninfo"&gt;&lt;varname&gt;primary_conninfo&lt;/varname&gt;&lt;/link&gt;.
+     It's highly recommended that the said physical replication slot is named in
+     &lt;link linkend="guc-synchronized-standby-slots"&gt;&lt;varname&gt;synchronized_standby_slots&lt;/varname&gt;&lt;/link&gt;
+     list on the primary, to prevent the subscriber from consuming changes
+     faster than the hot standby. Even when correctly configured, some latency
+     is expected when sending changes to logical subscribers due to the waiting
+     on slots named in
+     &lt;link linkend="guc-synchronized-standby-slots"&gt;&lt;varname&gt;synchronized_standby_slots&lt;/varname&gt;&lt;/link&gt;.
+     When &lt;varname&gt;synchronized_standby_slots&lt;/varname&gt; is utilized, the
+     primary server will not completely shut down until the corresponding
+     standbys, associated with the physical replication slots specified
+     in &lt;varname&gt;synchronized_standby_slots&lt;/varname&gt;, have confirmed
+     receiving the WAL up to the latest flushed position on the primary server.
+</span>
+プライマリ上の論理レプリケーションスロットは、ホットスタンバイと同期させることができます。
+これは、スロットの作成時に<a class="link" href="functions-admin.html#PG-CREATE-LOGICAL-REPLICATION-SLOT"><code class="function">pg_create_logical_replication_slot</code></a>の<code class="literal">failover</code>パラメータを指定するか、<code class="command">CREATE SUBSCRIPTION</code>の<a class="link" href="sql-createsubscription.html#SQL-CREATESUBSCRIPTION-PARAMS-WITH-FAILOVER"><code class="literal">failover</code></a>オプションを指定することで可能です。
+さらに、スタンバイで<a class="link" href="runtime-config-replication.html#GUC-SYNC-REPLICATION-SLOTS"><code class="varname">sync_replication_slots</code></a>を有効にする必要があります。
+スタンバイで<a class="link" href="runtime-config-replication.html#GUC-SYNC-REPLICATION-SLOTS"><code class="varname">sync_replication_slots</code></a>を有効にすると、フェイルオーバースロットをスロット同期ワーカーによって定期的に同期させることができます。
+同期を機能させるには、プライマリとスタンバイの間に物理レプリケーションスロットが必要であり（つまり、スタンバイで<a class="link" href="runtime-config-replication.html#GUC-PRIMARY-SLOT-NAME"><code class="varname">primary_slot_name</code></a>が設定されている必要があります）、スタンバイでは<a class="link" href="runtime-config-replication.html#GUC-HOT-STANDBY-FEEDBACK"><code class="varname">hot_standby_feedback</code></a>が有効になっている必要があります。
+また、<a class="link" href="runtime-config-replication.html#GUC-PRIMARY-CONNINFO"><code class="varname">primary_conninfo</code></a>に有効な<code class="literal">dbname</code>を指定する必要があります。
+この物理レプリケーションスロットを、プライマリの<a class="link" href="runtime-config-replication.html#GUC-SYNCHRONIZED-STANDBY-SLOTS"><code class="varname">synchronized_standby_slots</code></a>リスト内に指定することを強くお勧めします。
+これは、サブスクライバーがホットスタンバイよりも早く変更を消費しないようにするためです。
+正しく設定されていても、<a class="link" href="runtime-config-replication.html#GUC-SYNCHRONIZED-STANDBY-SLOTS"><code class="varname">synchronized_standby_slots</code></a>内に指定されたスロットを待つため、サブスクライバーに変更を送信するときに多少の遅延が予想されます。
+<code class="varname">synchronized_standby_slots</code>が使用されている場合、<code class="varname">synchronized_standby_slots</code>で指定された物理レプリケーションスロットに関連付けられた対応するスタンバイが、プライマリサーバ上の最新のフラッシュされた位置までWALを受信することを確認するまで、プライマリサーバは完全にはシャットダウンしません。
+    </p><div class="note"><h3 class="title">注記</h3><p>
+<span class="original">
+      While enabling &lt;link linkend="guc-sync-replication-slots"&gt;
+      &lt;varname&gt;sync_replication_slots&lt;/varname&gt;&lt;/link&gt; allows for automatic
+      periodic synchronization of failover slots, they can also be manually
+      synchronized using the &lt;link linkend="pg-sync-replication-slots"&gt;
+      &lt;function&gt;pg_sync_replication_slots&lt;/function&gt;&lt;/link&gt; function on the standby.
+      However, this function is primarily intended for testing and debugging and
+      should be used with caution. Unlike automatic synchronization, it does not
+      include cyclic retries, making it more prone to synchronization failures,
+      particularly during initial sync scenarios where the required WAL files
+      or catalog rows for the slot might have already been removed or are at risk
+      of being removed on the standby. In contrast, automatic synchronization
+      via &lt;varname&gt;sync_replication_slots&lt;/varname&gt; provides continuous slot
+      updates, enabling seamless failover and supporting high availability.
+      Therefore, it is the recommended method for synchronizing slots.
+</span>
+<a class="link" href="runtime-config-replication.html#GUC-SYNC-REPLICATION-SLOTS"><code class="varname">sync_replication_slots</code></a>を有効にすると、フェイルオーバースロットの定期的な自動同期が可能になりますが、スタンバイ上で<a class="link" href="functions-admin.html#PG-SYNC-REPLICATION-SLOTS"><code class="function">pg_sync_replication_slots</code></a>関数を使用して手動で同期することもできます。
+ただし、この関数は主にテストとデバッグを目的としており、注意して使用する必要があります。
+自動同期とは異なり、周期的な再試行が行われないため、同期が失敗しやすくなります。
+特に、スロットに必要なWALファイルまたはカタログ行がすでに削除されているか、スタンバイ上で削除されている可能性がある初期同期のシナリオではその傾向が強くなります。
+それとは対照的に、<code class="varname">sync_replication_slots</code>を介した自動同期はスロットを継続的に更新するため、シームレスなフェイルオーバーと高可用性を実現します。
+そのため、スロットの同期には自動同期を推奨します。
+     </p></div><p>
+<span class="original">
+     When slot synchronization is configured as recommended,
+     and the initial synchronization is performed either automatically or
+     manually via pg_sync_replication_slot, the standby can persist the
+     synchronized slot only if the following condition is met: The logical
+     replication slot on the primary must retain WALs and system catalog
+     rows that are still available on the standby. This ensures data
+     integrity and allows logical replication to continue smoothly after
+     promotion.
+     If the required WALs or catalog rows have already been purged from the
+     standby, the slot will not be persisted to avoid data loss. In such
+     cases, the following log message may appear:
+</span>
+スロットの同期が推奨通りに設定され、初期同期が自動的に、またはpg_sync_replication_slotを介して手動で行われた場合、次の条件を満たした場合にのみ、スタンバイは同期されたスロットを永続化できます：プライマリ上の論理レプリケーションスロットが、スタンバイ上で必要なWALおよびシステムカタログ行を保持している必要があります。
+これにより、データの整合性が確保され、昇格後も論理レプリケーションをスムーズに継続できます。
+必要なWALまたはカタログ行がスタンバイからすでに削除されている場合、スロットはデータ損失を回避するために永続化されません。
+このような場合、次のログメッセージが表示されることがあります。
+</p><pre class="programlisting">
+LOG:  could not synchronize replication slot "failover_slot"
+DETAIL:  Synchronization could lead to data loss, because the remote slot needs WAL at LSN 0/3003F28 and catalog xmin 754, but the standby has LSN 0/3003F28 and catalog xmin 756.
+</pre><p>
+<span class="original">
+     If the logical replication slot is actively used by a consumer, no
+     manual intervention is needed; the slot will advance automatically,
+     and synchronization will resume in the next cycle. However, if no
+     consumer is configured, it is advisable to manually advance the slot
+     on the primary using &lt;link linkend="pg-logical-slot-get-changes"&gt;
+     &lt;function&gt;pg_logical_slot_get_changes&lt;/function&gt;&lt;/link&gt; or
+     &lt;link linkend="pg-logical-slot-get-binary-changes"&gt;
+     &lt;function&gt;pg_logical_slot_get_binary_changes&lt;/function&gt;&lt;/link&gt;,
+     allowing synchronization to proceed.
+</span>
+論理レプリケーションスロットが消費者によって活発に使用されている場合、手作業による介入は必要ありません。
+スロットは自動的に進み、同期は次のサイクルで再開されます。
+ただし、消費者が設定されていない場合は、<a class="link" href="functions-admin.html#PG-LOGICAL-SLOT-GET-CHANGES"><code class="function">pg_logical_slot_get_changes</code></a>または<a class="link" href="functions-admin.html#PG-LOGICAL-SLOT-GET-BINARY-CHANGES"><code class="function">pg_logical_slot_get_binary_changes</code></a>を使用してプライマリ上のスロットを手動で進め、同期を続行できるようにすることをお勧めします。
+    </p><p>
+<span class="original">
+     The ability to resume logical replication after failover depends upon the
+     &lt;link linkend="view-pg-replication-slots"&gt;pg_replication_slots&lt;/link&gt;.&lt;structfield&gt;synced&lt;/structfield&gt;
+     value for the synchronized slots on the standby at the time of failover.
+     Only persistent slots that have attained synced state as true on the standby
+     before failover can be used for logical replication after failover.
+     Temporary synced slots cannot be used for logical decoding, therefore
+     logical replication for those slots cannot be resumed. For example, if the
+     synchronized slot could not become persistent on the standby due to a
+     disabled subscription, then the subscription cannot be resumed after
+     failover even when it is enabled.
+</span>
+フェイルオーバー後に論理レプリケーションを再開できるかどうかは、フェイルオーバー時のスタンバイ上で同期されていたスロットの持つ<a class="link" href="view-pg-replication-slots.html" title="52.19. pg_replication_slots">pg_replication_slots</a>.<code class="structfield">synced</code>の値によって決まります。
+フェイルオーバー前に、スタンバイで同期状態が真となっている永続スロットだけが、フェイルオーバー後の論理レプリケーションに使用できます。
+同期されていた一時スロットはロジカルデコーディングには使用できないため、これらのスロットによる論理レプリケーションは再開できません。
+例えば、サブスクリプション無効になっているため、同期されたスロットがスタンバイ上で永続化できなかった場合、フェイルオーバー後にサブスクリプションを有効にしても、そのサブスクリプションは再利用できません。
+    </p><p>
+<span class="original">
+     To resume logical replication after failover from the synced logical
+     slots, the subscription's 'conninfo' must be altered to point to the
+     new primary server. This is done using
+     &lt;link linkend="sql-altersubscription-params-connection"&gt;&lt;command&gt;ALTER SUBSCRIPTION ... CONNECTION&lt;/command&gt;&lt;/link&gt;.
+     It is recommended that subscriptions are first disabled before promoting
+     the standby and are re-enabled after altering the connection string.
+</span>
+同期されたロジカルスロットからフェイルオーバーの後に論理レプリケーションを再開するには、サブスクリプションの'conninfo'オプションを新しいプライマリサーバを指すように変更する必要があります。
+これは<a class="link" href="sql-altersubscription.html#SQL-ALTERSUBSCRIPTION-PARAMS-CONNECTION"><code class="command">ALTER SUBSCRIPTION ... CONNECTION</code></a>を使用して行います。
+スタンバイが昇格する前に先にサブスクリプションを無効にし、接続文字列を変更した後に再度有効にすることをお勧めします。
+    </p><div class="caution"><h3 class="title">注意</h3><p>
+<span class="original">
+      There is a chance that the old primary is up again during the promotion
+      and if subscriptions are not disabled, the logical subscribers may
+      continue to receive data from the old primary server even after promotion
+      until the connection string is altered. This might result in data
+      inconsistency issues, preventing the logical subscribers from being
+      able to continue replication from the new primary server.
+</span>
+昇格中に古いプライマリが再度起動する場合があります。
+このときサブスクリプションが無効なっていない場合、サブスクライバーは昇格後も接続文字列が変更されるまで、古いプライマリサーバからデータを受信し続ける可能性があります。
+これによりデータの不整合の問題が生じ、サブスクライバーが新しいプライマリからのレプリケーションを継続できなくなる可能性があります。
+     </p></div></div><div class="sect2" id="LOGICALDECODING-EXPLANATION-OUTPUT-PLUGINS"><div class="titlepage"><div><div><h3 class="title">47.2.4. 出力プラグイン <a href="#LOGICALDECODING-EXPLANATION-OUTPUT-PLUGINS" class="id_link">#</a></h3></div></div></div><span class="original">
+    &lt;title&gt;Output Plugins&lt;/title&gt;
+</span><p>
+<span class="original">
+     Output plugins transform the data from the write-ahead log's internal
+     representation into the format the consumer of a replication slot desires.
+</span>
+出力プラグインは、先行書き込みログ（WAL）の内部データ表現を、レプリケーションスロットの消費者が必要とする形式に変換します。
+    </p></div><div class="sect2" id="LOGICALDECODING-EXPLANATION-EXPORTED-SNAPSHOTS"><div class="titlepage"><div><div><h3 class="title">47.2.5. スナップショットのエクスポート <a href="#LOGICALDECODING-EXPLANATION-EXPORTED-SNAPSHOTS" class="id_link">#</a></h3></div></div></div><span class="original">
+    &lt;title&gt;Exported Snapshots&lt;/title&gt;
+</span><p>
+<span class="original">
+     When a new replication slot is created using the streaming replication
+     interface (see &lt;xref linkend="protocol-replication-create-replication-slot"/&gt;), a
+     snapshot is exported
+     (see &lt;xref linkend="functions-snapshot-synchronization"/&gt;), which will show
+     exactly the state of the database after which all changes will be
+     included in the change stream. This can be used to create a new replica by
+     using &lt;link linkend="sql-set-transaction"&gt;&lt;literal&gt;SET TRANSACTION
+     SNAPSHOT&lt;/literal&gt;&lt;/link&gt; to read the state of the database at the moment
+     the slot was created. This transaction can then be used to dump the
+     database's state at that point in time, which afterwards can be updated
+     using the slot's contents without losing any changes.
+</span>
+ストリーミングレプリケーションのインタフェースを使って新しいスロットを作ると（<a class="xref" href="protocol-replication.html#PROTOCOL-REPLICATION-CREATE-REPLICATION-SLOT">CREATE_REPLICATION_SLOT</a>参照）、スナップショットがエクスポートされます（<a class="xref" href="functions-admin.html#FUNCTIONS-SNAPSHOT-SYNCHRONIZATION" title="9.28.5. スナップショット同期関数">9.28.5</a>参照）。
+このスナップショットはまさにその時点でのデータベースの状態を示しており、スナップショット以後のすべての変更は更新ストリームに含まれるようになります。
+このことを利用して、スロットが作られた際のデータベースの状態を<a class="link" href="sql-set-transaction.html" title="SET TRANSACTION"><code class="literal">SET TRANSACTION SNAPSHOT</code></a>を使って読み込むことにより、新しいレプリカを作ることができます。
+このトランザクションは、その時点のデータベースの状態をダンプするために使用することができます。
+また、スロットに含まれるデータを使って、ダンプした後で行われた更新を失うことなくデータベースを更新できます。
+    </p><p>
+<span class="original">
+     Applications that do not require
+     snapshot export may suppress it with the &lt;literal&gt;SNAPSHOT 'nothing'&lt;/literal&gt;
+     option.
+</span>
+スナップショットのエクスポートが必要ないアプリケーションは、<code class="literal">SNAPSHOT 'nothing'</code>オプションを使ってスナップショットのエクスポートを抑止できます。
+    </p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="logicaldecoding-example.html" title="47.1. ロジカルデコーディングの例">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="logicaldecoding.html" title="第47章 ロジカルデコーディング">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="logicaldecoding-walsender.html" title="47.3. ストリーミングレプリケーションプロトコルインタフェース">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">47.1. ロジカルデコーディングの例 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 17.6文書">ホーム</a></td><td width="40%" align="right" valign="top"> 47.3. ストリーミングレプリケーションプロトコルインタフェース</td></tr></table></div></body></html>

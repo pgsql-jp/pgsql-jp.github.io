@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>32.20. スレッド化プログラムの振舞い</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="libpq-ssl.html" title="32.19. SSLサポート" /><link rel="next" href="libpq-build.html" title="32.21. libpqプログラムの構築" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 17.6文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="libpq.html" title="第32章 libpq — C ライブラリ">第32章 <span class="application">libpq</span> — C ライブラリ</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 17.6 : libpq-threading.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="libpq-ssl.html" title="32.19. SSLサポート">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="libpq.html" title="第32章 libpq — C ライブラリ">上へ</a></td><td width="60%" align="center">32.20. スレッド化プログラムの振舞い</td><td width="20%" align="right"> <a accesskey="n" href="libpq-build.html" title="32.21. libpqプログラムの構築">次へ</a></td></tr></table><hr /></div><div class="sect1" id="LIBPQ-THREADING"><div class="titlepage"><div><div><h2 class="title" style="clear: both">32.20. スレッド化プログラムの振舞い <a href="#LIBPQ-THREADING" class="id_link">#</a></h2></div></div></div><span class="original">
+  &lt;title&gt;Behavior in Threaded Programs&lt;/title&gt;
+</span><a id="id-1.7.3.27.2" class="indexterm"></a><a id="id-1.7.3.27.3" class="indexterm"></a><p>
+<span class="original">
+   As of version 17, &lt;application&gt;libpq&lt;/application&gt; is always reentrant and thread-safe.
+   However, one restriction is that no two threads attempt to manipulate
+   the same &lt;structname&gt;PGconn&lt;/structname&gt; object at the same time. In particular,
+   you cannot issue concurrent commands from different threads through
+   the same connection object. (If you need to run concurrent commands,
+   use multiple connections.)
+</span>
+バージョン17では、<span class="application">libpq</span>は常に再入可能でスレッドセーフです。
+ただし、1つの制限として、2つのスレッドが同じ<code class="structname">PGconn</code>オブジェクトを同時に操作することはできません。
+特に、異なるスレッドから同じ接続オブジェクトを介して同時にコマンドを実行することはできません。（並行してコマンドを実行する必要がある場合は、複数の接続を使用してください。）
+  </p><p>
+<span class="original">
+   &lt;structname&gt;PGresult&lt;/structname&gt; objects are normally read-only after creation,
+   and so can be passed around freely between threads.  However, if you use
+   any of the &lt;structname&gt;PGresult&lt;/structname&gt;-modifying functions described in
+   &lt;xref linkend="libpq-misc"/&gt; or &lt;xref linkend="libpq-events"/&gt;, it's up
+   to you to avoid concurrent operations on the same &lt;structname&gt;PGresult&lt;/structname&gt;,
+   too.
+</span>
+<code class="structname">PGresult</code>オブジェクトは生成後、読み込み専用であり、そのためスレッド間で自由に渡すことができます。
+しかし<a class="xref" href="libpq-misc.html" title="32.12. 雑多な関数">32.12</a>や<a class="xref" href="libpq-events.html" title="32.14. イベントシステム">32.14</a>で説明する<code class="structname">PGresult</code>を変更する関数のいずれかを使用している場合、同一の<code class="structname">PGresult</code>に対する同時操作を防ぐことも、作成者の責任です。
+  </p><p>
+<span class="original">
+   In earlier versions, &lt;application&gt;libpq&lt;/application&gt; could be compiled
+   with or without thread support, depending on compiler options. This
+   function allows the querying of &lt;application&gt;libpq&lt;/application&gt;'s
+   thread-safe status:
+</span>
+以前のバージョンでは、<span class="application">libpq</span>はコンパイラオプションに応じてスレッドサポート付きでコンパイルすることも、スレッドサポートなしでコンパイルすることもできました。
+この関数は<span class="application">libpq</span>のスレッドセーフステータスを照会することができます。
+  </p><div class="variablelist"><dl class="variablelist"><dt id="LIBPQ-PQISTHREADSAFE"><span class="term"><code class="function">PQisthreadsafe</code><a id="id-1.7.3.27.7.1.1.2" class="indexterm"></a></span> <a href="#LIBPQ-PQISTHREADSAFE" class="id_link">#</a></dt><dd><p>
+<span class="original">
+      Returns the thread safety status of the
+      &lt;application&gt;libpq&lt;/application&gt; library.
+</span>
+<span class="application">libpq</span>ライブラリのスレッドセーフ状態を返します。
+</p><pre class="synopsis">
+int PQisthreadsafe();
+</pre><p>
+     </p><p>
+<span class="original">
+      Returns 1 if the &lt;application&gt;libpq&lt;/application&gt; is thread-safe
+      and 0 if it is not. Always returns 1 on version 17 and above.
+</span>
+<span class="application">libpq</span>がスレッドセーフである場合は1を、そうでない場合は0を返します。
+バージョン17以降では常に1を返します。
+     </p></dd></dl></div><p>
+<span class="original">
+   The deprecated functions &lt;xref linkend="libpq-PQrequestCancel"/&gt; and
+   &lt;xref linkend="libpq-PQoidStatus"/&gt; are not thread-safe and should not be
+   used in multithread programs.  &lt;xref linkend="libpq-PQrequestCancel"/&gt;
+   can be replaced by &lt;xref linkend="libpq-PQcancelBlocking"/&gt;.
+   &lt;xref linkend="libpq-PQoidStatus"/&gt; can be replaced by
+   &lt;xref linkend="libpq-PQoidValue"/&gt;.
+</span>
+非推奨の関数、<a class="xref" href="libpq-cancel.html#LIBPQ-PQREQUESTCANCEL"><code class="function">PQrequestCancel</code></a>や<a class="xref" href="libpq-exec.html#LIBPQ-PQOIDSTATUS"><code class="function">PQoidStatus</code></a>はスレッドセーフではありませんので、マルチスレッドプログラムでは使用してはなりません。
+<a class="xref" href="libpq-cancel.html#LIBPQ-PQREQUESTCANCEL"><code class="function">PQrequestCancel</code></a>は<a class="xref" href="libpq-cancel.html#LIBPQ-PQCANCELBLOCKING"><code class="function">PQcancelBlocking</code></a>に置き換えられます。
+<a class="xref" href="libpq-exec.html#LIBPQ-PQOIDSTATUS"><code class="function">PQoidStatus</code></a>は<a class="xref" href="libpq-exec.html#LIBPQ-PQOIDVALUE"><code class="function">PQoidValue</code></a>に置き換えられます。
+  </p><p>
+<span class="original">
+   If you are using Kerberos inside your application (in addition to inside
+   &lt;application&gt;libpq&lt;/application&gt;), you will need to do locking around
+   Kerberos calls because Kerberos functions are not thread-safe.  See
+   function &lt;function&gt;PQregisterThreadLock&lt;/function&gt; in the
+   &lt;application&gt;libpq&lt;/application&gt; source code for a way to do cooperative
+   locking between &lt;application&gt;libpq&lt;/application&gt; and your application.
+</span>
+(<span class="application">libpq</span>の内部に加えて)アプリケーション中でKerberosを利用している場合、Kerberos関数はスレッドセーフではありませんのでKerberos呼び出しの前後をロックする必要があるでしょう。
+<span class="application">libpq</span>とアプリケーション間のロック処理を協調させる方法として<span class="application">libpq</span>のソースコードの<code class="function">PQregisterThreadLock</code>関数を参照してください。
+  </p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="libpq-ssl.html" title="32.19. SSLサポート">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="libpq.html" title="第32章 libpq — C ライブラリ">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="libpq-build.html" title="32.21. libpqプログラムの構築">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">32.19. SSLサポート </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 17.6文書">ホーム</a></td><td width="40%" align="right" valign="top"> 32.21. <span class="application">libpq</span>プログラムの構築</td></tr></table></div></body></html>

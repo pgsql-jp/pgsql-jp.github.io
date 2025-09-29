@@ -1,0 +1,1249 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>E.6. リリース17.1</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="release-17-2.html" title="E.5. リリース17.2" /><link rel="next" href="release-17.html" title="E.7. リリース17" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 17.6文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="release.html" title="付録E リリースノート">付録E リリースノート</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 17.6 : release-17-1.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="release-17-2.html" title="E.5. リリース17.2">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="release.html" title="付録E リリースノート">上へ</a></td><td width="60%" align="center">E.6. リリース17.1</td><td width="20%" align="right"> <a accesskey="n" href="release-17.html" title="E.7. リリース17">次へ</a></td></tr></table><hr /></div><div class="sect1" id="RELEASE-17-1"><div class="titlepage"><div><div><h2 class="title" style="clear: both">E.6. リリース17.1 <a href="#RELEASE-17-1" class="id_link">#</a></h2></div></div></div><span class="original">
+  &lt;title&gt;Release 17.1&lt;/title&gt;
+</span><p><span class="original">
+  &lt;title&gt;Release date:&lt;/title&gt;
+</span><strong>リリース日: </strong>2024-11-14</p><p>
+<span class="original">
+   This release contains a variety of fixes from 17.0.
+   For information about new features in major release 17, see
+   &lt;xref linkend="release-17"/&gt;.
+</span>
+このリリースは17.0に対し、様々な不具合を修正したものです。
+17メジャーリリースにおける新機能については、<a class="xref" href="release-17.html" title="E.7. リリース17">E.7</a>を参照してください。
+  </p><div class="sect2" id="RELEASE-17-1-MIGRATION"><div class="titlepage"><div><div><h3 class="title">E.6.1. バージョン17.1への移行 <a href="#RELEASE-17-1-MIGRATION" class="id_link">#</a></h3></div></div></div><span class="original">
+   &lt;title&gt;Migration to Version 17.1&lt;/title&gt;
+</span><p>
+<span class="original">
+    A dump/restore is not required for those running 17.X.
+</span>
+17.Xからの移行ではダンプ/リストアは不要です。
+   </p><p>
+<span class="original">
+    However, if you have ever detached a partition from a partitioned
+    table that has a foreign-key reference to another partitioned table,
+    and not dropped the former partition, then you may have catalog and/or
+    data corruption to repair, as detailed in the fifth changelog entry
+    below.
+</span>
+しかしながら、パーティションテーブルからパーティションを切り離したことがあり、そのパーティションが別のパーティションテーブルへの外部参照を持っていて、以前のそのパーティションを削除してない場合は、次の変更点の5番目のエントリで詳しく説明するように、カタログまたはデータの破損、あるいはその両方の破損を修復する必要があります。
+   </p><p>
+<span class="original">
+    Also, in the uncommon case that a
+    database's &lt;varname&gt;LC_CTYPE&lt;/varname&gt; setting is &lt;literal&gt;C&lt;/literal&gt;
+    while its &lt;varname&gt;LC_COLLATE&lt;/varname&gt; setting is some other locale,
+    indexes on textual columns should be reindexed, as described in the
+    sixth changelog entry below.
+</span>
+また、データベースの<code class="varname">LC_CTYPE</code>設定が<code class="literal">C</code>であるのに、<code class="varname">LC_COLLATE</code>設定が他のロケールである稀なケースでは、次の変更点の6番目のエントリで説明しているように、テキスト列のインデックスを再作成する必要があります。
+   </p></div><div class="sect2" id="RELEASE-17-1-CHANGES"><div class="titlepage"><div><div><h3 class="title">E.6.2. 変更点 <a href="#RELEASE-17-1-CHANGES" class="id_link">#</a></h3></div></div></div><span class="original">
+   &lt;title&gt;Changes&lt;/title&gt;
+</span><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><span class="original">
+Author: Nathan Bossart &lt;nathan@postgresql.org&gt;
+Branch: master [cd7ab5753] 2024-11-11 09:00:00 -0600
+Branch: REL_17_STABLE [edcda9bb4] 2024-11-11 09:00:00 -0600
+Branch: REL_16_STABLE [562289460] 2024-11-11 09:00:00 -0600
+Branch: REL_15_STABLE [6db5ea8de] 2024-11-11 09:00:00 -0600
+Branch: REL_14_STABLE [4e51030af] 2024-11-11 09:00:00 -0600
+Branch: REL_13_STABLE [952ff31e2] 2024-11-11 09:00:00 -0600
+Branch: REL_12_STABLE [448525e8a] 2024-11-11 09:00:00 -0600
+</span><p>
+<span class="original">
+      Ensure cached plans are marked as dependent on the calling role when
+      RLS applies to a non-top-level table reference (Nathan Bossart)
+</span>
+最上位レベル以外のテーブル参照にRLSが適用される場合、キャッシュされた実行計画が呼び出し元のロールに依存するものとしてマークされるようになりました。
+(Nathan Bossart)
+      <a class="ulink" href="https://postgr.es/c/edcda9bb4" target="_top">§</a>
+     </p><p>
+<span class="original">
+      If a CTE, subquery, sublink, security invoker view, or coercion
+      projection in a query references a table with row-level security
+      policies, we neglected to mark the resulting plan as potentially
+      dependent on which role is executing it.  This could lead to later
+      query executions in the same session using the wrong plan, and then
+      returning or hiding rows that should have been hidden or returned
+      instead.
+</span>
+問い合わせ内のCTE、サブクエリ、サブリンク、セキュリティ呼び出し元ビュー、または強制射影が行レベルセキュリティポリシーを持つテーブルを参照する場合、結果の実行計画がどのロールで実行しているかに依存する可能性があるとマークされていませんでした。
+これにより、同じセッションで後に実行された問い合わせが間違った実行計画で実行され、本来非表示にする必要があった行が返されたり、返すべき行が非表示になったりする可能性がありました。
+     </p><p>
+<span class="original">
+      The &lt;productname&gt;PostgreSQL&lt;/productname&gt; Project thanks
+      Wolfgang Walther for reporting this problem.
+      (CVE-2024-10976)
+</span>
+<span class="productname">PostgreSQL</span>プロジェクトは、本問題を報告してくれたWolfgang Waltherに感謝します。
+(CVE-2024-10976)
+     </p></li><li class="listitem"><span class="original">
+Author: Michael Paquier &lt;michael@paquier.xyz&gt;
+Branch: master [bf8835ea9] 2024-11-11 10:19:52 +0900
+Branch: REL_17_STABLE [a5cc4c667] 2024-11-11 10:19:56 +0900
+Branch: REL_16_STABLE [67d28bd02] 2024-11-11 10:19:58 +0900
+Branch: REL_15_STABLE [d2c3e31c1] 2024-11-11 10:19:59 +0900
+Branch: REL_14_STABLE [e6c945476] 2024-11-11 10:20:01 +0900
+Branch: REL_13_STABLE [7b49707b7] 2024-11-11 10:20:02 +0900
+Branch: REL_12_STABLE [2a951ef0a] 2024-11-11 10:20:03 +0900
+</span><p>
+<span class="original">
+      Make &lt;application&gt;libpq&lt;/application&gt; discard error messages
+      received during SSL or GSS protocol negotiation (Jacob Champion)
+</span>
+<span class="application">libpq</span>がSSLまたはGSSプロトコルのネゴシエーション中に受信したエラーメッセージを廃棄するように修正されました。
+(Jacob Champion)
+      <a class="ulink" href="https://postgr.es/c/a5cc4c667" target="_top">§</a>
+     </p><p>
+<span class="original">
+      An error message received before encryption negotiation is completed
+      might have been injected by a man-in-the-middle, rather than being
+      real server output.  Reporting it opens the door to various security
+      hazards; for example, the message might spoof a query result that a
+      careless user could mistake for correct output.  The best answer
+      seems to be to discard such data and rely only
+      on &lt;application&gt;libpq&lt;/application&gt;'s own report of the connection
+      failure.
+</span>
+暗号化ネゴシエーションが完了する前に受け取ったエラーメッセージは、実際のサーバの出力ではなく、中間者攻撃によって挿入された可能性があります。
+これを報告すると、さまざまなセキュリティ上の危険が生じる可能性があります。
+例えば、このメッセージによって問い合わせの結果を偽装して、不注意なユーザが正しい出力と勘違いする可能性があります。
+最良の解決策は、このようなデータを破棄し、<span class="application">libpq</span>自身の接続失敗の報告のみに頼ることです。
+     </p><p>
+<span class="original">
+      The &lt;productname&gt;PostgreSQL&lt;/productname&gt; Project thanks
+      Jacob Champion for reporting this problem.
+      (CVE-2024-10977)
+</span>
+<span class="productname">PostgreSQL</span>プロジェクトは、本問題を報告してくれたJacob Championに感謝します。
+(CVE-2024-10977)
+     </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+Branch: master [5a2fed911] 2024-11-11 10:29:54 -0500
+Branch: REL_17_STABLE [cd82afdda] 2024-11-11 10:29:54 -0500
+Branch: REL_16_STABLE [ae340d031] 2024-11-11 10:29:54 -0500
+Branch: REL_15_STABLE [a5d2e6205] 2024-11-11 10:29:54 -0500
+Branch: REL_14_STABLE [2a68808e2] 2024-11-11 10:29:54 -0500
+Branch: REL_13_STABLE [76123ded6] 2024-11-11 10:29:54 -0500
+Branch: REL_12_STABLE [4c9d96f74] 2024-11-11 10:29:54 -0500
+Branch: master [73c9f91a1] 2024-11-11 17:05:53 -0500
+Branch: REL_17_STABLE [f4f5d27d8] 2024-11-11 17:05:53 -0500
+Branch: REL_16_STABLE [95f5a5237] 2024-11-11 17:05:53 -0500
+Branch: REL_15_STABLE [109a32380] 2024-11-11 17:05:53 -0500
+Branch: REL_14_STABLE [00b94e8e2] 2024-11-11 17:05:53 -0500
+Branch: REL_13_STABLE [dc7378793] 2024-11-11 17:05:53 -0500
+Branch: REL_12_STABLE [0edad8654] 2024-11-11 17:05:53 -0500
+</span><p>
+<span class="original">
+      Fix unintended interactions between &lt;command&gt;SET SESSION
+      AUTHORIZATION&lt;/command&gt; and &lt;command&gt;SET ROLE&lt;/command&gt; (Tom Lane)
+</span>
+<code class="command">SET SESSION AUTHORIZATION</code>と<code class="command">SET ROLE</code>の間の意図しない相互作用が修正されました。
+(Tom Lane)
+      <a class="ulink" href="https://postgr.es/c/cd82afdda" target="_top">§</a>
+      <a class="ulink" href="https://postgr.es/c/f4f5d27d8" target="_top">§</a>
+     </p><p>
+<span class="original">
+      The SQL standard mandates that &lt;command&gt;SET SESSION
+      AUTHORIZATION&lt;/command&gt; have a side-effect of doing &lt;command&gt;SET
+      ROLE NONE&lt;/command&gt;.  Our implementation of that was flawed,
+      creating more interaction between the two settings than intended.
+      Notably, rolling back a transaction that had done &lt;command&gt;SET
+      SESSION AUTHORIZATION&lt;/command&gt; would revert &lt;literal&gt;ROLE&lt;/literal&gt;
+      to &lt;literal&gt;NONE&lt;/literal&gt; even if that had not been the previous
+      state, so that the effective user ID might now be different from
+      what it had been before the transaction.  Transiently
+      setting &lt;varname&gt;session_authorization&lt;/varname&gt; in a
+      function &lt;literal&gt;SET&lt;/literal&gt; clause had a similar effect.
+      A related bug was that if a parallel worker
+      inspected &lt;literal&gt;current_setting('role')&lt;/literal&gt;, it
+      saw &lt;literal&gt;none&lt;/literal&gt; even when it should see something else.
+</span>
+標準SQLでは、<code class="command">SET SESSION AUTHORIZATION</code>が副作用として<code class="command">SET ROLE NONE</code>を実行することを義務付けています。
+この実装には欠陥があり、2つの設定間に意図した以上の相互作用が発生していました。
+特に、<code class="command">SET SESSION AUTHORIZATION</code>を実行したトランザクションをロールバックすると、以前の状態ではなかったとしても<code class="literal">ROLE</code>が<code class="literal">NONE</code>に戻ってしまうことがありました。そのため実効ユーザIDがトランザクションの前とは異なる場合がありました。
+関数の<code class="literal">SET</code>句で<code class="varname">session_authorization</code>を一時的に設定しても、同様の影響がありました。
+関連するバグとして、パラレルワーカーが<code class="literal">current_setting('role')</code>を検査した場合、他の値を参照すべきときでも<code class="literal">none</code>と認識される問題がありました。
+     </p><p>
+<span class="original">
+      The &lt;productname&gt;PostgreSQL&lt;/productname&gt; Project thanks
+      Tom Lane for reporting this problem.
+      (CVE-2024-10978)
+</span>
+<span class="productname">PostgreSQL</span>プロジェクトは、本問題を報告してくれたTom Laneに感謝します。
+(CVE-2024-10978)
+     </p></li><li class="listitem"><span class="original">
+Author: Noah Misch &lt;noah@leadboat.com&gt;
+Branch: master [b7e3a52a8] 2024-11-11 06:23:43 -0800
+Branch: REL_17_STABLE [3ebcfa54d] 2024-11-11 06:23:46 -0800
+Branch: REL_16_STABLE [8fe3e697a] 2024-11-11 06:23:47 -0800
+Branch: REL_15_STABLE [e530835c6] 2024-11-11 06:23:47 -0800
+Branch: REL_14_STABLE [d15ec27c9] 2024-11-11 06:23:47 -0800
+Branch: REL_13_STABLE [e428cd058] 2024-11-11 06:23:48 -0800
+Branch: REL_12_STABLE [2ab12d860] 2024-11-11 06:23:48 -0800
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+Branch: REL_14_STABLE [f89bd92c9] 2024-11-11 10:42:32 -0500
+Branch: REL_13_STABLE [6bccd7b03] 2024-11-11 10:42:32 -0500
+Branch: REL_12_STABLE [b1e58defb] 2024-11-11 10:42:32 -0500
+Branch: master [a34c33fd2] 2024-11-11 12:20:08 -0500
+Branch: REL_17_STABLE [4cd4f3b97] 2024-11-11 12:20:08 -0500
+Branch: REL_16_STABLE [88269df4d] 2024-11-11 12:20:08 -0500
+Branch: REL_16_STABLE [168579e23] 2024-11-11 12:27:06 -0500
+Author: Noah Misch &lt;noah@leadboat.com&gt;
+Branch: REL_16_STABLE [c335264c9] 2024-11-11 10:55:18 -0800
+Branch: REL_15_STABLE [16ed4f4d0] 2024-11-11 10:56:05 -0800
+Branch: REL_14_STABLE [c1fff7b1b] 2024-11-11 10:56:09 -0800
+Branch: REL_13_STABLE [9f97c31c2] 2024-11-11 10:56:12 -0800
+Branch: REL_12_STABLE [1e457468f] 2024-11-11 10:56:14 -0800
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+Branch: master [c4252c9ef] 2024-11-11 13:57:21 -0500
+Branch: REL_17_STABLE [8d19f3fea] 2024-11-11 13:57:21 -0500
+Branch: REL_16_STABLE [64df88700] 2024-11-11 13:57:40 -0500
+Branch: REL_15_STABLE [c834b375a] 2024-11-11 13:57:41 -0500
+Branch: REL_14_STABLE [256e34653] 2024-11-11 13:57:41 -0500
+Branch: REL_13_STABLE [0bd9560d9] 2024-11-11 13:57:41 -0500
+Branch: REL_12_STABLE [9fc1c3a02] 2024-11-11 13:57:41 -0500
+</span><p>
+<span class="original">
+      Prevent trusted PL/Perl code from changing environment variables
+      (Andrew Dunstan, Noah Misch)
+</span>
+信頼されたPL/Perlコードが環境変数を変更できないように修正されました。
+(Andrew Dunstan, Noah Misch)
+      <a class="ulink" href="https://postgr.es/c/3ebcfa54d" target="_top">§</a>
+      <a class="ulink" href="https://postgr.es/c/4cd4f3b97" target="_top">§</a>
+      <a class="ulink" href="https://postgr.es/c/8d19f3fea" target="_top">§</a>
+     </p><p>
+<span class="original">
+      The ability to manipulate process environment variables such
+      as &lt;literal&gt;PATH&lt;/literal&gt; gives an attacker opportunities to
+      execute arbitrary code.  Therefore, &lt;quote&gt;trusted&lt;/quote&gt; PLs must
+      not offer the ability to do that.  To fix &lt;literal&gt;plperl&lt;/literal&gt;,
+      replace &lt;varname&gt;%ENV&lt;/varname&gt; with a tied hash that rejects any
+      modification attempt with a warning.
+      Untrusted &lt;literal&gt;plperlu&lt;/literal&gt; retains the ability to change
+      the environment.
+</span>
+<code class="literal">PATH</code>などのプロセス環境変数を操作する機能は、攻撃者に任意のコードを実行する機会を与えます。
+したがって、<span class="quote">「<span class="quote">信頼された</span>」</span>PLはそれを行う機能を提供してはなりません。
+<code class="literal">plperl</code>は、<code class="varname">%ENV</code>を、変更の試みを警告で拒否する結びつけられたハッシュに置き換えるよう修正されました。
+信頼されていない<code class="literal">plperlu</code>は、環境を変更する機能を保持します。
+     </p><p>
+<span class="original">
+      The &lt;productname&gt;PostgreSQL&lt;/productname&gt; Project thanks
+      Coby Abrams for reporting this problem.
+      (CVE-2024-10979)
+</span>
+<span class="productname">PostgreSQL</span>プロジェクトは、本問題を報告してくれたCoby Abramsに感謝します。
+(CVE-2024-10979)
+     </p></li><li class="listitem"><span class="original">
+Author: Álvaro Herrera &lt;alvherre@alvh.no-ip.org&gt;
+Branch: master [53af9491a] 2024-10-22 16:01:18 +0200
+Branch: REL_17_STABLE [5914a22f6] 2024-10-22 16:01:18 +0200
+Branch: REL_16_STABLE [2aaf2a28b] 2024-10-22 16:01:18 +0200
+Branch: REL_15_STABLE [5d83bad6b] 2024-10-22 16:01:18 +0200
+Branch: REL_14_STABLE [46a8c27a7] 2024-10-22 16:01:18 +0200
+Branch: REL_13_STABLE [d20194cea] 2024-10-22 16:01:18 +0200
+Branch: master [2d5fe5140] 2024-10-30 10:54:03 +0100
+Branch: REL_17_STABLE [936ab6de9] 2024-10-30 10:54:03 +0100
+Branch: REL_16_STABLE [f7d510a38] 2024-10-30 10:54:03 +0100
+Branch: REL_15_STABLE [1b216fcef] 2024-10-30 10:54:03 +0100
+</span><p>
+<span class="original">
+      Fix updates of catalog state for foreign-key constraints when
+      attaching or detaching table partitions (Jehan-Guillaume de
+      Rorthais, Tender Wang, Álvaro Herrera)
+</span>
+テーブルパーティションをアタッチまたはデタッチする際の、外部キーの制約のカタログ状態の更新が修正されました。
+(Jehan-Guillaume de Rorthais, Tender Wang, Álvaro Herrera)
+      <a class="ulink" href="https://postgr.es/c/5914a22f6" target="_top">§</a>
+      <a class="ulink" href="https://postgr.es/c/936ab6de9" target="_top">§</a>
+     </p><p>
+<span class="original">
+      If the referenced table is partitioned, then different catalog
+      entries are needed for a referencing table that is stand-alone
+      versus one that is a partition.  &lt;literal&gt;ATTACH/DETACH
+      PARTITION&lt;/literal&gt; commands failed to perform this conversion
+      correctly.  In particular, after &lt;literal&gt;DETACH&lt;/literal&gt; the now
+      stand-alone table would be missing foreign-key enforcement triggers,
+      which could result in the table later containing rows that fail the
+      foreign-key constraint.  A subsequent re-&lt;literal&gt;ATTACH&lt;/literal&gt;
+      could fail with surprising errors, too.
+</span>
+参照先テーブルがパーティションテーブルの場合、参照元テーブルがスタンドアローンの場合とパーティションの場合で、異なるカタログエントリが必要になります。
+<code class="literal">ATTACH/DETACH PARTITION</code>コマンドはこの変換を正しく実行できませんでした。
+特に、<code class="literal">DETACH</code>後、スタンドアローンになったテーブルには、外部キー強制トリガが欠落するため、その結果、外部キー制約に違反する行がテーブルに含まれる可能性がありました。
+その後の再<code class="literal">ATTACH</code>も、予期しないエラーで失敗する可能性がありました。
+     </p><p>
+<span class="original">
+      The way to fix this is to do &lt;command&gt;ALTER TABLE DROP
+      CONSTRAINT&lt;/command&gt; on the now stand-alone table for each faulty
+      constraint, and then re-add the constraint.  If re-adding the
+      constraint fails, then some erroneous data has crept in.  You will
+      need to manually re-establish consistency between the referencing
+      and referenced tables, then re-add the constraint.
+</span>
+この問題を解決するには、スタンドアローンになったテーブルで問題のある制約ごとに<code class="command">ALTER TABLE DROP CONSTRAINT</code>を実行し、その後制約を再度追加します。
+制約の再追加に失敗した場合は、誤ったデータが入り込んでいます。
+参照元テーブルと参照先テーブル間の整合性を手動で再確立し、制約を再度追加する必要があります。
+     </p><p>
+<span class="original">
+      This query can be used to identify broken constraints and construct
+      the commands needed to recreate them:
+</span>
+このクエリを使用して、破損した制約を識別し、それらを再作成するために必要なコマンドを作成することができます。
+</p><pre class="programlisting">
+SELECT conrelid::pg_catalog.regclass AS "constrained table",
+       conname AS constraint,
+       confrelid::pg_catalog.regclass AS "references",
+       pg_catalog.format('ALTER TABLE %s DROP CONSTRAINT %I;',
+                         conrelid::pg_catalog.regclass, conname) AS "drop",
+       pg_catalog.format('ALTER TABLE %s ADD CONSTRAINT %I %s;',
+                         conrelid::pg_catalog.regclass, conname,
+                         pg_catalog.pg_get_constraintdef(oid)) AS "add"
+FROM pg_catalog.pg_constraint c
+WHERE contype = 'f' AND conparentid = 0 AND
+   (SELECT count(*) FROM pg_catalog.pg_constraint c2
+    WHERE c2.conparentid = c.oid) &lt;&gt;
+   ((SELECT count(*) FROM pg_catalog.pg_inherits i
+    WHERE (i.inhparent = c.conrelid OR i.inhparent = c.confrelid) AND
+      EXISTS (SELECT 1 FROM pg_catalog.pg_partitioned_table
+              WHERE partrelid = i.inhparent)) +
+    CASE WHEN pg_catalog.pg_partition_root(conrelid) = confrelid THEN
+              (SELECT count(*) FROM pg_catalog.pg_partition_tree(confrelid)
+                WHERE level = 1)
+         ELSE 0 END);
+</pre><p>
+<span class="original">
+      Since it is possible that one or more of the &lt;literal&gt;ADD
+      CONSTRAINT&lt;/literal&gt; steps will fail, you should save the query's
+      output in a file and then attempt to perform each step.
+</span>
+<code class="literal">ADD CONSTRAINT</code>の1つ以上のステップが失敗する可能性があるため、問い合わせの出力をファイルに保存してから、各ステップの実行を試行する必要があります。
+     </p></li><li class="listitem"><span class="original">
+Author: Jeff Davis &lt;jdavis@postgresql.org&gt;
+Branch: REL_17_STABLE [8148e7124] 2024-11-06 14:44:35 -0800
+</span><p>
+<span class="original">
+      Fix test for &lt;literal&gt;C&lt;/literal&gt; locale
+      when &lt;varname&gt;LC_COLLATE&lt;/varname&gt; is different
+      from &lt;varname&gt;LC_CTYPE&lt;/varname&gt; (Jeff Davis)
+</span>
+<code class="varname">LC_COLLATE</code>が<code class="varname">LC_CTYPE</code>と異なる場合の<code class="literal">C</code>ロケールのテストが修正されました。
+(Jeff Davis)
+      <a class="ulink" href="https://postgr.es/c/8148e7124" target="_top">§</a>
+     </p><p>
+<span class="original">
+      When using &lt;literal&gt;libc&lt;/literal&gt; as the default collation
+      provider, the test to see if &lt;literal&gt;C&lt;/literal&gt; locale is in use
+      for collation accidentally checked &lt;varname&gt;LC_CTYPE&lt;/varname&gt;
+      not &lt;varname&gt;LC_COLLATE&lt;/varname&gt;.  This has no impact in the
+      typical case where those settings are the same, nor if both are
+      not &lt;literal&gt;C&lt;/literal&gt; (nor its alias &lt;literal&gt;POSIX&lt;/literal&gt;).
+      However, if &lt;varname&gt;LC_CTYPE&lt;/varname&gt; is &lt;literal&gt;C&lt;/literal&gt;
+      while &lt;varname&gt;LC_COLLATE&lt;/varname&gt; is some other locale, wrong
+      query answers could ensue, and corruption of indexes on strings was
+      possible.  Users of databases with such settings should reindex
+      affected indexes after installing this update.
+      The converse case with &lt;varname&gt;LC_COLLATE&lt;/varname&gt;
+      being &lt;literal&gt;C&lt;/literal&gt; while &lt;varname&gt;LC_CTYPE&lt;/varname&gt; is some
+      other locale would cause performance degradation, but no actual
+      errors.
+</span>
+デフォルトの照合順序プロバイダとして<code class="literal">libc</code>を使用している場合、照合順序に<code class="literal">C</code>ロケールが使用されているかどうかを確認するテストが、誤って<code class="varname">LC_COLLATE</code>ではなく<code class="varname">LC_CTYPE</code>をチェックしていました。
+これらの設定が同じである一般的なケース、または両方が<code class="literal">C</code>（またはその別名である<code class="literal">POSIX</code>）でない場合は、この問題は発生しません。
+ただし、<code class="varname">LC_CTYPE</code>が<code class="literal">C</code>で、<code class="varname">LC_COLLATE</code>が他のロケールである場合、問い合わせの応答が間違っていたり、文字列のインデックスが破損する可能性がありました。
+このような設定を持つデータベースのユーザは、この更新をインストールした後に、影響を受けるインデックスを再作成する必要があります。
+逆に<code class="varname">LC_COLLATE</code>が<code class="literal">C</code>で<code class="varname">LC_CTYPE</code>が他のロケールである場合は、パフォーマンスは低下しますが、実際のエラーは発生しません。
+     </p></li><li class="listitem"><span class="original">
+Author: Amit Langote &lt;amitlan@postgresql.org&gt;
+Branch: master [075acdd93] 2024-11-08 17:25:24 +0900
+Branch: REL_17_STABLE [a0cdfc889] 2024-11-08 17:19:35 +0900
+Branch: REL_16_STABLE [f734b6b4d] 2024-11-08 17:19:13 +0900
+Branch: REL_15_STABLE [33040b171] 2024-11-08 17:18:55 +0900
+Branch: REL_14_STABLE [62df5484f] 2024-11-08 17:18:38 +0900
+Branch: REL_13_STABLE [054701a2b] 2024-11-08 17:18:21 +0900
+Branch: REL_12_STABLE [9c4757491] 2024-11-08 17:18:04 +0900
+Branch: master [90fe6251c] 2024-11-08 16:07:22 +0900
+Branch: REL_17_STABLE [b6484ca95] 2024-11-08 16:07:13 +0900
+Branch: REL_16_STABLE [dd2f8ebee] 2024-11-08 16:07:05 +0900
+Branch: REL_15_STABLE [0a620659c] 2024-11-08 16:06:58 +0900
+Branch: REL_14_STABLE [96f9b29a3] 2024-11-08 16:06:46 +0900
+Branch: REL_13_STABLE [ff65f695c] 2024-11-08 16:06:12 +0900
+Branch: REL_12_STABLE [46d9be5ef] 2024-11-08 16:05:33 +0900
+</span><p>
+<span class="original">
+      Don't use partitionwise joins or grouping if the query's collation
+      for the key column doesn't match the partition key's collation (Jian
+      He, Webbo Han)
+</span>
+キー列の問い合わせの照合順序がパーティションキーの照合順序と一致しない場合は、パーティション同士の結合またはグループ化を使用しないようになりました。
+(Jian He, Webbo Han)
+      <a class="ulink" href="https://postgr.es/c/a0cdfc889" target="_top">§</a>
+      <a class="ulink" href="https://postgr.es/c/b6484ca95" target="_top">§</a>
+     </p><p>
+<span class="original">
+      Such plans could produce incorrect results.
+</span>
+このような計画は、間違った結果を生成する可能性がありました。
+     </p></li><li class="listitem"><span class="original">
+Author: Richard Guo &lt;rguo@postgresql.org&gt;
+Branch: master [f00ab1fd1] 2024-11-08 11:21:11 +0900
+Branch: REL_17_STABLE [78b1c553b] 2024-11-08 11:24:26 +0900
+</span><p>
+<span class="original">
+      Avoid planner failure after converting an &lt;literal&gt;IS NULL&lt;/literal&gt;
+      test on a &lt;literal&gt;NOT NULL&lt;/literal&gt; column to
+      constant &lt;literal&gt;FALSE&lt;/literal&gt; (Richard Guo)
+</span>
+<code class="literal">NOT NULL</code>列の<code class="literal">IS NULL</code>テストを<code class="literal">FALSE</code>定数に変換した後のプランナ失敗が回避されました。
+(Richard Guo)
+      <a class="ulink" href="https://postgr.es/c/78b1c553b" target="_top">§</a>
+     </p><p>
+<span class="original">
+      This bug typically led to errors such as &lt;quote&gt;variable not found
+      in subplan target lists&lt;/quote&gt;.
+</span>
+このバグは典型的には、<span class="quote">「<span class="quote">variable not found in subplan target lists</span>」</span>などのエラーを引き起こしました。
+     </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+Branch: master [5a4416192] 2024-10-09 17:07:53 -0400
+Branch: REL_17_STABLE [a3c4a91f1] 2024-10-09 17:07:53 -0400
+</span><p>
+<span class="original">
+      Avoid possible planner crash while inlining a SQL function whose
+      arguments contain certain array-related constructs (Tom Lane, Nathan
+      Bossart)
+</span>
+引数に特定の配列関連の構成が含まれるSQL関数をインライン化する際に、プランナがクラッシュする可能性が回避されました。
+(Tom Lane, Nathan Bossart)
+      <a class="ulink" href="https://postgr.es/c/a3c4a91f1" target="_top">§</a>
+     </p></li><li class="listitem"><span class="original">
+Author: Dean Rasheed &lt;dean.a.rasheed@gmail.com&gt;
+Branch: master [dddb5640c] 2024-10-03 12:53:03 +0100
+Branch: REL_17_STABLE [d7d297f84] 2024-10-03 12:50:38 +0100
+Branch: master [259a0a99f] 2024-10-03 13:48:32 +0100
+Branch: REL_17_STABLE [34ae54af9] 2024-10-03 13:45:37 +0100
+</span><p>
+<span class="original">
+      Fix possible wrong answers or &lt;quote&gt;wrong varnullingrels&lt;/quote&gt;
+      planner errors for &lt;literal&gt;MERGE ... WHEN NOT MATCHED BY
+      SOURCE&lt;/literal&gt; actions (Dean Rasheed)
+</span>
+<code class="literal">MERGE ... WHEN NOT MATCHED BY SOURCE</code>アクションで発生する可能性のある、間違った応答または<span class="quote">「<span class="quote">wrong varnullingrels</span>」</span>プランナエラーが修正されました。
+(Dean Rasheed)
+      <a class="ulink" href="https://postgr.es/c/d7d297f84" target="_top">§</a>
+      <a class="ulink" href="https://postgr.es/c/34ae54af9" target="_top">§</a>
+     </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+Branch: master [9f954177b] 2024-10-12 14:56:08 -0400
+Branch: REL_17_STABLE [54889ea64] 2024-10-12 14:56:08 -0400
+Branch: REL_16_STABLE [64635c8af] 2024-10-12 14:56:08 -0400
+Branch: REL_15_STABLE [4f3bccbaa] 2024-10-12 14:56:08 -0400
+Branch: REL_14_STABLE [4ca708eb3] 2024-10-12 14:56:08 -0400
+Branch: REL_13_STABLE [76de4b182] 2024-10-12 14:56:08 -0400
+</span><p>
+<span class="original">
+      Fix possible &lt;quote&gt;could not find pathkey item to sort&lt;/quote&gt;
+      error when the output of a &lt;literal&gt;UNION ALL&lt;/literal&gt; member query
+      needs to be sorted, and the sort column is an expression (Andrei
+      Lepikhov, Tom Lane)
+</span>
+<code class="literal">UNION ALL</code>メンバ問い合わせの出力をソートする必要があり、ソート列が式である場合に発生する可能性のある<span class="quote">「<span class="quote">could not find pathkey item to sort</span>」</span>エラーが修正されました。
+(Andrei Lepikhov, Tom Lane)
+      <a class="ulink" href="https://postgr.es/c/54889ea64" target="_top">§</a>
+     </p></li><li class="listitem"><span class="original">
+Author: Peter Geoghegan &lt;pg@bowt.ie&gt;
+Branch: master [763d65ae2] 2024-10-30 10:57:19 -0400
+Branch: REL_17_STABLE [c177726ae] 2024-10-30 10:57:17 -0400
+</span><p>
+<span class="original">
+      Fix edge case in B-tree ScalarArrayOp index scans (Peter Geoghegan)
+</span>
+B-treeのScalarArrayOpを使うインデックススキャンの稀な不具合が修正されました。
+(Peter Geoghegan)
+      <a class="ulink" href="https://postgr.es/c/c177726ae" target="_top">§</a>
+     </p><p>
+<span class="original">
+      When a scrollable cursor with a plan of this kind was backed up to its
+      starting point and then run forward again, wrong answers were
+      possible.
+</span>
+この種のプランを持つスクロール可能なカーソルを開始点まで巻き戻した後、再び前方に実行した場合、誤った問い合わせ結果が生じる可能性がありました。
+     </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+Branch: master [68ad9816c] 2024-10-21 15:08:22 -0400
+Branch: REL_17_STABLE [3685ad618] 2024-10-21 15:08:22 -0400
+Branch: REL_16_STABLE [6c3b2d204] 2024-10-21 15:08:22 -0400
+Branch: REL_15_STABLE [c80a1e048] 2024-10-21 15:08:22 -0400
+Branch: REL_14_STABLE [5e94f616c] 2024-10-21 15:08:22 -0400
+Branch: REL_13_STABLE [beab395a4] 2024-10-21 15:08:22 -0400
+Branch: REL_12_STABLE [6a57a457c] 2024-10-21 15:08:22 -0400
+</span><p>
+<span class="original">
+      Fix assertion failure or confusing error message for &lt;literal&gt;COPY
+      (&lt;replaceable&gt;query&lt;/replaceable&gt;) TO ...&lt;/literal&gt;, when
+      the &lt;replaceable&gt;query&lt;/replaceable&gt; is rewritten by a &lt;literal&gt;DO
+      INSTEAD NOTIFY&lt;/literal&gt; rule (Tender Wang, Tom Lane)
+</span>
+<em class="replaceable"><code>問い合わせ</code></em>が<code class="literal">DO INSTEAD NOTIFY</code>の規則によって書き換えられた場合に発生する、<code class="literal">COPY (<em class="replaceable"><code>query</code></em>) TO ...</code>のアサーションエラーまたは紛らわしいエラーメッセージが修正されました。
+(Tender Wang, Tom Lane)
+      <a class="ulink" href="https://postgr.es/c/3685ad618" target="_top">§</a>
+     </p></li><li class="listitem"><span class="original">
+Author: Michael Paquier &lt;michael@paquier.xyz&gt;
+Branch: master [089aac631] 2024-10-17 08:44:50 +0900
+Branch: REL_17_STABLE [c06a4746b] 2024-10-17 08:45:56 +0900
+</span><p>
+<span class="original">
+      Fix validation
+      of &lt;command&gt;COPY&lt;/command&gt;'s &lt;literal&gt;FORCE_NOT_NULL&lt;/literal&gt;
+      and &lt;literal&gt;FORCE_NULL&lt;/literal&gt; options (Joel Jacobson)
+</span>
+<code class="command">COPY</code>の<code class="literal">FORCE_NOT_NULL</code>オプションと<code class="literal">FORCE_NULL</code>オプションの検証が修正されました。
+(Joel Jacobson)
+      <a class="ulink" href="https://postgr.es/c/c06a4746b" target="_top">§</a>
+     </p><p>
+<span class="original">
+      Some incorrect usages are now rejected as they should be.
+</span>
+一部の誤った使用法は、適切に拒否されるようになりました。
+     </p></li><li class="listitem"><span class="original">
+Author: Amit Langote &lt;amitlan@postgresql.org&gt;
+Branch: master [11c87216d] 2024-10-20 12:20:55 +0900
+Branch: REL_17_STABLE [7148cb3e3] 2024-10-20 12:21:12 +0900
+Branch: REL_16_STABLE [fa4f11854] 2024-10-20 12:21:03 +0900
+</span><p>
+<span class="original">
+      Fix server crash when a &lt;function&gt;json_objectagg()&lt;/function&gt; call
+      contains a volatile function (Amit Langote)
+</span>
+<code class="function">json_objectagg()</code>呼び出しにVOLATILE関数が含まれている場合に発生するサーバクラッシュが修正されました。
+(Amit Langote)
+      <a class="ulink" href="https://postgr.es/c/7148cb3e3" target="_top">§</a>
+     </p></li><li class="listitem"><span class="original">
+Author: Thomas Munro &lt;tmunro@postgresql.org&gt;
+Branch: master [98c7c7152] 2024-10-17 22:11:59 +1300
+Branch: REL_17_STABLE [4ac5d33a8] 2024-10-17 22:10:29 +1300
+Branch: REL_16_STABLE [53edc9485] 2024-10-17 22:08:13 +1300
+Branch: REL_15_STABLE [1831545ca] 2024-10-17 22:04:05 +1300
+Branch: REL_14_STABLE [20d948994] 2024-10-17 22:01:54 +1300
+Branch: REL_13_STABLE [45329466f] 2024-10-17 22:00:38 +1300
+Branch: REL_12_STABLE [4fa80a6d7] 2024-10-17 22:00:16 +1300
+</span><p>
+<span class="original">
+      Fix detection of skewed data during parallel hash join (Thomas
+      Munro)
+</span>
+パラレルハッシュ結合中の偏ったデータ検出が修正されました。
+(Thomas Munro)
+      <a class="ulink" href="https://postgr.es/c/4ac5d33a8" target="_top">§</a>
+     </p><p>
+<span class="original">
+      After repartitioning the inner side of a hash join because one
+      partition has accumulated too many tuples, we check to see if all
+      the partition's tuples went into the same child partition, which
+      suggests that they all have the same hash value and further
+      repartitioning cannot improve matters.  This check malfunctioned in
+      some cases, allowing repeated futile repartitioning which would
+      eventually end in a resource-exhaustion error.
+</span>
+1つのパーティションにタプルが蓄積されすぎたため、ハッシュ結合の内側を再分割した後、すべてのパーティションのタプルが同じ子パーティションに入ったかどうかを確認します。これは、すべてのタプルが同じハッシュ値を持つため、さらに再分割しても改善は問題にならないことを示唆しています。
+このチェックは場合によっては誤動作し、無駄な再分割が繰り返され、最終的にはリソース不足のエラーになることがありました。
+     </p></li><li class="listitem"><span class="original">
+Author: Jeff Davis &lt;jdavis@postgresql.org&gt;
+Branch: master [a9ed7d944] 2024-10-07 17:51:14 -0700
+Branch: REL_17_STABLE [2fe4167bc] 2024-10-07 17:54:19 -0700
+</span><p>
+<span class="original">
+      Avoid crash when &lt;command&gt;ALTER DATABASE SET&lt;/command&gt; is used to
+      set a server parameter that requires search-path-based lookup, such
+      as &lt;varname&gt;default_text_search_config&lt;/varname&gt; (Jeff Davis)
+</span>
+<code class="command">ALTER DATABASE SET</code>を使用して、<code class="varname">default_text_search_config</code>などのサーチパスベースの検索を必要とするパラメータを設定した場合のクラッシュが回避されました。
+(Jeff Davis)
+      <a class="ulink" href="https://postgr.es/c/2fe4167bc" target="_top">§</a>
+     </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+Branch: master [68dfecbef] 2024-10-05 14:46:44 -0400
+Branch: REL_17_STABLE [fee8cb947] 2024-10-05 14:46:44 -0400
+</span><p>
+<span class="original">
+      Avoid repeated lookups of opclasses and collations while creating a
+      new index on a partitioned table (Tom Lane)
+</span>
+パーティションテーブルに新しいインデックスを作成する際の、opclassesと照合順序の繰り返し検索が回避されました。
+(Tom Lane)
+      <a class="ulink" href="https://postgr.es/c/fee8cb947" target="_top">§</a>
+     </p><p>
+<span class="original">
+      This was problematic mainly because some of the lookups would be
+      done with a restricted &lt;varname&gt;search_path&lt;/varname&gt;, leading to
+      unexpected failures if the &lt;command&gt;CREATE INDEX&lt;/command&gt; command
+      referenced objects outside &lt;literal&gt;pg_catalog&lt;/literal&gt;.
+</span>
+これは主に一部の検索が制限された<code class="varname">search_path</code>で実行されるため、<code class="command">CREATE INDEX</code>コマンドが<code class="literal">pg_catalog</code>外のオブジェクトを参照した場合に予期せぬエラーが発生する問題がありました。
+     </p><p>
+<span class="original">
+      This fix also prevents comments on the parent partitioned index from
+      being copied to child indexes.
+</span>
+この修正により、親パーティションインデックスのコメントが子インデックスにコピーされるのも防止されます。
+     </p></li><li class="listitem"><span class="original">
+Author: Michael Paquier &lt;michael@paquier.xyz&gt;
+Branch: master [49a23441c] 2024-10-29 08:41:33 +0900
+Branch: REL_17_STABLE [bb584e831] 2024-10-29 08:41:53 +0900
+</span><p>
+<span class="original">
+      Add missing dependency from a partitioned table to a non-built-in
+      access method specified in &lt;literal&gt;CREATE TABLE ... USING&lt;/literal&gt;
+      (Michael Paquier)
+</span>
+パーティションテーブルから<code class="literal">CREATE TABLE ... USING</code>で指定された非組み込みアクセスメソッドへの欠落した依存性が追加されました。
+(Michael Paquier)
+      <a class="ulink" href="https://postgr.es/c/bb584e831" target="_top">§</a>
+     </p><p>
+<span class="original">
+      Dropping the access method should be blocked when a table exists
+      that depends on it, but it was not, allowing subsequent odd
+      behavior.  Note that this fix only prevents problems for partitioned
+      tables created after this update.
+</span>
+アクセスメソッドに依存するテーブルが存在する場合は、アクセスメソッドの削除はブロックされる必要がありますが、そうではなかっため、その後に異常な動作が発生する可能性がありました。
+この修正は、この更新の後に作成されたパーティションテーブルの問題のみを防止することに注意してください。
+     </p></li><li class="listitem"><span class="original">
+Author: Thomas Munro &lt;tmunro@postgresql.org&gt;
+Branch: master [adbb27ac8] 2024-10-05 13:50:02 +1300
+Branch: REL_17_STABLE [9c7acc333] 2024-10-05 13:54:35 +1300
+Branch: REL_16_STABLE [ce17de580] 2024-10-05 14:01:24 +1300
+</span><p>
+<span class="original">
+      Disallow locale names containing non-ASCII characters (Thomas Munro)
+</span>
+非ASCII文字を含むロケール名が許可されなくなりました。
+(Thomas Munro)
+      <a class="ulink" href="https://postgr.es/c/9c7acc333" target="_top">§</a>
+     </p><p>
+<span class="original">
+      This is only an issue on Windows, as such locale names are not used
+      elsewhere.  They are problematic because it's quite unclear what
+      encoding such names are represented in (since the locale itself
+      defines the encoding to use).  In
+      recent &lt;productname&gt;PostgreSQL&lt;/productname&gt; releases, an abort in
+      the Windows runtime library could occur because of confusion about
+      that.
+</span>
+このようなロケール名は他の場所では使用されていないため、これはWindowsだけの問題です。
+このような名前がどのエンコーディングで表現されるのかが非常に不明確であるため、問題があります（ロケール自体が使用するエンコーディングを定義するため）。
+最近の<span class="productname">PostgreSQL</span>リリースでは、その混乱によりWindowsランタイムライブラリのアボートが発生する可能性がありました。
+     </p><p>
+<span class="original">
+      Anyone who encounters the new error message should either create a
+      new duplicated locale with an ASCII-only name using Windows Locale
+      Builder, or consider using BCP 47-compliant locale names
+      like &lt;literal&gt;tr-TR&lt;/literal&gt;.
+</span>
+新しいエラーメッセージに遭遇した場合は、Windows Locale Builderを使用してASCII文字のみの名前で新しい複製ロケールを作成するか、<code class="literal">tr-TR</code>のようなBCP 47準拠のロケール名の使用を検討してください。
+     </p></li><li class="listitem"><span class="original">
+Author: Heikki Linnakangas &lt;heikki.linnakangas@iki.fi&gt;
+Branch: master [1a43de5e0] 2024-10-21 09:49:21 +0300
+Branch: REL_17_STABLE [234f6d09e] 2024-10-21 09:49:29 +0300
+Branch: REL_16_STABLE [22665f210] 2024-10-21 09:49:32 +0300
+Branch: REL_15_STABLE [d97419b85] 2024-10-21 09:49:35 +0300
+Branch: REL_14_STABLE [520ec2474] 2024-10-21 09:49:38 +0300
+Branch: REL_13_STABLE [8e607a5a4] 2024-10-21 09:49:41 +0300
+Branch: REL_12_STABLE [e2ec3afeb] 2024-10-21 09:49:50 +0300
+</span><p>
+<span class="original">
+      Fix race condition in committing a serializable transaction (Heikki
+      Linnakangas)
+</span>
+シリアライザブルトランザクションをコミットする際の競合状態が修正されました。
+(Heikki Linnakangas)
+      <a class="ulink" href="https://postgr.es/c/234f6d09e" target="_top">§</a>
+     </p><p>
+<span class="original">
+      Mis-processing of a recently committed transaction could lead to an
+      assertion failure or a &lt;quote&gt;could not access status of
+      transaction&lt;/quote&gt; error.
+</span>
+最近コミットされたトランザクションの処理を誤って、アサーションエラーまたは<span class="quote">「<span class="quote">could not access status of transaction</span>」</span>エラーにつながる可能性がありました。
+     </p></li><li class="listitem"><span class="original">
+Author: Michael Paquier &lt;michael@paquier.xyz&gt;
+Branch: master [cf4401fe6] 2024-10-01 15:44:03 +0900
+Branch: REL_17_STABLE [f250cb29d] 2024-10-01 15:44:07 +0900
+Branch: REL_16_STABLE [7de9b64a5] 2024-10-01 15:44:09 +0900
+Branch: REL_15_STABLE [41ab45680] 2024-10-01 15:44:11 +0900
+Branch: REL_14_STABLE [5f1510787] 2024-10-01 15:44:12 +0900
+Branch: REL_13_STABLE [7bfaa4671] 2024-10-01 15:44:14 +0900
+Branch: REL_12_STABLE [34d751ba7] 2024-10-01 15:44:15 +0900
+</span><p>
+<span class="original">
+      Fix race condition in &lt;command&gt;COMMIT PREPARED&lt;/command&gt;
+      that resulted in orphaned 2PC files (wuchengwen)
+</span>
+孤立した二相コミット(2PC)ファイルが生成されていた<code class="command">COMMIT PREPARED</code>で競合条件が修正されました。
+(wuchengwen)
+      <a class="ulink" href="https://postgr.es/c/f250cb29d" target="_top">§</a>
+     </p><p>
+<span class="original">
+      A concurrent &lt;command&gt;PREPARE TRANSACTION&lt;/command&gt; could
+      cause &lt;command&gt;COMMIT PREPARED&lt;/command&gt; to not remove the on-disk
+      two-phase state file for the completed transaction.  There was no
+      immediate ill effect, but a subsequent crash-and-recovery could fail
+      with &lt;quote&gt;could not access status of transaction&lt;/quote&gt;,
+      requiring manual removal of the orphaned file to restore service.
+</span>
+同時実行の<code class="command">PREPARE TRANSACTION</code>により、<code class="command">COMMIT PREPARED</code>が完了したトランザクションのディスク上の二相状態ファイルが削除されない原因となる可能性がありました。
+すぐに悪影響はありませんでしたが、その後のクラッシュとリカバリが<span class="quote">「<span class="quote">could not access status of transaction</span>」</span>というエラーで、サービス復旧には孤立したファイルを手動で削除する必要がありました。
+     </p></li><li class="listitem"><span class="original">
+Author: Michael Paquier &lt;michael@paquier.xyz&gt;
+Branch: master [09620ea09] 2024-09-27 09:40:09 +0900
+Branch: REL_17_STABLE [1532599a8] 2024-09-27 09:40:14 +0900
+Branch: REL_16_STABLE [afbd3dc7d] 2024-09-27 09:40:16 +0900
+Branch: REL_15_STABLE [a613edc5c] 2024-09-27 09:40:18 +0900
+Branch: REL_14_STABLE [6530b869c] 2024-09-27 09:40:19 +0900
+Branch: REL_13_STABLE [911eda9f3] 2024-09-27 09:40:21 +0900
+Branch: REL_12_STABLE [2f33e68a5] 2024-09-27 09:40:22 +0900
+</span><p>
+<span class="original">
+      Avoid invalid memory accesses after skipping an invalid toast index
+      during &lt;command&gt;VACUUM FULL&lt;/command&gt; (Tender Wang)
+</span>
+<code class="command">VACUUM FULL</code>中に無効なTOASTインデックスをスキップした後の無効なメモリアクセスが回避されました。
+(Tender Wang)
+      <a class="ulink" href="https://postgr.es/c/1532599a8" target="_top">§</a>
+     </p><p>
+<span class="original">
+      A list tracking yet-to-be-rebuilt indexes was not properly updated
+      in this code path, risking assertion failures or crashes later on.
+</span>
+このコードパスでは、まだ再構築されていないインデックスを追跡しているリストが適切に更新されず、後でアサーションエラーやクラッシュが発生する危険性がありました。
+     </p></li><li class="listitem"><span class="original">
+Author: Noah Misch &lt;noah@leadboat.com&gt;
+Branch: master [a07e03fd8] 2024-09-24 15:25:18 -0700
+Branch: REL_17_STABLE [fd27b878c] 2024-09-24 15:25:21 -0700
+Branch: REL_16_STABLE [63f019805] 2024-09-24 15:25:22 -0700
+Branch: REL_15_STABLE [8590c942c] 2024-09-24 15:25:23 -0700
+Branch: REL_14_STABLE [82c2d9e02] 2024-09-24 15:25:23 -0700
+Branch: REL_13_STABLE [a8ad1929d] 2024-09-24 15:25:24 -0700
+Branch: REL_12_STABLE [7354b680a] 2024-09-24 15:25:25 -0700
+Branch: master [aac2c9b4f] 2024-09-24 15:25:18 -0700
+Branch: REL_17_STABLE [3b7a689e1] 2024-09-24 15:25:22 -0700
+Branch: REL_16_STABLE [51ff46de2] 2024-09-24 15:25:22 -0700
+Branch: REL_15_STABLE [5c837f8fa] 2024-09-24 15:25:23 -0700
+Branch: REL_14_STABLE [f51b34b3e] 2024-09-24 15:25:23 -0700
+Branch: REL_13_STABLE [14c57cb63] 2024-09-24 15:25:24 -0700
+Branch: REL_12_STABLE [cafcc3ad0] 2024-09-24 15:25:25 -0700
+Branch: master [0d5a3d757] 2024-09-29 15:54:25 -0700
+Branch: REL_17_STABLE [da99df15c] 2024-09-29 15:54:28 -0700
+Branch: REL_16_STABLE [4c922821e] 2024-09-29 15:54:28 -0700
+Branch: REL_15_STABLE [159bf0f31] 2024-09-29 15:54:29 -0700
+Branch: REL_14_STABLE [b9ee1339b] 2024-09-29 15:54:29 -0700
+Branch: REL_13_STABLE [db1992455] 2024-09-29 15:54:29 -0700
+Branch: REL_12_STABLE [5a33a39a8] 2024-09-29 15:54:30 -0700
+Branch: master [e947224cb] 2024-10-24 09:16:14 -0700
+Branch: REL_17_STABLE [e11907682] 2024-10-24 09:16:17 -0700
+Branch: REL_16_STABLE [2d63c964f] 2024-10-24 09:16:18 -0700
+Branch: REL_15_STABLE [d34ffbaa1] 2024-10-24 09:16:18 -0700
+Branch: REL_14_STABLE [ad24b7565] 2024-10-24 09:16:19 -0700
+Branch: REL_13_STABLE [3e5ea478d] 2024-10-24 09:16:19 -0700
+Branch: REL_12_STABLE [a0c0078b1] 2024-10-24 09:16:20 -0700
+Branch: master [30d47ec8c] 2024-10-29 09:39:55 -0700
+Branch: REL_17_STABLE [9aef6f19a] 2024-10-29 09:39:58 -0700
+Branch: REL_16_STABLE [370bc7740] 2024-10-29 09:39:58 -0700
+Branch: REL_15_STABLE [0fe002d0c] 2024-10-29 09:39:59 -0700
+Branch: REL_14_STABLE [11e3f288f] 2024-10-29 09:39:59 -0700
+Branch: REL_13_STABLE [2a912bc1a] 2024-10-29 09:40:00 -0700
+Branch: REL_12_STABLE [c2139db11] 2024-10-29 09:40:00 -0700
+Branch: master [b412f402d] 2024-11-02 09:04:55 -0700
+Branch: REL_17_STABLE [0bcb9d079] 2024-11-02 09:05:00 -0700
+Branch: REL_16_STABLE [6c837c237] 2024-11-02 09:05:02 -0700
+Branch: REL_15_STABLE [6d5b4031b] 2024-11-02 09:05:04 -0700
+Branch: REL_14_STABLE [bb3054297] 2024-11-02 09:05:05 -0700
+Branch: REL_13_STABLE [6b01cac0b] 2024-11-02 09:05:07 -0700
+Branch: REL_12_STABLE [d729f1ea5] 2024-11-02 09:05:08 -0700
+Branch: master [825c72c07] 2024-11-02 19:42:52 -0700
+Branch: REL_17_STABLE [54bc22fbf] 2024-11-02 19:42:55 -0700
+Branch: REL_16_STABLE [f8f9110b4] 2024-11-02 19:42:56 -0700
+Branch: REL_15_STABLE [d14e94ac4] 2024-11-02 19:42:56 -0700
+Branch: REL_14_STABLE [803655e66] 2024-11-02 19:42:57 -0700
+Branch: REL_13_STABLE [4dc0c933f] 2024-11-02 19:42:57 -0700
+Branch: REL_12_STABLE [766809db3] 2024-11-02 19:42:58 -0700
+</span><p>
+<span class="original">
+      Fix ways in which an &lt;quote&gt;in place&lt;/quote&gt; catalog update could be
+      lost (Noah Misch)
+</span>
+<span class="quote">「<span class="quote">インプレース</span>」</span>でのカタログ更新が失われる可能性のある方法が修正されました。
+(Noah Misch)
+      <a class="ulink" href="https://postgr.es/c/fd27b878c" target="_top">§</a>
+      <a class="ulink" href="https://postgr.es/c/3b7a689e1" target="_top">§</a>
+      <a class="ulink" href="https://postgr.es/c/da99df15c" target="_top">§</a>
+      <a class="ulink" href="https://postgr.es/c/e11907682" target="_top">§</a>
+      <a class="ulink" href="https://postgr.es/c/9aef6f19a" target="_top">§</a>
+      <a class="ulink" href="https://postgr.es/c/0bcb9d079" target="_top">§</a>
+      <a class="ulink" href="https://postgr.es/c/54bc22fbf" target="_top">§</a>
+     </p><p>
+<span class="original">
+      Normal row updates write a new version of the row to preserve
+      rollback-ability of the transaction.  However, certain system
+      catalog updates are intentionally non-transactional and are done
+      with an in-place update of the row.  These patches fix race
+      conditions that could cause the effects of an in-place update to be
+      lost.  As an example, it was possible to forget having set
+      &lt;structname&gt;pg_class&lt;/structname&gt;.&lt;structfield&gt;relhasindex&lt;/structfield&gt;
+      to true, preventing updates of the new index and thus causing index
+      corruption.
+</span>
+通常の行更新では、トランザクションのロールバック可能性を維持するために行の新しいバージョンが書き込まれます。
+ただし、一部のシステムカタログ更新は意図的にトランザクションではなく、行のインプレース更新で行われます。
+これらのパッチは、インプレース更新の効果が失われる原因となる競合状態を修正します。
+例えば、<code class="structname">pg_class</code>.<code class="structfield">relhasindex</code>をtrueに設定し忘れると、新しいインデックスの更新が妨げられ、インデックスの破損を引き起こす可能性がありました。
+     </p></li><li class="listitem"><span class="original">
+Author: Noah Misch &lt;noah@leadboat.com&gt;
+Branch: REL_17_STABLE [a4668c99f] 2024-10-25 06:51:06 -0700
+Branch: REL_16_STABLE [d36b4d8ec] 2024-10-25 06:51:06 -0700
+Branch: REL_15_STABLE [3baf804b7] 2024-10-25 06:51:07 -0700
+Branch: REL_14_STABLE [dca68242a] 2024-10-25 06:51:07 -0700
+Branch: REL_13_STABLE [67f30c79a] 2024-10-25 06:51:08 -0700
+Branch: REL_12_STABLE [da9950456] 2024-10-25 06:51:08 -0700
+</span><p>
+<span class="original">
+      Reset catalog caches at end of recovery (Noah Misch)
+</span>
+リカバリの終了時にカタログキャッシュをリセットするようになりました。
+(Noah Misch)
+      <a class="ulink" href="https://postgr.es/c/a4668c99f" target="_top">§</a>
+     </p><p>
+<span class="original">
+      This prevents scenarios wherein an in-place catalog update could be
+      lost due to using stale data from a catalog cache.
+</span>
+これにより、カタログキャッシュからの古いデータを使用することで、インプレイスカタログ更新が失われるシナリオが回避されます。
+     </p></li><li class="listitem"><span class="original">
+Author: Noah Misch &lt;noah@leadboat.com&gt;
+Branch: master [ac04aa84a] 2024-09-17 19:53:11 -0700
+Branch: REL_17_STABLE Release: REL_17_0 [2370582ab] 2024-09-17 19:54:25 -0700
+Branch: REL_16_STABLE [6f6521de9] 2024-09-17 19:54:25 -0700
+Branch: REL_15_STABLE [884860bfc] 2024-09-17 19:54:26 -0700
+Branch: REL_14_STABLE [5c698e898] 2024-09-17 19:54:26 -0700
+Branch: REL_13_STABLE [916b8ae47] 2024-09-17 19:54:26 -0700
+Branch: REL_12_STABLE [507b72bd9] 2024-09-17 19:54:26 -0700
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+Branch: master [b8df69049] 2024-11-08 13:42:10 -0500
+Branch: REL_17_STABLE [943b65358] 2024-11-08 13:42:01 -0500
+Branch: REL_16_STABLE [06424e9a2] 2024-11-08 13:42:01 -0500
+Branch: REL_15_STABLE [bcbdb176e] 2024-11-08 13:42:01 -0500
+Branch: REL_14_STABLE [989ccd26c] 2024-11-08 13:42:01 -0500
+Branch: REL_13_STABLE [62685876f] 2024-11-08 13:42:01 -0500
+Branch: REL_12_STABLE [6e39ca6e7] 2024-11-08 13:42:01 -0500
+</span><p>
+<span class="original">
+      Avoid using parallel query while holding off interrupts
+      (Francesco Degrassi, Noah Misch, Tom Lane)
+</span>
+割り込みを保留している間は、パラレルクエリを使用しないようになりました。
+(Francesco Degrassi, Noah Misch, Tom Lane)
+      <a class="ulink" href="https://postgr.es/c/2370582ab" target="_top">§</a>
+      <a class="ulink" href="https://postgr.es/c/943b65358" target="_top">§</a>
+     </p><p>
+<span class="original">
+      This situation cannot arise normally, but it can be reached with
+      test scenarios such as using a SQL-language function as B-tree
+      support (which would be far too slow for production usage).  If it
+      did occur it would result in an indefinite wait.
+</span>
+この状況は通常は発生しませんが、SQL言語関数をB-treeサポートとして使用するなどのテストシナリオでは発生する可能性があります（これは実稼働環境での使用には遅すぎます）。
+このような状況が発生した場合、無期限の待機が発生しました。
+     </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+Branch: master [f8d9a9f21] 2024-10-06 16:03:48 -0400
+Branch: REL_17_STABLE [3daeb539a] 2024-10-06 16:03:48 -0400
+Branch: REL_16_STABLE [5de77b609] 2024-10-06 16:03:48 -0400
+Branch: REL_15_STABLE [aef75219c] 2024-10-06 16:03:48 -0400
+Branch: REL_14_STABLE [3922c9e9f] 2024-10-06 16:03:48 -0400
+Branch: REL_13_STABLE [4a17acd0d] 2024-10-06 16:03:48 -0400
+Branch: REL_12_STABLE [5c17f5a63] 2024-10-06 16:03:48 -0400
+</span><p>
+<span class="original">
+      Ignore not-yet-defined Portals in
+      the &lt;structname&gt;pg_cursors&lt;/structname&gt; view (Tom Lane)
+</span>
+<code class="structname">pg_cursors</code>ビューで未定義のポータルを無視するようになりました。
+(Tom Lane)
+      <a class="ulink" href="https://postgr.es/c/3daeb539a" target="_top">§</a>
+     </p><p>
+<span class="original">
+      It is possible for user-defined code that inspects this view to be
+      called while a new cursor is being set up, and if that happens a
+      null pointer dereference would ensue.  Avoid the problem by defining
+      the view to exclude incompletely-set-up cursors.
+</span>
+新しいカーソルの設定中に、このビューを検査するユーザ定義コードが呼び出される可能性があり、その場合NULLポインタ間接参照が発生します。
+設定が不完全なカーソルを除外するようにビューを定義することでこの問題が回避されます。
+     </p></li><li class="listitem"><span class="original">
+Author: Amit Kapila &lt;akapila@postgresql.org&gt;
+Branch: master [022564f60] 2024-10-07 15:38:45 +0530
+Branch: REL_17_STABLE [918107759] 2024-10-07 15:15:05 +0530
+Branch: REL_16_STABLE [0f0e253db] 2024-10-07 15:04:05 +0530
+Branch: REL_15_STABLE [8175a7d11] 2024-10-07 14:53:18 +0530
+Branch: REL_14_STABLE [efe706e27] 2024-10-07 14:45:39 +0530
+Branch: master [d759c1a0b] 2024-10-08 12:25:52 +0530
+Branch: REL_17_STABLE [c4b8a916f] 2024-10-08 12:13:28 +0530
+Branch: REL_16_STABLE [0c40d9019] 2024-10-08 12:01:35 +0530
+Branch: REL_15_STABLE [5ce0dcc99] 2024-10-08 11:45:58 +0530
+Branch: REL_14_STABLE [581092c90] 2024-10-08 11:30:26 +0530
+</span><p>
+<span class="original">
+      Avoid &lt;quote&gt;unexpected table_index_fetch_tuple call during logical
+      decoding&lt;/quote&gt; error while decoding a transaction involving
+      insertion of a column default value (Takeshi Ideriha, Hou Zhijie)
+</span>
+列のデフォルト値の挿入を含むトランザクションのデコード中に、<span class="quote">「<span class="quote">unexpected table_index_fetch_tuple call during logical decoding</span>」</span>エラーが発生しなくなりました。
+(Takeshi Ideriha, Hou Zhijie)
+      <a class="ulink" href="https://postgr.es/c/918107759" target="_top">§</a>
+      <a class="ulink" href="https://postgr.es/c/c4b8a916f" target="_top">§</a>
+     </p></li><li class="listitem"><span class="original">
+Author: Masahiko Sawada &lt;msawada@postgresql.org&gt;
+Branch: master [1b9b6cc34] 2024-10-16 12:08:05 -0700
+Branch: REL_17_STABLE [eef9cc4dc] 2024-10-16 12:08:02 -0700
+Branch: REL_16_STABLE [05e982cdc] 2024-10-16 12:08:00 -0700
+Branch: REL_15_STABLE [4a675f318] 2024-10-16 12:07:58 -0700
+Branch: REL_14_STABLE [5c1ed0a51] 2024-10-16 12:07:55 -0700
+Branch: REL_13_STABLE [cb988b04d] 2024-10-16 12:07:52 -0700
+Branch: REL_12_STABLE [53fa68b3b] 2024-10-16 12:07:50 -0700
+</span><p>
+<span class="original">
+      Reduce memory consumption of logical decoding (Masahiko Sawada)
+</span>
+ロジカルデコーディングのメモリ使用量が削減されました。
+(Masahiko Sawada)
+      <a class="ulink" href="https://postgr.es/c/eef9cc4dc" target="_top">§</a>
+     </p><p>
+<span class="original">
+      Use a smaller default block size to store tuple data received during
+      logical replication.  This reduces memory wastage, which has been
+      reported to be severe while processing long-running transactions,
+      even leading to out-of-memory failures.
+</span>
+論理レプリケーション中に受信したタプルデータを格納するために、より小さいデフォルトブロックサイズを使用するようになりました。
+これにより、メモリ不足の障害につながることもあると報告されている、長時間実行されるトランザクション処理中の深刻なメモリ浪費が削減されます。
+     </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+Branch: master [c96de42c4] 2024-10-16 17:36:40 -0400
+Branch: REL_17_STABLE [b5eef7539] 2024-10-16 17:36:29 -0400
+Branch: REL_16_STABLE [25d639eea] 2024-10-16 17:36:29 -0400
+Branch: REL_15_STABLE [b35231989] 2024-10-16 17:36:29 -0400
+Branch: REL_14_STABLE [ab13c46ff] 2024-10-16 17:36:30 -0400
+Branch: REL_13_STABLE [0d83ced3c] 2024-10-16 17:36:30 -0400
+Branch: REL_12_STABLE [cf1443d67] 2024-10-16 17:36:30 -0400
+</span><p>
+<span class="original">
+      Fix behavior of stable functions called from
+      a &lt;command&gt;CALL&lt;/command&gt; statement's argument list, when
+      the &lt;command&gt;CALL&lt;/command&gt; is within a
+      PL/pgSQL &lt;literal&gt;EXCEPTION&lt;/literal&gt; block (Tom Lane)
+</span>
+PL/pgSQLの<code class="literal">EXCEPTION</code>ブロック内で<code class="command">CALL</code>文の引数リストから呼び出されるSTABLE関数の動作が修正されました。
+(Tom Lane)
+      <a class="ulink" href="https://postgr.es/c/b5eef7539" target="_top">§</a>
+     </p><p>
+<span class="original">
+      As with a similar fix in our previous quarterly releases, this case
+      allowed such functions to be passed the wrong snapshot, causing them
+      to see stale values of rows modified since the start of the outer
+      transaction.
+</span>
+以前の四半期リリースでの同様の修正と同様に、今回のケースでは、このような関数に間違ったスナップショットが渡され、外部トランザクションの開始以降に変更された行の古い値を参照する可能性がありました。
+     </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+Branch: master [920d51979] 2024-10-02 17:30:36 -0400
+Branch: REL_17_STABLE [c7a201053] 2024-10-02 17:30:36 -0400
+Branch: REL_16_STABLE [65f431aff] 2024-10-02 17:30:36 -0400
+Branch: REL_15_STABLE [bb8c89dbc] 2024-10-02 17:30:36 -0400
+Branch: REL_14_STABLE [e7af9b52f] 2024-10-02 17:30:36 -0400
+Branch: REL_13_STABLE [2120eda94] 2024-10-02 17:30:36 -0400
+Branch: REL_12_STABLE [47d8a15de] 2024-10-02 17:30:36 -0400
+</span><p>
+<span class="original">
+      Parse &lt;application&gt;libpq&lt;/application&gt;'s &lt;literal&gt;keepalives&lt;/literal&gt;
+      connection option in the same way as other integer-valued options
+      (Yuto Sasaki)
+</span>
+<span class="application">libpq</span>の<code class="literal">keepalives</code>接続オプションを、他の整数値オプションと同様に解析するようになりました。
+(Yuto Sasaki)
+      <a class="ulink" href="https://postgr.es/c/c7a201053" target="_top">§</a>
+     </p><p>
+<span class="original">
+      The coding used here rejected trailing whitespace in the option
+      value, unlike other cases.  This turns out to be problematic
+      in &lt;application&gt;ecpg&lt;/application&gt;'s usage, for example.
+</span>
+ここで使用されたコーディングでは、他の場合とは異なり、オプション値の末尾の空白文字が拒否されていました。
+これは、例えば<span class="application">ecpg</span>の使用時に問題となることが判明しました。
+     </p></li><li class="listitem"><span class="original">
+Author: Michael Paquier &lt;michael@paquier.xyz&gt;
+Branch: master [a0bff38d1] 2024-10-23 08:33:54 +0900
+Branch: REL_17_STABLE [2c37cb26f] 2024-10-23 08:35:00 +0900
+Branch: REL_16_STABLE [a1e613b81] 2024-10-23 08:35:02 +0900
+Branch: REL_15_STABLE [335501fb2] 2024-10-23 08:35:04 +0900
+Branch: REL_14_STABLE [9a51d4af1] 2024-10-23 08:35:05 +0900
+Branch: REL_13_STABLE [fcafbaadf] 2024-10-23 08:35:07 +0900
+Branch: REL_12_STABLE [9ecfd8a48] 2024-10-23 08:35:08 +0900
+</span><p>
+<span class="original">
+      In &lt;application&gt;ecpglib&lt;/application&gt;, fix out-of-bounds read when
+      parsing incorrect datetime input (Bruce Momjian, Pavel Nekrasov)
+</span>
+<span class="application">ecpglib</span>が、不正なdatetime入力を解析する際に範囲外の読み取りをしないよう修正されました。
+(Bruce Momjian, Pavel Nekrasov)
+      <a class="ulink" href="https://postgr.es/c/2c37cb26f" target="_top">§</a>
+     </p><p>
+<span class="original">
+      It was possible to try to read the location just before the start of
+      a constant array.  Real-world consequences seem minimal, though.
+</span>
+定数配列の開始直前の位置を読み取ろうとする可能性がありました。
+しかしながら、実世界での影響は最小限にとどまると思われます。
+     </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+Branch: master [1591b38d1] 2024-09-24 17:21:38 -0400
+Branch: REL_17_STABLE [923a71584] 2024-09-24 17:21:38 -0400
+</span><p>
+<span class="original">
+      Fix &lt;application&gt;psql&lt;/application&gt;'s describe commands to again
+      work with pre-9.4 servers (Tom Lane)
+</span>
+<span class="application">psql</span>のdescribeコマンドが9.4以前のサーバで再び動作するように修正されました。
+(Tom Lane)
+      <a class="ulink" href="https://postgr.es/c/923a71584" target="_top">§</a>
+     </p><p>
+<span class="original">
+      Commands involving display of an ACL (permissions) column failed
+      with very old &lt;productname&gt;PostgreSQL&lt;/productname&gt; servers, due to
+      use of a function not present in those versions.
+</span>
+ACL（権限）列の表示を含むコマンドは、非常に古い<span class="productname">PostgreSQL</span>サーバでこれらのバージョンには存在しない関数を使用していたため失敗していました。
+     </p></li><li class="listitem"><span class="original">
+Author: Michael Paquier &lt;michael@paquier.xyz&gt;
+Branch: master [9f34cae14] 2024-10-14 12:27:51 +0900
+Branch: REL_17_STABLE [8a6170860] 2024-10-14 12:27:57 +0900
+Branch: REL_16_STABLE [6331972c7] 2024-10-14 12:28:01 +0900
+</span><p>
+<span class="original">
+      Avoid hanging if an interval less than 1ms is specified
+      in &lt;application&gt;psql&lt;/application&gt;'s &lt;literal&gt;\watch&lt;/literal&gt;
+      command (Andrey Borodin, Michael Paquier)
+</span>
+<span class="application">psql</span>の<code class="literal">\watch</code>コマンドで1ミリ秒未満の間隔が指定された場合のハングアップが回避されました。
+(Andrey Borodin, Michael Paquier)
+      <a class="ulink" href="https://postgr.es/c/8a6170860" target="_top">§</a>
+     </p><p>
+<span class="original">
+      Instead, treat this the same as an interval of zero (no wait between
+      executions).
+</span>
+代わりに、間隔ゼロ（実行間の待ち時間なし）と同じように扱われます。
+     </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+Branch: master [b1008c1f0] 2024-11-04 14:36:11 -0500
+Branch: REL_17_STABLE [e2a912909] 2024-11-04 14:36:04 -0500
+</span><p>
+<span class="original">
+      Fix failure to find replication password
+      in &lt;filename&gt;~/.pgpass&lt;/filename&gt; (Tom Lane)
+</span>
+<code class="filename">~/.pgpass</code>でレプリケーションパスワードが見つからない問題が修正されました。
+(Tom Lane)
+      <a class="ulink" href="https://postgr.es/c/e2a912909" target="_top">§</a>
+     </p><p>
+<span class="original">
+      &lt;application&gt;pg_basebackup&lt;/application&gt;
+      and &lt;application&gt;pg_receivewal&lt;/application&gt; failed to match an entry
+      in &lt;filename&gt;~/.pgpass&lt;/filename&gt; that
+      had &lt;literal&gt;replication&lt;/literal&gt; in the database name field, if
+      no &lt;option&gt;-d&lt;/option&gt; or &lt;option&gt;&amp;#45;-dbname&lt;/option&gt; switch was
+      supplied.  This resulted in an unexpected prompt for password.
+</span>
+<span class="application">pg_basebackup</span>と<span class="application">pg_receivewal</span>は、<code class="option">-d</code>または<code class="option">--dbname</code>スイッチが指定されていない場合、データベース名フィールドに<code class="literal">replication</code>を含む<code class="filename">~/.pgpass</code>のエントリとの一致に失敗していました。
+その結果、予期しないパスワードプロンプトが表示されていました。
+     </p></li><li class="listitem"><span class="original">
+Author: Robert Haas &lt;rhaas@postgresql.org&gt;
+Branch: master [0b1765d95] 2024-11-04 10:11:05 -0500
+Branch: REL_17_STABLE [e36711442] 2024-11-04 10:19:37 -0500
+</span><p>
+<span class="original">
+      In &lt;application&gt;pg_combinebackup&lt;/application&gt;, throw an error if an
+      incremental backup file is present in a directory that is supposed to
+      contain a full backup (Robert Haas)
+</span>
+<span class="application">pg_combinebackup</span>で、フルバックアップが格納されているディレクトリに増分バックアップファイルが存在する場合、エラーを発生するよう修正されました。
+(Robert Haas)
+      <a class="ulink" href="https://postgr.es/c/e36711442" target="_top">§</a>
+     </p></li><li class="listitem"><span class="original">
+Author: Robert Haas &lt;rhaas@postgresql.org&gt;
+Branch: master [6c24801b1] 2024-11-04 09:55:02 -0500
+Branch: REL_17_STABLE [0d635b615] 2024-11-04 10:04:26 -0500
+</span><p>
+<span class="original">
+      In &lt;application&gt;pg_combinebackup&lt;/application&gt;, don't construct
+      filenames containing double slashes (Robert Haas)
+</span>
+<span class="application">pg_combinebackup</span>で、二重スラッシュを含むファイル名を作成しなくなりました。
+(Robert Haas)
+      <a class="ulink" href="https://postgr.es/c/0d635b615" target="_top">§</a>
+     </p><p>
+<span class="original">
+      This caused no functional problems, but the duplicate slashes were
+      visible in error messages, which could create confusion.
+</span>
+これにより機能的な問題は発生しませんでしたが、重複したスラッシュがエラーメッセージに表示されるため、混乱が生じる可能性がありました。
+     </p></li><li class="listitem"><span class="original">
+Author: Michael Paquier &lt;michael@paquier.xyz&gt;
+Branch: master [1ab67c9df] 2024-09-25 14:43:16 +0900
+Branch: REL_17_STABLE [85cb21df6] 2024-09-25 14:44:50 +0900
+Branch: REL_16_STABLE [1ea4d9c00] 2024-09-25 14:44:53 +0900
+Branch: REL_15_STABLE [74eaa0544] 2024-09-25 14:44:56 +0900
+Branch: REL_14_STABLE [60c618216] 2024-09-25 14:44:57 +0900
+Branch: REL_13_STABLE [9db4598c9] 2024-09-25 14:44:59 +0900
+Branch: REL_12_STABLE [ef57a7135] 2024-09-25 14:45:01 +0900
+Author: Fujii Masao &lt;fujii@postgresql.org&gt;
+Branch: master [20cfec896] 2024-09-30 11:13:55 +0900
+Branch: REL_17_STABLE [77f154681] 2024-09-30 11:15:56 +0900
+Branch: REL_16_STABLE [653ce5b8b] 2024-09-30 11:16:15 +0900
+Branch: REL_15_STABLE [92cc21d15] 2024-09-30 11:16:21 +0900
+Branch: REL_14_STABLE [88e1153cb] 2024-09-30 11:16:27 +0900
+Branch: REL_13_STABLE [9410f7cbf] 2024-09-30 11:17:23 +0900
+Author: Nathan Bossart &lt;nathan@postgresql.org&gt;
+Branch: master [8318f2b17] 2024-10-07 16:49:20 -0500
+Branch: REL_17_STABLE [5bd26e652] 2024-10-07 16:49:20 -0500
+Branch: REL_16_STABLE [eba8cc1af] 2024-10-07 16:49:20 -0500
+Branch: REL_15_STABLE [6d047c6a9] 2024-10-07 16:49:20 -0500
+Branch: REL_14_STABLE [ce6f27857] 2024-10-07 16:49:20 -0500
+Branch: REL_13_STABLE [d4ade0baf] 2024-10-07 16:49:20 -0500
+Branch: REL_12_STABLE [5e0431c32] 2024-10-07 16:49:20 -0500
+</span><p>
+<span class="original">
+      Avoid trying to reindex temporary tables and indexes
+      in &lt;application&gt;vacuumdb&lt;/application&gt; and in
+      parallel &lt;application&gt;reindexdb&lt;/application&gt; (VaibhaveS, Michael
+      Paquier, Fujii Masao, Nathan Bossart)
+</span>
+<span class="application">vacuumdb</span>およびパラレル<span class="application">reindexdb</span>において、一時テーブルとインデックスのインデックス再構築を試みないようになりました。
+(VaibhaveS, Michael Paquier, Fujii Masao, Nathan Bossart)
+      <a class="ulink" href="https://postgr.es/c/85cb21df6" target="_top">§</a>
+      <a class="ulink" href="https://postgr.es/c/77f154681" target="_top">§</a>
+      <a class="ulink" href="https://postgr.es/c/5bd26e652" target="_top">§</a>
+     </p><p>
+<span class="original">
+      Reindexing other sessions' temporary tables cannot work, but the
+      check to skip them was missing in some code paths, leading to
+      unwanted failures.
+</span>
+他のセッションの一時テーブルのインデックス再構築は機能しませんが、一部のコードパスでそれらをスキップするチェックが欠落していたため、不要な障害が発生していました。
+     </p></li><li class="listitem"><span class="original">
+Author: Thomas Munro &lt;tmunro@postgresql.org&gt;
+Branch: master [9044fc1d4] 2024-11-06 23:17:18 +1300
+Branch: REL_17_STABLE [b7467ab71] 2024-11-06 23:07:34 +1300
+Branch: REL_16_STABLE [ee67b73f5] 2024-11-06 23:09:03 +1300
+Branch: REL_15_STABLE [19bf81c06] 2024-11-06 23:09:28 +1300
+Branch: REL_14_STABLE [0b022ddf3] 2024-11-06 23:09:50 +1300
+Branch: REL_13_STABLE [e88d824a4] 2024-11-06 23:10:05 +1300
+Branch: REL_12_STABLE [50c1453a3] 2024-11-06 23:10:20 +1300
+</span><p>
+<span class="original">
+      Fix incorrect LLVM-generated code on ARM64 platforms (Thomas
+      Munro, Anthonin Bonnefoy)
+</span>
+ARM64プラットフォームでLLVMが生成するコードの誤りが修正されました。
+(Thomas Munro, Anthonin Bonnefoy)
+      <a class="ulink" href="https://postgr.es/c/b7467ab71" target="_top">§</a>
+     </p><p>
+<span class="original">
+      When using JIT compilation on ARM platforms, the generated code
+      could not support relocation distances exceeding 32 bits, allowing
+      unlucky placement of generated code to cause server crashes on
+      large-memory systems.
+</span>
+ARMプラットフォームでJITコンパイルを使用する場合、生成されたコードは32ビットを超える再配置距離をサポートできず、生成されたコードの配置ミスにより、大容量メモリシステムでサーバクラッシュが発生する可能性がありました。
+     </p></li><li class="listitem"><span class="original">
+Author: Nathan Bossart &lt;nathan@postgresql.org&gt;
+Branch: master [5d6187d2a] 2024-10-07 13:51:03 -0500
+Branch: REL_17_STABLE [a356d23fd] 2024-10-07 13:51:03 -0500
+Branch: REL_16_STABLE [8aaf88b63] 2024-10-07 13:51:03 -0500
+Branch: REL_15_STABLE [01731eeea] 2024-10-07 13:51:03 -0500
+Branch: REL_14_STABLE [5cea7168d] 2024-10-07 13:51:03 -0500
+Branch: REL_13_STABLE [b255493ae] 2024-10-07 13:51:03 -0500
+Branch: REL_12_STABLE [c91d0af0a] 2024-10-07 13:51:03 -0500
+</span><p>
+<span class="original">
+      Fix a few places that assumed that process start time (represented
+      as a &lt;type&gt;time_t&lt;/type&gt;) will fit into a &lt;type&gt;long&lt;/type&gt; value
+      (Max Johnson, Nathan Bossart)
+</span>
+<code class="type">time_t</code>として表現されるプロセス開始時刻が<code class="type">long</code>値に収まると想定していたいくつかの個所が修正されました。
+(Max Johnson, Nathan Bossart)
+      <a class="ulink" href="https://postgr.es/c/a356d23fd" target="_top">§</a>
+     </p><p>
+<span class="original">
+      On platforms where &lt;type&gt;long&lt;/type&gt; is 32 bits (notably Windows),
+      this coding would fail after Y2038.  Most of the failures appear
+      only cosmetic, but notably &lt;literal&gt;pg_ctl start&lt;/literal&gt; would
+      hang.
+</span>
+<code class="type">long</code>が32ビットのプラットフォーム（特にWindows）では、このコーディングは2038年以降で失敗します。
+ほとんどの失敗は表面的な問題にすぎませんが、特に<code class="literal">pg_ctl start</code>がハングする可能性がありました。
+     </p></li><li class="listitem"><span class="original">
+Author: Tom Lane &lt;tgl@sss.pgh.pa.us&gt;
+Branch: master [502e7bf7f] 2024-10-29 11:49:38 -0400
+Branch: REL_17_STABLE [cad65907e] 2024-10-29 11:49:50 -0400
+Branch: REL_16_STABLE [a0c8d600b] 2024-10-29 11:49:56 -0400
+Branch: REL_15_STABLE [74f70cb86] 2024-10-29 11:50:00 -0400
+Branch: REL_14_STABLE [dedced73e] 2024-10-29 11:50:05 -0400
+Branch: REL_13_STABLE [8a8486175] 2024-10-29 11:50:10 -0400
+Branch: REL_12_STABLE [8f1759c9b] 2024-10-29 11:50:14 -0400
+Branch: master [b8ea0f675] 2024-09-14 17:55:02 -0400
+Branch: REL_17_STABLE Release: REL_17_0 [6283ff201] 2024-09-14 17:55:02 -0400
+Branch: REL_16_STABLE [2abc88958] 2024-09-14 17:55:03 -0400
+Branch: REL_15_STABLE [2b94ee58b] 2024-09-14 17:55:03 -0400
+Branch: REL_14_STABLE [b27622c90] 2024-09-14 17:55:03 -0400
+Branch: REL_13_STABLE [b28b9b19b] 2024-09-14 17:55:03 -0400
+Branch: REL_12_STABLE [205813da4] 2024-09-14 17:55:03 -0400
+</span><p>
+<span class="original">
+      Update time zone data files to &lt;application&gt;tzdata&lt;/application&gt;
+      release 2024b (Tom Lane)
+</span>
+タイムゾーンデータファイルを<span class="application">tzdata</span>リリース2024bに更新しました。
+(Tom Lane)
+      <a class="ulink" href="https://postgr.es/c/cad65907e" target="_top">§</a>
+      <a class="ulink" href="https://postgr.es/c/6283ff201" target="_top">§</a>
+     </p><p>
+<span class="original">
+      This &lt;application&gt;tzdata&lt;/application&gt; release changes the old
+      System-V-compatibility zone names to duplicate the corresponding
+      geographic zones; for example &lt;literal&gt;PST8PDT&lt;/literal&gt; is now an
+      alias for &lt;literal&gt;America/Los_Angeles&lt;/literal&gt;.  The main visible
+      consequence is that for timestamps before the introduction of
+      standardized time zones, the zone is considered to represent local
+      mean solar time for the named location.  For example,
+      in &lt;literal&gt;PST8PDT&lt;/literal&gt;, &lt;type&gt;timestamptz&lt;/type&gt; input such
+      as &lt;literal&gt;1801-01-01 00:00&lt;/literal&gt; would previously have been
+      rendered as &lt;literal&gt;1801-01-01 00:00:00-08&lt;/literal&gt;, but now it is
+      rendered as &lt;literal&gt;1801-01-01 00:00:00-07:52:58&lt;/literal&gt;.
+</span>
+この<span class="application">tzdata</span>リリースでは、古いSystem-V互換性ゾーン名を変更して、対応する地理的ゾーンを複製します。
+例えば<code class="literal">PST8PDT</code>は<code class="literal">America/Los_Angeles</code>の別名になります。
+目に見える主な結果は、標準化されたタイムゾーンが導入される前のタイムスタンプの場合、そのゾーンは指定された場所のローカル平均太陽時を表すと見なされることです。
+例えば<code class="literal">PST8PDT</code>では、<code class="type">timestamptz</code>の入力値<code class="literal">1801-01-01 00:00</code>は、以前は<code class="literal">1801-01-01 00:00:00-08</code>としてレンダリングされていましたが、現在は<code class="literal">1801-01-01 00:00:00-07:52:58</code>としてレンダリングされます。
+     </p><p>
+<span class="original">
+      Also, historical corrections for Mexico, Mongolia, and Portugal.
+      Notably, &lt;literal&gt;Asia/Choibalsan&lt;/literal&gt; is now an alias
+      for &lt;literal&gt;Asia/Ulaanbaatar&lt;/literal&gt; rather than being a separate
+      zone, mainly because the differences between those zones were found to
+      be based on untrustworthy data.
+</span>
+また、メキシコ、モンゴル、ポルトガルの歴史的修正がおこなわれています。
+特に、<code class="literal">Asia/Choibalsan</code>は現在、独立したゾーンではなく、<code class="literal">Asia/Ulaanbaatar</code>の別名となっています。
+これは主に、これらのゾーン間の違いが信頼できないデータに基づいていることが判明したためです。
+     </p></li></ul></div></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="release-17-2.html" title="E.5. リリース17.2">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="release.html" title="付録E リリースノート">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="release-17.html" title="E.7. リリース17">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">E.5. リリース17.2 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 17.6文書">ホーム</a></td><td width="40%" align="right" valign="top"> E.7. リリース17</td></tr></table></div></body></html>
