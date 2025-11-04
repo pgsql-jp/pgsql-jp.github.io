@@ -29,7 +29,7 @@
     because &lt;command&gt;ANALYZE&lt;/command&gt;'s statistics are random samples rather
     than exact, and because costs are inherently somewhat platform-dependent.
 </span>
-《マッチ度[94.212963]》本節の例は、v17の開発版ソースを用いて<code class="command">VACUUM ANALYZE</code>を実行した後でリグレッションテストデータベースから取り出したものです。
+本節の例は、v18の開発版ソースを用いて<code class="command">VACUUM ANALYZE</code>を実行した後でリグレッションテストデータベースから取り出したものです。
 実際にこの例を試すと、似たような結果になるはずですが、おそらく推定コストや行数は多少異なることになるでしょう。
 <code class="command">ANALYZE</code>による統計情報は厳密なものではなくランダムなサンプリングを行った結果であり、また、コストは本質的にプラットフォームに何かしら依存するためです。
    </p><p>
@@ -715,9 +715,9 @@ WHERE t1.unique1 &lt; 100 AND t1.unique2 = t2.unique2;
     plan for a given query.  When the resulting plan contains a disabled node,
     the &lt;command&gt;EXPLAIN&lt;/command&gt; output will indicate this fact.
 </span>
-《機械翻訳》有効/無効フラグを使用してプランノードタイプを無効にする場合、フラグの多くは対応するプランノードの使用を禁止するだけで、プランナがプランノードタイプを使用できないようにするわけではありません。
-これはデザインによるもので、プランナは特定の問い合わせに対してプランをフォームする機能を維持します。
-結果のプラン包含がノードを無効にした場合、<code class="command">EXPLAIN</code>出力はこの事実を示します。
+enable/disableフラグを使用して計画ノード型を無効化する場合、そのフラグの多くは、対応する計画ノードの使用を妨げるだけで、プランナがその計画ノード型を使用することを完全に禁止するわけではありません。
+これは、与えられた問い合わせの計画を作成する機能をプランナが維持するための設計です。
+作成された計画に無効化したノードが含まれている場合、<code class="command">EXPLAIN</code>の出力にはその事実が示されます。
 
 </p><pre class="screen">
 SET enable_seqscan = off;
@@ -734,7 +734,7 @@ EXPLAIN SELECT * FROM unit;
     other means to read the table data, so the sequential scan is the only
     option available to the query planner.
 </span>
-《機械翻訳》<code class="literal">unit</code>テーブルにはインデックスがないため、他にテーブルデータを読み取る手段がないため、シーケンシャルスキャンは問い合わせプランナで使用できる唯一のオプションです。
+<code class="literal">unit</code>テーブルにはインデックスがなく、他にテーブルデータを読み取る方法がないため、問い合わせプランナが使用できるのはシーケンシャルスキャンのみです。
    </p><p>
     <a id="id-1.5.13.5.8.31.1" class="indexterm"></a>
 <span class="original">
@@ -975,7 +975,7 @@ WHERE t1.unique1 &lt; 100 AND t1.unique2 = t2.unique2 ORDER BY t1.fivethous;
     of searches across &lt;emphasis&gt;all&lt;/emphasis&gt; node
     executions/&lt;literal&gt;loops&lt;/literal&gt;:
 </span>
-《機械翻訳》インデックススキャンノード（およびビットマップインデックススキャンとインデックスのみのスキャンノード）には、<span class="emphasis"><em>すべての</em></span>インデックス実行/<code class="literal">loops</code>:の検索の合計数を報告する<span class="quote">「<span class="quote">直線検索</span>」</span>ノードが表示されます。
+インデックススキャンノード（およびビットマップインデックススキャンとインデックスオンリースキャンノード）には、<span class="emphasis"><em>すべての</em></span>ノード実行と<code class="literal">loops</code>にわたる検索の合計数を報告する<span class="quote">「<span class="quote">Index Searches</span>」</span>の行が表示されます。
 
 </p><pre class="screen">
 EXPLAIN ANALYZE SELECT * FROM tenk1 WHERE thousand IN (1, 500, 700, 999);
@@ -1001,10 +1001,9 @@ EXPLAIN ANALYZE SELECT * FROM tenk1 WHERE thousand IN (1, 500, 700, 999);
     construct.  However, the number of index searches often won't have such a
     simple correspondence to the query predicate:
 </span>
-《機械翻訳》ここでは、4つのノード検索を必要とするビットマップインデックススキャンのインデックスがあります。
-スキャンは、インデックスの<code class="literal">IN</code>コンストラクトの<code class="type">整数</code>値ごとに1回、<code class="structname">tenk1_thous_tenthous</code>インデックスからを検索する必要がありました。
-ただし、インデックス検索の数には、述語問い合わせに対するこのようなシンプル対応がないことがよくあります。
-ルートページ述語
+ここでは、4つの個別のインデックス検索を必要とするビットマップインデックススキャンノードがあります。
+このスキャンは、述語の<code class="literal">IN</code>構文における<code class="type">integer</code>の値につき一度、<code class="structname">tenk1_thous_tenthous</code>インデックスのルートページからインデックスを検索する必要がありました。
+ただし、インデックス検索の数は、問い合わせの述語とそれほど単純に対応していないことがよくあります。
 
 </p><pre class="screen">
 EXPLAIN ANALYZE SELECT * FROM tenk1 WHERE thousand IN (1, 2, 3, 4);
@@ -1029,17 +1028,15 @@ EXPLAIN ANALYZE SELECT * FROM tenk1 WHERE thousand IN (1, 2, 3, 4);
     index tuples stored next to each other, on the same
     &lt;structname&gt;tenk1_thous_tenthous&lt;/structname&gt; index leaf page.
 </span>
-《機械翻訳》この<code class="literal">IN</code>問い合わせの変形は、1つのインデックス検索のみを実行しました。
-<code class="literal">IN</code>オリジナル問い合わせと比較してインデックスを通過する時間が短くなりました。
-これは、コンストラクトは、同じ<code class="structname">tenk1_thous_tenthous</code>インデックスリーフページで互いに隣り合って格納されたマッチングインデックスタプルの値を使用するためです。
+この異なる<code class="literal">IN</code>を含む問い合わせでは、1つのインデックス検索しか実行されていません。
+この<code class="literal">IN</code>構文では、同じ<code class="structname">tenk1_thous_tenthous</code>インデックスリーフページ上にお互い隣り合って格納されているインデックスタプルと一致する値を使用しているため、（元の問い合わせと比較して）インデックスを探索する時間が短くなりました。
    </p><p>
 <span class="original">
     The &lt;quote&gt;Index Searches&lt;/quote&gt; line is also useful with B-tree index
     scans that apply the &lt;firstterm&gt;skip scan&lt;/firstterm&gt; optimization to
     more efficiently traverse through an index:
 </span>
-《機械翻訳》<span class="quote">「<span class="quote">インデックス検索</span>」</span>直線は、<em class="firstterm">スキップツリーインデックス</em>最適化を適用してインデックスをより効率的にトラバースするB-スキャンにも役立ちます。
-スキャン
+<span class="quote">「<span class="quote">Index Searches</span>」</span>の行は、<em class="firstterm">スキップスキャン</em>最適化を適用してインデックスをより効果的に探索するB-treeインデックススキャンでも役立ちます。
 </p><pre class="screen">
 EXPLAIN ANALYZE SELECT four, unique1 FROM tenk1 WHERE four BETWEEN 1 AND 3 AND unique1 = 42;
                                                               QUERY PLAN
@@ -1068,11 +1065,9 @@ EXPLAIN ANALYZE SELECT four, unique1 FROM tenk1 WHERE four BETWEEN 1 AND 3 AND u
     while its second/final column (the &lt;structfield&gt;unique1&lt;/structfield&gt;
     column) contains many distinct values.
 </span>
-《機械翻訳》ここでは、<code class="structname">tenk1</code>インデックスの<code class="structfield">four</code>列と<code class="structfield">ユニーク1</code>列に<code class="structname">tenk1_four_unique1_idx</code>を使用したマルチのみのスキャンノードを示しています。
-スキャンは<span class="quote">「<span class="quote"><code class="literal">four = 1 AND unique1 = 42</code></span>」</span>、<span class="quote">「<span class="quote"><code class="literal">four = 2 AND unique1 = 42</code></span>」</span>、<span class="quote">「<span class="quote"><code class="literal">four = 3 AND unique1 = 42</code></span>」</span>の3つの検索を実行し、それぞれが1つのインデックスリーフページを読み取ります。
-<a class="xref" href="indexes-multicolumn.html" title="11.3. 複数列インデックス">11.3</a>で説明したように、このインデックスは一般にスキップスキャンに適したターゲットです。
-これは、その先頭のカラム（<code class="structfield">four</code>カラム）包含には4つの個別値しかなく、2番目/最後のカラム（<code class="structfield">unique1</code>カラム）包含には多くの個別値があるためです。
-カラムインデックステーブル
+ここでは、<code class="structname">tenk1</code>テーブルの<code class="structfield">four</code>列と<code class="structfield">unique1</code>列にある複数列インデックスの<code class="structname">tenk1_four_unique1_idx</code>を使用するインデックスオンリースキャンノードがあります。
+このスキャンでは3回の検索が実行され、それぞれ1つのインデックスリーフページを読みます。<span class="quote">「<span class="quote"><code class="literal">four = 1 AND unique1 = 42</code></span>」</span>、<span class="quote">「<span class="quote"><code class="literal">four = 2 AND unique1 = 42</code></span>」</span>、そして<span class="quote">「<span class="quote"><code class="literal">four = 3 AND unique1 = 42</code></span>」</span>です。
+このインデックスは、先頭の列（<code class="structfield">four</code>列）には異なる値が4つしかありませんが、2番目であり最後の列（<code class="structfield">unique1</code>列）には多くの異なる値が含まれるため、<a class="xref" href="indexes-multicolumn.html" title="11.3. 複数列インデックス">11.3</a>で説明されているように、スキップスキャンの対象として一般的に適しています。
    </p><p>
 <span class="original">
     Another type of extra information is the number of rows removed by a
@@ -1170,10 +1165,10 @@ EXPLAIN ANALYZE SELECT * FROM polygon_tbl WHERE f1 @&gt; polygon '(0.5,2.0)';
     &lt;literal&gt;BUFFERS&lt;/literal&gt; option.  If this
     is undesired, &lt;literal&gt;BUFFERS&lt;/literal&gt; may be explicitly disabled:
 </span>
-《機械翻訳》<code class="command">EXPLAIN</code>には<code class="literal">BUFFERS</code>オプションがあり、特定の問い合わせの計画および実行中に実行される入出力操作に関する追加の詳細を提供します。
-バッファの表示の数字は、特定のカウントおよびそのすべての子ノードの個別でないバッファヒット、読取り、ダーティ、書込みのノードを示します。
-<code class="literal">ANALYZE</code>オプションは暗黙的に<code class="literal">BUFFERS</code>オプションを使用可能にします。
-これが望ましくない場合は、<code class="literal">BUFFERS</code>明示的に使用不可にすることもできます。
+<code class="command">EXPLAIN</code>には、与えられた問い合わせのプランニング中と実行中に行われるI/O操作に関して追加の詳細情報を提供する<code class="literal">BUFFERS</code>オプションがあります。
+表示されるバッファ数は、与えられたノードとその全ての子ノードについて、ヒット、読み取り、ダーティ化、そして書き込みが行われた個別のバッファの数を示します。
+<code class="literal">ANALYZE</code>オプションは暗黙的に<code class="literal">BUFFERS</code>オプションを有効化します。
+これが望ましくない場合は、<code class="literal">BUFFERS</code>を明示的に無効化できます。
 
 </p><pre class="screen">
 EXPLAIN (ANALYZE, BUFFERS OFF) SELECT * FROM tenk1 WHERE unique1 &lt; 100 AND unique2 &gt; 9000;
