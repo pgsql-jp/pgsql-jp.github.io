@@ -518,12 +518,10 @@ XIDのカウンタが一周して0に戻り、そして、突然に、過去に�
     &lt;firstterm&gt;aggressive vacuum&lt;/firstterm&gt;, which will freeze all eligible unfrozen
     XID and MXID values, including those from all-visible but not all-frozen pages.
 </span>
-《機械翻訳》<code class="command">VACUUM</code>は<a class="link" href="storage-vm.html" title="66.4. 可視性マップ">可視性マップ</a>を使用して、テーブルのどのページをスキャンする必要があるかを判断します。
-通常、古いXID値を持つページのバージョンが残っていたとしても、使用されなくなった行のバージョンがないのはスキップページです。
-したがって、通常のsは、テーブル内のすべての古い行バージョンをフリーズするとは限りません。
-その場合、<code class="command">VACUUM</code>は最終的に<em class="firstterm"></em>を実行する必要があります。
-これにより、すべての可視のXID値とMXID値を含むが、すべての凍結されていないページのXID値とMXID値を含まない、すべての適格な凍結されていないXID値とMXID値がフリーズされます。
-<code class="command">VACUUM</code>行積極的なバキューム
+<code class="command">VACUUM</code>は<a class="link" href="storage-vm.html" title="66.4. 可視性マップ">可視性マップ</a>を使用して、テーブルのどのページをスキャンする必要があるかを決定します。
+通常は、無効な行バージョンを持っていないページをスキップします。このとき、そのページに古いXID値の行バージョンがまだある可能性があったとしても読み飛ばします。
+したがって、通常の<code class="command">VACUUM</code>では必ずしもテーブル内のすべての古い行バージョンを凍結するわけではありません。
+そのようなことが起きた場合には、最終的に<code class="command">VACUUM</code>で<em class="firstterm">積極的なバキューム</em>を実行する必要があるでしょう。そのときは、全可視ではあるが全凍結ではないページにあるものを含めて、適切な凍結されていないXID値やMXID値をすべて凍結します。
    </p><p>
 <span class="original">
     If a table is building up a backlog of all-visible but not all-frozen
@@ -538,13 +536,12 @@ XIDのカウンタが一周して0に戻り、そして、突然に、過去に�
     any pages successfully eager frozen may be skipped during an aggressive
     vacuum, so eager freezing may minimize the overhead of aggressive vacuums.
 </span>
-《機械翻訳》ある表に、すべて可視であるがすべて凍結ではないページのバックログが蓄積されている場合、通常のバキュームは、それらを凍結するために、スキップ可能なページをスキャンにすることを選択できます。
+テーブルに、全可視ではあるが全凍結ではないページのバックログが蓄積されている場合、通常のバキュームは、それらを凍結するために、スキップ可能なページをスキャンすることを選択するかもしれません。
 これにより、次の積極的なバキュームがスキャンしなければならないページの数が減少します。
 これらは<em class="firstterm">熱心にスキャンされる</em>ページと呼ばれます。
-熱心なスキャンは、<a class="xref" href="runtime-config-vacuum.html#GUC-VACUUM-MAX-EAGER-FREEZE-FAILURE-RATE">vacuum_max_eager_freeze_failure_rate</a>を増加させることによって、より多くのすべて可視ページをフリーズにしようとするように調整できます。
-熱心なスキャンによって、すべて可視であるがすべて凍結ではないページの数が最小限に抑えられた場合でも、ほとんどの表では定期的な積極的バキューム処理が必要です。
-ただし、熱心に凍結に成功したページは積極的なバキュームの間スキップされたになる可能性があるため、熱心な凍結は積極的なバキュームのオーバーヘッドを最小限に抑える可能性があります。
-フリーズ
+熱心なスキャンは、<a class="xref" href="runtime-config-vacuum.html#GUC-VACUUM-MAX-EAGER-FREEZE-FAILURE-RATE">vacuum_max_eager_freeze_failure_rate</a>を増加させることによって、より多くの全可視のページを凍結しようとするように調整できます。
+熱心なスキャンによって、全可視ではあるが全凍結ではないページの数が最小限に抑えられた場合でも、ほとんどのテーブルでは定期的な積極的バキューム処理が必要です。
+ただし、熱心な凍結に成功したページは積極的なバキュームではスキップされる可能性があるため、熱心な凍結は積極的なバキュームのオーバーヘッドを最小限に抑えるかもしれません。
    </p><p>
 <span class="original">
     &lt;xref linkend="guc-vacuum-freeze-table-age"/&gt;
@@ -555,8 +552,9 @@ XIDのカウンタが一周して0に戻り、そして、突然に、過去に�
     &lt;varname&gt;vacuum_freeze_table_age&lt;/varname&gt; to 0 forces &lt;command&gt;VACUUM&lt;/command&gt; to
     always use its aggressive strategy.
 </span>
-《機械翻訳》<a class="xref" href="runtime-config-vacuum.html#GUC-VACUUM-FREEZE-TABLE-AGE">vacuum_freeze_table_age</a>は、いつテーブルが積極的にバキュームされるかを制御します。
-凍結された可視以外の全てのページがスキャンされるのは、このようなスキャンが最後に発生してから経過したトランザクションの数がより大きい<code class="varname">vacuum_freeze_table_age</code>マイナス<code class="varname">vacuum_freeze_min_age</code>.<code class="varname">vacuum_freeze_table_age</code>を0に設定すると<code class="command">VACUUM</code>常に積極的なストラテジが使用されます。
+<a class="xref" href="runtime-config-vacuum.html#GUC-VACUUM-FREEZE-TABLE-AGE">vacuum_freeze_table_age</a>は、いつテーブルが積極的にバキュームされるかを制御します。
+最後にそのようなスキャンが行われた後に実行されたトランザクションの数が<code class="varname">vacuum_freeze_table_age</code>から<code class="varname">vacuum_freeze_min_age</code>を引いた数より大きいとき、全可視ではあるが全凍結ではないページがスキャンされます。
+<code class="varname">vacuum_freeze_table_age</code>を0に設定すると<code class="command">VACUUM</code>は常にこの積極的な戦略を使うようになります。
    </p><p>
 <span class="original">
     The maximum time that a table can go unvacuumed is two billion
@@ -735,17 +733,12 @@ SELECT datname, age(datfrozenxid) FROM pg_database;
     &lt;varname&gt;autovacuum_freeze_max_age&lt;/varname&gt; is reached, an autovacuum will soon
     be forced for the table.
 </span>
-《マッチ度[85.269122]》<code class="command">VACUUM</code>は通常は最後のバキュームの後で変更されたページのみスキャンしますが、<code class="structfield">relfrozenxid</code>はテーブルの凍結されていないXIDを含むかもしれないすべてのページをスキャンしたときのみ繰り上がります。
+<code class="command">VACUUM</code>はたいてい前回のバキュームの後で変更されたページをスキャンしますが、全可視ではあるが全凍結ではないページを凍結しようと、それらを熱心にスキャンする場合もあります。ただし、<code class="structfield">relfrozenxid</code>はテーブルの凍結されていないXIDを含むかもしれないすべてのページをスキャンしたときのみ繰り上がります。
 これは、<code class="structfield">relfrozenxid</code>が<code class="varname">vacuum_freeze_table_age</code>トランザクション年齢より大きい時、<code class="command">VACUUM</code>の<code class="literal">FREEZE</code>オプションが使用された時、もしくは無効な行バージョンを削除するため全凍結になっていないすべてのページをバキュームしなければならなくなった時に発生します。
 <code class="command">VACUUM</code>がテーブルの全凍結になっていないすべてのページをスキャンしたとき、<code class="literal">age(relfrozenxid)</code>は、使用された<code class="varname">vacuum_freeze_min_age</code>設定より若干大きくなるはずです
 （<code class="command">VACUUM</code>を起動してから始まったトランザクションの数分大きくなります）。
 <code class="command">VACUUM</code>は<code class="structfield">relfrozenxid</code>をテーブルに残っている最も古いXIDに設定しますので、最後の値を厳密に要求されるものよりずっとより新しいものとすることが可能です。
 <code class="structfield">relfrozenxid</code>を繰り上げる<code class="command">VACUUM</code>が<code class="varname">autovacuum_freeze_max_age</code>に達するまでにテーブルに対して発行されない場合、そのテーブルに対して自動バキュームが早急に強制されます。
-《機械翻訳》<code class="command">VACUUM</code>は、最後のページ以降に変更されたほとんどのバキュームをスキャンしますが、一部の完全に凍結されたページをスキャンしようとして、完全に凍結されていないフリーズではなく、熱心に可視をすることもありますが、<code class="structfield">relfrozenxid</code>は、凍結されていないXIDを含む可能性のあるテーブルのすべてのページがスキャンされた場合にのみ拡張されます。
-これは、<code class="structfield">relfrozenxid</code>が<code class="varname">vacuum_freeze_table_age</code>トランザクションよりも古い場合、<code class="command">VACUUM</code>の<code class="literal">FREEZE</code>オプションが使用されている場合、またはまだ完全に凍結されていないすべてのページが、壊れた行バージョンを削除するためにバキューム処理を必要とする場合に発生します。
-<code class="command">VACUUM</code>は、まだ完全に凍結されていないテーブル内のすべてのページをスキャンする場合、使用された<code class="varname">vacuum_freeze_min_age</code>設定よりもわずかに大きい値（<code class="command">VACUUM</code>開始後に開始されたトランザクションの数だけ大きい値）に<code class="literal">age(relfrozenxid)</code>設定する必要があります。
-<code class="command">VACUUM</code>は<code class="structfield">relfrozenxid</code>をテーブルに残っている最も古いXIDに設定するため、最終的な値が厳密に必要とされるよりもはるかに新しい値になる可能性があります。
-<code class="varname">autovacuum_freeze_max_age</code>に到達するまでテーブルに<code class="structfield">relfrozenxid</code>-advancing<code class="command">VACUUM</code>が発行されない場合、オートバキュームはすぐにテーブルに強制されます。
    </p><p>
 <span class="original">
     If for some reason autovacuum fails to clear old XIDs from a table, the
@@ -1045,7 +1038,10 @@ MXIDが枯渇したときの通常の動作は、XIDが枯渇したときとほ�
 さもなければ、直前の<code class="command">VACUUM</code>の後に不要となったタプル数が<span class="quote">「<span class="quote">バキューム閾値</span>」</span>を超えると、テーブルはバキュームされます。
 このバキューム閾値は以下のように定義されます。
 </p><pre class="programlisting">
+<span class="original">
 vacuum threshold = Minimum(vacuum max threshold, vacuum base threshold + vacuum scale factor * number of tuples)
+</span>
+バキューム閾値 = Minimum(バキューム最大閾値, バキューム基礎閾値 + バキューム規模係数 * タプル数)
 </pre><p>
 <span class="original">
     where the vacuum max threshold is
@@ -1057,8 +1053,7 @@ vacuum threshold = Minimum(vacuum max threshold, vacuum base threshold + vacuum 
     and the number of tuples is
     &lt;structname&gt;pg_class&lt;/structname&gt;.&lt;structfield&gt;reltuples&lt;/structfield&gt;.
 </span>
-《マッチ度[71.346705]》ここで、バキューム基礎閾値は<a class="xref" href="runtime-config-vacuum.html#GUC-AUTOVACUUM-VACUUM-THRESHOLD">autovacuum_vacuum_threshold</a>、バキューム規模係数は<a class="xref" href="runtime-config-vacuum.html#GUC-AUTOVACUUM-VACUUM-SCALE-FACTOR">autovacuum_vacuum_scale_factor</a>、タプル数は<code class="structname">pg_class</code>.<code class="structfield">reltuples</code>です。
-《機械翻訳》ここで、バキューム最大の閾値は<a class="xref" href="runtime-config-vacuum.html#GUC-AUTOVACUUM-VACUUM-MAX-THRESHOLD">autovacuum_vacuum_max_threshold</a>、バキュームの基本閾値は<a class="xref" href="runtime-config-vacuum.html#GUC-AUTOVACUUM-VACUUM-THRESHOLD">autovacuum_vacuum_threshold</a>、バキュームスケールファクタは<a class="xref" href="runtime-config-vacuum.html#GUC-AUTOVACUUM-VACUUM-SCALE-FACTOR">autovacuum_vacuum_scale_factor</a>、タプル数は<code class="structname">pg_class</code>.<code class="structfield">reltuples</code>です。
+ここで、バキューム最大閾値は<a class="xref" href="runtime-config-vacuum.html#GUC-AUTOVACUUM-VACUUM-MAX-THRESHOLD">autovacuum_vacuum_max_threshold</a>、バキューム基礎閾値は<a class="xref" href="runtime-config-vacuum.html#GUC-AUTOVACUUM-VACUUM-THRESHOLD">autovacuum_vacuum_threshold</a>、バキューム規模係数は<a class="xref" href="runtime-config-vacuum.html#GUC-AUTOVACUUM-VACUUM-SCALE-FACTOR">autovacuum_vacuum_scale_factor</a>、タプル数は<code class="structname">pg_class</code>.<code class="structfield">reltuples</code>です。
    </p><p>
 <span class="original">
     The table is also vacuumed if the number of tuples inserted since the last
@@ -1092,22 +1087,12 @@ vacuum insert threshold = vacuum base insert threshold + vacuum insert scale fac
     an aggressive vacuum is performed to freeze old tuples and advance
     &lt;structfield&gt;relfrozenxid&lt;/structfield&gt;.
 </span>
-《マッチ度[86.443515]》ここで、バキューム挿入基礎閾値は<a class="xref" href="runtime-config-vacuum.html#GUC-AUTOVACUUM-VACUUM-INSERT-THRESHOLD">autovacuum_vacuum_insert_threshold</a>、バキューム挿入規模係数は<a class="xref" href="runtime-config-vacuum.html#GUC-AUTOVACUUM-VACUUM-INSERT-SCALE-FACTOR">autovacuum_vacuum_insert_scale_factor</a>です。
+ここで、バキューム挿入基礎閾値は<a class="xref" href="runtime-config-vacuum.html#GUC-AUTOVACUUM-VACUUM-INSERT-THRESHOLD">autovacuum_vacuum_insert_threshold</a>、バキューム挿入規模係数は<a class="xref" href="runtime-config-vacuum.html#GUC-AUTOVACUUM-VACUUM-INSERT-SCALE-FACTOR">autovacuum_vacuum_insert_scale_factor</a>です。
 そのようなバキュームは、テーブルの一部を<em class="firstterm">全可視</em>と印づけたり、タプルを凍結したりもできますので、後続のバキュームで必要となる作業を減らせます。
 より早いバキュームによりタプルを凍結できますので、<code class="command">INSERT</code>操作を受けたものの<code class="command">UPDATE</code>/<code class="command">DELETE</code>操作を全くもしくはほとんど受けていないテーブルに対しては、テーブルの<a class="xref" href="sql-createtable.html#RELOPTION-AUTOVACUUM-FREEZE-MIN-AGE">autovacuum_freeze_min_age</a>を低くすることが有益な場合があります。
 不要となったタプル数と挿入されたタプル数は、累積統計情報システムから取得されます。
 これは、<code class="command">UPDATE</code>、<code class="command">DELETE</code>および<code class="command">INSERT</code>操作ごとに更新される、最終的には一貫性のある数です。
 テーブルの<code class="structfield">relfrozenxid</code>値が<code class="varname">vacuum_freeze_table_age</code>トランザクション年齢より大きい場合、古いタプルを凍結して、<code class="structfield">relfrozenxid</code>を繰り上げるため、積極的なバキュームが実行されます。
-そうでなければ最後のバキュームの後に変更されたページのみスキャンされます。
-《機械翻訳》ここで、バキューム挿入のベースしきい値は<a class="xref" href="runtime-config-vacuum.html#GUC-AUTOVACUUM-VACUUM-INSERT-THRESHOLD">autovacuum_vacuum_insert_threshold</a>であり、バキューム挿入のスケールファクタは<a class="xref" href="runtime-config-vacuum.html#GUC-AUTOVACUUM-VACUUM-INSERT-SCALE-FACTOR">autovacuum_vacuum_insert_scale_factor</a>です。
-このようなバキュームは、テーブルの一部を<em class="firstterm">全て可視</em>としてマークすることを可能にし、タプルの凍結を可能にします。
-これにより、以降のバキュームで必要となる作業を減らすことができます。
-受信する<code class="command">UPDATE</code>操作であるが、全くまたはほとんど/<code class="command">DELETE</code>操作ではない、テーブルの<a class="xref" href="sql-createtable.html#RELOPTION-AUTOVACUUM-FREEZE-MIN-AGE">autovacuum_freeze_min_age</a>を下げることが有益な場合があります。
-これにより、以前のバキュームでタプルを凍結できる可能性があります。
-廃止されたタプルの数と挿入されたタプルの数は、累積統計処理システムから取得されます。
-これは、各<code class="command">UPDATE</code>、<code class="command">DELETE</code>および<code class="command">INSERT</code>オペレーションによって更新される、結果整合性のあるカウントです。
-テーブルの<code class="structfield">relfrozenxid</code>値が<code class="varname">vacuum_freeze_table_age</code> transactions oldより大きい場合、フリーズoldタプルに対して積極的なバキュームが実行され<code class="structfield">relfrozenxid</code>進行します。
-<code class="command">INSERT</code>
    </p><p>
 <span class="original">
     For analyze, a similar condition is used: the threshold, defined as:
