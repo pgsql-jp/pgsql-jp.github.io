@@ -126,8 +126,8 @@ GSSAPI、SSPI、SASLでは認証を完了するために複数のパケットの
           to &lt;xref linkend="auth-password"/&gt; for details about migrating to
           another password type.
 </span>
-《機械翻訳》MD5で暗号化されたパスワードのサポートは非推奨となり、将来の<span class="productname">PostgreSQL</span>のリリースで削除されます。
-他のパスワードタイプへの移行の詳細については、<a class="xref" href="auth-password.html" title="20.5. パスワード認証">20.5</a>を参照してください。
+MD5で暗号化されたパスワードのサポートは非推奨となり、将来の<span class="productname">PostgreSQL</span>のリリースで削除されます。
+他のパスワード形式への移行の詳細については、<a class="xref" href="auth-password.html" title="20.5. パスワード認証">20.5</a>を参照してください。
          </p></div></dd><dt><span class="term">AuthenticationGSS</span></dt><dd><p>
 <span class="original">
         The frontend must now initiate a GSSAPI negotiation. The frontend
@@ -206,9 +206,9 @@ GSSAPI、SSPI、SASLでは認証を完了するために複数のパケットの
         options (i.e., beginning with &lt;literal&gt;_pq_.&lt;/literal&gt;) in the
         startup packet.
 </span>
-《機械翻訳》サーバは、クライアントから要求されたマイナープロトコルバージョンをサポートするのではなく、プロトコルの前のバージョンをサポートします。
+サーバは、クライアントから要求されたマイナープロトコルバージョンをサポートしませんが、以前のプロトコルバージョンをサポートします。
 このメッセージは、サポートされている最高のマイナーバージョンを示します。
-このメッセージは、クライアントがスタートアップパケットで<code class="literal">_pq_.</code>で始まるサポートされていないプロトコルオプションを要求した場合にも送信されます。
+このメッセージは、クライアントがスタートアップパケット中でサポートされていないプロトコルオプション（つまり<code class="literal">_pq_.</code>で始まる）を要求した場合にも送信されます。
        </p><p>
 <span class="original">
         After this message, the authentication will continue using the version
@@ -217,7 +217,7 @@ GSSAPI、SSPI、SASLでは認証を完了するために複数のパケットの
         does not send this message, it supports the client's requested
         protocol version and all the protocol options.
 </span>
-《機械翻訳》このメッセージの後、認証はサーバが示すバージョンを引き続き使用します。
+このメッセージの後、認証はサーバが示すバージョンを引き続き使用します。
 このクライアントが古いバージョンをサポートしない場合は、すぐにコネクションをクローズする必要があります。
 サーバがこのメッセージを送信しない場合は、クライアントの要求したプロトコルバージョンとすべてのプロトコルオプションをサポートします。
        </p></dd></dl></div><p>
@@ -273,7 +273,7 @@ AuthenticationOkを受け取った後、フロントエンドはさらにサー�
         message, but some third party backend implementations of the protocol
         that don't support query cancellation are known not to.
 </span>
-《機械翻訳》<span class="productname">PostgreSQL</span>サーバは常にこのメッセージを送信しますが、サポートバックエンドをキャンセルしないプロトコルのサードパーティ問い合わせ実装の中には、そうでないものがあることが知られています。
+<span class="productname">PostgreSQL</span>サーバは常にこのメッセージを送信しますが、サードパーティによるこのプロトコルのバックエンド実装の中には、クエリキャンセルをサポートしていないものがあることが知られています。
        </p></dd><dt><span class="term">ParameterStatus</span></dt><dd><p>
 <span class="original">
         This message informs the frontend about the current (initial)
@@ -1008,18 +1008,12 @@ Flushを行わないと、バックエンドで返されるメッセージは、
     database consistency. Thus a Sync immediately following one of these
     commands has no effect except to respond with ReadyForQuery.
 </span>
-《マッチ度[76.161369]》クライアントが明示的な<code class="command">BEGIN</code>を発行しないと、先行のステップが成功した場合は各々のSyncは通常暗黙的な<code class="command">COMMIT</code>、失敗した場合には暗黙的な<code class="command">ROLLBACK</code>をもたらします。
-しかし、トランザクションブロックの内側で実行できない少数のDDLコマンド（<code class="command">CREATE DATABASE</code>のような）があります。
-これらのいずれかがパイプラインで実行されると、それがパイプラインの最初のコマンドでないかぎり失敗します。
-さらに、成功した場合は、即時のコミットによってデータベース一貫性が保持されます。
-したがって、これらのコマンドのいずれかの直後に続くSyncは、ReadyForQueryで応答することを除き、何の効果もありません。
-《機械翻訳》クライアントが明示的な<code class="command">BEGIN</code>を発行していない場合、暗黙的なトランザクションブロックが開始され、各Syncによって暗黙的な<code class="command">ROLLBACK</code>前のステップが成功した場合または暗黙的な失敗した場合が発生します。
-この暗黙的なトランザクションブロックは、最初のコマンドが同期なしで終了した場合にのみサーバによって検出されます。
+クライアントが明示的な<code class="command">BEGIN</code>を発行していない場合、暗黙的なトランザクションブロックが開始され、通常各Syncにより、前のステップが成功した場合は暗黙的な<code class="command">COMMIT</code>、あるいは前のステップが失敗した場合には暗黙的な<code class="command">ROLLBACK</code>がもたらされます。
+この暗黙的なトランザクションブロックは、最初のコマンドがSyncなしで終了した場合にのみサーバによって検出されます。
 トランザクションブロック内で実行できないDDLコマンド（<code class="command">CREATE DATABASE</code>など）がいくつかあります。
 これらのコマンドの1つがパイプラインで実行されると、Sync後の最初のコマンドでない限り失敗します。
-さらに、成功した場合は、即時のコミットにデータベース一貫性を保持するように強制します。
+さらに、成功した場合は、データベース一貫性を保持するために即時のコミットに強制します。
 したがって、これらのコマンドの1つの直後に行われたSyncは、ReadyForQueryで応答する以外には効果がありません。
-<code class="command">COMMIT</code>
    </p><p>
 <span class="original">
     When using this method, completion of the pipeline must be determined
@@ -1316,12 +1310,12 @@ ParameterStatusメッセージは、任意のパラメータの実際の値が�
     Accordingly, a frontend should simply ignore ParameterStatus for
     parameters that it does not understand or care about.
 </span>
-《機械翻訳》（<code class="varname">default_transaction_read_only</code>と<code class="varname">in_hot_standby</code>はバージョン14以前では報告されませんでした。
+（<code class="varname">default_transaction_read_only</code>と<code class="varname">in_hot_standby</code>はバージョン14以前では報告されませんでした。
 <code class="varname">scram_iterations</code>はバージョン16以前では報告されませんでした。
 <code class="varname">search_path</code>はバージョン18以前では報告されませんでした。）
 <code class="varname">server_version</code>、<code class="varname">server_encoding</code>、および<code class="varname">integer_datetimes</code>は、起動後に変更できない疑似パラメータであることに注意してください。
-このセットは将来変更される可能性があり、構成可能になる可能性もあります。
-したがって、フロントエンドは理解しない、または気にしないパラメータについてはParameterStatusを無視する必要があります。
+このセットは将来変わる可能性があり、変更が可能になる可能性もあります。
+したがって、フロントエンドは理解しない、または気にしないパラメータについてはParameterStatusは無視した方が良いです。
    </p><p>
 <span class="original">
     If a frontend issues a &lt;command&gt;LISTEN&lt;/command&gt; command, then the
