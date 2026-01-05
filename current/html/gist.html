@@ -157,7 +157,7 @@ CREATE INDEX ON my_table USING GIST (my_inet_column inet_ops);
    used by the operator class.  This lets the core code look up operators for
    temporal constraint indexes.
 </span>
-《マッチ度[81.405177]》<acronym class="acronym">GiST</acronym>用の演算子クラスが提供しなければならないメソッドが5つ、オプションで提供可能なメソッドが6つあります。
+<acronym class="acronym">GiST</acronym>用の演算子クラスが提供しなければならないメソッドが5つ、オプションで提供可能なメソッドが7つあります。
 インデックスの正確性は、<code class="function">same</code>、<code class="function">consistent</code>、<code class="function">union</code>メソッドを適切に実装することで保証されます。
 一方、インデックスの効率（容量と速度）は<code class="function">penalty</code>と<code class="function">picksplit</code>メソッドに依存します。
 オプションのメソッドの２つは、<code class="function">compress</code>と<code class="function">decompress</code>です。これによりインデックスはインデックス付けするデータと異なるデータ型のツリーデータを内部で持つことができるようになります。
@@ -170,20 +170,8 @@ CREATE INDEX ON my_table USING GIST (my_inet_column inet_ops);
 オプションの9番目のメソッド<code class="function">fetch</code>は、<code class="function">compress</code>メソッドが省略されている場合を除き、演算子クラスがインデックスオンリースキャンをサポートしたい場合に必要になります。
 オプションの10番目のメソッド<code class="function">options</code>は、演算子クラスがユーザに固有のパラメータを持つ場合に必要です。
 オプションの11番目のメソッド<code class="function">sortsupport</code>は、<acronym class="acronym">GiST</acronym>インデックスの構築を高速にするのに使われます。
-《機械翻訳》インデックス演算子クラスが<acronym class="acronym">GiST</acronym>に対して提供する必要があるメソッドは5つあり、オプショナルは7つあります。
-インデックスの正確さは<code class="function">same</code>、<code class="function">consistent</code>および<code class="function">union</code>メソッドの適切な実装によって保証されますが、インデックスの効率性（サイズと速度）は<code class="function">penalty</code>および<code class="function">picksplit</code>メソッドに依存します。
-オプショナルメソッドには<code class="function">compress</code>および<code class="function">decompress</code>の2つがあります。
-これにより、インデックスはインデックス付けされたデータとは異なるタイプの内部ツリーデータを持つことができます。
-リーフはインデックス付けされたデータタイプのものであり、他のツリーノードは任意のC構造体にすることができます（ただし、ここでは<span class="productname">PostgreSQL</span>データタイプルールに従う必要があります。
-変数サイズのデータについてはabout<code class="literal">varlena</code>を参照してください）。
-ツリーの内部データ型がSQLレベルに存在する場合は、<code class="command">CREATE OPERATOR CLASS</code>コマンドの<code class="literal">ストレージ</code>オプションを使用できます。
-オプショナルの8番目のは<code class="function">distance</code>です。
-これはが順序付きスキャン（最近傍検索）を希望する場合に必要です。
-の9番目のは、が省略されている場合を除いて、がのみスキャンを希望する場合に必要です。
-の10番目のは、が指定されたパラメータを持っている場合に必要です。
-の11番目のは、少し加速するために使用されます。
-の12番目は、比較型（から）をconstで使用されるに変換するために使用されます。
-これにより、は一時的なインデックスの演算子を検索できます。
+オプションの12番目のメソッド<code class="function">stratnum</code>は、（<code class="filename">src/include/nodes/primnodes.h</code>にある）比較型を演算子クラスで使用されるストラテジ番号に変換します。
+これにより、コアコードは時間的な制約インデックスの演算子を検索できます。
  </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="function">consistent</code></span></dt><dd><p>
 <span class="original">
        Given an index entry &lt;literal&gt;p&lt;/literal&gt; and a query value &lt;literal&gt;q&lt;/literal&gt;,
@@ -1230,8 +1218,8 @@ my_sortsupport(PG_FUNCTION_ARGS)
        function should return &lt;literal&gt;InvalidStrategy&lt;/literal&gt; if the
        operator class has no matching strategy.
 </span>
-《機械翻訳》<code class="literal">CompareType</code><code class="filename">src/include/nodes/primnodes.h</code>の値を指定すると、このストラテジでマッチング機能に使用される演算子クラス番号が戻されます。
-関数は結果である必要があります<code class="literal">InvalidStrategy</code>演算子クラスにマッチングストラテジがない場合。
+<code class="filename">src/include/nodes/primnodes.h</code>にある<code class="literal">CompareType</code>値を指定すると、この演算子クラスが一致機能に使用するストラテジ番号を返します。
+演算子クラスに一致するストラテジがない場合、この関数は<code class="literal">InvalidStrategy</code>を返すべきです。
       </p><p>
 <span class="original">
        This is used for temporal index constraints (i.e., &lt;literal&gt;PRIMARY
@@ -1240,8 +1228,8 @@ my_sortsupport(PG_FUNCTION_ARGS)
        &lt;literal&gt;COMPARE_EQ&lt;/literal&gt;, it can be used in the
        non-&lt;literal&gt;WITHOUT OVERLAPS&lt;/literal&gt; part(s) of an index constraint.
 </span>
-《機械翻訳》これは、一時的なインデックス制約<code class="literal">PRIMARY KEY</code>つまり、および<code class="literal">UNIQUE</code>に使用されます。
-演算子クラスがこの関数を提供し、<code class="literal">COMPARE_EQ</code>の結果を返す場合は、インデックスパートの非<code class="literal">WITHOUT OVERLAPS</code>複数の制約で使用できます。
+これは、時間的なインデックス制約（つまり<code class="literal">PRIMARY KEY</code>と<code class="literal">UNIQUE</code>）に使用されます。
+演算子クラスがこの関数を提供し、<code class="literal">COMPARE_EQ</code>の結果を返す場合は、インデックス制約の<code class="literal">WITHOUT OVERLAPS</code>以外の部分で使用できます。
       </p><p>
 <span class="original">
        This support function corresponds to the index access method callback
@@ -1253,9 +1241,8 @@ my_sortsupport(PG_FUNCTION_ARGS)
        respective operator family, since the GiST index access method has no
        fixed strategy numbers itself.
 </span>
-《機械翻訳》このサポート関数は、インデックスアクセスメソッドコールバック関数<code class="structfield">amtranslatecmptype</code>に対応しています<a class="xref" href="index-functions.html" title="63.2. インデックスアクセスメソッド関数">63.2</a>を参照。
-GiSTインデックスの<code class="structfield">amtranslatecmptype</code>コールバック関数は、単にダウンをそれぞれの演算子族の<code class="function">translate_cmptype</code>サポート関数に呼び出します。
-これは、GiSTインデックスアクセスメソッドには固定のストラテジ番号自分自身がないためです。
+このサポート関数は、インデックスアクセスメソッドのコールバック関数<code class="structfield">amtranslatecmptype</code>（<a class="xref" href="index-functions.html" title="63.2. インデックスアクセスメソッド関数">63.2</a>を参照）に対応しています。
+GiSTインデックスのアクセスメソッド自体には固定のストラテジ番号がないため、GiSTインデックス用の<code class="structfield">amtranslatecmptype</code>コールバック関数は、それぞれの演算子族の<code class="function">translate_cmptype</code>サポート関数を呼び出すだけです。
       </p><p>
 <span class="original">
        The &lt;acronym&gt;SQL&lt;/acronym&gt; declaration of the function must look like
@@ -1273,7 +1260,7 @@ LANGUAGE C STRICT;
 <span class="original">
        And the operator family registration must look like this:
 </span>
-《機械翻訳》そして、演算子族の登録は次のようになるはずです。
+そして、演算子族の登録は以下のようになります。
 </p><pre class="programlisting">
 ALTER OPERATOR FAMILY my_opfamily USING gist ADD
     FUNCTION 12 ("any", "any") my_translate_cmptype(int);
@@ -1313,8 +1300,9 @@ my_translate_cmptype(PG_FUNCTION_ARGS)
        &lt;literal&gt;gist_translate_cmptype_btree&lt;/literal&gt;, for operator classes that use
        the &lt;literal&gt;BT*StrategyNumber&lt;/literal&gt; constants.
 </span>
-《機械翻訳》1つの翻訳関数は、<span class="productname">PostgreSQL</span>:<code class="literal">gist_translate_cmptype_common</code>は、<code class="literal">RT*StrategyNumber</code>定数を使用する演算子クラス用です。
-<code class="literal">btree_gist</code> extensionは、<code class="literal">BT*StrategyNumber</code>定数を使用する演算子クラス用の<code class="literal">gist_translate_cmptype_btree</code> 2番目の翻訳関数を定義します。
+<span class="productname">PostgreSQL</span>では1つの変換関数が提供されています。
+<code class="literal">RT*StrategyNumber</code>定数を使用する演算子クラス用の、<code class="literal">gist_translate_cmptype_common</code>です。
+<code class="literal">btree_gist</code>拡張では、<code class="literal">BT*StrategyNumber</code>定数を使用する演算子クラス用に、2つめの変換関数<code class="literal">gist_translate_cmptype_btree</code>が定義されています。
       </p></dd></dl></div><p>
 <span class="original">
    All the GiST support methods are normally called in short-lived memory
