@@ -92,6 +92,7 @@
 さもなければ、スタンバイサーバでクエリを実行できなくなります。
         </p></dd><dt id="GUC-MAX-REPLICATION-SLOTS"><span class="term"><code class="varname">max_replication_slots</code> (<code class="type">integer</code>)
        <a id="id-1.6.6.10.5.3.2.1.3" class="indexterm"></a>
+       <a id="id-1.6.6.10.5.3.2.1.4" class="indexterm"></a>
        </span> <a href="#GUC-MAX-REPLICATION-SLOTS" class="id_link">#</a></dt><dd><p>
 <span class="original">
          Specifies the maximum number of replication slots
@@ -178,6 +179,7 @@
 このパラメータは、<code class="filename">postgresql.conf</code>ファイルか、サーバのコマンドラインでのみ設定可能です。
        </p></dd><dt id="GUC-IDLE-REPLICATION-SLOT-TIMEOUT"><span class="term"><code class="varname">idle_replication_slot_timeout</code> (<code class="type">integer</code>)
       <a id="id-1.6.6.10.5.3.5.1.3" class="indexterm"></a>
+      <a id="id-1.6.6.10.5.3.5.1.4" class="indexterm"></a>
       </span> <a href="#GUC-IDLE-REPLICATION-SLOT-TIMEOUT" class="id_link">#</a></dt><dd><p>
 <span class="original">
         Invalidate replication slots that have remained inactive (not used by
@@ -189,9 +191,9 @@
         &lt;filename&gt;postgresql.conf&lt;/filename&gt; file or on the server command
         line.
 </span>
-《機械翻訳》この期間より長く非アクティブのままになっている<a class="link" href="protocol-replication.html" title="54.4. ストリーミングレプリケーションプロトコル">レプリケーションレプリケーション</a>によって使用されていないコネクションスロットを無効にします。
-この値がユニットなしで指定された場合、秒単位で処理されます。
-ゼロ（デフォルト）の値は、アイドル状態のタイムアウト無効化メカニズムを無効にします。
+この期間より長く活動していない（<a class="link" href="protocol-replication.html" title="54.4. ストリーミングレプリケーションプロトコル">レプリケーション接続</a>で使用されていない）ままになっているレプリケーションスロットを無効にします。
+この値が単位なしで指定された場合は、秒単位であるとみなします。
+値がゼロ（デフォルト）の場合は、アイドルタイムアウトの無効化機構を無効にします。
 このパラメータは、<code class="filename">postgresql.conf</code>ファイルまたはサーバコマンドラインでのみ設定できます。
        </p><p>
 <span class="original">
@@ -205,10 +207,10 @@
         slot's &lt;link linkend="view-pg-replication-slots"&gt;pg_replication_slots&lt;/link&gt;.&lt;structfield&gt;inactive_since&lt;/structfield&gt;
         value.
 </span>
-《機械翻訳》スロットの空き時間によるタイムアウトの無効化は、チェックポイント中に発生します。
-チェックポイントは<code class="varname">checkpoint_timeout</code>間隔で発生するため、<code class="varname">idle_replication_slot_timeout</code>を超えた時点と、次のスロットでチェックポイントの無効化がトリガされる時点との間に多少の遅延が発生する可能性があります。
-このような遅延を回避するために、ユーザはチェックポイントに対して、すぐに非アクティブなスロットを無効にするように強制できます。
-スロットの非アクティブな期間は、スロットの<a class="link" href="view-pg-replication-slots.html" title="53.20. pg_replication_slots">pg_replication_slots</a>.<code class="structfield">inactive_since</code>値を使用して計算されます。
+アイドルタイムアウトによるスロットの無効化は、チェックポイント中に発生します。
+チェックポイントは<code class="varname">checkpoint_timeout</code>の間隔で発生するため、<code class="varname">idle_replication_slot_timeout</code>を超えてから次のチェックポイントでスロットの無効化が行われるまでに多少の遅れが生じる可能性があります。
+このような遅延を避けるために、ユーザはチェックポイントを強制して活動していないスロットを速やかに無効にすることができます。
+スロットが活動していない期間は、スロットの<a class="link" href="view-pg-replication-slots.html" title="53.20. pg_replication_slots">pg_replication_slots</a>.<code class="structfield">inactive_since</code>の値を使用して計算されます。
        </p><p>
 <span class="original">
         Note that the idle timeout invalidation mechanism is not applicable
@@ -219,8 +221,8 @@
         be inactive because they don't perform logical decoding to produce
         changes.
 </span>
-《機械翻訳》ノートアイドルタイムアウト無効化メカニズムは、WALを予約しないスロットや、スタンバイサーバから同期されるプライマリサーバ上のスロット（すなわち、<a class="link" href="view-pg-replication-slots.html" title="53.20. pg_replication_slots">pg_replication_slots</a>.<code class="structfield">synced</code>の値<code class="literal">true</code>を持つレプリケーションスロット）には適用されません。
-同期スロットは、変更を生成するロジカルデコーディングを行わないため、常に非アクティブとみなされます。
+アイドルタイムアウトの無効化機構は、WALを保存していないスロットや、プライマリサーバから同期されているスタンバイサーバのスロット（つまり、<a class="link" href="view-pg-replication-slots.html" title="53.20. pg_replication_slots">pg_replication_slots</a>.<code class="structfield">synced</code>の値が<code class="literal">true</code>であるスタンバイスロット）には適用されないことに注意してください。
+同期されているスロットは、論理的なデコードを実行して変更を生成しないため、常に活動していないものと見なされます。
        </p></dd><dt id="GUC-WAL-SENDER-TIMEOUT"><span class="term"><code class="varname">wal_sender_timeout</code> (<code class="type">integer</code>)
       <a id="id-1.6.6.10.5.3.6.1.3" class="indexterm"></a>
       <a id="id-1.6.6.10.5.3.6.1.4" class="indexterm"></a>
@@ -390,12 +392,10 @@ ANY <em class="replaceable"><code>num_sync</code></em> ( <em class="replaceable"
         &lt;literal&gt;FIRST&lt;/literal&gt; and &lt;literal&gt;ANY&lt;/literal&gt; specify the method to choose
         synchronous standbys from the listed servers.
 </span>
-《マッチ度[70.171674]》ここで、<em class="replaceable"><code>num_sync</code></em>は、トランザクションが応答を待機する必要のある同期スタンバイの数です。
+ここで、<em class="replaceable"><code>num_sync</code></em>は、トランザクションが応答を待機する必要のある同期スタンバイの数です。
 <em class="replaceable"><code>standby_name</code></em>は、スタンバイサーバの名前です。
+<em class="replaceable"><code>num_sync</code></em>は、ゼロより大きい整数値である必要があります。
 <code class="literal">FIRST</code>と<code class="literal">ANY</code>は、リスト中のサーバから同期スタンバイを選ぶ方法を指定します。
-《機械翻訳》ここで、<em class="replaceable"><code>num_sync</code></em>はトランザクションが応答を待機する必要がある同期的スタンバイの数、<em class="replaceable"><code>standby_名前</code></em>はスタンバイサーバの名前です。
-<em class="replaceable"><code>num_sync</code></em>は整数の値より大きいゼロである必要があります。
-<code class="literal">FIRST</code>および<code class="literal">ANY</code>メソッドを指定して、リストされたサーバから同期的スタンバイを選択します。
        </p><p>
 <span class="original">
         The keyword &lt;literal&gt;FIRST&lt;/literal&gt;, coupled with
@@ -769,8 +769,8 @@ WAL受信プロセスが実行中にこのパラメータが変更されると�
         rows on the primary for extended periods, as the feedback mechanism is
         based on timestamps.
 </span>
-《機械翻訳》スタンバイのノートを前後に移動すると、必要なクロックでフィードバックメッセージが送信されない可能性があるインターバル。
-極端な場合、フィードバックのリスクはタイムスタンプに基づいているため、拡張期間のプライマリで不要な行が削除されないメカニズムが長くなる可能性があります。
+スタンバイの時計が前後にずれると、必要な間隔でフィードバックメッセージが送信されない場合があることに注意してください。
+フィードバック機構はタイムスタンプに基づいているため、極端なケースでは、プライマリの無効な行が長期間削除されないという危険が長引く可能性があります。
        </p></dd><dt id="GUC-WAL-RECEIVER-TIMEOUT"><span class="term"><code class="varname">wal_receiver_timeout</code> (<code class="type">integer</code>)
       <a id="id-1.6.6.10.7.3.9.1.3" class="indexterm"></a>
       <a id="id-1.6.6.10.7.3.9.1.4" class="indexterm"></a>
@@ -834,8 +834,7 @@ WALの生成頻度が少ないシステムでは、この値を大きくする�
         replication apply worker or table synchronization worker will be
         respawned.
 </span>
-《マッチ度[67.123288]》論理レプリケーションでは、このパラメータによって、失敗したレプリケーション適用ワーカーが再生成される頻度も制限されます。
-《機械翻訳》論理レプリケーションでは、このパラメータによって、失敗したレプリケーション適用ワーカーまたはテーブル同期化ワーカーが再生成される頻度も制限されます。
+論理レプリケーションでは、このパラメータによって、失敗したレプリケーション適用ワーカーやテーブル同期ワーカーが再生成される頻度も制限されます。
        </p></dd><dt id="GUC-RECOVERY-MIN-APPLY-DELAY"><span class="term"><code class="varname">recovery_min_apply_delay</code> (<code class="type">integer</code>)
       <a id="id-1.6.6.10.7.3.11.1.3" class="indexterm"></a>
       <a id="id-1.6.6.10.7.3.11.1.4" class="indexterm"></a>
@@ -959,6 +958,7 @@ WALレコードは、適用される準備が整うまでスタンバイに保�
 詳細については<a class="xref" href="logical-replication-config.html" title="29.12. 構成設定">29.12</a>を参照してください。
      </p><div class="variablelist"><dl class="variablelist"><dt id="GUC-MAX-ACTIVE-REPLICATION-ORIGINS"><span class="term"><code class="varname">max_active_replication_origins</code> (<code class="type">integer</code>)
        <a id="id-1.6.6.10.8.3.1.1.3" class="indexterm"></a>
+       <a id="id-1.6.6.10.8.3.1.1.4" class="indexterm"></a>
       </span> <a href="#GUC-MAX-ACTIVE-REPLICATION-ORIGINS" class="id_link">#</a></dt><dd><p>
 <span class="original">
         Specifies how many replication origins (see
@@ -974,17 +974,11 @@ WALレコードは、適用される準備が整うまでスタンバイに保�
         number of subscriptions that will be added to the subscriber, plus some
         reserve for table synchronization.
 </span>
-《マッチ度[78.739003]》サブスクライバー側ではレプリケーション原点(origin)（<a class="xref" href="replication-origins.html" title="第48章 レプリケーション進捗の追跡">第48章</a>参照）をいくつ並行して追跡できるかを指定します。
-これは実質的に論理レプリケーションのサブスクリプションをサーバ上にいくつ作ることができるかを制限します。
-現在追跡しているレプリケーション原点の数（<a class="link" href="view-pg-replication-origin-status.html" title="53.19. pg_replication_origin_status">pg_replication_origin_status</a>に反映されます）よりも小さい値を設定すると、サーバが起動しなくなります。
-<code class="literal">max_replication_slots</code>は、少なくともサブスクライバーに追加されるサブスクリプションの数に、テーブル同期用の予備を加えた数に設定する必要があります。
-<a class="xref" href="replication-origins.html" title="第48章 レプリケーション進捗の追跡">第48章</a>
-《機械翻訳》同時に追跡できるレプリケーション起点（<a class="xref" href="replication-origins.html" title="第48章 レプリケーション進捗の追跡">第48章</a>を参照）の数を指定し、その論理レプリケーションで作成できるサーバサブスクリプションの数を効果的に制限します。
- <a class="link" href="view-pg-replication-origin-status.html" title="53.19. pg_replication_origin_status">pg_replication_origin_status</a>に反映される追跡される現在のレプリケーション起点番号よりも小さい値に設定すると、サーバは開始できなくなります。
+同時に追跡できるレプリケーション起点（replication origin）（<a class="xref" href="replication-origins.html" title="第48章 レプリケーション進捗の追跡">第48章</a>を参照）の数を指定し、サーバ上に作成できる論理レプリケーションのサブスクリプション数を効果的に制限します。
+現在追跡されているレプリケーション起点の数（<a class="link" href="view-pg-replication-origin-status.html" title="53.19. pg_replication_origin_status">pg_replication_origin_status</a>に反映されている）よりも低い値に設定すると、サーバが起動しなくなります。
 デフォルトは10です。
-このパラメータはサーバスタートにのみ設定できます。
-<code class="literal">max_active_replication_origins</code>少なくともサブスクライバーに追加されるサブスクリプションの数に設定する必要があります。
-プラスはテーブルの同期化のために予約します。
+このパラメータはサーバ起動時のみ設定可能です。
+少なくとも<code class="literal">max_active_replication_origins</code>は、サブスクライバーに追加されるサブスクリプション数に、テーブル同期のために予約された数を加えた数以上に設定することが必要です。
        </p></dd><dt id="GUC-MAX-LOGICAL-REPLICATION-WORKERS"><span class="term"><code class="varname">max_logical_replication_workers</code> (<code class="type">integer</code>)
       <a id="id-1.6.6.10.8.3.2.1.3" class="indexterm"></a>
       <a id="id-1.6.6.10.8.3.2.1.4" class="indexterm"></a>
