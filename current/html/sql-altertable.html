@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>ALTER TABLE</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="sql-altersystem.html" title="ALTER SYSTEM" /><link rel="next" href="sql-altertablespace.html" title="ALTER TABLESPACE" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 18.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="sql-commands.html" title="SQLコマンド">SQLコマンド</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 18.0 : sql-altertable.html">誤訳等の報告
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>ALTER TABLE</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="sql-altersystem.html" title="ALTER SYSTEM" /><link rel="next" href="sql-altertablespace.html" title="ALTER TABLESPACE" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 18.2文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="sql-commands.html" title="SQLコマンド">SQLコマンド</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 18.2 : sql-altertable.html">誤訳等の報告
                     </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="sql-altersystem.html" title="ALTER SYSTEM">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="sql-commands.html" title="SQLコマンド">上へ</a></td><td width="60%" align="center">ALTER TABLE</td><td width="20%" align="right"> <a accesskey="n" href="sql-altertablespace.html" title="ALTER TABLESPACE">次へ</a></td></tr></table><hr /></div><div class="refentry" id="SQL-ALTERTABLE"><div class="titlepage"></div><a id="id-1.9.3.35.1" class="indexterm"></a><div class="refnamediv"><h2><span class="refentrytitle">ALTER TABLE</span></h2><p>ALTER TABLE<span class="original">
   &lt;refpurpose&gt;change the definition of a table&lt;/refpurpose&gt;
 </span> — テーブル定義を変更する</p></div><div class="refsynopsisdiv"><h2>概要</h2><pre class="synopsis">
@@ -379,26 +379,24 @@ WITH ( MODULUS <em class="replaceable"><code>numeric_literal</code></em>, REMAIN
       &lt;literal&gt;n_distinct_inherited&lt;/literal&gt;, which override the
       number-of-distinct-values estimates made by subsequent
       &lt;link linkend="sql-analyze"&gt;&lt;command&gt;ANALYZE&lt;/command&gt;&lt;/link&gt;
-      operations.  &lt;literal&gt;n_distinct&lt;/literal&gt; affects the statistics for the table
-      itself, while &lt;literal&gt;n_distinct_inherited&lt;/literal&gt; affects the statistics
-      gathered for the table plus its inheritance children.  When set to a
-      positive value, &lt;command&gt;ANALYZE&lt;/command&gt; will assume that the column contains
-      exactly the specified number of distinct nonnull values.  When set to a
-      negative value, which must be greater
-      than or equal to -1, &lt;command&gt;ANALYZE&lt;/command&gt; will assume that the number of
-      distinct nonnull values in the column is linear in the size of the
-      table; the exact count is to be computed by multiplying the estimated
-      table size by the absolute value of the given number.  For example,
-      a value of -1 implies that all values in the column are distinct, while
-      a value of -0.5 implies that each value appears twice on the average.
-      This can be useful when the size of the table changes over time, since
-      the multiplication by the number of rows in the table is not performed
-      until query planning time.  Specify a value of 0 to revert to estimating
-      the number of distinct values normally.  For more information on the use
-      of statistics by the &lt;productname&gt;PostgreSQL&lt;/productname&gt; query
-      planner, refer to &lt;xref linkend="planner-stats"/&gt;.
+      operations. &lt;literal&gt;n_distinct&lt;/literal&gt; affects the statistics for the
+      table itself, while &lt;literal&gt;n_distinct_inherited&lt;/literal&gt; affects the
+      statistics gathered for the table plus its inheritance children, and for
+      the statistics gathered for partitioned tables.  When the value
+      specified is a positive value, the query planner will assume that the
+      column contains exactly the specified number of distinct nonnull values.
+      Fractional values may also be specified by using values below 0 and
+      above or equal to -1.  This instructs the query planner to estimate the
+      number of distinct values by multiplying the absolute value of the
+      specified number by the estimated number of rows in the table.  For
+      example, a value of -1 implies that all values in the column are
+      distinct, while a value of -0.5 implies that each value appears twice on
+      average.  This can be useful when the size of the table changes over
+      time.  For more information on the use of statistics by the
+      &lt;productname&gt;PostgreSQL&lt;/productname&gt; query planner, refer to
+      &lt;xref linkend="planner-stats"/&gt;.
 </span>
-この構文は属性単位のオプションの設定または設定解除を行います。
+《マッチ度[53.834916]》この構文は属性単位のオプションの設定または設定解除を行います。
 現時点では属性単位のオプションで定義されているのは<code class="literal">n_distinct</code>および<code class="literal">n_distinct_inherited</code>のみです。
 これらのオプションは、その後の<a class="link" href="sql-analyze.html" title="ANALYZE"><code class="command">ANALYZE</code></a>操作により生成される個別値数の推定値を上書きします。
 <code class="literal">n_distinct</code>はテーブル自身の統計情報に影響を与え、<code class="literal">n_distinct_inherited</code>はテーブルとそれを継承した子テーブルから集めた統計情報に影響を与えます。
@@ -408,6 +406,17 @@ WITH ( MODULUS <em class="replaceable"><code>numeric_literal</code></em>, REMAIN
 テーブルの行数との乗算は問い合わせ計画を作成するまで行われませんので、テーブルサイズが変わり続けるような場合にこれは有用かもしれません。
 0という値を指定することで、個別値数の推定を通常に戻します。
 <span class="productname">PostgreSQL</span>問い合わせプランナにおける統計情報の使用に関しては<a class="xref" href="planner-stats.html" title="14.2. プランナで使用される統計情報">14.2</a>を参照してください。
+《機械翻訳》このフォームは、属性ごとのオプションを設定またはリセットします。
+現在、定義されている属性ごとのオプションは、<code class="literal">n_distinct</code>および<code class="literal">n_distinct_inherited</code>のみです。
+この上書きは、後続の<a class="link" href="sql-analyze.html" title="ANALYZE"><code class="command">ANALYZE</code></a>操作によって個別値の数が推定されます。
+<code class="literal">n_distinct</code>はテーブル自分自身の統計処理に影響しますが、<code class="literal">n_distinct_inherited</code>はテーブルプラスの継承の子に対して収集された統計処理、およびテーブルパーティションのために収集された統計処理に影響します。
+指定された値が正の値の場合、問い合わせプランナはカラム包含が指定された数の個別非NULL値と正確に一致すると想定します。
+0未満または等しい-1以上の値を使用して、小数値を指定することもできます。
+これにより、問い合わせプランナに対して、指定された数の絶対数にテーブルの推定行数を乗算して個別値の数を推定するように指示します。
+例の場合、値が-1の場合はカラムのすべての値が個別であることを意味し、値が-0.5の場合はそれぞれの値が平均に2回出現することを意味します。
+これは、のが時間の経過とともに変化する場合に便利です。
+<span class="productname">PostgreSQL</span>query kpaによるkpaの使用の詳細は、<a class="xref" href="planner-stats.html" title="14.2. プランナで使用される統計情報">14.2</a>を参照してください。
+統計処理サイズテーブルプランナ
      </p><p>
 <span class="original">
       Changing per-attribute options acquires a
@@ -1952,4 +1961,4 @@ ALTER TABLE measurement
 これは<span class="productname">PostgreSQL</span>の拡張です。SQLでは、列を持たないテーブルは認められていません。
   </p></div><div class="refsect1" id="id-1.9.3.35.10"><h2>関連項目</h2><span class="original">
   &lt;title&gt;See Also&lt;/title&gt;
-</span><span class="simplelist"><a class="xref" href="sql-createtable.html" title="CREATE TABLE"><span class="refentrytitle">CREATE TABLE</span></a></span></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="sql-altersystem.html" title="ALTER SYSTEM">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="sql-commands.html" title="SQLコマンド">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="sql-altertablespace.html" title="ALTER TABLESPACE">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">ALTER SYSTEM </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 18.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> ALTER TABLESPACE</td></tr></table></div></body></html>
+</span><span class="simplelist"><a class="xref" href="sql-createtable.html" title="CREATE TABLE"><span class="refentrytitle">CREATE TABLE</span></a></span></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="sql-altersystem.html" title="ALTER SYSTEM">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="sql-commands.html" title="SQLコマンド">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="sql-altertablespace.html" title="ALTER TABLESPACE">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">ALTER SYSTEM </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 18.2文書">ホーム</a></td><td width="40%" align="right" valign="top"> ALTER TABLESPACE</td></tr></table></div></body></html>

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>24.1. 定常的なバキューム作業</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="maintenance.html" title="第24章 定常的なデータベース保守作業" /><link rel="next" href="routine-reindex.html" title="24.2. 定常的なインデックスの再作成" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 18.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="maintenance.html" title="第24章 定常的なデータベース保守作業">第24章 定常的なデータベース保守作業</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 18.0 : routine-vacuuming.html">誤訳等の報告
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>24.1. 定常的なバキューム作業</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="maintenance.html" title="第24章 定常的なデータベース保守作業" /><link rel="next" href="routine-reindex.html" title="24.2. 定常的なインデックスの再作成" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 18.2文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="maintenance.html" title="第24章 定常的なデータベース保守作業">第24章 定常的なデータベース保守作業</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 18.2 : routine-vacuuming.html">誤訳等の報告
                     </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="maintenance.html" title="第24章 定常的なデータベース保守作業">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="maintenance.html" title="第24章 定常的なデータベース保守作業">上へ</a></td><td width="60%" align="center">24.1. 定常的なバキューム作業</td><td width="20%" align="right"> <a accesskey="n" href="routine-reindex.html" title="24.2. 定常的なインデックスの再作成">次へ</a></td></tr></table><hr /></div><div class="sect1" id="ROUTINE-VACUUMING"><div class="titlepage"><div><div><h2 class="title" style="clear: both">24.1. 定常的なバキューム作業 <a href="#ROUTINE-VACUUMING" class="id_link">#</a></h2></div></div></div><span class="original">
   &lt;title&gt;Routine Vacuuming&lt;/title&gt;
 </span><a id="id-1.6.11.12.2" class="indexterm"></a><a id="id-1.6.11.12.3" class="indexterm"></a><p>
@@ -1062,15 +1062,20 @@ vacuum threshold = Minimum(vacuum max threshold, vacuum base threshold + vacuum 
 直前のバキュームの後に挿入されたタプル数が定義された挿入閾値を超えた場合も、テーブルはバキュームされます。ここで挿入閾値は以下のように定義されます。
 </p><pre class="programlisting">
 <span class="original">
-vacuum insert threshold = vacuum base insert threshold + vacuum insert scale factor * number of tuples
+vacuum insert threshold = vacuum base insert threshold + vacuum insert scale factor * number of tuples * percent of table not frozen
 </span>
-バキューム挿入閾値 = バキューム基礎挿入閾値 + バキューム挿入規模係数 * タプル数
+《マッチ度[77.272727]》バキューム挿入閾値 = バキューム基礎挿入閾値 + バキューム挿入規模係数 * タプル数
+《機械翻訳》バキューム挿入しきい値=バキュームベース挿入しきい値+バキューム挿入スケールファクタ*タプル数*凍結されていないテーブルのパーセント。
 </pre><p>
 <span class="original">
     where the vacuum insert base threshold is
     &lt;xref linkend="guc-autovacuum-vacuum-insert-threshold"/&gt;,
-    and vacuum insert scale factor is
-    &lt;xref linkend="guc-autovacuum-vacuum-insert-scale-factor"/&gt;.
+    the vacuum insert scale factor is
+    &lt;xref linkend="guc-autovacuum-vacuum-insert-scale-factor"/&gt;,
+    the number of tuples is
+    &lt;structname&gt;pg_class&lt;/structname&gt;.&lt;structfield&gt;reltuples&lt;/structfield&gt;,
+    and the percent of the table not frozen is
+    &lt;literal&gt;1 - pg_class.relallfrozen / pg_class.relpages&lt;/literal&gt;.
     Such vacuums may allow portions of the table to be marked as
     &lt;firstterm&gt;all visible&lt;/firstterm&gt; and also allow tuples to be frozen, which
     can reduce the work required in subsequent vacuums.
@@ -1087,12 +1092,20 @@ vacuum insert threshold = vacuum base insert threshold + vacuum insert scale fac
     an aggressive vacuum is performed to freeze old tuples and advance
     &lt;structfield&gt;relfrozenxid&lt;/structfield&gt;.
 </span>
-ここで、バキューム挿入基礎閾値は<a class="xref" href="runtime-config-vacuum.html#GUC-AUTOVACUUM-VACUUM-INSERT-THRESHOLD">autovacuum_vacuum_insert_threshold</a>、バキューム挿入規模係数は<a class="xref" href="runtime-config-vacuum.html#GUC-AUTOVACUUM-VACUUM-INSERT-SCALE-FACTOR">autovacuum_vacuum_insert_scale_factor</a>です。
+《マッチ度[80.142857]》ここで、バキューム挿入基礎閾値は<a class="xref" href="runtime-config-vacuum.html#GUC-AUTOVACUUM-VACUUM-INSERT-THRESHOLD">autovacuum_vacuum_insert_threshold</a>、バキューム挿入規模係数は<a class="xref" href="runtime-config-vacuum.html#GUC-AUTOVACUUM-VACUUM-INSERT-SCALE-FACTOR">autovacuum_vacuum_insert_scale_factor</a>です。
 そのようなバキュームは、テーブルの一部を<em class="firstterm">全可視</em>と印づけたり、タプルを凍結したりもできますので、後続のバキュームで必要となる作業を減らせます。
 より早いバキュームによりタプルを凍結できますので、<code class="command">INSERT</code>操作を受けたものの<code class="command">UPDATE</code>/<code class="command">DELETE</code>操作を全くもしくはほとんど受けていないテーブルに対しては、テーブルの<a class="xref" href="sql-createtable.html#RELOPTION-AUTOVACUUM-FREEZE-MIN-AGE">autovacuum_freeze_min_age</a>を低くすることが有益な場合があります。
 不要となったタプル数と挿入されたタプル数は、累積統計情報システムから取得されます。
 これは、<code class="command">UPDATE</code>、<code class="command">DELETE</code>および<code class="command">INSERT</code>操作ごとに更新される、最終的には一貫性のある数です。
 テーブルの<code class="structfield">relfrozenxid</code>値が<code class="varname">vacuum_freeze_table_age</code>トランザクション年齢より大きい場合、古いタプルを凍結して、<code class="structfield">relfrozenxid</code>を繰り上げるため、積極的なバキュームが実行されます。
+《機械翻訳》ここで、バキューム挿入のベースしきい値は<a class="xref" href="runtime-config-vacuum.html#GUC-AUTOVACUUM-VACUUM-INSERT-THRESHOLD">autovacuum_vacuum_insert_threshold</a>、バキューム挿入のスケールファクタは<a class="xref" href="runtime-config-vacuum.html#GUC-AUTOVACUUM-VACUUM-INSERT-SCALE-FACTOR">autovacuum_vacuum_insert_scale_factor</a>、タプル数は<code class="structname">pg_クラス</code>.<code class="structfield">reltuples</code>、凍結されていないテーブルのパーセントは<code class="literal">1 - pg_class.relallfrozen / pg_class.relpages</code>です。
+このようなバキュームは、テーブルの一部を<em class="firstterm">全て可視</em>としてマークすることを可能にし、タプルの凍結も可能にします。
+これにより、以降のバキュームで必要となる作業を減らすことができます。
+<code class="command">INSERT</code>操作はあるが<code class="command">UPDATE</code>/<code class="command">DELETE</code>操作がないか、ほとんどないテーブルでは、テーブルの<a class="xref" href="sql-createtable.html#RELOPTION-AUTOVACUUM-FREEZE-MIN-AGE">autovacuum_freeze_min_age</a>を下げることが有益な場合があります。
+これにより、以前のバキュームでタプルを凍結できるようになる可能性があるためです。
+廃止されたタプルの数と挿入されたタプルの数は、累積統計処理システムから取得されます。
+これは、<code class="command">UPDATE</code>、<code class="command">DELETE</code>、<code class="command">INSERT</code>オペレーションのそれぞれによって更新される、結果整合性のあるカウントです。
+テーブルの<code class="structfield">relfrozenxid</code>値が<code class="varname">vacuum_freeze_table_age</code>トランザクションよりも古い場合、積極的なバキュームがフリーズのタプルに対して実行され、<code class="structfield">relfrozenxid</code>を進めます。
    </p><p>
 <span class="original">
     For analyze, a similar condition is used: the threshold, defined as:
@@ -1187,4 +1200,4 @@ analyze threshold = analyze base threshold + analyze scale factor * number of tu
      effectively prevent autovacuums from ever completing.
 </span>
 <code class="literal">SHARE UPDATE EXCLUSIVE</code>ロックと衝突するロックを獲得する、定期的に動作するコマンド(例えばANALYZE)により、自動バキュームが実質的に終わらなくなることがあります。
-    </p></div></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="maintenance.html" title="第24章 定常的なデータベース保守作業">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="maintenance.html" title="第24章 定常的なデータベース保守作業">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="routine-reindex.html" title="24.2. 定常的なインデックスの再作成">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">第24章 定常的なデータベース保守作業 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 18.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 24.2. 定常的なインデックスの再作成</td></tr></table></div></body></html>
+    </p></div></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="maintenance.html" title="第24章 定常的なデータベース保守作業">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="maintenance.html" title="第24章 定常的なデータベース保守作業">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="routine-reindex.html" title="24.2. 定常的なインデックスの再作成">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">第24章 定常的なデータベース保守作業 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 18.2文書">ホーム</a></td><td width="40%" align="right" valign="top"> 24.2. 定常的なインデックスの再作成</td></tr></table></div></body></html>
