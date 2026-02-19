@@ -1,0 +1,578 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>F.25. pg_buffercache — PostgreSQLのバッファキャッシュの状態を確認する</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="passwordcheck.html" title="F.24. passwordcheck — パスワードの強度を検査する" /><link rel="next" href="pgcrypto.html" title="F.26. pgcrypto — 暗号関数" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 18.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="contrib.html" title="付録F 追加で提供されるモジュールと拡張">付録F 追加で提供されるモジュールと拡張</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 18.0 : pgbuffercache.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="passwordcheck.html" title="F.24. passwordcheck — パスワードの強度を検査する">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="contrib.html" title="付録F 追加で提供されるモジュールと拡張">上へ</a></td><td width="60%" align="center">F.25. pg_buffercache — <span class="productname">PostgreSQL</span>のバッファキャッシュの状態を確認する</td><td width="20%" align="right"> <a accesskey="n" href="pgcrypto.html" title="F.26. pgcrypto — 暗号関数">次へ</a></td></tr></table><hr /></div><div class="sect1" id="PGBUFFERCACHE"><div class="titlepage"><div><div><h2 class="title" style="clear: both">F.25. pg_buffercache — <span class="productname">PostgreSQL</span>のバッファキャッシュの状態を確認する <a href="#PGBUFFERCACHE" class="id_link">#</a></h2></div></div></div><span class="original">
+ &lt;title&gt;pg_buffercache &amp;mdash; inspect &lt;productname&gt;PostgreSQL&lt;/productname&gt;
+    buffer cache state&lt;/title&gt;
+</span><a id="id-1.11.7.35.2" class="indexterm"></a><p>
+<span class="original">
+  The &lt;filename&gt;pg_buffercache&lt;/filename&gt; module provides a means for
+  examining what's happening in the shared buffer cache in real time.
+  It also offers a low-level way to evict data from it, for testing
+  purposes.
+</span>
+<code class="filename">pg_buffercache</code>モジュールは、共有バッファキャッシュで何が起きているかをリアルタイムに確認する方法を提供します。
+また、テスト目的で、低レベルでデータを取り出す方法も提供します。
+ </p><a id="id-1.11.7.35.4" class="indexterm"></a><a id="id-1.11.7.35.5" class="indexterm"></a><a id="id-1.11.7.35.6" class="indexterm"></a><a id="id-1.11.7.35.7" class="indexterm"></a><a id="id-1.11.7.35.8" class="indexterm"></a><a id="id-1.11.7.35.9" class="indexterm"></a><a id="id-1.11.7.35.10" class="indexterm"></a><p>
+<span class="original">
+  This module provides the &lt;function&gt;pg_buffercache_pages()&lt;/function&gt;
+  function (wrapped in the &lt;structname&gt;pg_buffercache&lt;/structname&gt; view), the
+  &lt;function&gt;pg_buffercache_numa_pages()&lt;/function&gt; function (wrapped in the
+  &lt;structname&gt;pg_buffercache_numa&lt;/structname&gt; view), the
+  &lt;function&gt;pg_buffercache_summary()&lt;/function&gt; function, the
+  &lt;function&gt;pg_buffercache_usage_counts()&lt;/function&gt; function, the
+  &lt;function&gt;pg_buffercache_evict()&lt;/function&gt; function, the
+  &lt;function&gt;pg_buffercache_evict_relation()&lt;/function&gt; function and the
+  &lt;function&gt;pg_buffercache_evict_all()&lt;/function&gt; function.
+</span>
+このモジュールは、<code class="function">pg_buffercache_pages()</code>関数（<code class="structname">pg_buffercache</code>ビューでラップされています）、<code class="function">pg_buffercache_numa_pages()</code>関数（<code class="structname">pg_buffercache_numa</code>ビューでラップされています）、<code class="function">pg_buffercache_summary()</code>関数、<code class="function">pg_buffercache_usage_counts()</code>関数、<code class="function">pg_buffercache_evict()</code>関数、<code class="function">pg_buffercache_evict_relation()</code>関数、および<code class="function">pg_buffercache_evict_all()</code>関数を提供します。
+ </p><p>
+<span class="original">
+  The &lt;function&gt;pg_buffercache_pages()&lt;/function&gt; function returns a set of
+  records, each row describing the state of one shared buffer entry. The
+  &lt;structname&gt;pg_buffercache&lt;/structname&gt; view wraps the function for
+  convenient use.
+</span>
+<code class="function">pg_buffercache_pages()</code>関数は、各行が1つの共有バッファエントリの状態を記述するレコード集合を返します。
+<code class="structname">pg_buffercache</code>ビューは、簡単に利用できるようにこの関数をラップしています。
+ </p><p>
+<span class="original">
+  The &lt;function&gt;pg_buffercache_numa_pages()&lt;/function&gt; function provides
+  &lt;acronym&gt;NUMA&lt;/acronym&gt; node mappings for shared buffer entries. This
+  information is not part of &lt;function&gt;pg_buffercache_pages()&lt;/function&gt;
+  itself, as it is much slower to retrieve.
+  The &lt;structname&gt;pg_buffercache_numa&lt;/structname&gt; view wraps the function for
+  convenient use.
+</span>
+<code class="function">pg_buffercache_numa_pages()</code>関数は、共有バッファエントリの<acronym class="acronym">NUMA</acronym>ノードマッピングを提供します。
+この情報は、<code class="function">pg_buffercache_pages()</code>自体の一部ではありません。なぜなら、取得に時間がかかるからです。
+<code class="structname">pg_buffercache_numa</code>ビューは、簡単に利用できるようにこの関数をラップしています。
+ </p><p>
+<span class="original">
+  The &lt;function&gt;pg_buffercache_summary()&lt;/function&gt; function returns a single
+  row summarizing the state of the shared buffer cache.
+</span>
+<code class="function">pg_buffercache_summary()</code>関数は、共有バッファキャッシュの状態を要約した1行を返します。
+ </p><p>
+<span class="original">
+  The &lt;function&gt;pg_buffercache_usage_counts()&lt;/function&gt; function returns a set
+  of records, each row describing the number of buffers with a given usage
+  count.
+</span>
+<code class="function">pg_buffercache_usage_counts()</code>関数は、各行が対応する使用カウントを持つバッファの数を記述するレコード集合を返します。
+ </p><p>
+<span class="original">
+  By default, use of the above functions is restricted to superusers and roles
+  with privileges of the &lt;literal&gt;pg_monitor&lt;/literal&gt; role. Access may be
+  granted to others using &lt;command&gt;GRANT&lt;/command&gt;.
+</span>
+デフォルトでは、上記関数の使用はスーパーユーザと<code class="literal">pg_monitor</code>ロールの権限を持つロールに限定されています。
+他のユーザに対しては<code class="command">GRANT</code>を使用してアクセス権を付与できます。
+ </p><p>
+<span class="original">
+  The &lt;function&gt;pg_buffercache_evict()&lt;/function&gt; function allows a block to
+  be evicted from the buffer pool given a buffer identifier.  Use of this
+  function is restricted to superusers only.
+</span>
+<code class="function">pg_buffercache_evict()</code>関数は、バッファ識別子を指定して、ブロックをバッファプールから退避させることができます。
+この関数の使用はスーパーユーザのみに制限されています。
+ </p><p>
+<span class="original">
+  The &lt;function&gt;pg_buffercache_evict_relation()&lt;/function&gt; function allows all
+  unpinned shared buffers in the relation to be evicted from the buffer pool
+  given a relation identifier.  Use of this function is restricted to
+  superusers only.
+</span>
+<code class="function">pg_buffercache_evict_relation()</code>関数は、リレーション識別子を指定して、ピン留めされていないすべての共有バッファをバッファプールから退避させることができます。
+この関数の使用はスーパーユーザのみに制限されています。
+ </p><p>
+<span class="original">
+  The &lt;function&gt;pg_buffercache_evict_all()&lt;/function&gt; function allows all
+  unpinned shared buffers to be evicted in the buffer pool.  Use of this
+  function is restricted to superusers only.
+</span>
+<code class="function">pg_buffercache_evict_all()</code>関数は、ピン留めされていないすべての共有バッファをバッファプール内で退避させることができます。
+この関数の使用はスーパーユーザのみに制限されています。
+ </p><div class="sect2" id="PGBUFFERCACHE-PG-BUFFERCACHE"><div class="titlepage"><div><div><h3 class="title">F.25.1. <code class="structname">pg_buffercache</code>ビュー <a href="#PGBUFFERCACHE-PG-BUFFERCACHE" class="id_link">#</a></h3></div></div></div><span class="original">
+  &lt;title&gt;The &lt;structname&gt;pg_buffercache&lt;/structname&gt; View&lt;/title&gt;
+</span><p>
+<span class="original">
+   The definitions of the columns exposed by the view are shown in &lt;xref linkend="pgbuffercache-columns"/&gt;.
+</span>
+ビューによって公開されている列の定義を<a class="xref" href="pgbuffercache.html#PGBUFFERCACHE-COLUMNS" title="表F.14 pg_buffercacheの列">表 F.14</a>に示します。
+  </p><div class="table" id="PGBUFFERCACHE-COLUMNS"><p class="title"><strong>表F.14 <code class="structname">pg_buffercache</code>の列</strong></p><div class="table-contents"><span class="original">
+   &lt;title&gt;&lt;structname&gt;pg_buffercache&lt;/structname&gt; Columns&lt;/title&gt;
+</span><table class="table" summary="pg_buffercacheの列" border="1"><colgroup><col /></colgroup><thead><tr><th class="catalog_table_entry"><p class="column_definition">
+<span class="original">
+       Column Type
+</span>
+列 型
+      </p>
+      <p>
+<span class="original">
+       Description
+</span>
+説明
+      </p></th></tr></thead><tbody><tr><td class="catalog_table_entry"><p class="column_definition">
+       <code class="structfield">bufferid</code> <code class="type">integer</code>
+      </p>
+      <p>
+<span class="original">
+       ID, in the range 1..&lt;varname&gt;shared_buffers&lt;/varname&gt;
+</span>
+1から<code class="varname">shared_buffers</code>までの範囲で示されるID
+      </p></td></tr><tr><td class="catalog_table_entry"><p class="column_definition">
+       <code class="structfield">relfilenode</code> <code class="type">oid</code>
+<span class="original">
+       (references &lt;link linkend="catalog-pg-class"&gt;&lt;structname&gt;pg_class&lt;/structname&gt;&lt;/link&gt;.&lt;structfield&gt;relfilenode&lt;/structfield&gt;)
+</span>
+（参照先 <a class="link" href="catalog-pg-class.html" title="52.11. pg_class"><code class="structname">pg_class</code></a>.<code class="structfield">relfilenode</code>）
+      </p>
+      <p>
+<span class="original">
+       Filenode number of the relation
+</span>
+リレーションのファイルノード番号
+      </p></td></tr><tr><td class="catalog_table_entry"><p class="column_definition">
+       <code class="structfield">reltablespace</code> <code class="type">oid</code>
+<span class="original">
+       (references &lt;link linkend="catalog-pg-tablespace"&gt;&lt;structname&gt;pg_tablespace&lt;/structname&gt;&lt;/link&gt;.&lt;structfield&gt;oid&lt;/structfield&gt;)
+</span>
+（参照先 <a class="link" href="catalog-pg-tablespace.html" title="52.56. pg_tablespace"><code class="structname">pg_tablespace</code></a>.<code class="structfield">oid</code>）
+      </p>
+      <p>
+<span class="original">
+       Tablespace OID of the relation
+</span>
+リレーションのテーブル空間OID
+      </p></td></tr><tr><td class="catalog_table_entry"><p class="column_definition">
+       <code class="structfield">reldatabase</code> <code class="type">oid</code>
+<span class="original">
+       (references &lt;link linkend="catalog-pg-database"&gt;&lt;structname&gt;pg_database&lt;/structname&gt;&lt;/link&gt;.&lt;structfield&gt;oid&lt;/structfield&gt;)
+</span>
+（参照先 <a class="link" href="catalog-pg-database.html" title="52.15. pg_database"><code class="structname">pg_database</code></a>.<code class="structfield">oid</code>）
+      </p>
+      <p>
+<span class="original">
+       Database OID of the relation
+</span>
+リレーションのデータベースOID
+      </p></td></tr><tr><td class="catalog_table_entry"><p class="column_definition">
+       <code class="structfield">relforknumber</code> <code class="type">smallint</code>
+      </p>
+      <p>
+<span class="original">
+       Fork number within the relation;  see
+       &lt;filename&gt;common/relpath.h&lt;/filename&gt;
+</span>
+リレーション内のフォーク番号。<code class="filename">common/relpath.h</code>参照
+      </p></td></tr><tr><td class="catalog_table_entry"><p class="column_definition">
+       <code class="structfield">relblocknumber</code> <code class="type">bigint</code>
+      </p>
+      <p>
+<span class="original">
+       Page number within the relation
+</span>
+リレーション内のページ番号
+      </p></td></tr><tr><td class="catalog_table_entry"><p class="column_definition">
+       <code class="structfield">isdirty</code> <code class="type">boolean</code>
+      </p>
+      <p>
+<span class="original">
+       Is the page dirty?
+</span>
+ダーティページかどうか？
+      </p></td></tr><tr><td class="catalog_table_entry"><p class="column_definition">
+       <code class="structfield">usagecount</code> <code class="type">smallint</code>
+      </p>
+      <p>
+<span class="original">
+       Clock-sweep access count
+</span>
+Clock-sweepアクセスカウント
+      </p></td></tr><tr><td class="catalog_table_entry"><p class="column_definition">
+       <code class="structfield">pinning_backends</code> <code class="type">integer</code>
+      </p>
+      <p>
+<span class="original">
+       Number of backends pinning this buffer
+</span>
+このバッファをピン留めしているバックエンドの数
+      </p></td></tr></tbody></table></div></div><br class="table-break" /><p>
+<span class="original">
+   There is one row for each buffer in the shared cache. Unused buffers are
+   shown with all fields null except &lt;structfield&gt;bufferid&lt;/structfield&gt;.  Shared system
+   catalogs are shown as belonging to database zero.
+</span>
+共有キャッシュ内の各バッファに対して、1行が存在します。
+未使用のバッファは、<code class="structfield">bufferid</code>を除き、すべてのフィールドがNULLになります。
+共有システムカタログは、OIDがゼロのデータベースに属するものとして表示されます。
+  </p><p>
+<span class="original">
+   Because the cache is shared by all the databases, there will normally be
+   pages from relations not belonging to the current database.  This means
+   that there may not be matching join rows in &lt;structname&gt;pg_class&lt;/structname&gt; for
+   some rows, or that there could even be incorrect joins.  If you are
+   trying to join against &lt;structname&gt;pg_class&lt;/structname&gt;, it's a good idea to
+   restrict the join to rows having &lt;structfield&gt;reldatabase&lt;/structfield&gt; equal to
+   the current database's OID or zero.
+</span>
+キャッシュはすべてのデータベースで共有されているため、現在のデータベースに属さないリレーションのページも表示されます。
+これは、一部の行に対して一致する<code class="structname">pg_class</code>の結合行が存在しない、間違った結合をしてしまう可能性すらあることを意味します。
+<code class="structname">pg_class</code>に対して結合しようとする場合、現在のデータベースのOIDまたは0と等しい<code class="structfield">reldatabase</code>を持つ行に限定して結合することをお勧めします。
+  </p><p>
+<span class="original">
+   Since buffer manager locks are not taken to copy the buffer state data that
+   the view will display, accessing &lt;structname&gt;pg_buffercache&lt;/structname&gt; view
+   has less impact on normal buffer activity but it doesn't provide a consistent
+   set of results across all buffers.  However, we ensure that the information of
+   each buffer is self-consistent.
+</span>
+ビューが表示するバッファ状態データのコピーのために、バッファマネージャのロックを取得しません。このため、<code class="structname">pg_buffercache</code>ビューへのアクセスは、通常のバッファ処理への影響がより小さくなりますが、バッファすべてに渡る矛盾のない結果を提供しません。
+しかしながら、各バッファの情報に自己矛盾がないことは保証されます。
+  </p></div><div class="sect2" id="PGBUFFERCACHE-PG-BUFFERCACHE-NUMA"><div class="titlepage"><div><div><h3 class="title">F.25.2. <code class="structname">pg_buffercache_numa</code>ビュー <a href="#PGBUFFERCACHE-PG-BUFFERCACHE-NUMA" class="id_link">#</a></h3></div></div></div><span class="original">
+  &lt;title&gt;The &lt;structname&gt;pg_buffercache_numa&lt;/structname&gt; View&lt;/title&gt;
+</span><p>
+<span class="original">
+   The definitions of the columns exposed by the view are shown in &lt;xref linkend="pgbuffercache-numa-columns"/&gt;.
+</span>
+ビューによって公開されている列の定義を<a class="xref" href="pgbuffercache.html#PGBUFFERCACHE-NUMA-COLUMNS" title="表F.15 pg_buffercache_numaの列">表 F.15</a>に示します。
+  </p><div class="table" id="PGBUFFERCACHE-NUMA-COLUMNS"><p class="title"><strong>表F.15 <code class="structname">pg_buffercache_numa</code>の列</strong></p><div class="table-contents"><span class="original">
+   &lt;title&gt;&lt;structname&gt;pg_buffercache_numa&lt;/structname&gt; Columns&lt;/title&gt;
+</span><table class="table" summary="pg_buffercache_numaの列" border="1"><colgroup><col /></colgroup><thead><tr><th class="catalog_table_entry"><p class="column_definition">
+<span class="original">
+       Column Type
+</span>
+列 型
+      </p>
+      <p>
+<span class="original">
+       Description
+</span>
+説明
+      </p></th></tr></thead><tbody><tr><td class="catalog_table_entry"><p class="column_definition">
+       <code class="structfield">bufferid</code> <code class="type">integer</code>
+      </p>
+      <p>
+<span class="original">
+       ID, in the range 1..&lt;varname&gt;shared_buffers&lt;/varname&gt;
+</span>
+1から<code class="varname">shared_buffers</code>までの範囲で示されるID
+      </p></td></tr><tr><td class="catalog_table_entry"><p class="column_definition">
+       <code class="structfield">os_page_num</code> <code class="type">bigint</code>
+      </p>
+      <p>
+<span class="original">
+       number of OS memory page for this buffer
+</span>
+このバッファのOSメモリページの数
+      </p></td></tr><tr><td class="catalog_table_entry"><p class="column_definition">
+       <code class="structfield">numa_node</code> <code class="type">int</code>
+      </p>
+      <p>
+<span class="original">
+       ID of &lt;acronym&gt;NUMA&lt;/acronym&gt; node
+</span>
+<acronym class="acronym">NUMA</acronym>ノードのID
+      </p></td></tr></tbody></table></div></div><br class="table-break" /><p>
+<span class="original">
+   As &lt;acronym&gt;NUMA&lt;/acronym&gt; node ID inquiry for each page requires memory pages
+   to be paged-in, the first execution of this function can take a noticeable
+   amount of time. In all the cases (first execution or not), retrieving this
+   information is costly and querying the view at a high frequency is not recommended.
+</span>
+各ページの<acronym class="acronym">NUMA</acronym>ノードID照会は、メモリページをページインする必要があるため、この関数の最初の実行にはかなりの時間がかかることがあります。
+いずれの場合も（最初の実行の有無にかかわらず）、この情報の取得にはコストがかかり、高い頻度でビューを照会することはお薦めしません。
+  </p><div class="warning"><h3 class="title">警告</h3><p>
+<span class="original">
+      When determining the &lt;acronym&gt;NUMA&lt;/acronym&gt; node, the view touches
+      all memory pages for the shared memory segment. This will force
+      allocation of the shared memory, if it wasn't allocated already,
+      and the memory may get allocated in a single &lt;acronym&gt;NUMA&lt;/acronym&gt;
+      node (depending on system configuration).
+</span>
+<acronym class="acronym">NUMA</acronym>ノードを決定する場合、ビューは共有メモリセグメントのすべてのメモリページにアクセスします。
+これにより、共有メモリがまだ割り当てられていない場合は強制的に割り当てられ、メモリは単一の<acronym class="acronym">NUMA</acronym>ノードに割り当てられる可能性があります（システム構成によります）。
+    </p></div></div><div class="sect2" id="PGBUFFERCACHE-SUMMARY"><div class="titlepage"><div><div><h3 class="title">F.25.3. <code class="function">pg_buffercache_summary()</code>関数 <a href="#PGBUFFERCACHE-SUMMARY" class="id_link">#</a></h3></div></div></div><span class="original">
+  &lt;title&gt;The &lt;function&gt;pg_buffercache_summary()&lt;/function&gt; Function&lt;/title&gt;
+</span><p>
+<span class="original">
+   The definitions of the columns exposed by the function are shown in &lt;xref linkend="pgbuffercache-summary-columns"/&gt;.
+</span>
+関数によって公開されている列の定義を<a class="xref" href="pgbuffercache.html#PGBUFFERCACHE-SUMMARY-COLUMNS" title="表F.16 pg_buffercache_summary()出力列">表 F.16</a>に示します。
+  </p><div class="table" id="PGBUFFERCACHE-SUMMARY-COLUMNS"><p class="title"><strong>表F.16 <code class="function">pg_buffercache_summary()</code>出力列</strong></p><div class="table-contents"><span class="original">
+   &lt;title&gt;&lt;function&gt;pg_buffercache_summary()&lt;/function&gt; Output Columns&lt;/title&gt;
+</span><table class="table" summary="pg_buffercache_summary()出力列" border="1"><colgroup><col /></colgroup><thead><tr><th class="catalog_table_entry"><p class="column_definition">
+<span class="original">
+       Column Type
+</span>
+列 型
+      </p>
+      <p>
+<span class="original">
+       Description
+</span>
+説明
+      </p></th></tr></thead><tbody><tr><td class="catalog_table_entry"><p class="column_definition">
+       <code class="structfield">buffers_used</code> <code class="type">int4</code>
+      </p>
+      <p>
+<span class="original">
+       Number of used shared buffers
+</span>
+使用中の共有バッファの数
+      </p></td></tr><tr><td class="catalog_table_entry"><p class="column_definition">
+       <code class="structfield">buffers_unused</code> <code class="type">int4</code>
+      </p>
+      <p>
+<span class="original">
+       Number of unused shared buffers
+</span>
+未使用の共有バッファの数
+      </p></td></tr><tr><td class="catalog_table_entry"><p class="column_definition">
+       <code class="structfield">buffers_dirty</code> <code class="type">int4</code>
+      </p>
+      <p>
+<span class="original">
+       Number of dirty shared buffers
+</span>
+ダーティ共有バッファの数
+      </p></td></tr><tr><td class="catalog_table_entry"><p class="column_definition">
+       <code class="structfield">buffers_pinned</code> <code class="type">int4</code>
+      </p>
+      <p>
+<span class="original">
+       Number of pinned shared buffers
+</span>
+ピン留めされた共有バッファの数
+      </p></td></tr><tr><td class="catalog_table_entry"><p class="column_definition">
+       <code class="structfield">usagecount_avg</code> <code class="type">float8</code>
+      </p>
+      <p>
+<span class="original">
+       Average usage count of used shared buffers
+</span>
+使用中の共有バッファの平均使用カウント
+      </p></td></tr></tbody></table></div></div><br class="table-break" /><p>
+<span class="original">
+   The &lt;function&gt;pg_buffercache_summary()&lt;/function&gt; function returns a
+   single row summarizing the state of all shared buffers. Similar and more
+   detailed information is provided by the
+   &lt;structname&gt;pg_buffercache&lt;/structname&gt; view, but
+   &lt;function&gt;pg_buffercache_summary()&lt;/function&gt; is significantly cheaper.
+</span>
+<code class="function">pg_buffercache_summary()</code>関数は、すべての共有バッファの状態を要約した単一の行を返します。
+同様の、より詳細な情報は<code class="structname">pg_buffercache</code>ビューによって提供されますが、<code class="function">pg_buffercache_summary()</code>はかなり安価です。
+  </p><p>
+<span class="original">
+   Like the &lt;structname&gt;pg_buffercache&lt;/structname&gt; view,
+   &lt;function&gt;pg_buffercache_summary()&lt;/function&gt; does not acquire buffer
+   manager locks. Therefore concurrent activity can lead to minor inaccuracies
+   in the result.
+</span>
+<code class="structname">pg_buffercache</code>ビューと同様に、<code class="function">pg_buffercache_summary()</code>はバッファマネージャのロックを取得しません。
+そのため、同時実行中の処理によって結果に小さな不正確さが生じる可能性があります。
+  </p></div><div class="sect2" id="PGBUFFERCACHE-USAGE-COUNTS"><div class="titlepage"><div><div><h3 class="title">F.25.4. <code class="function">pg_buffercache_usage_counts()</code>関数 <a href="#PGBUFFERCACHE-USAGE-COUNTS" class="id_link">#</a></h3></div></div></div><span class="original">
+  &lt;title&gt;The &lt;function&gt;pg_buffercache_usage_counts()&lt;/function&gt; Function&lt;/title&gt;
+</span><p>
+<span class="original">
+   The definitions of the columns exposed by the function are shown in
+   &lt;xref linkend="pgbuffercache_usage_counts-columns"/&gt;.
+</span>
+関数によって公開されている列の定義を<a class="xref" href="pgbuffercache.html#PGBUFFERCACHE_USAGE_COUNTS-COLUMNS" title="表F.17 pg_buffercache_usage_counts()出力列">表 F.17</a>に示します。
+  </p><div class="table" id="PGBUFFERCACHE_USAGE_COUNTS-COLUMNS"><p class="title"><strong>表F.17 <code class="function">pg_buffercache_usage_counts()</code>出力列</strong></p><div class="table-contents"><span class="original">
+   &lt;title&gt;&lt;function&gt;pg_buffercache_usage_counts()&lt;/function&gt; Output Columns&lt;/title&gt;
+</span><table class="table" summary="pg_buffercache_usage_counts()出力列" border="1"><colgroup><col /></colgroup><thead><tr><th class="catalog_table_entry"><p class="column_definition">
+<span class="original">
+       Column Type
+</span>
+列 型
+      </p>
+      <p>
+<span class="original">
+       Description
+</span>
+説明
+      </p></th></tr></thead><tbody><tr><td class="catalog_table_entry"><p class="column_definition">
+       <code class="structfield">usage_count</code> <code class="type">int4</code>
+      </p>
+      <p>
+<span class="original">
+       A possible buffer usage count
+</span>
+取り得るバッファ使用カウント
+      </p></td></tr><tr><td class="catalog_table_entry"><p class="column_definition">
+       <code class="structfield">buffers</code> <code class="type">int4</code>
+      </p>
+      <p>
+<span class="original">
+       Number of buffers with the usage count
+</span>
+その使用カウントのバッファの数
+      </p></td></tr><tr><td class="catalog_table_entry"><p class="column_definition">
+       <code class="structfield">dirty</code> <code class="type">int4</code>
+      </p>
+      <p>
+<span class="original">
+       Number of dirty buffers with the usage count
+</span>
+その使用カウントのダーティバッファの数
+      </p></td></tr><tr><td class="catalog_table_entry"><p class="column_definition">
+       <code class="structfield">pinned</code> <code class="type">int4</code>
+      </p>
+      <p>
+<span class="original">
+       Number of pinned buffers with the usage count
+</span>
+その使用カウントのピン留めされたバッファの数
+      </p></td></tr></tbody></table></div></div><br class="table-break" /><p>
+<span class="original">
+   The &lt;function&gt;pg_buffercache_usage_counts()&lt;/function&gt; function returns a
+   set of rows summarizing the states of all shared buffers, aggregated over
+   the possible usage count values.  Similar and more detailed information is
+   provided by the &lt;structname&gt;pg_buffercache&lt;/structname&gt; view, but
+   &lt;function&gt;pg_buffercache_usage_counts()&lt;/function&gt; is significantly cheaper.
+</span>
+<code class="function">pg_buffercache_usage_counts()</code>関数は、すべての共有バッファの状態を要約した行の集合を返します。これは、取り得る使用カウント値に基づいて集計されます。
+同様の、より詳細な情報は<code class="structname">pg_buffercache</code>ビューによって提供されますが、<code class="function">pg_buffercache_usage_counts()</code>はかなり安価です。
+  </p><p>
+<span class="original">
+   Like the &lt;structname&gt;pg_buffercache&lt;/structname&gt; view,
+   &lt;function&gt;pg_buffercache_usage_counts()&lt;/function&gt; does not acquire buffer
+   manager locks. Therefore concurrent activity can lead to minor inaccuracies
+   in the result.
+</span>
+<code class="structname">pg_buffercache</code>ビューと同様に、<code class="function">pg_buffercache_usage_counts()</code>はバッファマネージャのロックを取得しません。
+そのため、同時実行中の処理によって結果に小さな不正確さが生じる可能性があります。
+  </p></div><div class="sect2" id="PGBUFFERCACHE-PG-BUFFERCACHE-EVICT"><div class="titlepage"><div><div><h3 class="title">F.25.5. <code class="function">pg_buffercache_evict()</code>関数 <a href="#PGBUFFERCACHE-PG-BUFFERCACHE-EVICT" class="id_link">#</a></h3></div></div></div><span class="original">
+  &lt;title&gt;The &lt;function&gt;pg_buffercache_evict()&lt;/function&gt; Function&lt;/title&gt;
+</span><p>
+<span class="original">
+   The &lt;function&gt;pg_buffercache_evict()&lt;/function&gt; function takes a buffer
+   identifier, as shown in the &lt;structfield&gt;bufferid&lt;/structfield&gt; column of
+   the &lt;structname&gt;pg_buffercache&lt;/structname&gt; view.  It returns information
+   about whether the buffer was evicted and flushed.  The buffer_evicted
+   column is true on success, and false if the buffer wasn't valid, if it
+   couldn't be evicted because it was pinned, or if it became dirty again
+   after an attempt to write it out.  The buffer_flushed column is true if the
+   buffer was flushed.  This does not necessarily mean that buffer was flushed
+   by us, it might be flushed by someone else.  The result is immediately out
+   of date upon return, as the buffer might become valid again at any time due
+   to concurrent activity. The function is intended for developer testing
+   only.
+</span>
+<code class="function">pg_buffercache_evict()</code>関数は、<code class="structname">pg_buffercache</code>ビューの<code class="structfield">bufferid</code>列に示されるバッファ識別子を取ります。
+バッファが退避され、フラッシュされたかどうかに関する情報を返します。
+buffer_evicted列は成功時にtrueを返し、バッファが無効であった場合、ピン留めされているために退避できなかった場合、または書き出しを試みた後に再びダーティになった場合にfalseを返します。
+buffer_flushed列は、バッファがフラッシュされた場合にtrueを返します。
+これは、バッファが私たちによってフラッシュされたことを必ずしも意味するわけではなく、他の誰かによってフラッシュされた可能性があります。
+同時アクティビティのためにバッファがいつでも再び有効になる可能性があるため、結果は返却時にすぐに古くなります。
+この関数は、開発者のテストのみを目的としています。
+  </p></div><div class="sect2" id="PGBUFFERCACHE-PG-BUFFERCACHE-EVICT-RELATION"><div class="titlepage"><div><div><h3 class="title">F.25.6. <code class="function">pg_buffercache_evict_relation()</code>関数 <a href="#PGBUFFERCACHE-PG-BUFFERCACHE-EVICT-RELATION" class="id_link">#</a></h3></div></div></div><span class="original">
+  &lt;title&gt;The &lt;structname&gt;pg_buffercache_evict_relation()&lt;/structname&gt; Function&lt;/title&gt;
+</span><p>
+<span class="original">
+   The &lt;function&gt;pg_buffercache_evict_relation()&lt;/function&gt; function is very
+   similar to the &lt;function&gt;pg_buffercache_evict()&lt;/function&gt; function.  The
+   difference is that the &lt;function&gt;pg_buffercache_evict_relation()&lt;/function&gt;
+   takes a relation identifier instead of buffer identifier.  It tries to
+   evict all buffers for all forks in that relation.
+
+   It returns the number of evicted buffers, flushed buffers and the number of
+   buffers that could not be evicted.  Flushed buffers haven't necessarily
+   been flushed by us, they might have been flushed by someone else.  The
+   result is immediately out of date upon return, as buffers might immediately
+   be read back in due to concurrent activity.  The function is intended for
+   developer testing only.
+</span>
+<code class="function">pg_buffercache_evict_relation()</code>関数は<code class="function">pg_buffercache_evict()</code>関数と非常によく似ています。
+違いは、<code class="function">pg_buffercache_evict_relation()</code>がバッファ識別子の代わりにリレーション識別子を取ることです。
+この関数は、そのリレーションのすべてのフォークのすべてのバッファを排除しようとします。
+
+排除されたバッファの数、フラッシュされたバッファの数、および排除できなかったバッファの数を返します。
+フラッシュされたバッファは、必ずしも私たちによってフラッシュされたわけではありません。
+他の誰かによってフラッシュされた可能性があります。
+同時アクティビティのためにバッファがすぐに読み戻される可能性があるため、結果は返却時にすぐに古くなります。
+この関数は、開発者のテストのみを目的としています。
+  </p></div><div class="sect2" id="PGBUFFERCACHE-PG-BUFFERCACHE-EVICT-ALL"><div class="titlepage"><div><div><h3 class="title">F.25.7. <code class="function">pg_buffercache_evict_all()</code>関数 <a href="#PGBUFFERCACHE-PG-BUFFERCACHE-EVICT-ALL" class="id_link">#</a></h3></div></div></div><span class="original">
+  &lt;title&gt;The &lt;structname&gt;pg_buffercache_evict_all()&lt;/structname&gt; Function&lt;/title&gt;
+</span><p>
+<span class="original">
+   The &lt;function&gt;pg_buffercache_evict_all()&lt;/function&gt; function is very
+   similar to the &lt;function&gt;pg_buffercache_evict()&lt;/function&gt; function.  The
+   difference is, the &lt;function&gt;pg_buffercache_evict_all()&lt;/function&gt; function
+   does not take an argument; instead it tries to evict all buffers in the
+   buffer pool.  It returns the number of evicted buffers, flushed buffers and
+   the number of buffers that could not be evicted.  Flushed buffers haven't
+   necessarily been flushed by us, they might have been flushed by someone
+   else.  The result is immediately out of date upon return, as buffers might
+   immediately be read back in due to concurrent activity.  The function is
+   intended for developer testing only.
+</span>
+<code class="function">pg_buffercache_evict_all()</code>関数は<code class="function">pg_buffercache_evict()</code>関数と非常によく似ています。
+違いは、<code class="function">pg_buffercache_evict_all()</code>関数が引数を取得しないことです。
+代わりに、バッファプール内のすべてのバッファを排除しようとします。
+排除されたバッファの数、フラッシュされたバッファの数、および排除できなかったバッファの数を返します。
+フラッシュされたバッファは、必ずしも私たちによってフラッシュされたわけではありません。
+他の誰かによってフラッシュされた可能性があります。
+同時アクティビティのためにバッファがすぐに読み戻される可能性があるため、結果は返却時にすぐに古くなります。
+この関数は、開発者のテストのみを目的としています。
+  </p></div><div class="sect2" id="PGBUFFERCACHE-SAMPLE-OUTPUT"><div class="titlepage"><div><div><h3 class="title">F.25.8. サンプル出力 <a href="#PGBUFFERCACHE-SAMPLE-OUTPUT" class="id_link">#</a></h3></div></div></div><span class="original">
+  &lt;title&gt;Sample Output&lt;/title&gt;
+</span><pre class="screen">
+regression=# SELECT n.nspname, c.relname, count(*) AS buffers
+             FROM pg_buffercache b JOIN pg_class c
+             ON b.relfilenode = pg_relation_filenode(c.oid) AND
+                b.reldatabase IN (0, (SELECT oid FROM pg_database
+                                      WHERE datname = current_database()))
+             JOIN pg_namespace n ON n.oid = c.relnamespace
+             GROUP BY n.nspname, c.relname
+             ORDER BY 3 DESC
+             LIMIT 10;
+
+  nspname   |        relname         | buffers
+------------+------------------------+---------
+ public     | delete_test_table      |     593
+ public     | delete_test_table_pkey |     494
+ pg_catalog | pg_attribute           |     472
+ public     | quad_poly_tbl          |     353
+ public     | tenk2                  |     349
+ public     | tenk1                  |     349
+ public     | gin_test_idx           |     306
+ pg_catalog | pg_largeobject         |     206
+ public     | gin_test_tbl           |     188
+ public     | spgist_text_tbl        |     182
+(10 rows)
+
+
+regression=# SELECT * FROM pg_buffercache_summary();
+ buffers_used | buffers_unused | buffers_dirty | buffers_pinned | usagecount_avg
+--------------+----------------+---------------+----------------+----------------
+          248 |        2096904 |            39 |              0 |       3.141129
+(1 row)
+
+
+regression=# SELECT * FROM pg_buffercache_usage_counts();
+ usage_count | buffers | dirty | pinned
+-------------+---------+-------+--------
+           0 |   14650 |     0 |      0
+           1 |    1436 |   671 |      0
+           2 |     102 |    88 |      0
+           3 |      23 |    21 |      0
+           4 |       9 |     7 |      0
+           5 |     164 |   106 |      0
+(6 rows)
+</pre></div><div class="sect2" id="PGBUFFERCACHE-AUTHORS"><div class="titlepage"><div><div><h3 class="title">F.25.9. 作者 <a href="#PGBUFFERCACHE-AUTHORS" class="id_link">#</a></h3></div></div></div><span class="original">
+  &lt;title&gt;Authors&lt;/title&gt;
+</span><p>
+   Mark Kirkwood <code class="email">&lt;<a class="email" href="mailto:markir@paradise.net.nz">markir@paradise.net.nz</a>&gt;</code>
+  </p><p>
+<span class="original">
+   Design suggestions: Neil Conway &lt;email&gt;neilc@samurai.com&lt;/email&gt;
+</span>
+設計協力: Neil Conway <code class="email">&lt;<a class="email" href="mailto:neilc@samurai.com">neilc@samurai.com</a>&gt;</code>
+  </p><p>
+<span class="original">
+   Debugging advice: Tom Lane &lt;email&gt;tgl@sss.pgh.pa.us&lt;/email&gt;
+</span>
+デバッグのアドバイス: Tom Lane <code class="email">&lt;<a class="email" href="mailto:tgl@sss.pgh.pa.us">tgl@sss.pgh.pa.us</a>&gt;</code>
+  </p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="passwordcheck.html" title="F.24. passwordcheck — パスワードの強度を検査する">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="contrib.html" title="付録F 追加で提供されるモジュールと拡張">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="pgcrypto.html" title="F.26. pgcrypto — 暗号関数">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">F.24. passwordcheck — パスワードの強度を検査する </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 18.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> F.26. pgcrypto — 暗号関数</td></tr></table></div></body></html>

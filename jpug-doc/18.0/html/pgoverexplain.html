@@ -1,0 +1,215 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>F.29. pg_overexplain — EXPLAINで詳細をダンプする</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="pglogicalinspect.html" title="F.28. pg_logicalinspect — ロジカルデコーディングコンポーネントの調査" /><link rel="next" href="pgprewarm.html" title="F.30. pg_prewarm — リレーションデータをバッファキャッシュにプリロードする" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 18.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="contrib.html" title="付録F 追加で提供されるモジュールと拡張">付録F 追加で提供されるモジュールと拡張</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 18.0 : pgoverexplain.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="pglogicalinspect.html" title="F.28. pg_logicalinspect — ロジカルデコーディングコンポーネントの調査">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="contrib.html" title="付録F 追加で提供されるモジュールと拡張">上へ</a></td><td width="60%" align="center">F.29. pg_overexplain — EXPLAINで詳細をダンプする</td><td width="20%" align="right"> <a accesskey="n" href="pgprewarm.html" title="F.30. pg_prewarm — リレーションデータをバッファキャッシュにプリロードする">次へ</a></td></tr></table><hr /></div><div class="sect1" id="PGOVEREXPLAIN"><div class="titlepage"><div><div><h2 class="title" style="clear: both">F.29. pg_overexplain — EXPLAINで詳細をダンプする <a href="#PGOVEREXPLAIN" class="id_link">#</a></h2></div></div></div><span class="original">
+ &lt;title&gt;pg_overexplain &amp;mdash; allow EXPLAIN to dump even more details&lt;/title&gt;
+</span><a id="id-1.11.7.39.2" class="indexterm"></a><p>
+<span class="original">
+  The &lt;filename&gt;pg_overexplain&lt;/filename&gt; module extends &lt;command&gt;EXPLAIN&lt;/command&gt;
+  with new options that provide additional output. It is mostly intended to
+  assist with debugging of and development of the planner, rather than for
+  general use. Since this module displays internal details of planner data
+  structures, it may be necessary to refer to the source code to make sense
+  of the output. Furthermore, the output is likely to change whenever (and as
+  often as) those data structures change.
+</span>
+<code class="filename">pg_overexplain</code>モジュールは、<code class="command">EXPLAIN</code>を拡張して追加の情報を出力する新しいオプションを提供します。
+これは主にプランナのデバッグと開発を支援することを目的としており、一般的な使用を目的としたものではありません。
+このモジュールはプランナのデータ構造の内部詳細を表示するため、出力を理解するにはソースコードを参照する必要があるかもしれません。
+さらに、これらのデータ構造が変更されるたびに（そして頻繁に）出力が変化する可能性があります。
+ </p><p>
+<span class="original">
+  To use it, simply load it into the server.  You can load it into an
+  individual session:
+</span>
+使用するには、サーバにロードするだけです。
+個々のセッションにロードすることができます。
+
+</p><pre class="programlisting">
+LOAD 'pg_overexplain';
+</pre><p>
+
+<span class="original">
+  You can also preload it into some or all sessions by including
+  &lt;literal&gt;pg_overexplain&lt;/literal&gt; in
+  &lt;xref linkend="guc-session-preload-libraries"/&gt; or
+  &lt;xref linkend="guc-shared-preload-libraries"/&gt; in
+  &lt;filename&gt;postgresql.conf&lt;/filename&gt;.
+</span>
+また、<code class="filename">postgresql.conf</code>の<a class="xref" href="runtime-config-client.html#GUC-SESSION-PRELOAD-LIBRARIES">session_preload_libraries</a>または<a class="xref" href="runtime-config-client.html#GUC-SHARED-PRELOAD-LIBRARIES">shared_preload_libraries</a>に<code class="literal">pg_overexplain</code>を含めることで、一部またはすべてのセッションで事前にロードすることもできます。
+ </p><div class="sect2" id="PGOVEREXPLAIN-DEBUG"><div class="titlepage"><div><div><h3 class="title">F.29.1. EXPLAIN (DEBUG) <a href="#PGOVEREXPLAIN-DEBUG" class="id_link">#</a></h3></div></div></div><p>
+<span class="original">
+   The &lt;literal&gt;DEBUG&lt;/literal&gt; option displays miscellaneous information from
+   the plan tree that is not normally shown because it is not expected to be
+   of general interest. For each individual plan node, it will display the
+   following fields.  See &lt;literal&gt;Plan&lt;/literal&gt; in
+   &lt;literal&gt;nodes/plannodes.h&lt;/literal&gt; for additional documentation of these
+   fields.
+</span>
+<code class="literal">DEBUG</code>オプションを使用すると、一般的には必要ないと想定されるために通常は表示されないさまざまなプランツリーの情報が表示されます。
+個々のプランノードに対して、次のフィールドを表示します。
+これらのフィールドの詳細については、<code class="literal">nodes/plannodes.h</code>の<code class="literal">Plan</code>を参照してください。
+  </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>
+<span class="original">
+     &lt;literal&gt;Disabled Nodes&lt;/literal&gt;. Normal &lt;command&gt;EXPLAIN&lt;/command&gt;
+     determines whether a node is disabled by checking whether the node's
+     count of disabled nodes is larger than the sum of the counts for the
+     underlying nodes. This option shows the raw counter value.
+</span>
+<code class="literal">Disabled Nodes</code>。
+通常の<code class="command">EXPLAIN</code>は、ノードが無効化されているかどうかを判断するために、そのノードにおける無効化されたノードのカウンタが、その子ノードにおける無効化されたノードのカウンタの合計よりも多いかどうかを確認します。
+このオプションでは、カウンタの値をそのまま表示します。
+    </p></li><li class="listitem"><p>
+<span class="original">
+     &lt;literal&gt;Parallel Safe&lt;/literal&gt;. Indicates whether it would be safe for
+     a plan tree node to appear beneath a &lt;literal&gt;Gather&lt;/literal&gt; or
+     &lt;literal&gt;Gather Merge&lt;/literal&gt; node, regardless of whether it is
+     actually below such a node.
+</span>
+<code class="literal">Parallel Safe</code>。
+プランツリーノードが<code class="literal">Gather</code>ノードまたは<code class="literal">Gather Merge</code>ノードの下に現れても安全かどうかを示します。
+実際にこれらのノードの下にあるかどうかは関係ありません。
+    </p></li><li class="listitem"><p>
+<span class="original">
+     &lt;literal&gt;Plan Node ID&lt;/literal&gt;. An internal ID number that should be
+     unique for every node in the plan tree. It is used to coordinate parallel
+     query activity.
+</span>
+<code class="literal">Plan Node ID</code>。
+プランツリー内の各ノードで一意である内部ID番号。
+パラレルクエリの活動を調整するために使用されます。
+    </p></li><li class="listitem"><p>
+<span class="original">
+     &lt;literal&gt;extParam&lt;/literal&gt; and &lt;literal&gt;allParam&lt;/literal&gt;. Information
+     about which numbered parameters affect this plan node or its children. In
+     text mode, these fields are only displayed if they are non-empty sets.
+</span>
+<code class="literal">extParam</code>および<code class="literal">allParam</code>。
+このプランノードまたはその子ノードに影響する番号付きパラメータに関する情報。
+テキストモードでは、これらのフィールドが空の集合ではない場合にのみ表示されます。
+    </p></li></ul></div><p>
+<span class="original">
+   Once per query, the &lt;literal&gt;DEBUG&lt;/literal&gt; option will display the
+   following fields. See &lt;literal&gt;PlannedStmt&lt;/literal&gt; in
+   &lt;literal&gt;nodes/plannodes.h&lt;/literal&gt; for additional detail.
+</span>
+問い合わせごとに1回、<code class="literal">DEBUG</code>オプションは次のフィールドを表示します。
+詳細については<code class="literal">nodes/plannodes.h</code>の<code class="literal">PlannedStmt</code>を参照してください。
+  </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>
+<span class="original">
+     &lt;literal&gt;Command Type&lt;/literal&gt;. For example, &lt;literal&gt;select&lt;/literal&gt;
+     or &lt;literal&gt;update&lt;/literal&gt;.
+</span>
+<code class="literal">Command Type</code>。
+たとえば、<code class="literal">select</code>や<code class="literal">update</code>です。
+    </p></li><li class="listitem"><p>
+<span class="original">
+     &lt;literal&gt;Flags&lt;/literal&gt;. A comma-separated list of Boolean structure
+     member names from the &lt;literal&gt;PlannedStmt&lt;/literal&gt; that are set to
+     &lt;literal&gt;true&lt;/literal&gt;. It covers the following structure members:
+     &lt;literal&gt;hasReturning&lt;/literal&gt;, &lt;literal&gt;hasModifyingCTE&lt;/literal&gt;,
+     &lt;literal&gt;canSetTag&lt;/literal&gt;, &lt;literal&gt;transientPlan&lt;/literal&gt;,
+     &lt;literal&gt;dependsOnRole&lt;/literal&gt;, &lt;literal&gt;parallelModeNeeded&lt;/literal&gt;.
+</span>
+<code class="literal">Flags</code>。
+<code class="literal">PlannedStmt</code>構造体の論理値型メンバのうち、<code class="literal">true</code>に設定されているメンバ名をカンマで区切ったリスト。
+対象となる構造体のメンバは、<code class="literal">hasReturning</code>、<code class="literal">hasModifyingCTE</code>、<code class="literal">canSetTag</code>、<code class="literal">transientPlan</code>、<code class="literal">dependsOnRole</code>、および<code class="literal">parallelModeNeeded</code>です。
+    </p></li><li class="listitem"><p>
+<span class="original">
+     &lt;literal&gt;Subplans Needing Rewind&lt;/literal&gt;. Integer IDs of subplans that
+     may need to be rewound by the executor.
+</span>
+<code class="literal">Subplans Needing Rewind</code>。
+エグゼキュータによる巻き戻しが必要なサブプランの整数値ID。
+    </p></li><li class="listitem"><p>
+<span class="original">
+     &lt;literal&gt;Relation OIDs&lt;/literal&gt;. OIDs of relations upon which this plan
+     depends.
+</span>
+<code class="literal">Relation OIDs</code>。
+このプランに関わるリレーションのOID。
+    </p></li><li class="listitem"><p>
+<span class="original">
+     &lt;literal&gt;Executor Parameter Types&lt;/literal&gt;. Type OID for each executor parameter
+     (e.g. when a nested loop is chosen and a parameter is used to pass a value down
+     to an inner index scan). Does not include parameters supplied to a prepared
+     statement by the user.
+</span>
+<code class="literal">Executor Parameter Types</code>。
+各エグゼキュータパラメータの型OID（たとえば、ネステッドループが選択されて内側のインデックススキャンに値を渡すためにパラメータが使用される場合）。
+ユーザがプリペアドステートメントに提供するパラメータは含まれません。
+    </p></li><li class="listitem"><p>
+<span class="original">
+     &lt;literal&gt;Parse Location&lt;/literal&gt;. Location within the query string
+     supplied to the planner where this query's text can be found. May be
+     &lt;literal&gt;Unknown&lt;/literal&gt; in some contexts. Otherwise, may be
+     &lt;literal&gt;NNN to end&lt;/literal&gt; for some integer &lt;literal&gt;NNN&lt;/literal&gt; or
+     &lt;literal&gt;NNN for MMM bytes&lt;/literal&gt; for some integers
+     &lt;literal&gt;NNN&lt;/literal&gt; and &lt;literal&gt;MMM&lt;/literal&gt;.
+</span>
+<code class="literal">Parse Location</code>。
+プランナに渡された問い合わせ文字列内で、この問い合わせテキストが見つかる位置。
+場合によっては<code class="literal">Unknown</code>になることがあります。
+それ以外の場合、整数値<code class="literal">NNN</code>に対して<code class="literal">NNN to end</code>、または整数値<code class="literal">NNN</code>と<code class="literal">MMM</code>に対して<code class="literal">NNN for MMM bytes</code>になることがあります。
+    </p></li></ul></div></div><div class="sect2" id="PGOVEREXPLAIN-RANGE-TABLE"><div class="titlepage"><div><div><h3 class="title">F.29.2. EXPLAIN (RANGE_TABLE) <a href="#PGOVEREXPLAIN-RANGE-TABLE" class="id_link">#</a></h3></div></div></div><p>
+<span class="original">
+   The &lt;literal&gt;RANGE_TABLE&lt;/literal&gt; option displays information from the
+   plan tree specifically concerning the query's range table. Range table
+   entries correspond roughly to items appearing in the query's
+   &lt;literal&gt;FROM&lt;/literal&gt; clause, but with numerous exceptions. For example,
+   subqueries that are proved unnecessary may be deleted from the range table
+   entirely, while inheritance expansion adds range table entries for child
+   tables that are not named directly in the query.
+</span>
+<code class="literal">RANGE_TABLE</code>オプションは、特に問い合わせの範囲テーブルに関するプランツリーの情報を表示します。
+範囲テーブルの項目は問い合わせの<code class="literal">FROM</code>句に含まれる項目とほぼ一致しますが、多くの例外があります。
+たとえば、不要であることが判明した副問い合わせは範囲テーブルから完全に削除される場合がある一方で、継承を展開するときには問い合わせで直接名前が付けられていない子テーブルに対して範囲テーブルの項目が追加されます。
+  </p><p>
+<span class="original">
+   Range table entries are generally referenced within the query plan by a
+   range table index, or RTI. Plan nodes that reference one or more RTIs will
+   be labelled accordingly, using one of the following fields: &lt;literal&gt;Scan
+   RTI&lt;/literal&gt;, &lt;literal&gt;Nominal RTI&lt;/literal&gt;, &lt;literal&gt;Exclude Relation
+   RTI&lt;/literal&gt;, &lt;literal&gt;Append RTIs&lt;/literal&gt;.
+</span>
+範囲テーブルの項目は通常、範囲テーブルインデックス（RTI）によって問い合わせ計画内で参照されます。
+1つ以上のRTIを参照するプランノードは、<code class="literal">Scan RTI</code>、<code class="literal">Nominal RTI</code>、<code class="literal">Exclude Relation RTI</code>、および<code class="literal">Append RTIs</code>のフィールドのいずれかを使用し、それに応じてラベルが付けられます。
+  </p><p>
+<span class="original">
+   In addition, the query as a whole may maintain lists of range table indexes
+   that are needed for various purposes. These lists will be displayed once
+   per query, labelled as appropriate as &lt;literal&gt;Unprunable RTIs&lt;/literal&gt; or
+   &lt;literal&gt;Result RTIs&lt;/literal&gt;. In text mode, these fields are only
+   displayed if they are non-empty sets.
+</span>
+さらに、問い合わせ全体では、さまざまな目的に必要な範囲テーブルインデックスのリストが保持される場合があります。
+これらのリストは問い合わせごとに1回表示され、必要に応じて<code class="literal">Unprunable RTIs</code>または<code class="literal">Result RTIs</code>というラベルが付けられます。
+テキストモードでは、これらのフィールドが空の集合ではない場合にのみ表示されます。
+  </p><p>
+<span class="original">
+   Finally, but most importantly, the &lt;literal&gt;RANGE_TABLE&lt;/literal&gt; option
+   will display a dump of the query's entire range table. Each range table
+   entry is labelled with the appropriate range table index, the kind of range
+   table entry (e.g.  &lt;literal&gt;relation&lt;/literal&gt;,
+   &lt;literal&gt;subquery&lt;/literal&gt;, or &lt;literal&gt;join&lt;/literal&gt;), followed by the
+   contents of various range table entry fields that are not normally part of
+   &lt;literal&gt;EXPLAIN&lt;/literal&gt; output. Some of these fields are only displayed
+   for certain kinds of range table entries. For example,
+   &lt;literal&gt;Eref&lt;/literal&gt; is displayed for all types of range table entries,
+   but &lt;literal&gt;CTE Name&lt;/literal&gt; is displayed only for range table entries
+   of type &lt;literal&gt;cte&lt;/literal&gt;.
+</span>
+最後に、最も重要なのは、<code class="literal">RANGE_TABLE</code>オプションは問い合わせの範囲テーブル全体のダンプを表示するということです。
+各範囲テーブルの項目には、適切な範囲テーブルインデックス、範囲テーブルの項目の種類（例えば、<code class="literal">relation</code>、<code class="literal">subquery</code>、または<code class="literal">join</code>など）のラベルが付けられ、その後に通常の<code class="literal">EXPLAIN</code>による出力には含まれない範囲テーブルの項目のフィールドに関する様々な内容が表示されます。
+これらのフィールドの一部は、特定種類の範囲テーブルの項目でのみ表示されます。
+たとえば、<code class="literal">Eref</code>はすべての種類の範囲テーブルの項目で表示されますが、<code class="literal">CTE Name</code>は<code class="literal">cte</code>の範囲テーブルの項目でのみ表示されます。
+  </p><p>
+<span class="original">
+   For more information about range table entries, see the definition of
+   &lt;literal&gt;RangeTblEntry&lt;/literal&gt; in &lt;literal&gt;nodes/plannodes.h&lt;/literal&gt;.
+</span>
+範囲テーブルの項目の詳細については、<code class="literal">nodes/plannodes.h</code>の<code class="literal">RangeTblEntry</code>の定義を参照してください。
+  </p></div><div class="sect2" id="PGOVEREXPLAIN-AUTHOR"><div class="titlepage"><div><div><h3 class="title">F.29.3. 作者 <a href="#PGOVEREXPLAIN-AUTHOR" class="id_link">#</a></h3></div></div></div><span class="original">
+  &lt;title&gt;Author&lt;/title&gt;
+</span><p>
+   Robert Haas <code class="email">&lt;<a class="email" href="mailto:rhaas@postgresql.org">rhaas@postgresql.org</a>&gt;</code>
+  </p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="pglogicalinspect.html" title="F.28. pg_logicalinspect — ロジカルデコーディングコンポーネントの調査">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="contrib.html" title="付録F 追加で提供されるモジュールと拡張">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="pgprewarm.html" title="F.30. pg_prewarm — リレーションデータをバッファキャッシュにプリロードする">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">F.28. pg_logicalinspect — ロジカルデコーディングコンポーネントの調査 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 18.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> F.30. pg_prewarm — リレーションデータをバッファキャッシュにプリロードする</td></tr></table></div></body></html>

@@ -1,0 +1,229 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>20.15. OAuth認可／認証</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="auth-bsd.html" title="20.14. BSD認証" /><link rel="next" href="client-authentication-problems.html" title="20.16. 認証における問題点" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 18.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="client-authentication.html" title="第20章 クライアント認証">第20章 クライアント認証</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 18.0 : auth-oauth.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="auth-bsd.html" title="20.14. BSD認証">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="client-authentication.html" title="第20章 クライアント認証">上へ</a></td><td width="60%" align="center">20.15. OAuth認可／認証</td><td width="20%" align="right"> <a accesskey="n" href="client-authentication-problems.html" title="20.16. 認証における問題点">次へ</a></td></tr></table><hr /></div><div class="sect1" id="AUTH-OAUTH"><div class="titlepage"><div><div><h2 class="title" style="clear: both">20.15. OAuth認可／認証 <a href="#AUTH-OAUTH" class="id_link">#</a></h2></div></div></div><span class="original">
+   &lt;title&gt;OAuth Authorization/Authentication&lt;/title&gt;
+</span><a id="id-1.6.7.23.2" class="indexterm"></a><a id="id-1.6.7.23.3" class="indexterm"></a><p>
+<span class="original">
+    OAuth 2.0 is an industry-standard framework, defined in
+    &lt;ulink url="https://datatracker.ietf.org/doc/html/rfc6749"&gt;RFC 6749&lt;/ulink&gt;,
+    to enable third-party applications to obtain limited access to a protected
+    resource.
+
+    OAuth client support has to be enabled when &lt;productname&gt;PostgreSQL&lt;/productname&gt;
+    is built, see &lt;xref linkend="installation"/&gt; for more information.
+</span>
+OAuth 2.0は、<a class="ulink" href="https://datatracker.ietf.org/doc/html/rfc6749" target="_top">RFC 6749</a>で定義されている業界標準のフレームワークであり、サードパーティのアプリケーションが保護されたリソースへの限定されたアクセスを取得できるようにします。
+<span class="productname">PostgreSQL</span>を構築する際、OAuthクライアントサポートを有効にする必要があります。詳細については<a class="xref" href="installation.html" title="第17章 ソースコードからインストール">第17章</a>を参照してください。
+   </p><p>
+<span class="original">
+    This documentation uses the following terminology when discussing the OAuth
+    ecosystem:
+</span>
+この文書では、OAuthエコシステムについて議論する際に次の用語を使用しています。
+
+    </p><div class="variablelist"><dl class="variablelist"><dt><span class="term">リソース所有者（またはエンドユーザ)</span></dt><dd><p>
+<span class="original">
+        The user or system who owns protected resources and can grant access to
+        them. This documentation also uses the term &lt;emphasis&gt;end user&lt;/emphasis&gt;
+        when the resource owner is a person. When you use
+        &lt;application&gt;psql&lt;/application&gt; to connect to the database using OAuth,
+        you are the resource owner/end user.
+</span>
+保護されたリソースを所有し、アクセスを与えることができるユーザまたはシステム。
+この文書は、リソース所有者が個人の場合にも<span class="emphasis"><em>エンドユーザ</em></span>という用語を使用します。
+<span class="application">psql</span>を使用して、OAuthを使用してデータベースに接続する場合、ユーザはリソース所有者/エンドユーザになります。
+       </p></dd><dt><span class="term">クライアント</span></dt><dd><p>
+<span class="original">
+        The system which accesses the protected resources using access
+        tokens. Applications using libpq, such as &lt;application&gt;psql&lt;/application&gt;,
+        are the OAuth clients when connecting to a
+        &lt;productname&gt;PostgreSQL&lt;/productname&gt; cluster.
+</span>
+アクセストークンを使用して保護されたリソースにアクセスするシステム。
+<span class="application">psql</span>などのlibpqを使用するアプリケーションは、<span class="productname">PostgreSQL</span>クラスタに接続するときのOAuthクライアントです。
+       </p></dd><dt><span class="term">リソースサーバ</span></dt><dd><p>
+<span class="original">
+        The system hosting the protected resources which are
+        accessed by the client. The &lt;productname&gt;PostgreSQL&lt;/productname&gt;
+        cluster being connected to is the resource server.
+</span>
+クライアントによってアクセスされる保護されたリソースをホスティングするシステム。
+接続される<span class="productname">PostgreSQL</span>クラスタはリソースサーバです。
+       </p></dd><dt><span class="term">プロバイダ</span></dt><dd><p>
+<span class="original">
+        The organization, product vendor, or other entity which develops and/or
+        administers the OAuth authorization servers and clients for a given application.
+        Different providers typically choose different implementation details
+        for their OAuth systems; a client of one provider is not generally
+        guaranteed to have access to the servers of another.
+</span>
+特定のアプリケーションのためにOAuth認証サーバおよびクライアントを開発および/または管理する組織、プロダクトベンダ、その他のエンティティ。
+典型的には、プロバイダが異なれば、OAuthシステムに対して選択する実装の詳細も異なります。
+あるプロバイダのクライアントが別のプロバイダのサーバに対してアクセスできる保証は通常ありません。
+       </p><p>
+<span class="original">
+        This use of the term "provider" is not standard, but it seems to be in
+        wide use colloquially. (It should not be confused with OpenID's similar
+        term "Identity Provider". While the implementation of OAuth in
+        &lt;productname&gt;PostgreSQL&lt;/productname&gt; is intended to be interoperable
+        and compatible with OpenID Connect/OIDC, it is not itself an OIDC client
+        and does not require its use.)
+</span>
+この「プロバイダ」という用語の使用は標準的ではありませんが、一般的に広く使用されているようです。
+（OpenIDの類似用語である「IDプロバイダ」と混同しないでください。
+<span class="productname">PostgreSQL</span>でのOAuthの実装はOpenID Connect/OIDCとの相互運用と互換性を意図していますが、自分自身はOIDCクライアントではないため、使用する必要はありません。）
+       </p></dd><dt><span class="term">認可サーバ</span></dt><dd><p>
+<span class="original">
+        The system which receives requests from, and issues access tokens to,
+        the client after the authenticated resource owner has given approval.
+        &lt;productname&gt;PostgreSQL&lt;/productname&gt; does not provide an authorization
+        server; it is the responsibility of the OAuth provider.
+</span>
+認証されたリソース所有者が承認した後に、クライアントからアクセストークンのリクエストを受信し、アクセストークンをクライアントに発行するシステム。
+<span class="productname">PostgreSQL</span>は認可サーバを提供しません。これはOAuthプロバイダの責任です。
+       </p></dd><dt><span class="term" id="AUTH-OAUTH-ISSUER">発行者</span></dt><dd><p>
+<span class="original">
+        An identifier for an authorization server, printed as an
+        &lt;literal&gt;https://&lt;/literal&gt; URL, which provides a trusted "namespace"
+        for OAuth clients and applications. The issuer identifier allows a
+        single authorization server to talk to the clients of mutually
+        untrusting entities, as long as they maintain separate issuers.
+</span>
+OAuthクライアントのための信頼された「名前空間」で、<code class="literal">https://</code> URLの形で印字される認可サーバの識別子。
+発行者識別子により、それらが別々の発行者を保持する限り、単一の認可サーバが相互に信用していないエンティティのクライアントと話すことを可能にします。
+       </p></dd></dl></div><p>
+
+    </p><div class="note"><h3 class="title">注記</h3><p>
+<span class="original">
+      For small deployments, there may not be a meaningful distinction between
+      the "provider", "authorization server", and "issuer". However, for more
+      complicated setups, there may be a one-to-many (or many-to-many)
+      relationship: a provider may rent out multiple issuer identifiers to
+      separate tenants, then provide multiple authorization servers, possibly
+      with different supported feature sets, to interact with their clients.
+</span>
+小規模な導入では、「プロバイダ」、「認可サーバ」、および「発行者」の間に意味のある区別がない場合があります。
+ただし、より複雑な設定では、1対多（または多対多）のリレーションが存在する場合があります。
+プロバイダは、複数の発行者識別子を別々のテナントに貸し出し、テナントがクライアントと対話するために、場合によっては異なる機能の組み合わせをサポートする複数の認証サーバを提供することがあります。
+     </p></div><p>
+   </p><p>
+<span class="original">
+    &lt;productname&gt;PostgreSQL&lt;/productname&gt; supports bearer tokens, defined in
+    &lt;ulink url="https://datatracker.ietf.org/doc/html/rfc6750"&gt;RFC 6750&lt;/ulink&gt;,
+    which are a type of access token used with OAuth 2.0 where the token is an
+    opaque string.  The format of the access token is implementation specific
+    and is chosen by each authorization server.
+</span>
+<span class="productname">PostgreSQL</span>は、<a class="ulink" href="https://datatracker.ietf.org/doc/html/rfc6750" target="_top">RFC 6750</a>で定義されているベアラ(bearer)トークンをサポートします。
+これは、OAuth 2.0で使用されるアクセストークンの型です。
+トークンは不透明文字列です。
+アクセストークンのフォーマットは実装固有であり、各認可サーバによって選択されます。
+   </p><p>
+<span class="original">
+    The following configuration options are supported for OAuth:
+</span>
+OAuth用に、次の設定オプションがサポートされています。
+    </p><div class="variablelist"><dl class="variablelist"><dt><span class="term"><code class="literal">issuer</code></span></dt><dd><p>
+<span class="original">
+        An HTTPS URL which is either the exact
+        &lt;link linkend="auth-oauth-issuer"&gt;issuer identifier&lt;/link&gt; of the
+        authorization server, as defined by its discovery document, or a
+        well-known URI that points directly to that discovery document. This
+        parameter is required.
+</span>
+ディスカバリー文書によって定義された認可サーバの正確な<a class="link" href="auth-oauth.html#AUTH-OAUTH-ISSUER">発行者識別子</a>であるか、またはそのディスカバリー文書を直接指す既知のURIであるHTTPS URLです。
+このパラメータは必須です。
+       </p><p>
+<span class="original">
+        When an OAuth client connects to the server, a URL for the discovery
+        document will be constructed using the issuer identifier. By default,
+        this URL uses the conventions of OpenID Connect Discovery: the path
+        &lt;literal&gt;/.well-known/openid-configuration&lt;/literal&gt; will be appended
+        to the end of the issuer identifier. Alternatively, if the
+        &lt;literal&gt;issuer&lt;/literal&gt; contains a &lt;literal&gt;/.well-known/&lt;/literal&gt;
+        path segment, that URL will be provided to the client as-is.
+</span>
+OAuthクライアントがサーバに接続する際に、その発行者識別子を用いてディスカバリー文書のURLを構築します。
+デフォルトでは、このURLはOpenID Connect Discoveryの規約であるパス<code class="literal">/.well-known/OpenID-configuration</code>発行者識別子の末尾に付加されます。
+あるいは、<code class="literal">issuer</code>が<code class="literal">/.well-known/</code>パスセグメントを含んでいる場合、そのURLがそのままクライアントに提供されます。
+       </p><div class="warning"><h3 class="title">警告</h3><p>
+<span class="original">
+         The OAuth client in libpq requires the server's issuer setting to
+         exactly match the issuer identifier which is provided in the discovery
+         document, which must in turn match the client's
+         &lt;xref linkend="libpq-connect-oauth-issuer"/&gt; setting. No variations in
+         case or formatting are permitted.
+</span>
+libpqのOAuthクライアントは、サーバ発行者の設定が、正確にディスカバリー文書中で提供された発行者識別子と一致する必要があり、そしてそれはクライアントの<a class="xref" href="libpq-connect.html#LIBPQ-CONNECT-OAUTH-ISSUER">oauth_issuer</a>設定と一致しなければなりません。
+大文字小文字やフォーマットの変更は許可されません。
+        </p></div></dd><dt><span class="term"><code class="literal">scope</code></span></dt><dd><p>
+<span class="original">
+        A space-separated list of the OAuth scopes needed for the server to
+        both authorize the client and authenticate the user.  Appropriate values
+        are determined by the authorization server and the OAuth validation
+        module used (see &lt;xref linkend="oauth-validators" /&gt; for more
+        information on validators).  This parameter is required.
+</span>
+サーバがクライアントを認可し、ユーザを認証するのに必要な空白で区切られたOAuthスコープです。
+認証サーバとOAuth検証モジュールによって適切な値が決まります（検証器の詳細は<a class="xref" href="oauth-validators.html" title="第50章 OAuth検証器モジュール">第50章</a>を参照）。
+このパラメータは必須です。
+       </p></dd><dt><span class="term"><code class="literal">validator</code></span></dt><dd><p>
+<span class="original">
+        The library to use for validating bearer tokens. If given, the name must
+        exactly match one of the libraries listed in
+        &lt;xref linkend="guc-oauth-validator-libraries" /&gt;.  This parameter is
+        optional unless &lt;literal&gt;oauth_validator_libraries&lt;/literal&gt; contains
+        more than one library, in which case it is required.
+</span>
+ベアラトークンの検証に使用するライブラリ。
+指定する場合、名前は<a class="xref" href="runtime-config-connection.html#GUC-OAUTH-VALIDATOR-LIBRARIES">oauth_validator_libraries</a>に列挙されているライブラリの1つと正確にマッチする必要があります。
+このパラメータは、<code class="literal">oauth_validator_libraries</code>が複数のライブラリを含んでいる場合を除き、オプションです。複数のライブラリが含まれていれば必須です。
+       </p></dd><dt><span class="term"><code class="literal">map</code></span></dt><dd><p>
+<span class="original">
+        Allows for mapping between OAuth identity provider and database user
+        names.  See &lt;xref linkend="auth-username-maps"/&gt; for details.  If a
+        map is not specified, the user name associated with the token (as
+        determined by the OAuth validator) must exactly match the role name
+        being requested.  This parameter is optional.
+</span>
+OAuthアイデンティティプロバイダとデータベースユーザ名の間のマッピングを可能にします。
+詳細は、<a class="xref" href="auth-username-maps.html" title="20.2. ユーザ名マップ">20.2</a>を参照してください。
+マップが指定されていない場合、（OAuth検証器によって決定される）トークンに関連付けられたユーザ名は、要求されているロール名と正確にマッチする必要があります。
+このパラメータはオプションです。
+       </p></dd><dt><span class="term" id="AUTH-OAUTH-DELEGATE-IDENT-MAPPING">
+       <code class="literal">delegate_ident_mapping</code>
+      </span></dt><dd><p>
+<span class="original">
+        An advanced option which is not intended for common use.
+</span>
+一般的な使用を目的としない高度なオプション。
+       </p><p>
+<span class="original">
+        When set to &lt;literal&gt;1&lt;/literal&gt;, standard user mapping with
+        &lt;filename&gt;pg_ident.conf&lt;/filename&gt; is skipped, and the OAuth validator
+        takes full responsibility for mapping end user identities to database
+        roles.  If the validator authorizes the token, the server trusts that
+        the user is allowed to connect under the requested role, and the
+        connection is allowed to proceed regardless of the authentication
+        status of the user.
+</span>
+<code class="literal">1</code>に設定すると、<code class="filename">pg_ident.conf</code>による標準ユーザマッピングはスキップされ、OAuth検証器はデータベースロールに対するマッピングエンドユーザIDに対して完全な責任を負います。
+検証器がトークンを認可すると、サーバはユーザが要求されたロールの下で接続できることを信頼し、ユーザの認証ステータスに関係なくコネクションを続行できます。
+       </p><p>
+<span class="original">
+        This parameter is incompatible with &lt;literal&gt;map&lt;/literal&gt;.
+</span>
+このパラメータは<code class="literal">map</code>と互換性がありません。
+       </p><div class="warning"><h3 class="title">警告</h3><p>
+<span class="original">
+         &lt;literal&gt;delegate_ident_mapping&lt;/literal&gt; provides additional
+         flexibility in the design of the authentication system, but it also
+         requires careful implementation of the OAuth validator, which must
+         determine whether the provided token carries sufficient end-user
+         privileges in addition to the &lt;link linkend="oauth-validators"&gt;standard
+         checks&lt;/link&gt; required of all validators.  Use with caution.
+</span>
+<code class="literal">delegate_ident_mapping</code>は認証システムのデザインに追加の柔軟性を提供しますが、提供されたトークンがすべての検証器に必要な<a class="link" href="oauth-validators.html" title="第50章 OAuth検証器モジュール">標準チェック</a>に加えて、十分なエンドユーザ権限を持っているかどうかを判断するOAuth検証器の注意深い実装も必要です。
+注意して使用してください。
+        </p></div></dd></dl></div><p>
+   </p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="auth-bsd.html" title="20.14. BSD認証">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="client-authentication.html" title="第20章 クライアント認証">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="client-authentication-problems.html" title="20.16. 認証における問題点">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">20.14. BSD認証 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 18.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 20.16. 認証における問題点</td></tr></table></div></body></html>

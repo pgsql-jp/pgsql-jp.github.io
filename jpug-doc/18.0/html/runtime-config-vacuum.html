@@ -1,0 +1,739 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>19.10. Vacuum作業</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="runtime-config-statistics.html" title="19.9. 実行時統計情報" /><link rel="next" href="runtime-config-client.html" title="19.11. クライアント接続デフォルト" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 18.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="runtime-config.html" title="第19章 サーバ設定">第19章 サーバ設定</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 18.0 : runtime-config-vacuum.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="runtime-config-statistics.html" title="19.9. 実行時統計情報">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="runtime-config.html" title="第19章 サーバ設定">上へ</a></td><td width="60%" align="center">19.10. Vacuum作業</td><td width="20%" align="right"> <a accesskey="n" href="runtime-config-client.html" title="19.11. クライアント接続デフォルト">次へ</a></td></tr></table><hr /></div><div class="sect1" id="RUNTIME-CONFIG-VACUUM"><div class="titlepage"><div><div><h2 class="title" style="clear: both">19.10. Vacuum作業 <a href="#RUNTIME-CONFIG-VACUUM" class="id_link">#</a></h2></div></div></div><span class="original">
+    &lt;title&gt;Vacuuming&lt;/title&gt;
+</span><a id="id-1.6.6.14.2" class="indexterm"></a><a id="id-1.6.6.14.3" class="indexterm"></a><p>
+<span class="original">
+     These parameters control vacuuming behavior. For more information on the
+     purpose and responsibilities of vacuum, see &lt;xref linkend="routine-vacuuming"/&gt;.
+</span>
+これらのパラメータは、バキューム処理の挙動を制御します。
+バキュームの目的と責任の詳細は<a class="xref" href="routine-vacuuming.html" title="24.1. 定常的なバキューム作業">24.1</a>を参照してください。
+    </p><div class="sect2" id="RUNTIME-CONFIG-AUTOVACUUM"><div class="titlepage"><div><div><h3 class="title">19.10.1. 自動Vacuum作業 <a href="#RUNTIME-CONFIG-AUTOVACUUM" class="id_link">#</a></h3></div></div></div><span class="original">
+     &lt;title&gt;Automatic Vacuuming&lt;/title&gt;
+</span><p>
+<span class="original">
+      These settings control the behavior of the &lt;firstterm&gt;autovacuum&lt;/firstterm&gt;
+      feature.  Refer to &lt;xref linkend="autovacuum"/&gt; for more information.
+      Note that many of these settings can be overridden on a per-table
+      basis; see &lt;xref linkend="sql-createtable-storage-parameters"/&gt;.
+</span>
+以下に示す設定は<em class="firstterm">自動バキューム</em>機能の動作を制御します。
+詳細は<a class="xref" href="routine-vacuuming.html#AUTOVACUUM" title="24.1.6. 自動バキュームデーモン">24.1.6</a>を参照してください。
+これらの設定の多くは、テーブル単位で変更できることに注意してください。
+<a class="xref" href="sql-createtable.html#SQL-CREATETABLE-STORAGE-PARAMETERS" title="格納パラメータ">格納パラメータ</a>を参照してください。
+     </p><div class="variablelist"><dl class="variablelist"><dt id="GUC-AUTOVACUUM"><span class="term"><code class="varname">autovacuum</code> (<code class="type">boolean</code>)
+       <a id="id-1.6.6.14.5.3.1.1.3" class="indexterm"></a>
+       <a id="id-1.6.6.14.5.3.1.1.4" class="indexterm"></a>
+       </span> <a href="#GUC-AUTOVACUUM" class="id_link">#</a></dt><dd><p>
+<span class="original">
+         Controls whether the server should run the
+         autovacuum launcher daemon.  This is on by default; however,
+         &lt;xref linkend="guc-track-counts"/&gt; must also be enabled for
+         autovacuum to work.
+         This parameter can only be set in the &lt;filename&gt;postgresql.conf&lt;/filename&gt;
+         file or on the server command line; however, autovacuuming can be
+         disabled for individual tables by changing table storage parameters.
+</span>
+サーバが自動バキュームランチャデーモンを実行すべきかどうかを管理します。
+デフォルトでは有効です。
+しかし自動バキュームを作動させるためには<a class="xref" href="runtime-config-statistics.html#GUC-TRACK-COUNTS">track_counts</a>も有効でなければなりません。
+このパラメータは、<code class="filename">postgresql.conf</code>ファイルか、サーバのコマンドラインでのみ設定可能です。
+ただし、テーブル格納パラメータを変更することにより、自動バキュームは個々のテーブルに対して無効にできます。
+        </p><p>
+<span class="original">
+         Note that even when this parameter is disabled, the system
+         will launch autovacuum processes if necessary to
+         prevent transaction ID wraparound.  See &lt;xref
+         linkend="vacuum-for-wraparound"/&gt; for more information.
+</span>
+このパラメータが無効であったとしてもシステムは、トランザクションIDの周回を防止する必要があれば、自動バキュームプロセスを起動することに注意してください。
+詳細は<a class="xref" href="routine-vacuuming.html#VACUUM-FOR-WRAPAROUND" title="24.1.5. トランザクションIDの周回エラーの防止">24.1.5</a>を参照してください。
+        </p></dd><dt id="GUC-AUTOVACUUM-WORKER-SLOTS"><span class="term"><code class="varname">autovacuum_worker_slots</code> (<code class="type">integer</code>)
+       <a id="id-1.6.6.14.5.3.2.1.3" class="indexterm"></a>
+       <a id="id-1.6.6.14.5.3.2.1.4" class="indexterm"></a>
+       </span> <a href="#GUC-AUTOVACUUM-WORKER-SLOTS" class="id_link">#</a></dt><dd><p>
+<span class="original">
+         Specifies the number of backend slots to reserve for autovacuum worker
+         processes.  The default is typically 16 slots, but might be less if
+         your kernel settings will not support it (as determined during initdb).
+         This parameter can only be set at server start.
+</span>
+自動バキュームワーカープロセス用に予約するバックエンドのスロット数を指定します。
+デフォルトは通常16スロットですが、カーネル設定でサポートされない場合（initdb中に判定します）、それより少なくなる可能性があります。
+このパラメータはサーバ起動時のみ設定可能です。
+        </p><p>
+<span class="original">
+         When changing this value, consider also adjusting
+         &lt;xref linkend="guc-autovacuum-max-workers"/&gt;.
+</span>
+この値を変更する場合は、<a class="xref" href="runtime-config-vacuum.html#GUC-AUTOVACUUM-MAX-WORKERS">autovacuum_max_workers</a>を調整することも考慮してください。
+        </p></dd><dt id="GUC-AUTOVACUUM-MAX-WORKERS"><span class="term"><code class="varname">autovacuum_max_workers</code> (<code class="type">integer</code>)
+       <a id="id-1.6.6.14.5.3.3.1.3" class="indexterm"></a>
+       <a id="id-1.6.6.14.5.3.3.1.4" class="indexterm"></a>
+       </span> <a href="#GUC-AUTOVACUUM-MAX-WORKERS" class="id_link">#</a></dt><dd><p>
+<span class="original">
+         Specifies the maximum number of autovacuum processes (other than the
+         autovacuum launcher) that may be running at any one time.  The default
+         is &lt;literal&gt;3&lt;/literal&gt;.  This parameter can only be set in the
+         &lt;filename&gt;postgresql.conf&lt;/filename&gt; file or on the server command line.
+</span>
+同時に実行することができる自動バキュームプロセス（自動バキュームランチャ以外）の最大数を指定します。
+デフォルトは<code class="literal">3</code>です。
+このパラメータは、<code class="filename">postgresql.conf</code>ファイルか、サーバのコマンドラインでのみ設定可能です。
+        </p><p>
+<span class="original">
+         Note that a setting for this value which is higher than
+         &lt;xref linkend="guc-autovacuum-worker-slots"/&gt; will have no effect,
+         since autovacuum workers are taken from the pool of slots established
+         by that setting.
+</span>
+<a class="xref" href="runtime-config-vacuum.html#GUC-AUTOVACUUM-WORKER-SLOTS">autovacuum_worker_slots</a>よりも大きい値を設定しても効果はありません。
+これは、自動バキュームワーカーがこの設定によって確立されたスロットのプールから取得されるためです。
+        </p></dd><dt id="GUC-AUTOVACUUM-NAPTIME"><span class="term"><code class="varname">autovacuum_naptime</code> (<code class="type">integer</code>)
+       <a id="id-1.6.6.14.5.3.4.1.3" class="indexterm"></a>
+       <a id="id-1.6.6.14.5.3.4.1.4" class="indexterm"></a>
+       </span> <a href="#GUC-AUTOVACUUM-NAPTIME" class="id_link">#</a></dt><dd><p>
+<span class="original">
+         Specifies the minimum delay between autovacuum runs on any given
+         database.  In each round the daemon examines the
+         database and issues &lt;command&gt;VACUUM&lt;/command&gt; and &lt;command&gt;ANALYZE&lt;/command&gt; commands
+         as needed for tables in that database.
+         If this value is specified without units, it is taken as seconds.
+         The default is one minute (&lt;literal&gt;1min&lt;/literal&gt;).
+         This parameter can only be set in the &lt;filename&gt;postgresql.conf&lt;/filename&gt;
+         file or on the server command line.
+</span>
+あるデータベースについて実行される自動バキュームデーモンの最小遅延を指定します。
+それぞれの周期で、デーモンはそのデータベースを試験し、そしてそのデータベース内のテーブルで必要性が認められると、<code class="command">VACUUM</code>および<code class="command">ANALYZE</code>コマンドを発行します。
+この値が単位なしで指定された場合は、秒単位であるとみなします。
+デフォルトは1分（<code class="literal">1min</code>）です。
+このパラメータは、<code class="filename">postgresql.conf</code>ファイルか、サーバのコマンドラインでのみ設定可能です。
+        </p></dd><dt id="GUC-AUTOVACUUM-VACUUM-THRESHOLD"><span class="term"><code class="varname">autovacuum_vacuum_threshold</code> (<code class="type">integer</code>)
+       <a id="id-1.6.6.14.5.3.5.1.3" class="indexterm"></a>
+       <a id="id-1.6.6.14.5.3.5.1.4" class="indexterm"></a>
+       </span> <a href="#GUC-AUTOVACUUM-VACUUM-THRESHOLD" class="id_link">#</a></dt><dd><p>
+<span class="original">
+         Specifies the minimum number of updated or deleted tuples needed
+         to trigger a &lt;command&gt;VACUUM&lt;/command&gt; in any one table.
+         The default is 50 tuples.
+         This parameter can only be set in the &lt;filename&gt;postgresql.conf&lt;/filename&gt;
+         file or on the server command line;
+         but the setting can be overridden for individual tables by
+         changing table storage parameters.
+</span>
+ある任意のテーブルで<code class="command">VACUUM</code>が起動されるのに必要な更新もしくは削除されたタプルの最小数を指定します。
+デフォルトは50タプルです。
+このパラメータは、<code class="filename">postgresql.conf</code>ファイルか、サーバのコマンドラインでのみ設定可能です。
+ただし、この設定はテーブル格納パラメータの変更により、それぞれのテーブルに対して上書きすることができます。
+        </p></dd><dt id="GUC-AUTOVACUUM-VACUUM-INSERT-THRESHOLD"><span class="term"><code class="varname">autovacuum_vacuum_insert_threshold</code> (<code class="type">integer</code>)
+       <a id="id-1.6.6.14.5.3.6.1.3" class="indexterm"></a>
+       <a id="id-1.6.6.14.5.3.6.1.4" class="indexterm"></a>
+       </span> <a href="#GUC-AUTOVACUUM-VACUUM-INSERT-THRESHOLD" class="id_link">#</a></dt><dd><p>
+<span class="original">
+         Specifies the number of inserted tuples needed to trigger a
+         &lt;command&gt;VACUUM&lt;/command&gt; in any one table.
+         The default is 1000 tuples.  If -1 is specified, autovacuum will not
+         trigger a &lt;command&gt;VACUUM&lt;/command&gt; operation on any tables based on
+         the number of inserts.
+         This parameter can only be set in the &lt;filename&gt;postgresql.conf&lt;/filename&gt;
+         file or on the server command line;
+         but the setting can be overridden for individual tables by
+         changing table storage parameters.
+</span>
+ある任意のテーブルで<code class="command">VACUUM</code>が起動されるのに必要な挿入タプル数を設定します。
+デフォルトは1000タプルです。
+-1が指定されると、自動バキュームが挿入タプル数に基づいて<code class="command">VACUUM</code>操作を引き起こすことはなくなります。
+このパラメータは、<code class="filename">postgresql.conf</code>ファイルか、サーバのコマンドラインでのみ設定可能です。
+ただし、この設定はテーブル格納パラメータの変更により、それぞれのテーブルに対して上書きすることができます。
+        </p></dd><dt id="GUC-AUTOVACUUM-ANALYZE-THRESHOLD"><span class="term"><code class="varname">autovacuum_analyze_threshold</code> (<code class="type">integer</code>)
+       <a id="id-1.6.6.14.5.3.7.1.3" class="indexterm"></a>
+       <a id="id-1.6.6.14.5.3.7.1.4" class="indexterm"></a>
+       </span> <a href="#GUC-AUTOVACUUM-ANALYZE-THRESHOLD" class="id_link">#</a></dt><dd><p>
+<span class="original">
+         Specifies the minimum number of inserted, updated or deleted tuples
+         needed to trigger an &lt;command&gt;ANALYZE&lt;/command&gt; in any one table.
+         The default is 50 tuples.
+         This parameter can only be set in the &lt;filename&gt;postgresql.conf&lt;/filename&gt;
+         file or on the server command line;
+         but the setting can be overridden for individual tables by
+         changing table storage parameters.
+</span>
+ある任意のテーブルで<code class="command">ANALYZE</code>が起動されるのに必要な、挿入、更新、もしくは削除されたタプルの最小数を指定します。
+デフォルトは50タプルです。
+このパラメータは、<code class="filename">postgresql.conf</code>ファイルか、サーバのコマンドラインでのみ設定可能です。
+ただし、この設定はテーブル格納パラメータの変更により、それぞれのテーブルに対して上書きすることができます。
+        </p></dd><dt id="GUC-AUTOVACUUM-VACUUM-SCALE-FACTOR"><span class="term"><code class="varname">autovacuum_vacuum_scale_factor</code> (<code class="type">floating point</code>)
+       <a id="id-1.6.6.14.5.3.8.1.3" class="indexterm"></a>
+       <a id="id-1.6.6.14.5.3.8.1.4" class="indexterm"></a>
+       </span> <a href="#GUC-AUTOVACUUM-VACUUM-SCALE-FACTOR" class="id_link">#</a></dt><dd><p>
+<span class="original">
+         Specifies a fraction of the table size to add to
+         &lt;varname&gt;autovacuum_vacuum_threshold&lt;/varname&gt;
+         when deciding whether to trigger a &lt;command&gt;VACUUM&lt;/command&gt;.
+         The default is &lt;literal&gt;0.2&lt;/literal&gt; (20% of table size).
+         This parameter can only be set in the &lt;filename&gt;postgresql.conf&lt;/filename&gt;
+         file or on the server command line;
+         but the setting can be overridden for individual tables by
+         changing table storage parameters.
+</span>
+<code class="command">VACUUM</code>を起動するかどうか決定するときに、<code class="varname">autovacuum_vacuum_threshold</code>に追加するテーブルサイズの割合を指定します。
+デフォルトは<code class="literal">0.2</code>（テーブルサイズの20%）です。
+このパラメータは、<code class="filename">postgresql.conf</code>ファイルか、サーバのコマンドラインでのみ設定可能です。
+ただし、この設定はテーブル格納パラメータの変更により、それぞれのテーブルに対して上書きすることができます。
+        </p></dd><dt id="GUC-AUTOVACUUM-VACUUM-INSERT-SCALE-FACTOR"><span class="term"><code class="varname">autovacuum_vacuum_insert_scale_factor</code> (<code class="type">floating point</code>)
+       <a id="id-1.6.6.14.5.3.9.1.3" class="indexterm"></a>
+       <a id="id-1.6.6.14.5.3.9.1.4" class="indexterm"></a>
+       </span> <a href="#GUC-AUTOVACUUM-VACUUM-INSERT-SCALE-FACTOR" class="id_link">#</a></dt><dd><p>
+<span class="original">
+         Specifies a fraction of the unfrozen pages in the table to add to
+         &lt;varname&gt;autovacuum_vacuum_insert_threshold&lt;/varname&gt; when deciding
+         whether to trigger a &lt;command&gt;VACUUM&lt;/command&gt;. The default is
+         &lt;literal&gt;0.2&lt;/literal&gt; (20% of unfrozen pages in table). This
+         parameter can only be set in the &lt;filename&gt;postgresql.conf&lt;/filename&gt;
+         file or on the server command line; but the setting can be overridden
+         for individual tables by changing table storage parameters.
+</span>
+<code class="command">VACUUM</code>を起動するかどうか決めるときに、<code class="varname">autovacuum_vacuum_insert_threshold</code>に追加するテーブルの未凍結なページの割合を指定します。
+デフォルトは<code class="literal">0.2</code>（テーブルで未凍結なページの20%）です。
+このパラメータは、<code class="filename">postgresql.conf</code>ファイルか、サーバのコマンドラインでのみ設定可能です。
+ただし、この設定はテーブル格納パラメータの変更により、それぞれのテーブルに対して上書きすることができます。
+        </p></dd><dt id="GUC-AUTOVACUUM-ANALYZE-SCALE-FACTOR"><span class="term"><code class="varname">autovacuum_analyze_scale_factor</code> (<code class="type">floating point</code>)
+       <a id="id-1.6.6.14.5.3.10.1.3" class="indexterm"></a>
+       <a id="id-1.6.6.14.5.3.10.1.4" class="indexterm"></a>
+       </span> <a href="#GUC-AUTOVACUUM-ANALYZE-SCALE-FACTOR" class="id_link">#</a></dt><dd><p>
+<span class="original">
+         Specifies a fraction of the table size to add to
+         &lt;varname&gt;autovacuum_analyze_threshold&lt;/varname&gt;
+         when deciding whether to trigger an &lt;command&gt;ANALYZE&lt;/command&gt;.
+         The default is &lt;literal&gt;0.1&lt;/literal&gt; (10% of table size).
+         This parameter can only be set in the &lt;filename&gt;postgresql.conf&lt;/filename&gt;
+         file or on the server command line;
+         but the setting can be overridden for individual tables by
+         changing table storage parameters.
+</span>
+<code class="command">ANALYZE</code>を起動するかどうか決めるときに、<code class="varname">autovacuum_analyze_threshold</code>に追加するテーブルサイズの割合を指定します。
+デフォルトは<code class="literal">0.1</code>（テーブルサイズの10%）です。
+このパラメータは、<code class="filename">postgresql.conf</code>ファイルか、サーバのコマンドラインでのみ設定可能です。
+ただし、この設定はテーブル格納パラメータの変更により、それぞれのテーブルに対して上書きすることができます。
+        </p></dd><dt id="GUC-AUTOVACUUM-VACUUM-MAX-THRESHOLD"><span class="term"><code class="varname">autovacuum_vacuum_max_threshold</code> (<code class="type">integer</code>)
+       <a id="id-1.6.6.14.5.3.11.1.3" class="indexterm"></a>
+       <a id="id-1.6.6.14.5.3.11.1.4" class="indexterm"></a>
+       </span> <a href="#GUC-AUTOVACUUM-VACUUM-MAX-THRESHOLD" class="id_link">#</a></dt><dd><p>
+<span class="original">
+         Specifies the maximum number of updated or deleted tuples needed to
+         trigger a &lt;command&gt;VACUUM&lt;/command&gt; in any one table, i.e., a limit on
+         the value calculated with
+         &lt;varname&gt;autovacuum_vacuum_threshold&lt;/varname&gt; and
+         &lt;varname&gt;autovacuum_vacuum_scale_factor&lt;/varname&gt;.  The default is
+         100,000,000 tuples.  If -1 is specified, autovacuum will not enforce a
+         maximum number of updated or deleted tuples that will trigger a
+         &lt;command&gt;VACUUM&lt;/command&gt; operation.  This parameter can only be set
+         in the &lt;filename&gt;postgresql.conf&lt;/filename&gt; file or on the server
+         command line; but the setting can be overridden for individual tables
+         by changing storage parameters.
+</span>
+ある任意のテーブルで<code class="command">VACUUM</code>が起動されるのに必要な更新または削除されたタプルの最大数、つまり<code class="varname">autovacuum_vacuum_threshold</code>と<code class="varname">autovacuum_vacuum_scale_factor</code>で計算される値の上限値を指定します。
+デフォルトは1億タプルです。
+-1を指定すると、自動バキュームは、<code class="command">VACUUM</code>操作を起動する更新または削除されたタプルの最大数を強制しません。
+このパラメータは、<code class="filename">postgresql.conf</code>ファイルか、サーバのコマンドラインでのみ設定可能です。
+ただし、この設定はテーブル格納パラメータの変更により、それぞれのテーブルに対して上書きすることができます。
+        </p></dd><dt id="GUC-AUTOVACUUM-FREEZE-MAX-AGE"><span class="term"><code class="varname">autovacuum_freeze_max_age</code> (<code class="type">integer</code>)
+       <a id="id-1.6.6.14.5.3.12.1.3" class="indexterm"></a>
+       <a id="id-1.6.6.14.5.3.12.1.4" class="indexterm"></a>
+       </span> <a href="#GUC-AUTOVACUUM-FREEZE-MAX-AGE" class="id_link">#</a></dt><dd><p>
+<span class="original">
+         Specifies the maximum age (in transactions) that a table's
+         &lt;structname&gt;pg_class&lt;/structname&gt;.&lt;structfield&gt;relfrozenxid&lt;/structfield&gt; field can
+         attain before a &lt;command&gt;VACUUM&lt;/command&gt; operation is forced
+         to prevent transaction ID wraparound within the table.
+         Note that the system will launch autovacuum processes to
+         prevent wraparound even when autovacuum is otherwise disabled.
+</span>
+トランザクションID周回を防ぐために<code class="command">VACUUM</code>操作が強制される前までにテーブルの<code class="structname">pg_class</code>.<code class="structfield">relfrozenxid</code>フィールドが到達できる（トランザクションにおける）最大の年代を指定します。
+自動バキュームが無効であった時でも、システムは周回を防ぐために自動バキューム子プロセスを起動することに注意してください。
+        </p><p>
+<span class="original">
+         Vacuum also allows removal of old files from the
+         &lt;filename&gt;pg_xact&lt;/filename&gt; subdirectory, which is why the default
+         is a relatively low 200 million transactions.
+         This parameter can only be set at server start, but the setting
+         can be reduced for individual tables by
+         changing table storage parameters.
+         For more information see &lt;xref linkend="vacuum-for-wraparound"/&gt;.
+</span>
+バキューム処理は同時に<code class="filename">pg_xact</code>サブディレクトリから古いファイルの削除を許可します。
+これが、比較的低い2億トランザクションがデフォルトである理由です。
+このパラメータはサーバ起動時にのみ設定可能です。
+しかし、この設定はテーブル格納パラメータの変更により、それぞれのテーブルで減らすことができます。
+詳細は<a class="xref" href="routine-vacuuming.html#VACUUM-FOR-WRAPAROUND" title="24.1.5. トランザクションIDの周回エラーの防止">24.1.5</a>を参照してください。
+        </p></dd><dt id="GUC-AUTOVACUUM-MULTIXACT-FREEZE-MAX-AGE"><span class="term"><code class="varname">autovacuum_multixact_freeze_max_age</code> (<code class="type">integer</code>)
+       <a id="id-1.6.6.14.5.3.13.1.3" class="indexterm"></a>
+       <a id="id-1.6.6.14.5.3.13.1.4" class="indexterm"></a>
+       </span> <a href="#GUC-AUTOVACUUM-MULTIXACT-FREEZE-MAX-AGE" class="id_link">#</a></dt><dd><p>
+<span class="original">
+         Specifies the maximum age (in multixacts) that a table's
+         &lt;structname&gt;pg_class&lt;/structname&gt;.&lt;structfield&gt;relminmxid&lt;/structfield&gt; field can
+         attain before a &lt;command&gt;VACUUM&lt;/command&gt; operation is forced to
+         prevent multixact ID wraparound within the table.
+         Note that the system will launch autovacuum processes to
+         prevent wraparound even when autovacuum is otherwise disabled.
+</span>
+トランザクションID周回を防ぐために<code class="command">VACUUM</code>操作が強制される前までにテーブルの<code class="structname">pg_class</code>.<code class="structfield">relminmxid</code>フィールドが到達できる（マルチトランザクションにおける）最大の年代を指定します。
+自動バキュームが無効であった時でも、システムは周回を防ぐために自動バキューム子プロセスを起動することに注意してください。
+        </p><p>
+<span class="original">
+         Vacuuming multixacts also allows removal of old files from the
+         &lt;filename&gt;pg_multixact/members&lt;/filename&gt; and &lt;filename&gt;pg_multixact/offsets&lt;/filename&gt;
+         subdirectories, which is why the default is a relatively low
+         400 million multixacts.
+         This parameter can only be set at server start, but the setting can
+         be reduced for individual tables by changing table storage parameters.
+         For more information see &lt;xref linkend="vacuum-for-multixact-wraparound"/&gt;.
+</span>
+マルチトランザクションのバキューム処理は同時に<code class="filename">pg_multixact/members</code>と<code class="filename">pg_multixact/offsets</code>サブディレクトリから古いファイルの削除を許可します。
+これが、比較的低い4億トランザクションがデフォルトである理由です。
+このパラメータはサーバ起動時にのみ設定可能です。
+しかし、この設定はテーブル格納パラメータの変更により、それぞれのテーブルで減らすことができます。
+詳細は<a class="xref" href="routine-vacuuming.html#VACUUM-FOR-MULTIXACT-WRAPAROUND" title="24.1.5.1. マルチトランザクションと周回">24.1.5.1</a>を参照してください。
+        </p></dd><dt id="GUC-AUTOVACUUM-VACUUM-COST-DELAY"><span class="term"><code class="varname">autovacuum_vacuum_cost_delay</code> (<code class="type">floating point</code>)
+       <a id="id-1.6.6.14.5.3.14.1.3" class="indexterm"></a>
+       <a id="id-1.6.6.14.5.3.14.1.4" class="indexterm"></a>
+       </span> <a href="#GUC-AUTOVACUUM-VACUUM-COST-DELAY" class="id_link">#</a></dt><dd><p>
+<span class="original">
+         Specifies the cost delay value that will be used in automatic
+         &lt;command&gt;VACUUM&lt;/command&gt; operations.  If -1 is specified, the regular
+         &lt;xref linkend="guc-vacuum-cost-delay"/&gt; value will be used.
+         If this value is specified without units, it is taken as milliseconds.
+         The default value is 2 milliseconds.
+         This parameter can only be set in the &lt;filename&gt;postgresql.conf&lt;/filename&gt;
+         file or on the server command line;
+         but the setting can be overridden for individual tables by
+         changing table storage parameters.
+</span>
+自動<code class="command">VACUUM</code>操作に使用されるコスト遅延値を指定します。
+-1が指定されると、通常の<a class="xref" href="runtime-config-vacuum.html#GUC-VACUUM-COST-DELAY">vacuum_cost_delay</a>の値が使用されます。
+この値が単位なしで指定された場合は、ミリ秒単位であるとみなします。
+デフォルト値は2ミリ秒です。
+このパラメータは、<code class="filename">postgresql.conf</code>ファイルか、サーバのコマンドラインでのみ設定可能です。
+ただし、この設定はテーブル格納パラメータの変更により、それぞれのテーブルに対して上書きすることができます。
+        </p></dd><dt id="GUC-AUTOVACUUM-VACUUM-COST-LIMIT"><span class="term"><code class="varname">autovacuum_vacuum_cost_limit</code> (<code class="type">integer</code>)
+       <a id="id-1.6.6.14.5.3.15.1.3" class="indexterm"></a>
+       <a id="id-1.6.6.14.5.3.15.1.4" class="indexterm"></a>
+       </span> <a href="#GUC-AUTOVACUUM-VACUUM-COST-LIMIT" class="id_link">#</a></dt><dd><p>
+<span class="original">
+         Specifies the cost limit value that will be used in automatic
+         &lt;command&gt;VACUUM&lt;/command&gt; operations.  If &lt;literal&gt;-1&lt;/literal&gt;
+         is specified (which is the default), the regular
+         &lt;xref linkend="guc-vacuum-cost-limit"/&gt; value will be used.  Note that
+         the value is distributed proportionally among the running autovacuum
+         workers, if there is more than one, so that the sum of the limits for
+         each worker does not exceed the value of this variable.
+         This parameter can only be set in the &lt;filename&gt;postgresql.conf&lt;/filename&gt;
+         file or on the server command line;
+         but the setting can be overridden for individual tables by
+         changing table storage parameters.
+</span>
+自動<code class="command">VACUUM</code>操作に使用されるコスト限界値を指定します。
+（デフォルトの）<code class="literal">-1</code>が指定されると、通常の<a class="xref" href="runtime-config-vacuum.html#GUC-VACUUM-COST-LIMIT">vacuum_cost_limit</a>の値が使用されます。
+実行中の自動バキュームワーカーが複数存在する場合、この値はすべてのワーカーに比例分配されることに注意してください。
+したがって各ワーカーの上限の合計がこの変数の値を超えることはありません。
+このパラメータは、<code class="filename">postgresql.conf</code>ファイルか、サーバのコマンドラインでのみ設定可能です。
+ただし、この設定はテーブル格納パラメータの変更により、それぞれのテーブルに対して上書きすることができます。
+        </p></dd></dl></div></div><div class="sect2" id="RUNTIME-CONFIG-RESOURCE-VACUUM-COST"><div class="titlepage"><div><div><h3 class="title">19.10.2. コストに基づくVacuum遅延 <a href="#RUNTIME-CONFIG-RESOURCE-VACUUM-COST" class="id_link">#</a></h3></div></div></div><span class="original">
+     &lt;title&gt;Cost-based Vacuum Delay&lt;/title&gt;
+</span><p>
+<span class="original">
+      During the execution of &lt;xref linkend="sql-vacuum"/&gt;
+      and &lt;xref linkend="sql-analyze"/&gt;
+      commands, the system maintains an
+      internal counter that keeps track of the estimated cost of the
+      various I/O operations that are performed.  When the accumulated
+      cost reaches a limit (specified by
+      &lt;varname&gt;vacuum_cost_limit&lt;/varname&gt;), the process performing
+      the operation will sleep for a short period of time, as specified by
+      &lt;varname&gt;vacuum_cost_delay&lt;/varname&gt;. Then it will reset the
+      counter and continue execution.
+</span>
+<a class="xref" href="sql-vacuum.html" title="VACUUM"><span class="refentrytitle">VACUUM</span></a> および <a class="xref" href="sql-analyze.html" title="ANALYZE"><span class="refentrytitle">ANALYZE</span></a> コマンドの実行中、実行される各種I/O操作の予測コストを追跡し続ける内部カウンタをシステムが保守します。
+累積されたコストが（<code class="varname">vacuum_cost_limit</code>で指定された）限度に達すると、操作を実行しているプロセスは<code class="varname">vacuum_cost_delay</code>で指定されたちょっとの間スリープします。その後、カウンタをリセットし、実行を継続します。
+     </p><p>
+<span class="original">
+      The intent of this feature is to allow administrators to reduce
+      the I/O impact of these commands on concurrent database
+      activity. There are many situations where it is not
+      important that maintenance commands like
+      &lt;command&gt;VACUUM&lt;/command&gt; and &lt;command&gt;ANALYZE&lt;/command&gt; finish
+      quickly; however, it is usually very important that these
+      commands do not significantly interfere with the ability of the
+      system to perform other database operations. Cost-based vacuum
+      delay provides a way for administrators to achieve this.
+</span>
+この機能の目的は、同時に実行されているデータベースの活動に対するこれらコマンドによるI/Oへの影響を、管理者が軽減できるようにすることです。
+<code class="command">VACUUM</code> および <code class="command">ANALYZE</code>の様な保守用コマンドが即座に終了することが重要ではない事態が数多くあります。
+しかし、他のデータベースの操作を行うに当たって、これらのコマンドがシステムの能力に多大な阻害を与えないことは通常とても重要です。
+コストに基づいたvacuum遅延はこれを実現するための方法を管理者に提供します。
+     </p><p>
+<span class="original">
+      This feature is disabled by default for manually issued
+      &lt;command&gt;VACUUM&lt;/command&gt; commands. To enable it, set the
+      &lt;varname&gt;vacuum_cost_delay&lt;/varname&gt; variable to a nonzero
+      value.
+</span>
+手動で実行した<code class="command">VACUUM</code>コマンドについては、デフォルトでこの機能は無効になっています。
+有効にするには、<code class="varname">vacuum_cost_delay</code>変数をゼロでない値に設定します。
+     </p><div class="variablelist"><dl class="variablelist"><dt id="GUC-VACUUM-COST-DELAY"><span class="term"><code class="varname">vacuum_cost_delay</code> (<code class="type">floating point</code>)
+       <a id="id-1.6.6.14.6.5.1.1.3" class="indexterm"></a>
+       <a id="id-1.6.6.14.6.5.1.1.4" class="indexterm"></a>
+       </span> <a href="#GUC-VACUUM-COST-DELAY" class="id_link">#</a></dt><dd><p>
+<span class="original">
+         The amount of time that the process will sleep when the cost
+         limit has been exceeded. If this value is specified without
+         units, it is taken as milliseconds. The default value is
+         &lt;literal&gt;0&lt;/literal&gt;, which disables the cost-based vacuum delay
+         feature.  Positive values enable cost-based vacuuming.
+</span>
+コストの上限を越えた場合に、プロセスがスリープする時間の長さです。
+この値が単位なしで指定された場合は、ミリ秒単位であるとみなします。
+デフォルトの値は<code class="literal">0</code>で、コストに基づいたvacuum遅延機能を無効にします。
+正の整数はコストに基づいたvacuumを有効にします。
+        </p><p>
+<span class="original">
+         When using cost-based vacuuming, appropriate values for
+         &lt;varname&gt;vacuum_cost_delay&lt;/varname&gt; are usually quite small, perhaps
+         less than 1 millisecond.  While &lt;varname&gt;vacuum_cost_delay&lt;/varname&gt;
+         can be set to fractional-millisecond values, such delays may not be
+         measured accurately on older platforms.  On such platforms,
+         increasing &lt;command&gt;VACUUM&lt;/command&gt;'s throttled resource consumption
+         above what you get at 1ms will require changing the other vacuum cost
+         parameters.  You should, nonetheless,
+         keep &lt;varname&gt;vacuum_cost_delay&lt;/varname&gt; as small as your platform
+         will consistently measure; large delays are not helpful.
+</span>
+コストに基づいたバキューム処理を使用する場合、<code class="varname">vacuum_cost_delay</code>の適切な値は通常かなり小さくなり、おそらく1ミリ秒以下になります。
+バキュームによるリソース消費の調整は、他のバキュームのコストパラメータを変更して行うことが最善です。
+<code class="varname">vacuum_cost_delay</code>を1ミリ秒以下に設定することは可能ですが、そうした遅延は古いプラットフォームでは正確には計測されないかも知れません。
+そうしたプラットフォームでは、<code class="command">VACUUM</code>のリソース消費制限を1ミリ秒のときに得られる値以上にするには、他のVACUUMコストパラメータの変更が必要となるでしょう。
+とは言うものの、使用するプラットフォームで常に計測できる範囲で<code class="varname">vacuum_cost_delay</code>をできるだけ小さくするようにしてください。
+大きな遅延は助けになりません。
+        </p></dd><dt id="GUC-VACUUM-COST-PAGE-HIT"><span class="term"><code class="varname">vacuum_cost_page_hit</code> (<code class="type">integer</code>)
+       <a id="id-1.6.6.14.6.5.2.1.3" class="indexterm"></a>
+       <a id="id-1.6.6.14.6.5.2.1.4" class="indexterm"></a>
+       </span> <a href="#GUC-VACUUM-COST-PAGE-HIT" class="id_link">#</a></dt><dd><p>
+<span class="original">
+         The estimated cost for vacuuming a buffer found in the shared
+         buffer cache. It represents the cost to lock the buffer pool,
+         lookup the shared hash table and scan the content of the page.
+         The default value is &lt;literal&gt;1&lt;/literal&gt;.
+</span>
+共有バッファキャッシュにあるバッファをバキュームするための推定コストです。
+これは、バッファプールのロック、共有ハッシュテーブルの検索、およびページ内容をスキャンするためのコストを示します。
+デフォルトの値は<code class="literal">1</code>です。
+        </p></dd><dt id="GUC-VACUUM-COST-PAGE-MISS"><span class="term"><code class="varname">vacuum_cost_page_miss</code> (<code class="type">integer</code>)
+       <a id="id-1.6.6.14.6.5.3.1.3" class="indexterm"></a>
+       <a id="id-1.6.6.14.6.5.3.1.4" class="indexterm"></a>
+       </span> <a href="#GUC-VACUUM-COST-PAGE-MISS" class="id_link">#</a></dt><dd><p>
+<span class="original">
+         The estimated cost for vacuuming a buffer that has to be read from
+         disk.  This represents the effort to lock the buffer pool,
+         lookup the shared hash table, read the desired block in from
+         the disk and scan its content. The default value is
+         &lt;literal&gt;2&lt;/literal&gt;.
+</span>
+ディスクから読み込まれなければならないバッファをバキュームするための推定コストです。
+これは、バッファプールロックの試み、共有ハッシュテーブルの参照、ディスクから目的ブロックの読み込み、そしてその内容をスキャンするためのコストを示します。
+デフォルトの値は<code class="literal">2</code>です。
+        </p></dd><dt id="GUC-VACUUM-COST-PAGE-DIRTY"><span class="term"><code class="varname">vacuum_cost_page_dirty</code> (<code class="type">integer</code>)
+       <a id="id-1.6.6.14.6.5.4.1.3" class="indexterm"></a>
+       <a id="id-1.6.6.14.6.5.4.1.4" class="indexterm"></a>
+       </span> <a href="#GUC-VACUUM-COST-PAGE-DIRTY" class="id_link">#</a></dt><dd><p>
+<span class="original">
+         The estimated cost charged when vacuum modifies a block that was
+         previously clean. It represents the extra I/O required to
+         flush the dirty block out to disk again. The default value is
+         &lt;literal&gt;20&lt;/literal&gt;.
+</span>
+以前掃除されたブロックをバキュームで変更するときに必要な推定コストです。
+これは、ダーティブロックを再度ディスクにフラッシュするのに必要な追加のI/Oを表します。
+デフォルトの値は<code class="literal">20</code>です。
+        </p></dd><dt id="GUC-VACUUM-COST-LIMIT"><span class="term"><code class="varname">vacuum_cost_limit</code> (<code class="type">integer</code>)
+       <a id="id-1.6.6.14.6.5.5.1.3" class="indexterm"></a>
+       <a id="id-1.6.6.14.6.5.5.1.4" class="indexterm"></a>
+       </span> <a href="#GUC-VACUUM-COST-LIMIT" class="id_link">#</a></dt><dd><p>
+<span class="original">
+         This is the accumulated cost that will cause the vacuuming
+         process to sleep for &lt;varname&gt;vacuum_cost_delay&lt;/varname&gt;.  The
+         default is &lt;literal&gt;200&lt;/literal&gt;.
+</span>
+これは、バキューム処理を<code class="varname">vacuum_cost_delay</code>の間スリープさせるための累積コストです。
+デフォルトの値は<code class="literal">200</code>です。
+        </p></dd></dl></div><div class="note"><h3 class="title">注記</h3><p>
+<span class="original">
+       There are certain operations that hold critical locks and should
+       therefore complete as quickly as possible.  Cost-based vacuum
+       delays do not occur during such operations.  Therefore it is
+       possible that the cost accumulates far higher than the specified
+       limit.  To avoid uselessly long delays in such cases, the actual
+       delay is calculated as &lt;varname&gt;vacuum_cost_delay&lt;/varname&gt; *
+       &lt;varname&gt;accumulated_balance&lt;/varname&gt; /
+       &lt;varname&gt;vacuum_cost_limit&lt;/varname&gt; with a maximum of
+       &lt;varname&gt;vacuum_cost_delay&lt;/varname&gt; * 4.
+</span>
+重要なロックを保有し可能なかぎり早急に完了しなければならないある種の操作があります。コストに基づいたvacuum遅延はこの様な操作では起こりません。
+したがって、コストの累計が指定された限度をかなり高く超える可能性があります。
+このような場合無駄な長い遅延を防止するため、実際の遅延は<code class="varname">vacuum_cost_delay</code> * 4 を上限として、以下のように計算されます。
+<code class="varname">vacuum_cost_delay</code> * <code class="varname">accumulated_balance</code> / <code class="varname">vacuum_cost_limit</code>
+      </p></div></div><div class="sect2" id="RUNTIME-CONFIG-VACUUM-DEFAULT"><div class="titlepage"><div><div><h3 class="title">19.10.3. デフォルトの動作 <a href="#RUNTIME-CONFIG-VACUUM-DEFAULT" class="id_link">#</a></h3></div></div></div><span class="original">
+     &lt;title&gt;Default Behavior&lt;/title&gt;
+</span><div class="variablelist"><dl class="variablelist"><dt id="GUC-VACUUM-TRUNCATE"><span class="term"><code class="varname">vacuum_truncate</code> (<code class="type">boolean</code>)
+       <a id="id-1.6.6.14.7.2.1.1.3" class="indexterm"></a>
+       <a id="id-1.6.6.14.7.2.1.1.4" class="indexterm"></a>
+       </span> <a href="#GUC-VACUUM-TRUNCATE" class="id_link">#</a></dt><dd><p>
+<span class="original">
+         Enables or disables vacuum to try to truncate off any empty pages at
+         the end of the table.  The default value is &lt;literal&gt;true&lt;/literal&gt;.
+         If &lt;literal&gt;true&lt;/literal&gt;, &lt;command&gt;VACUUM&lt;/command&gt; and autovacuum
+         do the truncation and the disk space for the truncated pages is
+         returned to the operating system.  Note that the truncation requires
+         an &lt;literal&gt;ACCESS EXCLUSIVE&lt;/literal&gt; lock on the table.  The
+         &lt;literal&gt;TRUNCATE&lt;/literal&gt; parameter of
+         &lt;link linkend="sql-vacuum"&gt;&lt;command&gt;VACUUM&lt;/command&gt;&lt;/link&gt;, if
+         specified, overrides the value of this parameter.  The setting can
+         also be overridden for individual tables by changing table storage
+         parameters.
+</span>
+テーブルの最後にある空のページを切り捨てようとするバキュームの機能を有効または無効にします。
+デフォルト値は<code class="literal">true</code>です。
+<code class="literal">true</code>に設定すると、<code class="command">VACUUM</code>と自動バキュームが切り捨てを行い、切り捨てられたページのディスク容量がオペレーティングシステムに返されます。
+切り捨てにはテーブルの<code class="literal">ACCESS EXCLUSIVE</code>ロックが必要であることに注意してください。
+<a class="link" href="sql-vacuum.html" title="VACUUM"><code class="command">VACUUM</code></a>の<code class="literal">TRUNCATE</code>パラメータが指定されている場合、このパラメータの値を上書きします。
+この設定はテーブル格納パラメータの変更により、それぞれのテーブルに対して上書きすることができます。
+        </p></dd></dl></div></div><div class="sect2" id="RUNTIME-CONFIG-VACUUM-FREEZING"><div class="titlepage"><div><div><h3 class="title">19.10.4. 凍結処理 <a href="#RUNTIME-CONFIG-VACUUM-FREEZING" class="id_link">#</a></h3></div></div></div><span class="original">
+     &lt;title&gt;Freezing&lt;/title&gt;
+</span><p>
+<span class="original">
+      To maintain correctness even after transaction IDs wrap around,
+      &lt;productname&gt;PostgreSQL&lt;/productname&gt; marks rows that are sufficiently
+      old as &lt;emphasis&gt;frozen&lt;/emphasis&gt;. These rows are visible to everyone;
+      other transactions do not need to examine their inserting XID to
+      determine visibility. &lt;command&gt;VACUUM&lt;/command&gt; is responsible for
+      marking rows as frozen. The following settings control
+      &lt;command&gt;VACUUM&lt;/command&gt;'s freezing behavior and should be tuned based
+      on the XID consumption rate of the system and data access patterns of the
+      dominant workloads. See &lt;xref linkend="vacuum-for-wraparound"/&gt; for more
+      information on transaction ID wraparound and tuning these parameters.
+</span>
+トランザクションIDが周回した後でも正確さを維持するために、<span class="productname">PostgreSQL</span>は十分に古い行を<span class="emphasis"><em>凍結</em></span>済みとして印付けます。
+これらの行はすべてのユーザに表示されます。
+他のトランザクションでは、挿入したXIDを調べて可視性を判断する必要はありません。
+<code class="command">VACUUM</code>には、行を凍結状態として印付ける責任があります。
+次の設定は<code class="command">VACUUM</code>の凍結動作を制御します。
+これらの設定は、システムのXID消費率と主要なワークロードのデータ参照パターンに基づいて調整する必要があります。
+トランザクションIDの周回とこれらのパラメータの調整の詳細については、<a class="xref" href="routine-vacuuming.html#VACUUM-FOR-WRAPAROUND" title="24.1.5. トランザクションIDの周回エラーの防止">24.1.5</a>を参照してください。
+     </p><div class="variablelist"><dl class="variablelist"><dt id="GUC-VACUUM-FREEZE-TABLE-AGE"><span class="term"><code class="varname">vacuum_freeze_table_age</code> (<code class="type">integer</code>)
+       <a id="id-1.6.6.14.8.3.1.1.3" class="indexterm"></a>
+       <a id="id-1.6.6.14.8.3.1.1.4" class="indexterm"></a>
+       </span> <a href="#GUC-VACUUM-FREEZE-TABLE-AGE" class="id_link">#</a></dt><dd><p>
+<span class="original">
+         &lt;command&gt;VACUUM&lt;/command&gt; performs an aggressive scan if the table's
+         &lt;structname&gt;pg_class&lt;/structname&gt;.&lt;structfield&gt;relfrozenxid&lt;/structfield&gt; field has reached
+         the age specified by this setting.  An aggressive scan differs from
+         a regular &lt;command&gt;VACUUM&lt;/command&gt; in that it visits every page that might
+         contain unfrozen XIDs or MXIDs, not just those that might contain dead
+         tuples.  The default is 150 million transactions.  Although users can
+         set this value anywhere from zero to two billion, &lt;command&gt;VACUUM&lt;/command&gt;
+         will silently limit the effective value to 95% of
+         &lt;xref linkend="guc-autovacuum-freeze-max-age"/&gt;, so that a
+         periodic manual &lt;command&gt;VACUUM&lt;/command&gt; has a chance to run before an
+         anti-wraparound autovacuum is launched for the table. For more
+         information see
+         &lt;xref linkend="vacuum-for-wraparound"/&gt;.
+</span>
+テーブルの<code class="structname">pg_class</code>.<code class="structfield">relfrozenxid</code>フィールドがこの設定で指定した年代に達すると、<code class="command">VACUUM</code>は積極的なテーブルスキャンを行います。
+積極的なスキャンは、無効タプルを含む可能性のあるページだけではなく、凍結されていないXIDあるいはMXIDを含むすべてのページを読む点で通常の<code class="command">VACUUM</code>とは異なります。
+デフォルトは1.5億トランザクションです。
+ユーザはこの値をゼロから20億までの任意の値に設定することができますが、周回問題対策の自動バキュームがテーブルに対して起動する前に定期的な手動<code class="command">VACUUM</code>が実行する機会を持つように、<code class="command">VACUUM</code>は警告することなく実際の値を<a class="xref" href="runtime-config-vacuum.html#GUC-AUTOVACUUM-FREEZE-MAX-AGE">autovacuum_freeze_max_age</a>の95%に制限します。
+詳細は<a class="xref" href="routine-vacuuming.html#VACUUM-FOR-WRAPAROUND" title="24.1.5. トランザクションIDの周回エラーの防止">24.1.5</a>を参照してください。
+        </p></dd><dt id="GUC-VACUUM-FREEZE-MIN-AGE"><span class="term"><code class="varname">vacuum_freeze_min_age</code> (<code class="type">integer</code>)
+       <a id="id-1.6.6.14.8.3.2.1.3" class="indexterm"></a>
+       <a id="id-1.6.6.14.8.3.2.1.4" class="indexterm"></a>
+       </span> <a href="#GUC-VACUUM-FREEZE-MIN-AGE" class="id_link">#</a></dt><dd><p>
+<span class="original">
+         Specifies the cutoff age (in transactions) that
+         &lt;command&gt;VACUUM&lt;/command&gt; should use to decide whether to
+         trigger freezing of pages that have an older XID.
+         The default is 50 million transactions.  Although
+         users can set this value anywhere from zero to one billion,
+         &lt;command&gt;VACUUM&lt;/command&gt; will silently limit the effective value to half
+         the value of &lt;xref linkend="guc-autovacuum-freeze-max-age"/&gt;, so
+         that there is not an unreasonably short time between forced
+         autovacuums.  For more information see &lt;xref
+         linkend="vacuum-for-wraparound"/&gt;.
+</span>
+<code class="command">VACUUM</code>が、古いXIDを持つページの凍結を行うかどうかを決定する、カットオフ年代を（トランザクション単位で）指定します。
+デフォルトは5千万トランザクションです。
+ユーザはこの値をゼロから10億までの間で任意の値に設定することができますが、<code class="command">VACUUM</code>は警告することなく実際の値を<a class="xref" href="runtime-config-vacuum.html#GUC-AUTOVACUUM-FREEZE-MAX-AGE">autovacuum_freeze_max_age</a>の半分の値まで制限します。
+このため、強制的な自動バキュームの間隔が不合理に短くなることはありません。
+詳細は<a class="xref" href="routine-vacuuming.html#VACUUM-FOR-WRAPAROUND" title="24.1.5. トランザクションIDの周回エラーの防止">24.1.5</a>を参照してください。
+        </p></dd><dt id="GUC-VACUUM-FAILSAFE-AGE"><span class="term"><code class="varname">vacuum_failsafe_age</code> (<code class="type">integer</code>)
+       <a id="id-1.6.6.14.8.3.3.1.3" class="indexterm"></a>
+       <a id="id-1.6.6.14.8.3.3.1.4" class="indexterm"></a>
+       </span> <a href="#GUC-VACUUM-FAILSAFE-AGE" class="id_link">#</a></dt><dd><p>
+<span class="original">
+         Specifies the maximum age (in transactions) that a table's
+         &lt;structname&gt;pg_class&lt;/structname&gt;.&lt;structfield&gt;relfrozenxid&lt;/structfield&gt;
+         field can attain before &lt;command&gt;VACUUM&lt;/command&gt; takes
+         extraordinary measures to avoid system-wide transaction ID
+         wraparound failure.  This is &lt;command&gt;VACUUM&lt;/command&gt;'s
+         strategy of last resort.  The failsafe typically triggers
+         when an autovacuum to prevent transaction ID wraparound has
+         already been running for some time, though it's possible for
+         the failsafe to trigger during any &lt;command&gt;VACUUM&lt;/command&gt;.
+</span>
+<code class="command">VACUUM</code>がシステム全体に渡るトランザクションID周回障害を避けるために異例の措置を取るようになる、テーブルの<code class="structname">pg_class</code>.<code class="structfield">relfrozenxid</code>フィールドが到達する最大の（トランザクション数単位での）年代を指定します。
+これは<code class="command">VACUUM</code>の最後の手段となる戦略です。
+この安全機構は典型的には、トランザクションID周回を防ぐための自動バキュームがすでに走っているときに起動されます。
+しかし、すべての<code class="command">VACUUM</code>の実行中にこの安全機構が起動する可能性があります。
+        </p><p>
+<span class="original">
+         When the failsafe is triggered, any cost-based delay that is
+         in effect will no longer be applied, further non-essential
+         maintenance tasks (such as index vacuuming) are bypassed, and any
+         &lt;glossterm linkend="glossary-buffer-access-strategy"&gt;Buffer Access Strategy&lt;/glossterm&gt;
+         in use will be disabled resulting in &lt;command&gt;VACUUM&lt;/command&gt; being
+         free to make use of all of
+         &lt;glossterm linkend="glossary-shared-memory"&gt;shared buffers&lt;/glossterm&gt;.
+</span>
+この安全機構が起動すると、すべての有効なコストに基づく遅延はもはや適用されず、（インデックスのバキュームのような）必須ではない保守タスクは迂回されます。
+使用中の<a class="glossterm" href="glossary.html#GLOSSARY-BUFFER-ACCESS-STRATEGY"><em class="glossterm"><a class="glossterm" href="glossary.html#GLOSSARY-BUFFER-ACCESS-STRATEGY" title="Buffer Access Strategy【バッファアクセスストラテジ】">バッファアクセスストラテジ</a></em></a>は無効になり、その結果<code class="command">VACUUM</code>は<a class="glossterm" href="glossary.html#GLOSSARY-SHARED-MEMORY"><em class="glossterm"><a class="glossterm" href="glossary.html#GLOSSARY-SHARED-MEMORY" title="Shared memory【共有メモリ】">共有バッファ</a></em></a>のすべてを自由に使用することになります。
+        </p><p>
+<span class="original">
+         The default is 1.6 billion transactions.  Although users can
+         set this value anywhere from zero to 2.1 billion,
+         &lt;command&gt;VACUUM&lt;/command&gt; will silently adjust the effective
+         value to no less than 105% of &lt;xref
+          linkend="guc-autovacuum-freeze-max-age"/&gt;.
+</span>
+デフォルトは16億トランザクションです。
+ユーザはこの値をゼロから21億までの間で設定できますが、<code class="command">VACUUM</code>は警告することなく実際の値を<a class="xref" href="runtime-config-vacuum.html#GUC-AUTOVACUUM-FREEZE-MAX-AGE">autovacuum_freeze_max_age</a>の105%よりも小さくならないように調整します。
+        </p></dd><dt id="GUC-VACUUM-MULTIXACT-FREEZE-TABLE-AGE"><span class="term"><code class="varname">vacuum_multixact_freeze_table_age</code> (<code class="type">integer</code>)
+       <a id="id-1.6.6.14.8.3.4.1.3" class="indexterm"></a>
+       <a id="id-1.6.6.14.8.3.4.1.4" class="indexterm"></a>
+       </span> <a href="#GUC-VACUUM-MULTIXACT-FREEZE-TABLE-AGE" class="id_link">#</a></dt><dd><p>
+<span class="original">
+         &lt;command&gt;VACUUM&lt;/command&gt; performs an aggressive scan if the table's
+         &lt;structname&gt;pg_class&lt;/structname&gt;.&lt;structfield&gt;relminmxid&lt;/structfield&gt; field has reached
+         the age specified by this setting.  An aggressive scan differs from
+         a regular &lt;command&gt;VACUUM&lt;/command&gt; in that it visits every page that might
+         contain unfrozen XIDs or MXIDs, not just those that might contain dead
+         tuples.  The default is 150 million multixacts.
+         Although users can set this value anywhere from zero to two billion,
+         &lt;command&gt;VACUUM&lt;/command&gt; will silently limit the effective value to 95% of
+         &lt;xref linkend="guc-autovacuum-multixact-freeze-max-age"/&gt;, so that a
+         periodic manual &lt;command&gt;VACUUM&lt;/command&gt; has a chance to run before an
+         anti-wraparound is launched for the table.
+         For more information see &lt;xref linkend="vacuum-for-multixact-wraparound"/&gt;.
+</span>
+<code class="structname">pg_class</code>.<code class="structfield">relminmxid</code>フィールドがこの設定値で指定した年代に達すると、<code class="command">VACUUM</code>はテーブルの積極的なスキャンを行います。
+積極的なスキャンは、無効タプルを含む可能性のあるページだけではなく、凍結されていないXIDあるいはMXIDを含むすべてのページを読む点で通常の<code class="command">VACUUM</code>とは異なります。
+デフォルトは1億5千万トランザクションです。
+ユーザはゼロから20億まで任意の値を設定できますが、テーブルに対して周回防止処理が起動される前に定期的な手動<code class="command">VACUUM</code>が走ることができるように、<code class="command">VACUUM</code>は警告することなく実際の値を<a class="xref" href="runtime-config-vacuum.html#GUC-AUTOVACUUM-MULTIXACT-FREEZE-MAX-AGE">autovacuum_multixact_freeze_max_age</a>の95%まで制限します。
+詳細は<a class="xref" href="routine-vacuuming.html#VACUUM-FOR-MULTIXACT-WRAPAROUND" title="24.1.5.1. マルチトランザクションと周回">24.1.5.1</a>を参照してください。
+        </p></dd><dt id="GUC-VACUUM-MULTIXACT-FREEZE-MIN-AGE"><span class="term"><code class="varname">vacuum_multixact_freeze_min_age</code> (<code class="type">integer</code>)
+       <a id="id-1.6.6.14.8.3.5.1.3" class="indexterm"></a>
+       <a id="id-1.6.6.14.8.3.5.1.4" class="indexterm"></a>
+       </span> <a href="#GUC-VACUUM-MULTIXACT-FREEZE-MIN-AGE" class="id_link">#</a></dt><dd><p>
+<span class="original">
+         Specifies the cutoff age (in multixacts) that &lt;command&gt;VACUUM&lt;/command&gt;
+         should use to decide whether to trigger freezing of pages with
+         an older multixact ID.  The default is 5 million multixacts.
+         Although users can set this value anywhere from zero to one billion,
+         &lt;command&gt;VACUUM&lt;/command&gt; will silently limit the effective value to half
+         the value of &lt;xref linkend="guc-autovacuum-multixact-freeze-max-age"/&gt;,
+         so that there is not an unreasonably short time between forced
+         autovacuums.
+         For more information see &lt;xref linkend="vacuum-for-multixact-wraparound"/&gt;.
+</span>
+<code class="command">VACUUM</code>が、古いマルチトランザクションIDを持つページの凍結を行うかどうかを決定する、カットオフ年代を（マルチトランザクション単位で）指定します。
+デフォルトは500万マルチトランザクションです。
+ユーザはゼロから10億まで任意の値を設定できますが、強制的な自動バキュームの間隔が短くなり過ぎないように、<code class="command">VACUUM</code>は警告することなく実際の値を<a class="xref" href="runtime-config-vacuum.html#GUC-AUTOVACUUM-MULTIXACT-FREEZE-MAX-AGE">autovacuum_multixact_freeze_max_age</a>の半分の値に制限します。
+詳細は<a class="xref" href="routine-vacuuming.html#VACUUM-FOR-MULTIXACT-WRAPAROUND" title="24.1.5.1. マルチトランザクションと周回">24.1.5.1</a>を参照してください。
+        </p></dd><dt id="GUC-VACUUM-MULTIXACT-FAILSAFE-AGE"><span class="term"><code class="varname">vacuum_multixact_failsafe_age</code> (<code class="type">integer</code>)
+       <a id="id-1.6.6.14.8.3.6.1.3" class="indexterm"></a>
+       <a id="id-1.6.6.14.8.3.6.1.4" class="indexterm"></a>
+       </span> <a href="#GUC-VACUUM-MULTIXACT-FAILSAFE-AGE" class="id_link">#</a></dt><dd><p>
+<span class="original">
+         Specifies the maximum age (in multixacts) that a table's
+         &lt;structname&gt;pg_class&lt;/structname&gt;.&lt;structfield&gt;relminmxid&lt;/structfield&gt;
+         field can attain before &lt;command&gt;VACUUM&lt;/command&gt; takes
+         extraordinary measures to avoid system-wide multixact ID
+         wraparound failure.  This is &lt;command&gt;VACUUM&lt;/command&gt;'s
+         strategy of last resort.  The failsafe typically triggers when
+         an autovacuum to prevent transaction ID wraparound has already
+         been running for some time, though it's possible for the
+         failsafe to trigger during any &lt;command&gt;VACUUM&lt;/command&gt;.
+</span>
+<code class="command">VACUUM</code>がシステム全体マルチトランザクションID周回障害を避けるために異例の措置を取るようになる、テーブルの<code class="structname">pg_class</code>.<code class="structfield">relminmxid</code>フィールドが到達する最大の（マルチトランザクション数単位での）年代を指定します。
+これは<code class="command">VACUUM</code>最後の手段となる戦略です。
+この安全機構は典型的には、マルチトランザクションID周回を防ぐための自動バキュームがすでに走っているときに起動されます。
+しかし、すべての<code class="command">VACUUM</code>の実行中にこの安全機構が起動する可能性があります。
+        </p><p>
+<span class="original">
+         When the failsafe is triggered, any cost-based delay that is
+         in effect will no longer be applied, and further non-essential
+         maintenance tasks (such as index vacuuming) are bypassed.
+</span>
+この安全機構が起動すると、すべての有効なコストに基づく遅延はもはや適用されず、（インデックスのバキュームのような）必須ではない保守タスクは迂回されます。
+        </p><p>
+<span class="original">
+         The default is 1.6 billion multixacts.  Although users can set
+         this value anywhere from zero to 2.1 billion,
+         &lt;command&gt;VACUUM&lt;/command&gt; will silently adjust the effective
+         value to no less than 105% of &lt;xref
+          linkend="guc-autovacuum-multixact-freeze-max-age"/&gt;.
+</span>
+デフォルトは16億マルチトランザクションです。
+ユーザはこの値をゼロから21億までの間で設定できますが、<code class="command">VACUUM</code>は警告することなく実際の値を<a class="xref" href="runtime-config-vacuum.html#GUC-AUTOVACUUM-MULTIXACT-FREEZE-MAX-AGE">autovacuum_multixact_freeze_max_age</a>の105%よりも小さくならないように調整します。
+        </p></dd><dt id="GUC-VACUUM-MAX-EAGER-FREEZE-FAILURE-RATE"><span class="term"><code class="varname">vacuum_max_eager_freeze_failure_rate</code> (<code class="type">floating point</code>)
+      <a id="id-1.6.6.14.8.3.7.1.3" class="indexterm"></a>
+      <a id="id-1.6.6.14.8.3.7.1.4" class="indexterm"></a>
+      </span> <a href="#GUC-VACUUM-MAX-EAGER-FREEZE-FAILURE-RATE" class="id_link">#</a></dt><dd><p>
+<span class="original">
+        Specifies the maximum number of pages (as a fraction of total pages in
+        the relation) that &lt;command&gt;VACUUM&lt;/command&gt; may scan and
+        &lt;emphasis&gt;fail&lt;/emphasis&gt; to set all-frozen in the visibility map
+        before disabling eager scanning. A value of &lt;literal&gt;0&lt;/literal&gt;
+        disables eager scanning altogether. The default is
+        &lt;literal&gt;0.03&lt;/literal&gt; (3%).
+</span>
+熱心なスキャンを無効にする前に、<code class="command">VACUUM</code>がスキャンした時に可視性マップで全凍結と設定することに<span class="emphasis"><em>失敗</em></span>するページの最大数（そのリレーション内の全ページ数に対する割合）を指定します。
+値が<code class="literal">0</code>の場合、熱心なスキャンは完全に無効になります。
+デフォルトは<code class="literal">0.03</code>（3%）です。
+       </p><p>
+<span class="original">
+        Note that when eager scanning is enabled, only freeze failures
+        count against the cap, not successful freezing. Successful page
+        freezes are capped internally at 20% of the all-visible but not
+        all-frozen pages in the relation. Capping successful page freezes helps
+        amortize the overhead across multiple normal vacuums and limits the
+        potential downside of wasted eager freezes of pages that are modified
+        again before the next aggressive vacuum.
+</span>
+熱心なスキャンを有効にすると、凍結の失敗のみがカウントされ、凍結の成功はカウントされないことに注意してください。
+凍結に成功するページは、内部的には、そのリレーション内の全可視ではあるが全凍結ではないページの20%に制限されます。
+凍結に成功するページを制限すると、複数の通常のバキューム処理でオーバーヘッドを分散でき、次の積極的バキュームの前に再度修正されたページに対する熱心な凍結処理が無駄になるという潜在的な欠点を抑えることができます。
+       </p><p>
+<span class="original">
+        This parameter can only be set in the
+        &lt;filename&gt;postgresql.conf&lt;/filename&gt; file or on the server command
+        line; but the setting can be overridden for individual tables by
+        changing the
+        &lt;link linkend="reloption-vacuum-max-eager-freeze-failure-rate"&gt;
+        corresponding table storage parameter&lt;/link&gt;.
+        For more information on tuning vacuum's freezing behavior,
+        see &lt;xref linkend="vacuum-for-wraparound"/&gt;.
+</span>
+このパラメータは、<code class="filename">postgresql.conf</code>ファイルか、サーバのコマンドラインでのみ設定可能です。
+ただし、この設定は<a class="link" href="sql-createtable.html#RELOPTION-VACUUM-MAX-EAGER-FREEZE-FAILURE-RATE">対応するテーブル格納パラメータ</a>の変更により、それぞれのテーブルに対して上書きすることができます。
+バキュームの凍結動作の詳細については、<a class="xref" href="routine-vacuuming.html#VACUUM-FOR-WRAPAROUND" title="24.1.5. トランザクションIDの周回エラーの防止">24.1.5</a>を参照してください。
+       </p></dd></dl></div></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="runtime-config-statistics.html" title="19.9. 実行時統計情報">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="runtime-config.html" title="第19章 サーバ設定">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="runtime-config-client.html" title="19.11. クライアント接続デフォルト">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">19.9. 実行時統計情報 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 18.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 19.11. クライアント接続デフォルト</td></tr></table></div></body></html>

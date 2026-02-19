@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>50.3. OAuth検証器コールバック</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="oauth-validator-init.html" title="50.2. 初期化関数" /><link rel="next" href="reference.html" title="パート VI. リファレンス" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 18.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="oauth-validators.html" title="第50章 OAuth検証器モジュール">第50章 OAuth検証器モジュール</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 18.0 : oauth-validator-callbacks.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="oauth-validator-init.html" title="50.2. 初期化関数">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="oauth-validators.html" title="第50章 OAuth検証器モジュール">上へ</a></td><td width="60%" align="center">50.3. OAuth検証器コールバック</td><td width="20%" align="right"> <a accesskey="n" href="reference.html" title="パート VI. リファレンス">次へ</a></td></tr></table><hr /></div><div class="sect1" id="OAUTH-VALIDATOR-CALLBACKS"><div class="titlepage"><div><div><h2 class="title" style="clear: both">50.3. OAuth検証器コールバック <a href="#OAUTH-VALIDATOR-CALLBACKS" class="id_link">#</a></h2></div></div></div><span class="original">
+  &lt;title&gt;OAuth Validator Callbacks&lt;/title&gt;
+</span><p>
+<span class="original">
+   OAuth validator modules implement their functionality by defining a set of
+   callbacks. The server will call them as required to process the
+   authentication request from the user.
+</span>
+OAuth検証器モジュールは、一連のコールバックを定義することでその機能を実装します。
+サーバは、ユーザからのプロセス認証リクエストを処理するために、必要に応じてそれらを呼び出します。
+  </p><div class="sect2" id="OAUTH-VALIDATOR-CALLBACK-STARTUP"><div class="titlepage"><div><div><h3 class="title">50.3.1. スタートアップコールバック <a href="#OAUTH-VALIDATOR-CALLBACK-STARTUP" class="id_link">#</a></h3></div></div></div><span class="original">
+   &lt;title&gt;Startup Callback&lt;/title&gt;
+</span><p>
+<span class="original">
+    The &lt;function&gt;startup_cb&lt;/function&gt; callback is executed directly after
+    loading the module. This callback can be used to set up local state and
+    perform additional initialization if required. If the validator module
+    has state it can use &lt;structfield&gt;state-&gt;private_data&lt;/structfield&gt; to
+    store it.
+</span>
+<code class="function">startup_cb</code>コールバックは、モジュールのロード直後に実行されます。
+このコールバックは、ローカルの状態を設定し、必要に応じて追加の初期設定を実行するために使用できます。
+検証器モジュールに状態がある場合は、<code class="structfield">state-&gt;private_data</code>を使用してそれを格納できます。
+
+</p><pre class="programlisting">
+typedef void (*ValidatorStartupCB) (ValidatorModuleState *state);
+</pre><p>
+   </p></div><div class="sect2" id="OAUTH-VALIDATOR-CALLBACK-VALIDATE"><div class="titlepage"><div><div><h3 class="title">50.3.2. 検証コールバック <a href="#OAUTH-VALIDATOR-CALLBACK-VALIDATE" class="id_link">#</a></h3></div></div></div><span class="original">
+   &lt;title&gt;Validate Callback&lt;/title&gt;
+</span><p>
+<span class="original">
+    The &lt;function&gt;validate_cb&lt;/function&gt; callback is executed during the OAuth
+    exchange when a user attempts to authenticate using OAuth.  Any state set in
+    previous calls will be available in &lt;structfield&gt;state-&gt;private_data&lt;/structfield&gt;.
+</span>
+<code class="function">validate_cb</code>コールバックは、ユーザがOAuthを使用して認証しようとするときに、OAuth交換中に実行されます。
+以前の呼び出しで設定された状態は、<code class="structfield">state-&gt;private_data</code>で使用できます。
+
+</p><pre class="programlisting">
+typedef bool (*ValidatorValidateCB) (const ValidatorModuleState *state,
+                                     const char *token, const char *role,
+                                     ValidatorModuleResult *result);
+</pre><p>
+
+<span class="original">
+    &lt;replaceable&gt;token&lt;/replaceable&gt; will contain the bearer token to validate.
+    &lt;application&gt;PostgreSQL&lt;/application&gt; has ensured that the token is well-formed syntactically, but no
+    other validation has been performed.  &lt;replaceable&gt;role&lt;/replaceable&gt; will
+    contain the role the user has requested to log in as.  The callback must
+    set output parameters in the &lt;literal&gt;result&lt;/literal&gt; struct, which is
+    defined as below:
+</span>
+<em class="replaceable"><code>トークン</code></em>には、検証対象のベアラトークンが含まれます。
+<span class="application">PostgreSQL</span>は、トークンが構文的に整形式であることを確認していますが、他のバリデーションは実行されていません。
+<em class="replaceable"><code>ロール</code></em>には、ユーザがログインとして要求したロールが含まれます。
+コールバックは<code class="literal">result</code>構造体に出力パラメータを設定する必要があり、これは次のように定義されます。
+
+</p><pre class="programlisting">
+typedef struct ValidatorModuleResult
+{
+    bool        authorized;
+    char       *authn_id;
+} ValidatorModuleResult;
+</pre><p>
+
+<span class="original">
+    The connection will only proceed if the module sets
+    &lt;structfield&gt;result-&gt;authorized&lt;/structfield&gt; to &lt;literal&gt;true&lt;/literal&gt;.  To
+    authenticate the user, the authenticated user name (as determined using the
+    token) shall be palloc'd and returned in the &lt;structfield&gt;result-&gt;authn_id&lt;/structfield&gt;
+    field.  Alternatively, &lt;structfield&gt;result-&gt;authn_id&lt;/structfield&gt; may be set to
+    NULL if the token is valid but the associated user identity cannot be
+    determined.
+</span>
+モジュールが<code class="structfield">result-&gt;authorized</code>を<code class="literal">true</code>に設定した場合のみ、コネクションが続行されます。
+ユーザを認証するために、認証されたユーザ名（トークンを使用して決定されたもの）はpallocされ、<code class="structfield">result-&gt;authn_id</code>フィールドで返される必要があります。
+または、<code class="structfield">result-&gt;authn_id</code>トークンが有効であるが、関連付けられたユーザIDを決定できない場合は、NULLに設定される場合があります。
+   </p><p>
+<span class="original">
+    A validator may return &lt;literal&gt;false&lt;/literal&gt; to signal an internal error,
+    in which case any result parameters are ignored and the connection fails.
+    Otherwise the validator should return &lt;literal&gt;true&lt;/literal&gt; to indicate
+    that it has processed the token and made an authorization decision.
+</span>
+検証器は、内部エラーを示すために<code class="literal">false</code>を返すことができ、この場合、すべての結果パラメータが無視され、接続は失敗します。
+そうでない場合、検証器は<code class="literal">true</code>を返して、トークンを処理し、認可決定を行ったことを示す必要があります。
+   </p><p>
+<span class="original">
+    The behavior after &lt;function&gt;validate_cb&lt;/function&gt; returns depends on the
+    specific HBA setup.  Normally, the &lt;structfield&gt;result-&gt;authn_id&lt;/structfield&gt; user
+    name must exactly match the role that the user is logging in as.  (This
+    behavior may be modified with a usermap.)  But when authenticating against
+    an HBA rule with &lt;literal&gt;delegate_ident_mapping&lt;/literal&gt; turned on,
+    &lt;productname&gt;PostgreSQL&lt;/productname&gt; will not perform any checks on the value of
+    &lt;structfield&gt;result-&gt;authn_id&lt;/structfield&gt; at all; in this case it is up to the
+    validator to ensure that the token carries enough privileges for the user to
+    log in under the indicated &lt;replaceable&gt;role&lt;/replaceable&gt;.
+</span>
+<code class="function">validate_cb</code>が返された後の動作は、特定のHBA設定によって異なります。
+通常、<code class="structfield">result-&gt;authn_id</code>ユーザ名は、ユーザがログインしようとしているロールと正確に一致する必要があります。
+（この振る舞いはユーザマップで変更できます。）
+しかし、<code class="literal">delegate_ident_mapping</code>が有効なHBAルールに対して認証する場合、<span class="productname">PostgreSQL</span>は<code class="structfield">result-&gt;authn_id</code>の値をまったくチェックしません。この場合、トークンが指示された<em class="replaceable"><code>role</code></em>の下でユーザがログインするのに十分な権限を持つかどうかは、検証器に委ねられます。
+   </p></div><div class="sect2" id="OAUTH-VALIDATOR-CALLBACK-SHUTDOWN"><div class="titlepage"><div><div><h3 class="title">50.3.3. シャットダウンコールバック <a href="#OAUTH-VALIDATOR-CALLBACK-SHUTDOWN" class="id_link">#</a></h3></div></div></div><span class="original">
+   &lt;title&gt;Shutdown Callback&lt;/title&gt;
+</span><p>
+<span class="original">
+    The &lt;function&gt;shutdown_cb&lt;/function&gt; callback is executed when the backend
+    process associated with the connection exits. If the validator module has
+    any allocated state, this callback should free it to avoid resource leaks.
+</span>
+<code class="function">shutdown_cb</code>コールバックは、接続に関連付けられたバックエンドプロセスが終了するときに実行されます。
+検証器モジュールにメモリを割り当てられた状態がある場合、このコールバックはリソースリークを回避するためにフリーする必要があります。
+</p><pre class="programlisting">
+typedef void (*ValidatorShutdownCB) (ValidatorModuleState *state);
+</pre><p>
+   </p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="oauth-validator-init.html" title="50.2. 初期化関数">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="oauth-validators.html" title="第50章 OAuth検証器モジュール">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="reference.html" title="パート VI. リファレンス">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">50.2. 初期化関数 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 18.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> パート VI. リファレンス</td></tr></table></div></body></html>

@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>6.4. 更新された行のデータを返す</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="dml-delete.html" title="6.3. データの削除" /><link rel="next" href="queries.html" title="第7章 問い合わせ" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 18.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="dml.html" title="第6章 データ操作">第6章 データ操作</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 18.0 : dml-returning.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="dml-delete.html" title="6.3. データの削除">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="dml.html" title="第6章 データ操作">上へ</a></td><td width="60%" align="center">6.4. 更新された行のデータを返す</td><td width="20%" align="right"> <a accesskey="n" href="queries.html" title="第7章 問い合わせ">次へ</a></td></tr></table><hr /></div><div class="sect1" id="DML-RETURNING"><div class="titlepage"><div><div><h2 class="title" style="clear: both">6.4. 更新された行のデータを返す <a href="#DML-RETURNING" class="id_link">#</a></h2></div></div></div><span class="original">
+  &lt;title&gt;Returning Data from Modified Rows&lt;/title&gt;
+</span><a id="id-1.5.5.6.2" class="indexterm"></a><a id="id-1.5.5.6.3" class="indexterm"></a><a id="id-1.5.5.6.4" class="indexterm"></a><a id="id-1.5.5.6.5" class="indexterm"></a><a id="id-1.5.5.6.6" class="indexterm"></a><p>
+<span class="original">
+   Sometimes it is useful to obtain data from modified rows while they are
+   being manipulated.  The &lt;command&gt;INSERT&lt;/command&gt;, &lt;command&gt;UPDATE&lt;/command&gt;,
+   &lt;command&gt;DELETE&lt;/command&gt;, and &lt;command&gt;MERGE&lt;/command&gt; commands all have an
+   optional &lt;literal&gt;RETURNING&lt;/literal&gt; clause that supports this.  Use
+   of &lt;literal&gt;RETURNING&lt;/literal&gt; avoids performing an extra database query to
+   collect the data, and is especially valuable when it would otherwise be
+   difficult to identify the modified rows reliably.
+</span>
+行が更新されるときに、その行のデータを取得できると便利なことがあります。
+<code class="command">INSERT</code>、<code class="command">UPDATE</code>、<code class="command">DELETE</code>、<code class="command">MERGE</code>の各コマンドは、いずれもオプションの<code class="literal">RETURNING</code>句によりそれが可能となっています。
+<code class="literal">RETURNING</code>を使うことで、行を取得するために余分なデータベースへの問い合わせを行うことを避けられ、それ以外の方法で更新された行を確実に特定するのが難しい場合には、これは特に貴重です。
+  </p><p>
+<span class="original">
+   The allowed contents of a &lt;literal&gt;RETURNING&lt;/literal&gt; clause are the same as
+   a &lt;command&gt;SELECT&lt;/command&gt; command's output list
+   (see &lt;xref linkend="queries-select-lists"/&gt;).  It can contain column
+   names of the command's target table, or value expressions using those
+   columns.  A common shorthand is &lt;literal&gt;RETURNING *&lt;/literal&gt;, which selects
+   all columns of the target table in order.
+</span>
+<code class="literal">RETURNING</code>句で使用できる項目は<code class="command">SELECT</code>コマンドの出力リスト（<a class="xref" href="queries-select-lists.html" title="7.3. 選択リスト">7.3</a>参照）と同じです。
+コマンドの対象となっているテーブルの列名、あるいはそれらの列を使った値の式を入れることができます。
+よく使われる省略記法は<code class="literal">RETURNING *</code>で、これは対象テーブルのすべての列を順に返します。
+  </p><p>
+<span class="original">
+   In an &lt;command&gt;INSERT&lt;/command&gt;, the default data available to
+   &lt;literal&gt;RETURNING&lt;/literal&gt; is
+   the row as it was inserted.  This is not so useful in trivial inserts,
+   since it would just repeat the data provided by the client.  But it can
+   be very handy when relying on computed default values.  For example,
+   when using a &lt;link linkend="datatype-serial"&gt;&lt;type&gt;serial&lt;/type&gt;&lt;/link&gt;
+   column to provide unique identifiers, &lt;literal&gt;RETURNING&lt;/literal&gt; can return
+   the ID assigned to a new row:
+</span>
+<code class="command">INSERT</code>では、<code class="literal">RETURNING</code>で利用できるデフォルトのデータは、挿入された通りの行です。
+単純な挿入では、クライアントが提供したデータを単に繰り返すだけになりますから、あまり役には立ちません。
+しかし、計算されたデフォルト値に依存しているときは、これは非常に便利なことがあります。
+例えば<a class="link" href="datatype-numeric.html#DATATYPE-SERIAL" title="8.1.4. 連番型"><code class="type">serial</code></a>の列を使って一意識別子を提供している場合、以下のように<code class="literal">RETURNING</code>によって、新しい行に割り当てられたIDを返すことができます。
+</p><pre class="programlisting">
+CREATE TABLE users (firstname text, lastname text, id serial primary key);
+
+INSERT INTO users (firstname, lastname) VALUES ('Joe', 'Cool') RETURNING id;
+</pre><p>
+<span class="original">
+   The &lt;literal&gt;RETURNING&lt;/literal&gt; clause is also very useful
+   with &lt;literal&gt;INSERT ... SELECT&lt;/literal&gt;.
+</span>
+また、<code class="literal">RETURNING</code>句は<code class="literal">INSERT ... SELECT</code>でも非常に役に立ちます。
+  </p><p>
+<span class="original">
+   In an &lt;command&gt;UPDATE&lt;/command&gt;, the default data available to
+   &lt;literal&gt;RETURNING&lt;/literal&gt; is
+   the new content of the modified row.  For example:
+</span>
+<code class="command">UPDATE</code>では、<code class="literal">RETURNING</code>で利用できるデフォルトのデータは、更新された行の新しい内容です。
+例を示します。
+</p><pre class="programlisting">
+UPDATE products SET price = price * 1.10
+  WHERE price &lt;= 99.99
+  RETURNING name, price AS new_price;
+</pre><p>
+  </p><p>
+<span class="original">
+   In a &lt;command&gt;DELETE&lt;/command&gt;, the default data available to
+   &lt;literal&gt;RETURNING&lt;/literal&gt; is
+   the content of the deleted row.  For example:
+</span>
+<code class="command">DELETE</code>では、<code class="literal">RETURNING</code>で利用できるデフォルトのデータは、削除された行の内容です。
+例を示します。
+</p><pre class="programlisting">
+DELETE FROM products
+  WHERE obsoletion_date = 'today'
+  RETURNING *;
+</pre><p>
+  </p><p>
+<span class="original">
+   In a &lt;command&gt;MERGE&lt;/command&gt;, the default data available to
+   &lt;literal&gt;RETURNING&lt;/literal&gt; is
+   the content of the source row plus the content of the inserted, updated, or
+   deleted target row.  Since it is quite common for the source and target to
+   have many of the same columns, specifying &lt;literal&gt;RETURNING *&lt;/literal&gt;
+   can lead to a lot of duplicated columns, so it is often more useful to
+   qualify it so as to return just the source or target row.  For example:
+</span>
+<code class="command">MERGE</code>では、<code class="literal">RETURNING</code>で利用できるデフォルトのデータは、元となる行の内容と挿入、更新、または削除された対象行の内容です。
+元となるものと対象が多くの同じ列を持つことは非常に一般的であるため、<code class="literal">RETURNING *</code>を指定すると、多くの重複した列が発生する可能性があります。そのため、元となる行または対象行だけを返すように修飾するのがより有用なことがしばしばあります。
+例を示します。
+</p><pre class="programlisting">
+MERGE INTO products p USING new_products n ON p.product_no = n.product_no
+  WHEN NOT MATCHED THEN INSERT VALUES (n.product_no, n.name, n.price)
+  WHEN MATCHED THEN UPDATE SET name = n.name, price = n.price
+  RETURNING p.*;
+</pre><p>
+  </p><p>
+<span class="original">
+   In each of these commands, it is also possible to explicitly return the
+   old and new content of the modified row.  For example:
+</span>
+これらの各コマンドでは、変更された行の新旧の内容を明示的に返すこともできます。
+例を示します。
+</p><pre class="programlisting">
+UPDATE products SET price = price * 1.10
+  WHERE price &lt;= 99.99
+  RETURNING name, old.price AS old_price, new.price AS new_price,
+            new.price - old.price AS price_change;
+</pre><p>
+<span class="original">
+   In this example, writing &lt;literal&gt;new.price&lt;/literal&gt; is the same as
+   just writing &lt;literal&gt;price&lt;/literal&gt;, but it makes the meaning clearer.
+</span>
+この例では、<code class="literal">new.price</code>と書くことは単に<code class="literal">price</code>と書くことと同じですが、意味をより明確にします。
+  </p><p>
+<span class="original">
+   This syntax for returning old and new values is available in
+   &lt;command&gt;INSERT&lt;/command&gt;, &lt;command&gt;UPDATE&lt;/command&gt;,
+   &lt;command&gt;DELETE&lt;/command&gt;, and &lt;command&gt;MERGE&lt;/command&gt; commands, but
+   typically old values will be &lt;literal&gt;NULL&lt;/literal&gt; for an
+   &lt;command&gt;INSERT&lt;/command&gt;, and new values will be &lt;literal&gt;NULL&lt;/literal&gt;
+   for a &lt;command&gt;DELETE&lt;/command&gt;.  However, there are situations where it
+   can still be useful for those commands.  For example, in an
+   &lt;command&gt;INSERT&lt;/command&gt; with an
+   &lt;link linkend="sql-on-conflict"&gt;&lt;literal&gt;ON CONFLICT DO UPDATE&lt;/literal&gt;&lt;/link&gt;
+   clause, the old values will be non-&lt;literal&gt;NULL&lt;/literal&gt; for conflicting
+   rows.  Similarly, if a &lt;command&gt;DELETE&lt;/command&gt; is turned into an
+   &lt;command&gt;UPDATE&lt;/command&gt; by a &lt;link linkend="sql-createrule"&gt;rewrite rule&lt;/link&gt;,
+   the new values may be non-&lt;literal&gt;NULL&lt;/literal&gt;.
+</span>
+古い値と新しい値を返すこの構文は、<code class="command">INSERT</code>、<code class="command">UPDATE</code>、<code class="command">DELETE</code>、および<code class="command">MERGE</code>コマンドで使用できますが、通常、古い値は<code class="command">INSERT</code>に対して<code class="literal">NULL</code>になり、新しい値は<code class="command">DELETE</code>に対して<code class="literal">NULL</code>になります。
+ただし、これらのコマンドに対しても有用な状況があります。
+例えば、<a class="link" href="sql-insert.html#SQL-ON-CONFLICT" title="ON CONFLICT句"><code class="literal">ON CONFLICT DO UPDATE</code></a>句を持つ<code class="command">INSERT</code>では、競合する行に対して古い値は非<code class="literal">NULL</code>になります。
+同様に、<a class="link" href="sql-createrule.html" title="CREATE RULE">書き換えルール</a>によって<code class="command">DELETE</code>が<code class="command">UPDATE</code>になった場合、新しい値は非<code class="literal">NULL</code>になる可能性があります。
+  </p><p>
+<span class="original">
+   If there are triggers (&lt;xref linkend="triggers"/&gt;) on the target table,
+   the data available to &lt;literal&gt;RETURNING&lt;/literal&gt; is the row as modified by
+   the triggers.  Thus, inspecting columns computed by triggers is another
+   common use-case for &lt;literal&gt;RETURNING&lt;/literal&gt;.
+</span>
+対象のテーブルにトリガ（<a class="xref" href="triggers.html" title="第37章 トリガ">第37章</a>）がある場合、<code class="literal">RETURNING</code>で利用できるデータは、トリガで更新された行です。
+従って、トリガによって計算された列を検査するのも<code class="literal">RETURNING</code>の一般的な利用方法の一つです。
+  </p></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="dml-delete.html" title="6.3. データの削除">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="dml.html" title="第6章 データ操作">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="queries.html" title="第7章 問い合わせ">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">6.3. データの削除 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 18.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 第7章 問い合わせ</td></tr></table></div></body></html>

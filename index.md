@@ -15,6 +15,12 @@ last-updated: 2026-02-17 04:44:45 JST
 |:---------------------------|:-------------------:|
 | [html](current/html)       | [PDF](current/postgres-A4.pdf) |
 
+### PostgreSQL 18
+
+| HTML （オンライン）           | PDF                                           | EPUB                                        | man | 更新日     |
+|:---------------------------|:---------------------------------------------:|:--------------------------------------------:|:---:|:----------:|
+| [18.0](jpug-doc/18.0/html/) | [PDF](jpug-doc/18.0/postgresql-18.0-A4.pdf) | [EPUB](jpug-doc/18.0/postgresql-18.0.epub) | [man.tar.gz](jpug-doc/18.0/man.tar.gz) | 2026-02-19 |
+
 ### PostgreSQL 17
 
 | HTML （オンライン）           | PDF                                           | EPUB                                         | man | 更新日     |

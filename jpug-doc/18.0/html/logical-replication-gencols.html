@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>29.6. 生成列のレプリケーション</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="logical-replication-col-lists.html" title="29.5. 列リスト" /><link rel="next" href="logical-replication-conflicts.html" title="29.7. コンフリクト" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 18.0文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="logical-replication.html" title="第29章 論理レプリケーション">第29章 論理レプリケーション</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 18.0 : logical-replication-gencols.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="logical-replication-col-lists.html" title="29.5. 列リスト">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="logical-replication.html" title="第29章 論理レプリケーション">上へ</a></td><td width="60%" align="center">29.6. 生成列のレプリケーション</td><td width="20%" align="right"> <a accesskey="n" href="logical-replication-conflicts.html" title="29.7. コンフリクト">次へ</a></td></tr></table><hr /></div><div class="sect1" id="LOGICAL-REPLICATION-GENCOLS"><div class="titlepage"><div><div><h2 class="title" style="clear: both">29.6. 生成列のレプリケーション <a href="#LOGICAL-REPLICATION-GENCOLS" class="id_link">#</a></h2></div></div></div><span class="original">
+  &lt;title&gt;Generated Column Replication&lt;/title&gt;
+</span><p>
+<span class="original">
+   Typically, a table at the subscriber will be defined the same as the
+   publisher table, so if the publisher table has a &lt;link linkend="ddl-generated-columns"&gt;
+   &lt;literal&gt;GENERATED column&lt;/literal&gt;&lt;/link&gt; then the subscriber table will
+   have a matching generated column. In this case, it is always the subscriber
+   table generated column value that is used.
+</span>
+通常、サブスクライバーのテーブルはパブリッシャーのテーブルと同じように定義されます。そのため、パブリッシャーテーブルに<a class="link" href="ddl-generated-columns.html" title="5.4. 生成列"><code class="literal">GENERATED（生成）列</code></a>が存在する場合、サブスクライバーテーブルにも対応する生成列が存在します。
+この場合、常にサブスクライバーテーブルの生成列の値が使用されます。
+  </p><p>
+<span class="original">
+   For example, note below that subscriber table generated column value comes from the
+   subscriber column's calculation.
+</span>
+例えば以下の場合、サブスクライバーテーブルの生成列の値は、サブスクライバー列の計算から取得されることに注意してください。
+</p><pre class="programlisting">
+/* pub # */ CREATE TABLE tab_gen_to_gen (a int, b int GENERATED ALWAYS AS (a + 1) STORED);
+/* pub # */ INSERT INTO tab_gen_to_gen VALUES (1),(2),(3);
+/* pub # */ CREATE PUBLICATION pub1 FOR TABLE tab_gen_to_gen;
+/* pub # */ SELECT * FROM tab_gen_to_gen;
+ a | b
+---+---
+ 1 | 2
+ 2 | 3
+ 3 | 4
+(3 rows)
+
+/* sub # */ CREATE TABLE tab_gen_to_gen (a int, b int GENERATED ALWAYS AS (a * 100) STORED);
+/* sub # */ CREATE SUBSCRIPTION sub1 CONNECTION 'dbname=test_pub' PUBLICATION pub1;
+/* sub # */ SELECT * from tab_gen_to_gen;
+ a | b
+---+----
+ 1 | 100
+ 2 | 200
+ 3 | 300
+(3 rows)
+</pre><p>
+  </p><p>
+<span class="original">
+   In fact, prior to version 18.0, logical replication does not publish
+   &lt;literal&gt;GENERATED&lt;/literal&gt; columns at all.
+</span>
+実際、バージョン18.0より前では、論理レプリケーションは<code class="literal">生成</code>列を全くパブリッシュしません。
+  </p><p>
+<span class="original">
+   But, replicating a generated column to a regular column can sometimes be
+   desirable.
+</span>
+しかし、生成列の値を通常の列に複製することが望ましい場合もあります。
+   </p><div class="tip"><h3 class="title">ヒント</h3><p>
+<span class="original">
+     This feature may be useful when replicating data to a
+     non-PostgreSQL database via output plugin, especially if the target database
+     does not support generated columns.
+</span>
+この機能は、出力プラグインを介してPostgreSQL以外のデータベースにデータを複製する場合、特に対象データベースが生成列をサポートしていない場合に有用です。
+    </p></div><p>
+  </p><p>
+<span class="original">
+   Generated columns are not published by default, but users can opt to
+   publish stored generated columns just like regular ones.
+</span>
+生成列はデフォルトではパブリッシュされませんが、ユーザは格納生成列を通常の列と同様にパブリッシュすることを選択できます。
+  </p><p>
+<span class="original">
+   There are two ways to do this:
+</span>
+これには2つの方法があります。
+   </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>
+<span class="original">
+       Set the &lt;command&gt;PUBLICATION&lt;/command&gt; parameter
+       &lt;link linkend="sql-createpublication-params-with-publish-generated-columns"&gt;
+       &lt;literal&gt;publish_generated_columns&lt;/literal&gt;&lt;/link&gt; to &lt;literal&gt;stored&lt;/literal&gt;.
+       This instructs PostgreSQL logical replication to publish current and
+       future stored generated columns of the publication's tables.
+</span>
+<code class="command">PUBLICATION</code>パラメータの<a class="link" href="sql-createpublication.html#SQL-CREATEPUBLICATION-PARAMS-WITH-PUBLISH-GENERATED-COLUMNS"><code class="literal">publish_generated_columns</code></a>を<code class="literal">stored</code>に設定します。
+これは、PostgreSQL論理レプリケーションに、パブリケーションのテーブルが持つ現在または将来の格納生成列をパブリッシュするように指示します。
+      </p></li><li class="listitem"><p>
+<span class="original">
+       Specify a table &lt;link linkend="logical-replication-col-lists"&gt;column list&lt;/link&gt;
+       to explicitly nominate which stored generated columns will be published.
+</span>
+どの格納生成列がパブリッシュされるかを明示的に指定する、テーブルの<a class="link" href="logical-replication-col-lists.html" title="29.5. 列リスト">列リスト</a>を設定します。
+      </p><div class="note"><h3 class="title">注記</h3><p>
+<span class="original">
+        When determining which table columns will be published, a column list
+        takes precedence, overriding the effect of the
+        &lt;literal&gt;publish_generated_columns&lt;/literal&gt; parameter.
+</span>
+どのテーブル列をパブリッシュするかを決定する際には、列リストが優先され、<code class="literal">publish_generated_columns</code>パラメータの効果を上書きします。
+       </p></div></li></ul></div><p>
+  </p><p>
+<span class="original">
+   The following table summarizes behavior when there are generated columns
+   involved in the logical replication. Results are shown for when
+   publishing generated columns is not enabled, and for when it is
+   enabled.
+</span>
+以下の表は、論理レプリケーションに生成列が含まれる場合の動作をまとめたものです。
+生成列のパブリッシュが有効になっていない場合と、有効になっている場合の結果を示しています。
+  </p><div class="table" id="LOGICAL-REPLICATION-GENCOLS-TABLE-SUMMARY"><p class="title"><strong>表29.2 レプリケーション結果の概要</strong></p><div class="table-contents"><span class="original">
+   &lt;title&gt;Replication Result Summary&lt;/title&gt;
+</span><table class="table" summary="レプリケーション結果の概要" border="1"><colgroup><col /><col /><col /><col /></colgroup><thead><tr><th>生成列をパブリッシュするか否か？</th><th>パブリッシャーテーブルの列</th><th>サブスクライバーテーブルの列</th><th>結果</th></tr></thead><tbody><tr><td>いいえ</td><td>生成列</td><td>生成列</td><td>パブリッシャーテーブルの列はレプリケーションされません。サブスクライバーテーブルの生成列の値を使用します。</td></tr><tr><td>いいえ</td><td>生成列</td><td>通常の列</td><td>パブリッシャーテーブルの列はレプリケーションされません。サブスクライバーテーブルの通常の列の値を使用します。</td></tr><tr><td>いいえ</td><td>生成列</td><td>--存在しない--</td><td>パブリッシャーテーブルの列はレプリケーションされません。何も起こりません。</td></tr><tr><td>はい</td><td>生成列</td><td>生成列</td><td>エラー。サポートされていません。</td></tr><tr><td>はい</td><td>生成列</td><td>通常の列</td><td>パブリッシャーテーブルの列がサブスクライバーテーブルの列にレプリケーションされます。</td></tr><tr><td>はい</td><td>生成列</td><td>--存在しない--</td><td>エラー。サブスクライバーテーブルに列が存在しないことが報告されます。</td></tr></tbody></table></div></div><br class="table-break" /><div class="warning"><h3 class="title">警告</h3><p>
+<span class="original">
+    There's currently no support for subscriptions comprising several
+    publications where the same table has been published with different column
+    lists. See &lt;xref linkend="logical-replication-col-lists"/&gt;.
+</span>
+現在のところ、同じテーブルが異なる列リストでパブリッシュされている複数のパブリケーションで構成されるサブスクリプションはサポートされていません。
+<a class="xref" href="logical-replication-col-lists.html" title="29.5. 列リスト">29.5</a>を参照してください。
+   </p><p>
+<span class="original">
+    This same situation can occur if one publication is publishing generated
+    columns, while another publication in the same subscription is not
+    publishing generated columns for the same table.
+</span>
+同様の状況は、あるパブリケーションが生成列をパブリッシュしている一方で、同じサブスクリプション内の別のパブリケーションが同じテーブルに対して生成列をパブリッシュしていない場合にも発生します。
+   </p></div><div class="note"><h3 class="title">注記</h3><p>
+<span class="original">
+    If the subscriber is from a release prior to 18, then initial table
+    synchronization won't copy generated columns even if they are defined in
+    the publisher.
+</span>
+サブスクライバーが18より前のリリースの場合、生成列のパブリッシュがパブリッシャーで規定されている場合でも、初期テーブル同期ではそれらの列はコピーされません。
+   </p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="logical-replication-col-lists.html" title="29.5. 列リスト">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="logical-replication.html" title="第29章 論理レプリケーション">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="logical-replication-conflicts.html" title="29.7. コンフリクト">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">29.5. 列リスト </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 18.0文書">ホーム</a></td><td width="40%" align="right" valign="top"> 29.7. コンフリクト</td></tr></table></div></body></html>
