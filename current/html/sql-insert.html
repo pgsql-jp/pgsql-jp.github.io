@@ -130,7 +130,7 @@ INSERT INTO <em class="replaceable"><code>table_name</code></em> [ AS <em class=
 列リストを指定する場合は、列挙された列に対する<code class="literal">INSERT</code>権限のみが必要です。
 同様に、<code class="literal">ON CONFLICT DO UPDATE</code>が指定されている場合、更新対象として列挙されている列についてのみ、<code class="literal">UPDATE</code>権限が必要です。
 しかし、すべての形式の<code class="literal">ON CONFLICT</code>は、値が読み取られる列に対する<code class="literal">SELECT</code>権限も必要とします。
-これには、<em class="replaceable"><code>conflict_target</code></em>で言及されている列（競合解決制約で参照される列も含む）や、<code class="literal">ON CONFLICT DO UPDATE</code>の<em class="replaceable"><code>expression</code></em>や<code class="literal">WHERE</code>句の<em class="replaceable"><code>condition</code></em>で言及されている列が含まれます。
+これには、<em class="replaceable"><code>conflict_target</code></em>で言及されている列（競合判定の制約で参照される列も含む）や、<code class="literal">ON CONFLICT DO UPDATE</code>の<em class="replaceable"><code>expression</code></em>や<code class="literal">WHERE</code>句の<em class="replaceable"><code>condition</code></em>で言及されている列が含まれます。
   </p><p>
 <span class="original">
    Use of the &lt;literal&gt;RETURNING&lt;/literal&gt; clause requires &lt;literal&gt;SELECT&lt;/literal&gt;
@@ -359,7 +359,7 @@ aliasを指定すると、テーブルの実際の名前が完全に隠されま
     row proposed for insertion as its alternative action.
 </span>
 オプションの<code class="literal">ON CONFLICT</code>句では、一意性制約や排他制約の違反について、エラーを発生させる代替となる動作を指定します。
-挿入しようとされた各行について、挿入の処理が進められるか、あるいは、<em class="parameter"><code>conflict_target</code></em>により指定された<span class="emphasis"><em>競合</em></span>制約またはインデックスに違反した場合の代替の<em class="parameter"><code>conflict_action</code></em>が実行されるか、のいずれかです。
+挿入しようとされた各行について、挿入の処理が進められるか、あるいは、<em class="parameter"><code>conflict_target</code></em>により指定された<span class="emphasis"><em>競合判定</em></span>の制約またはインデックスに違反した場合の代替の<em class="parameter"><code>conflict_action</code></em>が実行されるか、のいずれかです。
 <code class="literal">ON CONFLICT DO NOTHING</code>は代替の動作として、単に行の挿入をしなくなるだけです。
 <code class="literal">ON CONFLICT DO UPDATE</code>は代替の動作として、挿入されようとしていた行と競合する既存の行を更新します。
    </p><p>
@@ -384,8 +384,8 @@ aliasを指定すると、テーブルの実際の名前が完全に隠されま
 </span>
 <em class="parameter"><code>conflict_target</code></em>は<span class="emphasis"><em>一意インデックスの推定</em></span>を実行することができます。
 推定を実行するとき、それは1つ以上の<em class="replaceable"><code>index_column_name</code></em>列、または<em class="replaceable"><code>index_expression</code></em>式、あるいはその両方、およびオプションで<em class="replaceable"><code>index_predicate</code></em>から構成されます。
-<em class="replaceable"><code>table_name</code></em>の一意インデックスで<em class="parameter"><code>conflict_target</code></em>で指定された列と式を（順序は関係なく）正確に含むものは、すべて競合解決インデックスとして推定されます（選ばれます）。
-<em class="replaceable"><code>index_predicate</code></em>が指定されている場合は、推定のさらなる条件として、それは競合解決インデックスを満たさなければなりません。
+<em class="replaceable"><code>table_name</code></em>の一意インデックスで<em class="parameter"><code>conflict_target</code></em>で指定された列と式を（順序は関係なく）正確に含むものは、すべて競合判定インデックスとして推定されます（選ばれます）。
+<em class="replaceable"><code>index_predicate</code></em>が指定されている場合は、推定のさらなる条件として、それは競合判定インデックスを満たさなければなりません。
 これは、部分インデックスでない一意インデックス（述語のない一意インデックス）は、それが他のすべての条件を満たすのであれば推定される（従って<code class="literal">ON CONFLICT</code>で使用される）ことを意味することに注意して下さい。
 推定に失敗した時は、エラーが発生します。
    </p><p>
@@ -413,7 +413,7 @@ aliasを指定すると、テーブルの実際の名前が完全に隠されま
         UPDATE&lt;/literal&gt;, a &lt;parameter&gt;conflict_target&lt;/parameter&gt;
         &lt;emphasis&gt;must&lt;/emphasis&gt; be provided.
 </span>
-<code class="literal">ON CONFLICT</code>が<em class="firstterm">競合解決インデックス</em>を選ぶことで代替の動作をするときの競合を指定します。
+<code class="literal">ON CONFLICT</code>が<em class="firstterm">競合判定インデックス</em>を選ぶことで代替の動作をするときの競合を指定します。
 <span class="emphasis"><em>一意インデックスの推定</em></span>を実行するか、あるいは制約を明示的に指定するかのいずれかです。
 <code class="literal">ON CONFLICT DO NOTHING</code>では<em class="parameter"><code>conflict_target</code></em>を指定するのはオプションです。
 省略すると、利用可能なすべての制約（および一意インデックス）との競合が処理されます。
@@ -457,7 +457,7 @@ aliasを指定すると、テーブルの実際の名前が完全に隠されま
         is required.
 </span>
 <em class="replaceable"><code>table_name</code></em>の列の名前です。
-競合解決インデックスを推定するのに使われます。
+競合判定インデックスを推定するのに使われます。
 <code class="command">CREATE INDEX</code>の形式に従います。
 <em class="replaceable"><code>index_column_name</code></em>の<code class="literal">SELECT</code>権限が必要です。
        </p></dd><dt><span class="term"><em class="replaceable"><code>index_expression</code></em></span></dt><dd><p>
@@ -522,7 +522,7 @@ aliasを指定すると、テーブルの実際の名前が完全に隠されま
         &lt;emphasis&gt;constraint&lt;/emphasis&gt; by name, rather than inferring
         a constraint or index.
 </span>
-競合解決の<span class="emphasis"><em>制約</em></span>を制約やインデックスの推定によるのではなく、明示的に名前で指定します。
+競合判定の<span class="emphasis"><em>制約</em></span>を制約やインデックスの推定によるのではなく、明示的に名前で指定します。
        </p></dd><dt><span class="term"><em class="replaceable"><code>condition</code></em></span></dt><dd><p>
 <span class="original">
         An expression that returns a value of type
@@ -544,8 +544,8 @@ aliasを指定すると、テーブルの実際の名前が完全に隠されま
     &lt;literal&gt;NOT DEFERRABLE&lt;/literal&gt; constraints and unique indexes
     are supported as arbiters.
 </span>
-排他制約は<code class="literal">ON CONFLICT DO UPDATE</code>の競合解決としてはサポートされないことに注意して下さい。
-すべての場合について、<code class="literal">NOT DEFERRABLE</code>である制約と一意インデックスのみが競合解決としてサポートされます。
+排他制約は<code class="literal">ON CONFLICT DO UPDATE</code>の競合判定としてはサポートされないことに注意して下さい。
+すべての場合について、<code class="literal">NOT DEFERRABLE</code>である制約と一意インデックスのみが競合判定としてサポートされます。
    </p><p>
 <span class="original">
     &lt;command&gt;INSERT&lt;/command&gt; with an &lt;literal&gt;ON CONFLICT DO UPDATE&lt;/literal&gt;
@@ -559,7 +559,7 @@ aliasを指定すると、テーブルの実際の名前が完全に隠されま
 <code class="literal">ON CONFLICT DO UPDATE</code>句のある<code class="command">INSERT</code>は<span class="quote">「<span class="quote">決定論的な</span>」</span>文です。
 これは、そのコマンドが既存のどの行に対しても、2回以上影響を与えることが許されない、ということを意味します。
 これに反する状況が発生した時は、カーディナリティ違反のエラーが発生します。
-挿入されようとする行は、競合解決インデックスあるいは制約により制限される属性の観点で、複製されてはなりません。
+挿入されようとする行は、競合判定インデックスあるいは制約により制限される属性の観点で、複製されてはなりません。
    </p><p>
 <span class="original">
     Note that it is currently not supported for the
@@ -827,8 +827,8 @@ INSERT INTO distributors AS d (did, dname) VALUES (8, 'Anvil Distribution')
 &amp;#45;- Name a constraint directly in the statement (uses associated
 &amp;#45;- index to arbitrate taking the DO NOTHING action)
 </span>
--- 文中で制約を直接指定します（DO NOTHINGの動作をする競合解決のため
--- 関連するインデックスを指定します）
+-- 文中で制約を直接指定します（DO NOTHINGの動作の競合を判定するために
+-- 関連するインデックスを使用します）
 INSERT INTO distributors (did, dname) VALUES (9, 'Antwerp Design')
     ON CONFLICT ON CONSTRAINT distributors_pkey DO NOTHING;
 </pre><p>
