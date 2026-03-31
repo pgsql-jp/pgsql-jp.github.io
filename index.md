@@ -11,15 +11,16 @@ last-updated: 2026-03-31 05:03:03 JST
 
 ### 最新 PostgreSQL
 
-| HTML （オンライン）           | PDF                        |
-|:---------------------------|:-------------------:|
+| HTML （オンライン）        | PDF                            |
+|:---------------------------|:------------------------------:|
 | [html](current/html)       | [PDF](current/postgres-A4.pdf) |
 
 ### PostgreSQL 18
 
-| HTML （オンライン）           | PDF                                           | EPUB                                        | man | 更新日     |
-|:---------------------------|:---------------------------------------------:|:--------------------------------------------:|:---:|:----------:|
-| [18.0](jpug-doc/18.0/html/) | [PDF](jpug-doc/18.0/postgresql-18.0-A4.pdf) | [EPUB](jpug-doc/18.0/postgresql-18.0.epub) | [man.tar.gz](jpug-doc/18.0/man.tar.gz) | 2026-02-19 |
+| HTML （オンライン）           | PDF                                            | EPUB                                          | man                                     | 更新日     |
+|:------------------------------|:----------------------------------------------:|:---------------------------------------------:|:---------------------------------------:|:----------:|
+| [18.3](jpug-doc/18.3/html/)   | [PDF](jpug-doc/18.3/postgresql-18.3-A4.pdf)    | [EPUB](jpug-doc/18.3/postgresql-18.3.epub)    | [man.tar.gz](jpug-doc/18.3/man.tar.gz)  | 2026-03-31 |
+| [18.0](jpug-doc/18.0/html/)   | [PDF](jpug-doc/18.0/postgresql-18.0-A4.pdf)    | [EPUB](jpug-doc/18.0/postgresql-18.0.epub)    | [man.tar.gz](jpug-doc/18.0/man.tar.gz)  | 2026-02-19 |
 
 ### PostgreSQL 17
 
