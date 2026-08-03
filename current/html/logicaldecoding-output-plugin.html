@@ -181,7 +181,7 @@ SQLで変更データを見るような場合、任意のかたちでデータ�
 指定したトランザクションに含まれる更新だけが<code class="literal">begin</code>と<code class="literal">commit</code>の間のコールバックによってデコードされます。
 明示的あるいは暗黙的にロールバックされたトランザクションは、決してデコードされません。
 成功したセーブポイントは、実行された順番にセーブポイントが実行されたトランザクションの中に折り込まれます。
-<code class="command">PREPARE TRANSACTION</code>を使用して2相コミット用に準備されたトランザクションも、デコードに必要な出力プラグインコールバックが提供されていればデコードされます。
+<code class="command">PREPARE TRANSACTION</code>を使用して2相コミット用のプリペアドトランザクションも、デコードに必要な出力プラグインコールバックが提供されていればデコードされます。
 <code class="command">ROLLBACK PREPARED</code>コマンドを使用して、現在準備されているトランザクションが同時にアボートされる可能性があります。
 その場合、このトランザクションのロジカルデコーディングもアボートされます。
 そのようなトランザクションのすべての変更は、アボートが検出され、<code class="function">prepare_cb</code>コールバックが呼び出されるとスキップされます。
@@ -517,7 +517,7 @@ typedef bool (*LogicalDecodeFilterPrepareCB) (struct LogicalDecodingContext *ctx
       in which case it can either error out or skip the remaining changes of
       the transaction.
 </span>
-必須である<code class="function">begin_prepare_cb</code>コールバックは、準備されたトランザクションの開始がデコードされるたびに呼び出されます。
+必須である<code class="function">begin_prepare_cb</code>コールバックは、プリペアドトランザクションの開始がデコードされるたびに呼び出されます。
 <em class="parameter"><code>txn</code></em>パラメータの一部である<em class="parameter"><code>gid</code></em>フィールドをこのコールバックで使用して、プラグインがこの<code class="command">PREPARE</code>を既に受信しているかどうかをチェックできます。
 この場合、エラーになるか、トランザクションの残りの変更をスキップできます。
 </p><pre class="programlisting">
@@ -535,7 +535,7 @@ typedef void (*LogicalDecodeBeginPrepareCB) (struct LogicalDecodingContext *ctx,
       rows. The &lt;parameter&gt;gid&lt;/parameter&gt; field, which is part of the
       &lt;parameter&gt;txn&lt;/parameter&gt; parameter, can be used in this callback.
 </span>
-必須である<code class="function">prepare_cb</code>コールバックは、2相コミット用に準備されたトランザクションがデコードされるたびに呼び出されます。
+必須である<code class="function">prepare_cb</code>コールバックは、2相コミット用にプリペアドトランザクションがデコードされるたびに呼び出されます。
 修正された行がある場合、すべての修正された行に対する<code class="function">change_cb</code>コールバックはこの前に呼び出されています。
 <em class="parameter"><code>txn</code></em>パラメータの一部である<em class="parameter"><code>gid</code></em>フィールドは、このコールバックで使用できます。
 </p><pre class="programlisting">
@@ -580,7 +580,7 @@ typedef void (*LogicalDecodeCommitPreparedCB) (struct LogicalDecodingContext *ct
 この場合、プラグインはロールバックを適用できます。
 そうでない場合は、ロールバック操作をスキップできます。
 <em class="parameter"><code>gid</code></em>だけでは十分ではありません。
-なぜなら、下流ノードは同じ識別子を持つ準備されたトランザクションを持つことができるからです。
+なぜなら、下流ノードは同じ識別子を持つプリペアドトランザクションを持つことができるからです。
 </p><pre class="programlisting">
 typedef void (*LogicalDecodeRollbackPreparedCB) (struct LogicalDecodingContext *ctx,
                                                  ReorderBufferTXN *txn,
