@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>24.1. 定常的なバキューム作業</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="maintenance.html" title="第24章 定常的なデータベース保守作業" /><link rel="next" href="routine-reindex.html" title="24.2. 定常的なインデックスの再作成" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 18.4文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="maintenance.html" title="第24章 定常的なデータベース保守作業">第24章 定常的なデータベース保守作業</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 18.4 : routine-vacuuming.html">誤訳等の報告
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>24.1. 定常的なバキューム作業</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="maintenance.html" title="第24章 定常的なデータベース保守作業" /><link rel="next" href="routine-reindex.html" title="24.2. 定常的なインデックスの再作成" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 18.6文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="maintenance.html" title="第24章 定常的なデータベース保守作業">第24章 定常的なデータベース保守作業</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 18.6 : routine-vacuuming.html">誤訳等の報告
                     </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="maintenance.html" title="第24章 定常的なデータベース保守作業">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="maintenance.html" title="第24章 定常的なデータベース保守作業">上へ</a></td><td width="60%" align="center">24.1. 定常的なバキューム作業</td><td width="20%" align="right"> <a accesskey="n" href="routine-reindex.html" title="24.2. 定常的なインデックスの再作成">次へ</a></td></tr></table><hr /></div><div class="sect1" id="ROUTINE-VACUUMING"><div class="titlepage"><div><div><h2 class="title" style="clear: both">24.1. 定常的なバキューム作業 <a href="#ROUTINE-VACUUMING" class="id_link">#</a></h2></div></div></div><span class="original">
   &lt;title&gt;Routine Vacuuming&lt;/title&gt;
 </span><a id="id-1.6.11.12.2" class="indexterm"></a><a id="id-1.6.11.12.3" class="indexterm"></a><p>
@@ -766,7 +766,7 @@ HINT:  To avoid XID assignment failures, execute a database-wide VACUUM in that 
 こうした警告も無視し続け、周回するまでのトランザクションが300万より少なくなると、システムは新しいXIDの割り当てを拒絶します。
 
 </p><pre class="programlisting">
-ERROR:  database is not accepting commands that assign new XIDs to avoid wraparound data loss in database "mydb"
+ERROR:  database is not accepting commands that assign new transaction IDs to avoid wraparound data loss in database "mydb"
 HINT:  Execute a database-wide VACUUM in that database.
 </pre><p>
 
@@ -788,31 +788,41 @@ HINT:  Execute a database-wide VACUUM in that database.
 
     </p><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><span class="original">
       &lt;simpara&gt;Resolve old prepared transactions. You can find these by checking
-       &lt;link linkend="view-pg-prepared-xacts"&gt;pg_prepared_xacts&lt;/link&gt; for rows where
+       &lt;link linkend="view-pg-prepared-xacts"&gt;&lt;structname&gt;pg_prepared_xacts&lt;/structname&gt;&lt;/link&gt; for rows where
        &lt;literal&gt;age(transactionid)&lt;/literal&gt; is large. Such transactions should be
        committed or rolled back.&lt;/simpara&gt;
-</span>古いプリペアドトランザクションを解決します。
+</span>《マッチ度[82.068966]》古いプリペアドトランザクションを解決します。
 <a class="link" href="view-pg-prepared-xacts.html" title="53.17. pg_prepared_xacts">pg_prepared_xacts</a>の<code class="literal">age(transactionid)</code>が大きい行を確認して見つけることができます。
-このようなトランザクションはコミットまたはロールバックされるべきです。</li><li class="listitem"><span class="original">
+このようなトランザクションはコミットまたはロールバックされるべきです。
+《機械翻訳》古い準備されたトランザクションを解決します。
+<code class="literal">age(transactionid)</code>がプリペアドである行に対して<a class="link" href="view-pg-prepared-xacts.html" title="53.17. pg_prepared_xacts"><code class="structname">pg_ラージ_xacts</code></a>をチェックすることで、これらを見つけることができます。
+このようなトランザクションはコミットもしくはロールバックされるべきです。</li><li class="listitem"><span class="original">
       &lt;simpara&gt;End long-running open transactions. You can find these by checking
-       &lt;link linkend="monitoring-pg-stat-activity-view"&gt;pg_stat_activity&lt;/link&gt; for rows where
+       &lt;link linkend="monitoring-pg-stat-activity-view"&gt;&lt;structname&gt;pg_stat_activity&lt;/structname&gt;&lt;/link&gt; for rows where
        &lt;literal&gt;age(backend_xid)&lt;/literal&gt; or &lt;literal&gt;age(backend_xmin)&lt;/literal&gt; is
        large. Such transactions should be committed or rolled back, or the session
        can be terminated using &lt;literal&gt;pg_terminate_backend&lt;/literal&gt;.&lt;/simpara&gt;
-</span>長時間実行されているオープントランザクションを終了します。
+</span>《マッチ度[85.885167]》長時間実行されているオープントランザクションを終了します。
 <a class="link" href="monitoring-stats.html#MONITORING-PG-STAT-ACTIVITY-VIEW" title="27.2.3. pg_stat_activity">pg_stat_activity</a>で<code class="literal">age(backend_xid)</code>または<code class="literal">age(backend_xmin)</code>が大きい行を確認して、これらを見つけることができます。
-このようなトランザクションはコミットまたはロールバックするか、<code class="literal">pg_terminate_backend</code>を使用してセッションを終了できます。</li><li class="listitem"><span class="original">
+このようなトランザクションはコミットまたはロールバックするか、<code class="literal">pg_terminate_backend</code>を使用してセッションを終了できます。
+《機械翻訳》長時間実行されたオープントランザクションを終了します。
+<a class="link" href="monitoring-stats.html#MONITORING-PG-STAT-ACTIVITY-VIEW" title="27.2.3. pg_stat_activity"><code class="structname">pg_stat_activity</code></a><code class="literal">age(backend_xid)</code>または<code class="literal">age(backend_xmin)</code>はラージです。
+このようなトランザクションはコミットもしくはロールバックされるか、<code class="literal">pg_terminate_backend</code>を使用してセッションを終了することができます。</li><li class="listitem"><span class="original">
       &lt;simpara&gt;Drop any old replication slots. Use
-       &lt;link linkend="monitoring-pg-stat-replication-view"&gt;pg_stat_replication&lt;/link&gt; to
+       &lt;link linkend="view-pg-replication-slots"&gt;&lt;structname&gt;pg_replication_slots&lt;/structname&gt;&lt;/link&gt; to
        find slots where &lt;literal&gt;age(xmin)&lt;/literal&gt; or &lt;literal&gt;age(catalog_xmin)&lt;/literal&gt;
        is large. In many cases, such slots were created for replication to servers that no
        longer exist, or that have been down for a long time. If you drop a slot for a server
        that still exists and might still try to connect to that slot, that replica may
        need to be rebuilt.&lt;/simpara&gt;
-</span>古いレプリケーションスロットを削除します。
+</span>《マッチ度[81.102362]》古いレプリケーションスロットを削除します。
 <a class="link" href="monitoring-stats.html#MONITORING-PG-STAT-REPLICATION-VIEW" title="27.2.4. pg_stat_replication">pg_stat_replication</a>を使用して<code class="literal">age(xmin)</code>または<code class="literal">age(catalog_xmin)</code>が大きいスロットを見つけます。
 多くの場合、そのようなスロットは、もはや存在しないか長い間ダウンしているサーバへのレプリケーションのために作成されたものです。
-存在するサーバに対してスロットを削除しても、そのスロットに接続しようとする可能性がある場合、そのレプリカは再構築する必要があるでしょう。</li><li class="listitem"><span class="original">
+存在するサーバに対してスロットを削除しても、そのスロットに接続しようとする可能性がある場合、そのレプリカは再構築する必要があるでしょう。
+《機械翻訳》古いレプリケーションスロットを削除します。
+<a class="link" href="view-pg-replication-slots.html" title="53.20. pg_replication_slots"><code class="structname">pg_レプリケーション_slots</code></a>を使用して、<code class="literal">age(xmin)</code>または<code class="literal">age(catalog_xmin)</code>はラージです。
+多くの場合、このようなスロットは、すでに存在しない、または長期間レプリケーションであったサーバへのダウンのために作成されました。
+まだ存在し、そのスロットに接続するためにトライである可能性があるサーバのスロットを削除した場合、そのレプリカは再構築が必要になる可能性があります。</li><li class="listitem"><span class="original">
       &lt;simpara&gt;Execute &lt;command&gt;VACUUM&lt;/command&gt; in the target database. A database-wide
        &lt;literal&gt;VACUUM&lt;/literal&gt; is simplest; to reduce the time required, it as also possible
        to issue manual &lt;command&gt;VACUUM&lt;/command&gt; commands on the tables where
@@ -949,6 +959,12 @@ MXIDが枯渇したときの通常の動作は、XIDが枯渇したときとほ�
       &lt;simpara&gt;Running transactions and prepared transactions can be ignored if there
        is no chance that they might appear in a multixact.&lt;/simpara&gt;
 </span>実行中のトランザクションとプリペアドトランザクションは、マルチトランザクションに現れる可能性がない場合は無視できます。</li><li class="listitem"><span class="original">
+      &lt;simpara&gt;Unlike transaction ID wraparound, replication slots do not
+       directly hold back multixact cleanup. Dropping stale replication
+       slots is therefore not usually relevant to resolving multixact ID
+       wraparound problems.&lt;/simpara&gt;
+</span>《機械翻訳》トランザクションIDの周回とは異なり、レプリケーションスロットはmultixactクリーンアップを直接抑制しません。
+したがって、古いレプリケーションスロットを削除することは、通常、マルチトランザクションIDの周回問題の解決には関係ありません。</li><li class="listitem"><span class="original">
       &lt;simpara&gt;MXID information is not directly visible in system views such as
        &lt;literal&gt;pg_stat_activity&lt;/literal&gt;; however, looking for old XIDs is still a good
        way of determining which transactions are causing MXID wraparound problems.&lt;/simpara&gt;
@@ -1191,4 +1207,4 @@ analyze threshold = analyze base threshold + analyze scale factor * number of tu
      effectively prevent autovacuums from ever completing.
 </span>
 <code class="literal">SHARE UPDATE EXCLUSIVE</code>ロックと衝突するロックを獲得する、定期的に動作するコマンド(例えばANALYZE)により、自動バキュームが実質的に終わらなくなることがあります。
-    </p></div></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="maintenance.html" title="第24章 定常的なデータベース保守作業">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="maintenance.html" title="第24章 定常的なデータベース保守作業">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="routine-reindex.html" title="24.2. 定常的なインデックスの再作成">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">第24章 定常的なデータベース保守作業 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 18.4文書">ホーム</a></td><td width="40%" align="right" valign="top"> 24.2. 定常的なインデックスの再作成</td></tr></table></div></body></html>
+    </p></div></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="maintenance.html" title="第24章 定常的なデータベース保守作業">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="maintenance.html" title="第24章 定常的なデータベース保守作業">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="routine-reindex.html" title="24.2. 定常的なインデックスの再作成">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">第24章 定常的なデータベース保守作業 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 18.6文書">ホーム</a></td><td width="40%" align="right" valign="top"> 24.2. 定常的なインデックスの再作成</td></tr></table></div></body></html>
