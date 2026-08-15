@@ -144,7 +144,7 @@ CREATE TABLE another_catalog_table(data text) WITH (user_catalog_table = true);
 </span>
 出力プラグインコールバックは、かなり自由な形式で消費者にデータを渡すことができます。
 SQLで変更データを見るような場合、任意のかたちでデータを返すことのできるデータ型(たとえば<code class="type">bytea</code>)は扱いにくいです。
-出力プラグインがサーバエンコーディングのテキストデータのみを含むことにするには、<a class="link" href="logicaldecoding-output-plugin.html#LOGICALDECODING-OUTPUT-PLUGIN-STARTUP" title="47.6.4.1. 開始コールバック">起動コールバック</a>で、<code class="literal">OutputPluginOptions.output_type</code>に<code class="literal">OUTPUT_PLUGIN_BINARY_OUTPUT</code>ではなく、<code class="literal">OUTPUT_PLUGIN_TEXTUAL_OUTPUT</code>を設定することによって宣言できます。
+出力プラグインがサーバエンコーディングのテキストデータのみを含むことにするには、<a class="link" href="logicaldecoding-output-plugin.html#LOGICALDECODING-OUTPUT-PLUGIN-STARTUP" title="47.6.4.1. スタートアップコールバック">スタートアップコールバック</a>で、<code class="literal">OutputPluginOptions.output_type</code>に<code class="literal">OUTPUT_PLUGIN_BINARY_OUTPUT</code>ではなく、<code class="literal">OUTPUT_PLUGIN_TEXTUAL_OUTPUT</code>を設定することによって宣言できます。
 この場合、<code class="type">text</code>datumが格納することができるように、すべてのデータはサーバエンコーディングでエンコードされていなければなりません。
 これは、アサーションが有効なビルドでチェックされます。
     </p></div><div class="sect2" id="LOGICALDECODING-OUTPUT-PLUGIN-CALLBACKS"><div class="titlepage"><div><div><h3 class="title">47.6.4. 出力プラグインコールバック <a href="#LOGICALDECODING-OUTPUT-PLUGIN-CALLBACKS" class="id_link">#</a></h3></div></div></div><span class="original">
@@ -181,7 +181,7 @@ SQLで変更データを見るような場合、任意のかたちでデータ�
 指定したトランザクションに含まれる更新だけが<code class="literal">begin</code>と<code class="literal">commit</code>の間のコールバックによってデコードされます。
 明示的あるいは暗黙的にロールバックされたトランザクションは、決してデコードされません。
 成功したセーブポイントは、実行された順番にセーブポイントが実行されたトランザクションの中に折り込まれます。
-<code class="command">PREPARE TRANSACTION</code>を使用して2相コミット用に準備されたトランザクションも、デコードに必要な出力プラグインコールバックが提供されていればデコードされます。
+<code class="command">PREPARE TRANSACTION</code>を使用して2相コミット用のプリペアドトランザクションも、デコードに必要な出力プラグインコールバックが提供されていればデコードされます。
 <code class="command">ROLLBACK PREPARED</code>コマンドを使用して、現在準備されているトランザクションが同時にアボートされる可能性があります。
 その場合、このトランザクションのロジカルデコーディングもアボートされます。
 そのようなトランザクションのすべての変更は、アボートが検出され、<code class="function">prepare_cb</code>コールバックが呼び出されるとスキップされます。
@@ -196,7 +196,7 @@ SQLで変更データを見るような場合、任意のかたちでデータ�
 </span>
 ディスクに安全にフラッシュされたトランザクションだけがデコードされます。
 そのため、<code class="varname">synchronous_commit</code>が<code class="literal">off</code>の場合には、直後に呼び出された<code class="literal">pg_logical_slot_get_changes()</code>がその<code class="command">COMMIT</code>をデコードしないことがあります。
-     </p></div><div class="sect3" id="LOGICALDECODING-OUTPUT-PLUGIN-STARTUP"><div class="titlepage"><div><div><h4 class="title">47.6.4.1. 開始コールバック <a href="#LOGICALDECODING-OUTPUT-PLUGIN-STARTUP" class="id_link">#</a></h4></div></div></div><span class="original">
+     </p></div><div class="sect3" id="LOGICALDECODING-OUTPUT-PLUGIN-STARTUP"><div class="titlepage"><div><div><h4 class="title">47.6.4.1. スタートアップコールバック <a href="#LOGICALDECODING-OUTPUT-PLUGIN-STARTUP" class="id_link">#</a></h4></div></div></div><span class="original">
      &lt;title&gt;Startup Callback&lt;/title&gt;
 </span><p>
 <span class="original">
@@ -246,9 +246,9 @@ typedef struct OutputPluginOptions
       needs to have a state, it can
       use &lt;literal&gt;ctx-&amp;gt;output_plugin_private&lt;/literal&gt; to store it.
 </span>
-開始コールバックでは、<code class="literal">ctx-&gt;output_plugin_options</code>で指定されるオプションを検証しましょう。
+スタートアップコールバックでは、<code class="literal">ctx-&gt;output_plugin_options</code>で指定されるオプションを検証しましょう。
 出力プラグインが状態を持つ必要がある場合には、<code class="literal">ctx-&gt;output_plugin_private</code>を利用できます。
-     </p></div><div class="sect3" id="LOGICALDECODING-OUTPUT-PLUGIN-SHUTDOWN"><div class="titlepage"><div><div><h4 class="title">47.6.4.2. 終了コールバック <a href="#LOGICALDECODING-OUTPUT-PLUGIN-SHUTDOWN" class="id_link">#</a></h4></div></div></div><span class="original">
+     </p></div><div class="sect3" id="LOGICALDECODING-OUTPUT-PLUGIN-SHUTDOWN"><div class="titlepage"><div><div><h4 class="title">47.6.4.2. シャットダウンコールバック <a href="#LOGICALDECODING-OUTPUT-PLUGIN-SHUTDOWN" class="id_link">#</a></h4></div></div></div><span class="original">
      &lt;title&gt;Shutdown Callback&lt;/title&gt;
 </span><p>
 <span class="original">
@@ -517,7 +517,7 @@ typedef bool (*LogicalDecodeFilterPrepareCB) (struct LogicalDecodingContext *ctx
       in which case it can either error out or skip the remaining changes of
       the transaction.
 </span>
-必須である<code class="function">begin_prepare_cb</code>コールバックは、準備されたトランザクションの開始がデコードされるたびに呼び出されます。
+必須である<code class="function">begin_prepare_cb</code>コールバックは、プリペアドトランザクションの開始がデコードされるたびに呼び出されます。
 <em class="parameter"><code>txn</code></em>パラメータの一部である<em class="parameter"><code>gid</code></em>フィールドをこのコールバックで使用して、プラグインがこの<code class="command">PREPARE</code>を既に受信しているかどうかをチェックできます。
 この場合、エラーになるか、トランザクションの残りの変更をスキップできます。
 </p><pre class="programlisting">
@@ -535,7 +535,7 @@ typedef void (*LogicalDecodeBeginPrepareCB) (struct LogicalDecodingContext *ctx,
       rows. The &lt;parameter&gt;gid&lt;/parameter&gt; field, which is part of the
       &lt;parameter&gt;txn&lt;/parameter&gt; parameter, can be used in this callback.
 </span>
-必須である<code class="function">prepare_cb</code>コールバックは、2相コミット用に準備されたトランザクションがデコードされるたびに呼び出されます。
+必須である<code class="function">prepare_cb</code>コールバックは、2相コミット用にプリペアドトランザクションがデコードされるたびに呼び出されます。
 修正された行がある場合、すべての修正された行に対する<code class="function">change_cb</code>コールバックはこの前に呼び出されています。
 <em class="parameter"><code>txn</code></em>パラメータの一部である<em class="parameter"><code>gid</code></em>フィールドは、このコールバックで使用できます。
 </p><pre class="programlisting">
@@ -580,7 +580,7 @@ typedef void (*LogicalDecodeCommitPreparedCB) (struct LogicalDecodingContext *ct
 この場合、プラグインはロールバックを適用できます。
 そうでない場合は、ロールバック操作をスキップできます。
 <em class="parameter"><code>gid</code></em>だけでは十分ではありません。
-なぜなら、下流ノードは同じ識別子を持つ準備されたトランザクションを持つことができるからです。
+なぜなら、下流ノードは同じ識別子を持つプリペアドトランザクションを持つことができるからです。
 </p><pre class="programlisting">
 typedef void (*LogicalDecodeRollbackPreparedCB) (struct LogicalDecodingContext *ctx,
                                                  ReorderBufferTXN *txn,

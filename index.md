@@ -19,7 +19,7 @@ last-updated: 2026-08-15 04:55:37 JST
 
 | HTML （オンライン）           | PDF                                            | EPUB                                          | man                                     | 更新日     |
 |:------------------------------|:----------------------------------------------:|:---------------------------------------------:|:---------------------------------------:|:----------:|
-| [18.4](jpug-doc/18.4/html/)   | [PDF](https://github.com/pgsql-jp/jpug-doc/releases/download/pg184doc/postgres-A4.pdf) | [EPUB](https://github.com/pgsql-jp/jpug-doc/releases/download/pg184doc/postgres.epub)    | [man.tar.gz](https://github.com/pgsql-jp/jpug-doc/releases/download/pg184doc/man.tar.gz) | 2026-06-30 |
+| [18.4](jpug-doc/18.4/html/)   | [PDF](https://github.com/pgsql-jp/jpug-doc/releases/download/pg184tail2/postgres-A4.pdf) | [EPUB](https://github.com/pgsql-jp/jpug-doc/releases/download/pg184tail2/postgres.epub)    | [man.tar.gz](https://github.com/pgsql-jp/jpug-doc/releases/download/pg184tail2/man.tar.gz) | 2026-08-14 |
 | [18.3](jpug-doc/18.3/html/)   | [PDF](https://github.com/pgsql-jp/jpug-doc/releases/download/pg183tail2/postgres-A4.pdf) | [EPUB](https://github.com/pgsql-jp/jpug-doc/releases/download/pg183tail2/postgres.epub)    | [man.tar.gz](https://github.com/pgsql-jp/jpug-doc/releases/download/pg183tail2/man.tar.gz)  | 2026-05-18 |
 | [18.0](jpug-doc/18.0/html/)   | [PDF](https://github.com/pgsql-jp/jpug-doc/releases/download/pg180doc/postgres-A4.pdf)    | [EPUB](https://github.com/pgsql-jp/jpug-doc/releases/download/pg180doc/postgres.epub)    | [man.tar.gz](https://github.com/pgsql-jp/jpug-doc/releases/download/pg180doc/man.tar.gz)  | 2026-02-19 |
 
