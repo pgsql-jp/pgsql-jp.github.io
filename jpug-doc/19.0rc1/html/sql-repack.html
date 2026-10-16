@@ -1,0 +1,524 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>REPACK</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="sql-release-savepoint.html" title="RELEASE SAVEPOINT" /><link rel="next" href="sql-reset.html" title="RESET" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 19rc1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="sql-commands.html" title="SQLコマンド">SQLコマンド</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 19rc1 : sql-repack.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="sql-release-savepoint.html" title="RELEASE SAVEPOINT">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="sql-commands.html" title="SQLコマンド">上へ</a></td><td width="60%" align="center">REPACK</td><td width="20%" align="right"> <a accesskey="n" href="sql-reset.html" title="RESET">次へ</a></td></tr></table><hr /></div><div class="refentry" id="SQL-REPACK"><div class="titlepage"></div><a id="id-1.9.3.165.1" class="indexterm"></a><div class="refnamediv"><h2><span class="refentrytitle">REPACK</span></h2><p>REPACK — rewrite a table to reclaim disk space</p></div><div class="refsynopsisdiv"><h2>概要</h2><pre class="synopsis">
+REPACK [ ( <em class="replaceable"><code>option</code></em> [, ...] ) ] [ <em class="replaceable"><code>table_and_columns</code></em> [ USING INDEX [ <em class="replaceable"><code>index_name</code></em> ] ] ]
+REPACK [ ( <em class="replaceable"><code>option</code></em> [, ...] ) ] USING INDEX
+
+<span class="phrase">where <em class="replaceable"><code>option</code></em> can be one of:</span>
+
+    VERBOSE [ <em class="replaceable"><code>boolean</code></em> ]
+    ANALYZE [ <em class="replaceable"><code>boolean</code></em> ]
+    CONCURRENTLY [ <em class="replaceable"><code>boolean</code></em> ]
+
+<span class="phrase">and <em class="replaceable"><code>table_and_columns</code></em> is:</span>
+
+    <em class="replaceable"><code>table_name</code></em> [ ( <em class="replaceable"><code>column_name</code></em> [, ...] ) ]
+</pre></div><div class="refsect1" id="id-1.9.3.165.5"><h2>説明</h2><span class="original">
+  &lt;title&gt;Description&lt;/title&gt;
+</span><p>
+<span class="original">
+   &lt;command&gt;REPACK&lt;/command&gt; reclaims storage occupied by dead
+   tuples. Unlike &lt;command&gt;VACUUM&lt;/command&gt;, it does so by rewriting the
+   entire contents of the table specified
+   by &lt;replaceable class="parameter"&gt;table_name&lt;/replaceable&gt; into a new disk
+   file with no extra space (except for the space guaranteed by
+   the &lt;literal&gt;fillfactor&lt;/literal&gt; storage parameter), allowing unused space
+   to be returned to the operating system.
+</span>
+《機械翻訳》<code class="command">REPACK</code>は、無効なタプルによって占有されたストレージを回収します。
+<code class="command">VACUUM</code>とは異なり、<em class="replaceable"><code>table_name</code></em>で指定された名前の内容全体を、余分なディスクファイルのない新しいスペースに書き換えることによって行われます（<code class="literal">fillfactor</code>ストレージパラメータによって保証されたスペースを除き、未使用のスペースをオペレーティングシステムに戻すことができます）。
+  </p><p>
+<span class="original">
+   Without
+   a &lt;replaceable class="parameter"&gt;table_name&lt;/replaceable&gt;, &lt;command&gt;REPACK&lt;/command&gt;
+   processes every table and materialized view in the current database that
+   the current user has the &lt;literal&gt;MAINTAIN&lt;/literal&gt; privilege on. This
+   form of &lt;command&gt;REPACK&lt;/command&gt; cannot be executed inside a transaction
+   block.  Also, this form is not allowed if
+   the &lt;literal&gt;CONCURRENTLY&lt;/literal&gt; option is used.
+</span>
+《機械翻訳》<em class="replaceable"><code>table_name</code></em>がない場合、<code class="command">REPACK</code>は、現在データベースに<code class="literal">MAINTAIN</code>権限があるすべてのテーブルおよびマテリアライズドビューを処理します。
+<code class="command">REPACK</code>のこのフォームは、トランザクションブロック内では実行できません。
+また、<code class="literal">CONCURRENTLY</code>オプションが使用されている場合、このフォームは許可されません。
+  </p><p>
+<span class="original">
+   If a &lt;literal&gt;USING INDEX&lt;/literal&gt; clause is specified, the rows are
+   physically reordered based on information from an index.  Please see
+   &lt;xref linkend="sql-repack-notes-on-clustering"/&gt; below.
+</span>
+《機械翻訳》<code class="literal">USING INDEX</code>句を指定すると、インデックスからの情報に基づいて、行が物理的に並べ替えられます。
+下記の<a class="xref" href="sql-repack.html#SQL-REPACK-NOTES-ON-CLUSTERING" title="《機械翻訳》クラスタリングに関する注意。">Notes on Clustering</a>を参照してください。
+  </p><p>
+<span class="original">
+   When a table is being repacked, an &lt;literal&gt;ACCESS EXCLUSIVE&lt;/literal&gt; lock
+   is acquired on it, unless the &lt;literal&gt;CONCURRENTLY&lt;/literal&gt; option is given.
+   See &lt;xref linkend="sql-repack-notes-on-concurrently"/&gt; for a discussion
+   on the effects of this option.
+</span>
+《機械翻訳》テーブルを再パックする場合、<code class="literal">ACCESS EXCLUSIVE</code>オプションが指定されていなければ、そのテーブルに対して<code class="literal">CONCURRENTLY</code>ロックが獲得されます。
+このオプションの影響については<a class="xref" href="sql-repack.html#SQL-REPACK-NOTES-ON-CONCURRENTLY" title="《機械翻訳》同時オペレーションに関する注意。">Notes on Concurrent Operation</a>を参照してください。
+  </p></div><div class="refsect1" id="id-1.9.3.165.6"><h2>パラメータ</h2><span class="original">
+  &lt;title&gt;Parameters&lt;/title&gt;
+</span><div class="variablelist"><dl class="variablelist"><dt><span class="term"><em class="replaceable"><code>table_name</code></em></span></dt><dd><p>
+<span class="original">
+      The name (possibly schema-qualified) of a table.
+</span>
+《機械翻訳》テーブルの名前です（スキーマ修飾名も可）。
+     </p></dd><dt><span class="term"><em class="replaceable"><code>column_name</code></em></span></dt><dd><p>
+<span class="original">
+      The name of a specific column to analyze. Defaults to all columns.
+      If a column list is specific, &lt;literal&gt;ANALYZE&lt;/literal&gt; must also
+      be specified.
+</span>
+《機械翻訳》特定のカラムからANALYZEまでの名前。
+デフォルトはすべての列です。
+カラムリストが特定の場合は、<code class="literal">ANALYZE</code>も指定する必要があります。
+     </p></dd><dt><span class="term"><em class="replaceable"><code>index_name</code></em></span></dt><dd><p>
+<span class="original">
+      The name of an index.
+</span>
+《機械翻訳》インデックスの名前です。
+     </p></dd><dt><span class="term"><code class="literal">CONCURRENTLY</code></span></dt><dd><p>
+<span class="original">
+      Allow other transactions to use the table while it is being repacked.
+      See &lt;xref linkend="sql-repack-notes-on-concurrently" /&gt; for more details.
+</span>
+《機械翻訳》再パック中に、他のトランザクションがテーブルを使用できるようにします。
+詳細は、<a class="xref" href="sql-repack.html#SQL-REPACK-NOTES-ON-CONCURRENTLY" title="《機械翻訳》同時オペレーションに関する注意。">Notes on Concurrent Operation</a>を参照してください。
+     </p></dd><dt><span class="term"><code class="literal">VERBOSE</code></span></dt><dd><p>
+<span class="original">
+      Prints a progress report as each table is repacked
+      at &lt;literal&gt;INFO&lt;/literal&gt; level.
+</span>
+《機械翻訳》各レポートが<code class="literal">INFO</code>テーブルで再梱包されるときに、進行レベルを印刷します。
+     </p></dd><dt><span class="term"><code class="literal">ANALYZE</code><br /></span><span class="term"><code class="literal">ANALYSE</code></span></dt><dd><p>
+<span class="original">
+      Applies &lt;xref linkend="sql-analyze"/&gt; on the table after repacking.  This is
+      currently only supported when a single (non-partitioned) table is specified.
+      This option cannot be used inside a transaction block, or from a function,
+      procedure, or &lt;command&gt;DO&lt;/command&gt; block.
+</span>
+《機械翻訳》再梱包後にテーブルに<a class="xref" href="sql-analyze.html" title="ANALYZE"><span class="refentrytitle">ANALYZE</span></a>を適用します。
+これは現在、単一の（パーティション化されていない）テーブルが指定されている場合にのみサポートされています。
+このオプションは、トランザクションブロック内では使用できません。
+また、関数、プロシージャ、または<code class="command">DO</code>ブロックからは使用できません。
+     </p></dd><dt><span class="term"><em class="replaceable"><code>boolean</code></em></span></dt><dd><p>
+<span class="original">
+      Specifies whether the selected option should be turned on or off.
+      You can write &lt;literal&gt;TRUE&lt;/literal&gt;, &lt;literal&gt;ON&lt;/literal&gt;, or
+      &lt;literal&gt;1&lt;/literal&gt; to enable the option, and &lt;literal&gt;FALSE&lt;/literal&gt;,
+      &lt;literal&gt;OFF&lt;/literal&gt;, or &lt;literal&gt;0&lt;/literal&gt; to disable it.  The
+      &lt;replaceable class="parameter"&gt;boolean&lt;/replaceable&gt; value can also
+      be omitted, in which case &lt;literal&gt;TRUE&lt;/literal&gt; is assumed.
+</span>
+《機械翻訳》選択したオプションをオンにするか、オフにするかを指定します。
+<code class="literal">TRUE</code>、<code class="literal">ON</code>、または<code class="literal">1</code>と記述するとオプションが有効になり、<code class="literal">FALSE</code>、<code class="literal">OFF</code>、または<code class="literal">0</code>と記述すると無効になります。
+<em class="replaceable"><code>ブール</code></em>の値を省略することもでき、その場合はケース<code class="literal">TRUE</code>が想定されます。
+     </p></dd></dl></div></div><div class="refsect1" id="SQL-REPACK-NOTES"><h2>注釈</h2><span class="original">
+  &lt;title&gt;Notes&lt;/title&gt;
+</span><p>
+<span class="original">
+   To repack a table, one must have the &lt;literal&gt;MAINTAIN&lt;/literal&gt; privilege
+   on the table.
+</span>
+《機械翻訳》テーブルを再梱包するには、テーブルに<code class="literal">MAINTAIN</code>権限が必要です。
+  </p><p>
+<span class="original">
+   &lt;command&gt;REPACK&lt;/command&gt; is primarily meant to remove bloat and, with
+   &lt;literal&gt;USING INDEX&lt;/literal&gt;, to cluster the table, in order to improve
+   performance.  Although it also advances the table's
+   &lt;structfield&gt;relfrozenxid&lt;/structfield&gt; and &lt;structfield&gt;relminmxid&lt;/structfield&gt;,
+   it is not a good way to prevent transaction ID or multixact ID wraparound:
+   it rewrites the whole table and all of its indexes, so it takes much longer
+   than &lt;command&gt;VACUUM&lt;/command&gt;, and it can fail after most of the work
+   is done, especially with &lt;literal&gt;CONCURRENTLY&lt;/literal&gt; on a busy table.
+   &lt;command&gt;VACUUM&lt;/command&gt; is recommended for that instead (see
+   &lt;xref linkend="vacuum-for-wraparound"/&gt;).
+   When a table gets close to wraparound, &lt;command&gt;VACUUM&lt;/command&gt; skips index
+   vacuuming on its own (see &lt;xref linkend="guc-vacuum-failsafe-age"/&gt;), and its
+   &lt;link linkend="sql-vacuum"&gt;&lt;literal&gt;INDEX_CLEANUP OFF&lt;/literal&gt;&lt;/link&gt;
+   option can do the same earlier.
+</span>
+《機械翻訳》<code class="command">REPACK</code>は、主に膨張を除去することを目的としており、<code class="literal">USING INDEX</code>とともにテーブルのクラスタまで、オーダーではパフォーマンスの改善までです。
+テーブルの<code class="structfield">relfrozenxid</code>と<code class="structfield">relminmxid</code>も進みますが、トランザクションIDやマルチトランザクションIDの周回を防ぐのには適していません。
+これは、テーブル全体とそのインデックスのすべてを書き換えるため、<code class="command">VACUUM</code>よりもはるかに時間がかかり、特に<code class="literal">CONCURRENTLY</code>ビジーテーブルで使用する場合は失敗する可能性があります。
+<code class="command">VACUUM</code>代わりに推奨します（<a class="xref" href="routine-vacuuming.html#VACUUM-FOR-WRAPAROUND" title="24.1.5. トランザクションIDの周回エラーの防止">24.1.5</a>を参照）。
+テーブルがクローズから周回に移動する場合、<code class="command">VACUUM</code>はインデックスバキューム処理を自動的にスキップします（<a class="xref" href="runtime-config-vacuum.html#GUC-VACUUM-FAILSAFE-AGE">vacuum_failsafe_age</a>を参照）。
+<a class="link" href="sql-vacuum.html" title="VACUUM"><code class="literal">INDEX_CLEANUP OFF</code></a>オプションを使用すると、同じことをより早く行うことができます。
+  </p><p>
+<span class="original">
+   &lt;command&gt;REPACK&lt;/command&gt; refuses to process a table on which an invalid
+   index exists.  Such indexes must be dropped or reindexed by the user ahead
+   of time.
+</span>
+《機械翻訳》<code class="command">REPACK</code>無効なプロセスが存在するテーブルのインデックスを拒否します。
+このようなインデックスは、事前にユーザによって削除または再インデックスされる必要があります。
+  </p><p>
+<span class="original">
+   While &lt;command&gt;REPACK&lt;/command&gt; is running, the &lt;xref
+   linkend="guc-search-path"/&gt; is temporarily changed to &lt;literal&gt;pg_catalog,
+   pg_temp&lt;/literal&gt;.
+</span>
+《機械翻訳》<code class="command">REPACK</code>の実行中は、<a class="xref" href="runtime-config-client.html#GUC-SEARCH-PATH">search_path</a>が一時的に<code class="literal">pg_catalog, pg_temp</code>に変更されます。
+  </p><p>
+<span class="original">
+   Each backend running &lt;command&gt;REPACK&lt;/command&gt; will report its progress
+   in the &lt;structname&gt;pg_stat_progress_repack&lt;/structname&gt; view. See
+   &lt;xref linkend="repack-progress-reporting"/&gt; for details.
+</span>
+《機械翻訳》運行している各バックエンド<code class="command">REPACK</code>ビュー内でのレポートの進行状況。
+詳細は<a class="xref" href="progress-reporting.html#REPACK-PROGRESS-REPORTING" title="27.4.5. REPACK Progress Reporting">27.4.5</a>を参照。
+<code class="structname">pg_stat_progress_repack</code>
+  </p><p>
+<span class="original">
+   Repacking a partitioned table repacks each of its partitions. If an index
+   is specified, each partition is repacked using the partition of that
+   index. &lt;command&gt;REPACK&lt;/command&gt; on a partitioned table cannot be executed
+   inside a transaction block.
+</span>
+《機械翻訳》パーティション化されたテーブルを再パックすると、各パーティションが再パックされます。
+インデックスが指定されている場合は、そのパーティションのパーティションを使用して各インデックスが再パックされます。
+<code class="command">REPACK</code>パーティション化されたテーブルでは、トランザクションブロック内で実行できません。
+  </p><div class="refsect2" id="SQL-REPACK-NOTES-ON-CLUSTERING"><h3>《機械翻訳》クラスタリングに関する注意。</h3><span class="original">
+   &lt;title&gt;Notes on Clustering&lt;/title&gt;
+</span><p>
+<span class="original">
+    If the &lt;literal&gt;USING INDEX&lt;/literal&gt; clause is specified, the rows in
+    the table are physically rearranged according to the ordering implied by
+    the specified index; this is known as &lt;firstterm&gt;clustering&lt;/firstterm&gt;.
+    This can have performance implications:
+    in cases where you are accessing single rows randomly within a table, the
+    actual order of the data in the table is unimportant. However, if you tend
+    to access some data more than others, and there is an index that groups
+    them together, you will benefit from using clustering.  If
+    you are requesting a range of indexed values from a table, or a single
+    indexed value that has multiple matching rows,
+    clustering will help because once the index identifies the
+    table page for the first row that matches, all other rows that match are
+    probably already on the same table page, and so you save disk accesses and
+    speed up the query.
+</span>
+《機械翻訳》<code class="literal">USING INDEX</code>句が指定されている場合、そのテーブルの行は、指定された順序付けによって示されるインデックスに従って物理的に再配置されます。
+これは<em class="firstterm">クラスタリング</em>と呼ばれます。
+これはパフォーマンスに影響を与える可能性があります。
+テーブル内で単一の行をランダムにアクセスしている場合、テーブル内のデータの実際のオーダーは重要ではありません。
+ただし、一部のデータを他のよりも多くアクセスする傾向があり、それらをグループ化するインデックスがある場合は、クラスタリングを使用することでメリットが得られます。
+テーブルからインデックス付けされた値のレンジを要求している場合、またはマルチプルマッチング行を持つ単一のインデックス付けされた値を要求している場合、クラスタリングはヘルプになります。
+これは、インデックスが一致する最初の行のテーブルページを識別すると、マッチを持つ他のすべての行はおそらくすでに同じテーブルページにあるため、ディスクアクセスを節約し、問い合わせを高速化します。
+   </p><p>
+<span class="original">
+    For B-Tree indexes, the ordering used by clustering is the index's linear
+    sort order.  Other clusterable index access methods may use a different
+    ordering strategy, one which may not necessarily correspond to any SQL
+    sort order.
+    If an index name is specified in the command, that index is used and
+    is recorded as the table's clustering index.
+    (This also applies to an index given to the &lt;command&gt;CLUSTER&lt;/command&gt;
+    command.)
+    If no index name is specified, then the index that has been configured as
+    the clustering one is used; if none has been configured, an error is thrown.
+    An index can be set manually using &lt;command&gt;ALTER TABLE ... CLUSTER ON&lt;/command&gt;,
+    and reset with &lt;command&gt;ALTER TABLE ... SET WITHOUT CLUSTER&lt;/command&gt;.
+</span>
+《機械翻訳》Bツリー索引の場合、クラスタリングで使用される順序付けは、そのインデックスのリニアソートオーダーです。
+その他のクラスタリング可能インデックスアクセスメソッドでは、別の順序付けストラテジが使用される場合があります。
+このは、SQLソートオーダーに対応しているとはかぎりません。
+コマンドでインデックス名前が指定されている場合、そのインデックスが使用され、テーブルのクラスタリングインデックスとして記録されます。
+<code class="command">CLUSTER</code>コマンドに指定されたインデックスについても同様です。
+インデックス名前が指定されていない場合は、クラスタリング対象として構成されているインデックスが使用されます。
+構成されていない場合は、エラーがスローされます。
+インデックスを手動で設定するには、<code class="command">ALTER TABLE ... CLUSTER ON</code>を使用し、リセットを<code class="command">ALTER TABLE ... SET WITHOUT CLUSTER</code>.
+   </p><p>
+<span class="original">
+    Clustering is a one-time operation: when the table is
+    subsequently updated, the changes are not clustered.  That is, no attempt
+    is made to store new or updated rows according to the clustering order.
+    (If one wishes, one can periodically recluster by issuing the command again.
+    Also, setting the table's &lt;literal&gt;fillfactor&lt;/literal&gt; storage parameter
+    to less than 100% can aid in preserving cluster ordering during updates,
+    since updated rows are kept on the same page if enough space is available
+    there.)
+</span>
+《機械翻訳》クラスタ化は1回限りのオペレーションです。
+テーブルがその後更新された場合、その変更はクラスタ化されません。
+つまり、クラスタ化されたオーダーに従って、新規または更新された行を格納しようとすることはありません。
+(必要であれば、コマンドを再度発行することで定期的に再クラスタ化できます。
+また、テーブルを設定すると<code class="literal">fillfactor</code>ストレージパラメータをより小さい100%に設定すると、更新時にクラスタ順序付けを保護するのに役立ちます。
+これは、十分なスペースが利用可能な場合、更新された行は同じページに保持されるためです。
+   </p><p>
+<span class="original">
+    When clustering on a B-Tree index, &lt;command&gt;REPACK&lt;/command&gt; can rewrite
+    the table using either an index scan on the specified index, or a
+    sequential scan followed by sorting.  It will attempt to choose the method
+    that will be faster, based on planner cost parameters and available
+    statistical information.  When clustering on an index of an access method
+    other than B-Tree, &lt;command&gt;REPACK&lt;/command&gt; always uses an index scan.
+</span>
+《機械翻訳》B-ツリーインデックスでクラスタリングしている場合、<code class="command">REPACK</code>は、指定したテーブルのインデックススキャン、またはインデックスの後にシーケンシャルスキャンを使用して並べ替えを書き換えることができます。
+プランナコストパラメータおよび使用可能なメソッド情報に基づいて、より高速な統計の選択が試行されます。
+B-ツリー以外のアクセス方式のインデックスでクラスタリングしている場合、<code class="command">REPACK</code>は常にインデックススキャンを使用します。
+   </p><p>
+<span class="original">
+    Because the planner records statistics about the ordering of tables, it is
+    advisable to specify the &lt;literal&gt;ANALYZE&lt;/literal&gt; option, or to
+    run &lt;link linkend="sql-analyze"&gt;&lt;command&gt;ANALYZE&lt;/command&gt;&lt;/link&gt; on the
+    newly repacked table.  Otherwise, the planner might make poor choices of
+    query plans.
+</span>
+《機械翻訳》プランナはテーブルの統計処理に関する順序付けを記録しますので、<code class="literal">ANALYZE</code>オプションを指定するか、新しくパックし直したテーブルに対して<a class="link" href="sql-analyze.html" title="ANALYZE"><code class="command">ANALYZE</code></a>を実行することを推奨します。
+さもないと、そのプランナは、問い合わせ計画の不適切な選択をmakeする可能性があります。
+   </p><p>
+<span class="original">
+    If no table name is specified in &lt;command&gt;REPACK USING INDEX&lt;/command&gt;,
+    all tables which have a clustering index defined and which the calling
+    user has privileges for are processed.
+</span>
+《機械翻訳》<code class="command">REPACK USING INDEX</code>でテーブル名前が指定されていない場合は、クラスタ化インデックスが定義されていて、コール側ユーザが権限を持っているすべての表が処理されます。
+   </p></div><div class="refsect2" id="SQL-REPACK-NOTES-ON-RESOURCES"><h3>《機械翻訳》リソースに関するメモ。</h3><span class="original">
+   &lt;title&gt;Notes on Resources&lt;/title&gt;
+</span><p>
+<span class="original">
+    &lt;command&gt;REPACK&lt;/command&gt; creates a temporary copy of the table and all
+    of its indexes, so you need free disk space at least equal to the sum
+    of the table size and the index sizes.
+</span>
+《機械翻訳》<code class="command">REPACK</code>では、テーブルの一時的コピーとそのすべてのインデックスが作成されます。
+このため、フリーディスクスペースは少なくとも等しいテーブルサイズの総和とインデックスのサイズが必要です。
+   </p><p>
+<span class="original">
+    If the &lt;literal&gt;USING INDEX&lt;/literal&gt; clause is given and the planner
+    chooses a sequential scan and sort to implement it, a temporary sort
+    file of up to the size of the table is needed in addition to the above.
+    This method is usually faster than an index scan, but if the disk space
+    requirement is intolerable, you can disable this choice by temporarily
+    setting &lt;xref linkend="guc-enable-sort"/&gt; to &lt;literal&gt;off&lt;/literal&gt;; or
+    omitting &lt;literal&gt;USING INDEX&lt;/literal&gt; if the table doesn't need to be
+    reordered.
+</span>
+《機械翻訳》<code class="literal">USING INDEX</code>句が指定され、プランナがそれを実装するシーケンシャルスキャンとソートを選択した場合は、上記に加えて、テーブルのサイズまでの一時的ソートファイルが必要です。
+このメソッドは通常、インデックススキャンよりも高速ですが、ディスクスペースの条件が許容できない場合は、<a class="xref" href="runtime-config-query.html#GUC-ENABLE-SORT">enable_sort</a>を一時的に<code class="literal">off</code>;に設定するか、テーブルの順序変更が必要ない場合は<code class="literal">USING INDEX</code>を省略することで、この選択を無効にできます。
+   </p><p>
+<span class="original">
+    For the purposes of transaction ID wraparound
+    (see &lt;xref linkend="vacuum-for-wraparound"/&gt;),
+    &lt;command&gt;REPACK&lt;/command&gt; is considered a single long-running
+    transaction, which prevents &lt;command&gt;VACUUM&lt;/command&gt; from cleaning
+    up dead rows from other tables.
+    It is advisable to monitor &lt;structname&gt;pg_stat_activity.backend_xid&lt;/structname&gt;
+    for the process running &lt;command&gt;REPACK&lt;/command&gt; when repacking
+    very large tables, to avoid causing excessive bloat in other tables.
+</span>
+《機械翻訳》トランザクションIDの周回（<a class="xref" href="routine-vacuuming.html#VACUUM-FOR-WRAPAROUND" title="24.1.5. トランザクションIDの周回エラーの防止">24.1.5</a>を参照）において、<code class="command">REPACK</code>は単一の長時間実行されるトランザクションとみなされ、これにより<code class="command">VACUUM</code>他のテーブルの不要行の整理を防ぐことができます。
+<code class="command">REPACK</code>非常にラージなテーブルを再パックする場合、他のテーブルの過剰な膨張を防ぐために実行中のプロセスに対してモニタ<code class="structname">pg_stat_activity.backend_xid</code>を使用することをお勧めします。
+   </p><p>
+<span class="original">
+    It is advisable to set &lt;xref linkend="guc-maintenance-work-mem"/&gt; to a
+    reasonably large value (but not more than the amount of RAM you can
+    dedicate to the &lt;command&gt;REPACK&lt;/command&gt; operation) before repacking.
+</span>
+《機械翻訳》<a class="xref" href="runtime-config-resource.html#GUC-MAINTENANCE-WORK-MEM">maintenance_work_mem</a>を適切なラージの値に設定することをお勧めします（ただし、<code class="command">REPACK</code>オペレーションの前のリパックに使用できるRAMの量を超えないようにしてください）。
+   </p></div><div class="refsect2" id="SQL-REPACK-NOTES-ON-CONCURRENTLY"><h3>《機械翻訳》同時オペレーションに関する注意。</h3><span class="original">
+   &lt;title&gt;Notes on Concurrent Operation&lt;/title&gt;
+</span><div class="warning"><h3 class="title">警告</h3><p>
+<span class="original">
+     &lt;command&gt;REPACK&lt;/command&gt; with the &lt;literal&gt;CONCURRENTLY&lt;/literal&gt;
+     option is not MVCC-safe.  After the repacking transaction commits,
+     the table will appear empty to concurrent transactions, if they are
+     using a snapshot taken before repacking started.
+     See &lt;xref linkend="mvcc-caveats"/&gt; for more details.
+</span>
+《機械翻訳》<code class="command">REPACK</code>と<code class="literal">CONCURRENTLY</code>オプションはMVCC-セーフではありません。
+トランザクションの再パッキングがコミットされた後、同時トランザクションがテーブルの再パッキングを開始したsnapshotを使用している場合、その前は同時トランザクションに対して空であるように見えます。
+詳細は、<a class="xref" href="mvcc-caveats.html" title="13.6. 警告">13.6</a>を参照してください。
+    </p></div><p>
+<span class="original">
+    &lt;command&gt;REPACK&lt;/command&gt; copies the contents of the table
+    (ignoring dead tuples) into a new file, sorted by the specified index,
+    and also creates a new file for each index. It then swaps the old and
+    new files for the table and all the indexes, and deletes the old files.
+    Without the &lt;literal&gt;CONCURRENTLY&lt;/literal&gt; option, an
+    &lt;literal&gt;ACCESS EXCLUSIVE&lt;/literal&gt; lock is acquired at the beginning
+    and remains held throughout the operation to make sure that the old
+    files do not change during the processing; otherwise, any concurrent
+    changes would get lost due to the swap.
+</span>
+《機械翻訳》<code class="command">REPACK</code>は、テーブル（無効タプルは無視）の内容を、指定したファイルでソートして新規インデックスにコピーし、さらにファイルごとに新規インデックスを作成します。
+次に、テーブルおよびすべてのインデックスについて、古いファイルと新規ファイルを入れ替え、古いファイルを削除します。
+<code class="literal">CONCURRENTLY</code>オプションを使用しない場合、<code class="literal">ACCESS EXCLUSIVE</code>ロックは最初に取得され、オペレーションからmakeまで保持され、処理中に古いファイルが変更されないようにします。
+そうしないと、スワップによって同時に行われた変更が失われます。
+   </p><p>
+<span class="original">
+    By contrast, when the &lt;literal&gt;CONCURRENTLY&lt;/literal&gt; option is
+    specified, the bulk of the operation is run with
+    &lt;literal&gt;SHARE UPDATE EXCLUSIVE&lt;/literal&gt; lock, and the
+    &lt;literal&gt;ACCESS EXCLUSIVE&lt;/literal&gt; lock is only acquired
+    during the final phase to swap the table and index files.
+    The data changes that took place during the creation of the new
+    table and index files are captured using logical decoding
+    (see &lt;xref linkend="logicaldecoding"/&gt;) and applied before
+    the &lt;literal&gt;ACCESS EXCLUSIVE&lt;/literal&gt; lock is requested.
+    Once that lock is obtained, a final pass over any remaining captured
+    concurrent data changes is done and the files are swapped.
+    Thus the lock is typically held for a short time, depending
+    on the amount of changes accumulated while the lock was being
+    waited for.
+</span>
+《機械翻訳》対照的に、<code class="literal">CONCURRENTLY</code>オプションが指定された場合、オペレーションのバルクは<code class="literal">SHARE UPDATE EXCLUSIVE</code>ロックとともに実行され、<code class="literal">ACCESS EXCLUSIVE</code>ロックはテーブルおよびインデックスファイルをスワップする最終フェーズでのみ取得されます。
+新しいテーブルおよびインデックスファイルの作成中に発生したデータの変更は、ロジカルデコーディング（<a class="xref" href="logicaldecoding.html" title="第47章 ロジカルデコーディング">第47章</a>を参照）を使用して取得され、前に適用されます<code class="literal">ACCESS EXCLUSIVE</code>ロックが要求されます。
+ロックが取得されると、取得された残りの同時データの変更に対する最終パスが実行され、ファイルがスワップされます。
+したがって、ロックは通常、ロックが待機されている間に蓄積された変更の量に応じて、短時間保持されます。
+   </p><p>
+<span class="original">
+    Processing of these concurrent changes requires a fixed small
+    amount of memory for each tuple concurrently updated or deleted,
+    not limited by &lt;xref linkend="guc-maintenance-work-mem"/&gt;;
+    if more than about 104 million rows are concurrently updated or
+    deleted during the execution of &lt;command&gt;REPACK&lt;/command&gt;, the
+    command fails.  In addition, the complete tuple data for all
+    concurrent changes (except for TOAST columns that are not modified
+    by &lt;command&gt;UPDATE&lt;/command&gt;) are stored on disk separately.
+</span>
+《機械翻訳》これらの同時変更の処理には、同時に更新または削除される各メモリに対して固定された少量のタプルが必要であり、<a class="xref" href="runtime-config-resource.html#GUC-MAINTENANCE-WORK-MEM">maintenance_work_mem</a>によって制限されません。
+<code class="command">REPACK</code>の実行中に約104,000,000行を超える行が同時に更新または削除されると、コマンドに障害が発生します。
+さらに、すべての同時変更の完全なタプルデータ（<code class="command">UPDATE</code>によって変更されないTOAST列を除く）は、ディスクに個別に格納されます。
+   </p><p>
+<span class="original">
+    &lt;command&gt;REPACK (CONCURRENTLY)&lt;/command&gt; might fail to complete if DDL
+    commands are executed on the table by other transactions during the
+    repacking.
+</span>
+《機械翻訳》<code class="command">REPACK (CONCURRENTLY)</code>再パック中に他のトランザクションがDDL上でテーブルコマンドを実行すると、が完了しない可能性があります。
+   </p><p>
+<span class="original">
+    &lt;command&gt;REPACK (CONCURRENTLY) USING INDEX&lt;/command&gt;
+    does not try to order the rows inserted into the table after the
+    repacking started.
+</span>
+《機械翻訳》<code class="command">REPACK (CONCURRENTLY) USING INDEX</code>再パックの開始後にトライに挿入された行は、オーダーからテーブルに移動されません。
+   </p><p>
+<span class="original">
+    The &lt;literal&gt;CONCURRENTLY&lt;/literal&gt; option cannot be used in the
+    following cases:
+</span>
+《機械翻訳》<code class="literal">CONCURRENTLY</code>オプションは、次の場合には使用できません。
+
+    </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>
+<span class="original">
+       The relation is not a table (e.g., it is a materialized view).
+</span>
+《機械翻訳》リレーションがテーブルではありません（マテリアライズドビューなど）。
+      </p></li><li class="listitem"><p>
+<span class="original">
+       The table is &lt;literal&gt;UNLOGGED&lt;/literal&gt;.
+</span>
+《機械翻訳》テーブルは<code class="literal">UNLOGGED</code>です。
+      </p></li><li class="listitem"><p>
+<span class="original">
+       The table is partitioned.
+</span>
+《機械翻訳》テーブルは仕切られている。
+      </p></li><li class="listitem"><p>
+<span class="original">
+       The table lacks a primary key and index-based replica identity.
+</span>
+《機械翻訳》このテーブルには、主キーやインデックスを拠点とするレプリカアイデンティティがありません。
+      </p></li><li class="listitem"><p>
+<span class="original">
+       The table is a system catalog or a &lt;acronym&gt;TOAST&lt;/acronym&gt; table.
+</span>
+《機械翻訳》テーブルは、システムカタログまたはテーブル<acronym class="acronym">TOAST</acronym>です。
+      </p></li><li class="listitem"><p>
+<span class="original">
+       The table's access method is not &lt;literal&gt;heap&lt;/literal&gt;.
+</span>
+《機械翻訳》テーブルのアクセス方法は<code class="literal">heap</code>.NET以外ではありません。
+      </p></li><li class="listitem"><p>
+<span class="original">
+       The table is declared as a catalog table using the
+       &lt;link linkend="reloption-user-catalog-table"&gt;&lt;literal&gt;user_catalog_table&lt;/literal&gt;&lt;/link&gt;
+       storage parameter.
+</span>
+《機械翻訳》このテーブルは、<a class="link" href="sql-createtable.html#RELOPTION-USER-CATALOG-TABLE"><code class="literal">user_catalog_table</code></a>カタログテーブルを使用してストレージパラメータとして宣言されています。
+      </p></li><li class="listitem"><p>
+<span class="original">
+       &lt;command&gt;REPACK&lt;/command&gt; is executed inside a transaction block.
+</span>
+《機械翻訳》<code class="command">REPACK</code>トランザクションブロック内で実行されます。
+      </p></li><li class="listitem"><p>
+<span class="original">
+       The &lt;link linkend="guc-max-repack-replication-slots"&gt;&lt;varname&gt;max_repack_replication_slots&lt;/varname&gt;&lt;/link&gt;
+       configuration parameter does not allow for the creation of an
+       additional replication slot.
+</span>
+《機械翻訳》<a class="link" href="runtime-config-replication.html#GUC-MAX-REPACK-REPLICATION-SLOTS"><code class="varname">max_repack_replication_slots</code></a>設定パラメータでは、追加のレプリケーションスロットを作成できません。
+      </p></li></ul></div><p>
+   </p></div></div><div class="refsect1" id="id-1.9.3.165.8"><h2>例</h2><span class="original">
+  &lt;title&gt;Examples&lt;/title&gt;
+</span><p>
+<span class="original">
+   Repack the table &lt;literal&gt;employees&lt;/literal&gt;:
+</span>
+《機械翻訳》テーブル<code class="literal">employees</code>:.
+</p><pre class="programlisting">
+REPACK employees;
+</pre><p>
+  </p><p>
+<span class="original">
+   Repack the table &lt;literal&gt;employees&lt;/literal&gt; on the basis of its
+   index &lt;literal&gt;employees_ind&lt;/literal&gt; (since an index is specified, this is
+   effectively clustering):
+</span>
+《機械翻訳》テーブルを再梱包します<code class="literal">employees</code>インデックスに基づいて<code class="literal">employees_ind</code>インデックスが指定されているため、これは効果的にクラスタリングされます:。
+</p><pre class="programlisting">
+REPACK employees USING INDEX employees_ind;
+</pre><p>
+  </p><p>
+<span class="original">
+   Repack the &lt;literal&gt;employees&lt;/literal&gt; table following the same index
+   as was used before, in concurrent mode:
+</span>
+《機械翻訳》<code class="literal">employees</code>テーブルは、前で使用されたのと同じインデックスに従い、モードと同時にを再梱包します。
+</p><pre class="programlisting">
+REPACK (CONCURRENTLY) employees USING INDEX;
+</pre><p>
+  </p><p>
+<span class="original">
+   Repack the table &lt;literal&gt;cases&lt;/literal&gt; on physical ordering,
+   running an &lt;command&gt;ANALYZE&lt;/command&gt; on the given columns once
+   repacking is done, showing informational messages:
+</span>
+《機械翻訳》テーブルを再梱包します<code class="literal">cases</code>物理的順序付けでは、再梱包が完了すると、特定の列で<code class="command">ANALYZE</code>を実行し、情報メッセージを表示します。
+</p><pre class="programlisting">
+REPACK (ANALYZE, VERBOSE) cases (district, case_nr);
+</pre><p>
+  </p><p>
+<span class="original">
+   Repack all tables in the database on which you have
+   the &lt;literal&gt;MAINTAIN&lt;/literal&gt; privilege:
+</span>
+《機械翻訳》<code class="literal">MAINTAIN</code>データベース:.が存在する権限のすべてのテーブルを再梱包します。
+</p><pre class="programlisting">
+REPACK;
+</pre><p>
+  </p><p>
+<span class="original">
+   Repack all tables for which a clustering index has previously been
+   configured on which you have the &lt;literal&gt;MAINTAIN&lt;/literal&gt; privilege,
+   showing informational messages:
+</span>
+《機械翻訳》<code class="literal">MAINTAIN</code>インデックス。
+次の情報メッセージが表示されています。
+が存在し、以前にクラスタリング権限が構成された表をすべて再梱包します。
+</p><pre class="programlisting">
+REPACK (VERBOSE) USING INDEX;
+</pre><p>
+  </p></div><div class="refsect1" id="id-1.9.3.165.9"><h2>互換性</h2><span class="original">
+  &lt;title&gt;Compatibility&lt;/title&gt;
+</span><p>
+<span class="original">
+   There is no &lt;command&gt;REPACK&lt;/command&gt; statement in the SQL standard.
+</span>
+《機械翻訳》ステートメント基準では<code class="command">REPACK</code> SQLはない。
+  </p></div><div class="refsect1" id="id-1.9.3.165.10"><h2>関連項目</h2><span class="original">
+  &lt;title&gt;See Also&lt;/title&gt;
+</span><span class="simplelist"><a class="xref" href="progress-reporting.html#REPACK-PROGRESS-REPORTING" title="27.4.5. REPACK Progress Reporting">27.4.5</a></span></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="sql-release-savepoint.html" title="RELEASE SAVEPOINT">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="sql-commands.html" title="SQLコマンド">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="sql-reset.html" title="RESET">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">RELEASE SAVEPOINT </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 19rc1文書">ホーム</a></td><td width="40%" align="right" valign="top"> RESET</td></tr></table></div></body></html>

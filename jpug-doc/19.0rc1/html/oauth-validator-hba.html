@@ -1,0 +1,214 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>50.4. Custom HBA Options</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="oauth-validator-callbacks.html" title="50.3. OAuth検証器コールバック" /><link rel="next" href="reference.html" title="パート VI. リファレンス" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 19rc1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="oauth-validators.html" title="第50章 OAuth検証器モジュール">第50章 OAuth検証器モジュール</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 19rc1 : oauth-validator-hba.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="oauth-validator-callbacks.html" title="50.3. OAuth検証器コールバック">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="oauth-validators.html" title="第50章 OAuth検証器モジュール">上へ</a></td><td width="60%" align="center">50.4. Custom HBA Options</td><td width="20%" align="right"> <a accesskey="n" href="reference.html" title="パート VI. リファレンス">次へ</a></td></tr></table><hr /></div><div class="sect1" id="OAUTH-VALIDATOR-HBA"><div class="titlepage"><div><div><h2 class="title" style="clear: both">50.4. Custom HBA Options <a href="#OAUTH-VALIDATOR-HBA" class="id_link">#</a></h2></div></div></div><p>
+<span class="original">
+   Like other preloaded libraries, validator modules may define
+   &lt;link linkend="runtime-config-custom"&gt;custom GUC parameters&lt;/link&gt; for user
+   configuration in &lt;filename&gt;postgresql.conf&lt;/filename&gt;. However, it may be
+   desirable to configure behavior at a more granular level (say, for a
+   particular issuer or a group of users) instead of globally.
+</span>
+《機械翻訳》他のプリロードされたライブラリと同様に、バリデータモジュールは、ユーザ設定のために<a class="link" href="runtime-config-custom.html" title="19.16. 独自のオプション">カスタムGUCパラメータ</a>を定義することができる<code class="filename">postgresql.conf</code>。
+しかし、グローバルに、より細かいレベル（例えば、特定の発行者またはユーザのグループ）で動作を設定することが望ましい場合がある。
+代わり
+  </p><p>
+<span class="original">
+   Beginning in &lt;productname&gt;PostgreSQL&lt;/productname&gt; 19, validator
+   implementations may define custom options for use inside
+   &lt;filename&gt;pg_hba.conf&lt;/filename&gt;. These options are then
+   &lt;link linkend="auth-oauth-validator-option"&gt;made available&lt;/link&gt; to the user
+   as &lt;literal&gt;validator.&lt;replaceable&gt;option&lt;/replaceable&gt;&lt;/literal&gt;. The API
+   for registering and retrieving custom options is described below.
+</span>
+《機械翻訳》<span class="productname">PostgreSQL</span>19から、バリデータ実装は内部で使用するためにカスタムオプションを定義することができます<code class="filename">pg_hba.conf</code>。
+これらのオプションは、<code class="literal">validator.<em class="replaceable"><code>option</code></em></code>としてそのユーザに対して<a class="link" href="auth-oauth.html#AUTH-OAUTH-VALIDATOR-OPTION">利用可能にされる</a>。
+APIを登録および取得するためのカスタムオプションは、以下で説明されます。
+  </p><div class="sect2" id="OAUTH-VALIDATOR-HBA-API"><div class="titlepage"><div><div><h3 class="title">50.4.1. Options API <a href="#OAUTH-VALIDATOR-HBA-API" class="id_link">#</a></h3></div></div></div><p>
+<span class="original">
+     Modules register custom HBA option names during the &lt;function&gt;startup_cb&lt;/function&gt;
+     callback, using &lt;function&gt;RegisterOAuthHBAOptions()&lt;/function&gt;:
+</span>
+《機械翻訳》モジュール登録カスタムHBAオプション名を<code class="function">startup_cb</code>コールバック、<code class="function">RegisterOAuthHBAOptions()</code>:.
+
+</p><pre class="programlisting">
+/*
+ * Register a list of custom option names for use in pg_hba.conf. For each name
+ * "foo" registered here, that option will be provided as "validator.foo" in
+ * the HBA.
+ *
+ * Valid option names consist of alphanumeric ASCII, underscore (_), and hyphen
+ * (-). Invalid option names will be ignored with a WARNING logged at
+ * connection time.
+ *
+ * This function may only be called during the startup_cb callback. Multiple
+ * calls are permitted, which will append to the existing list of registered
+ * options; options cannot be unregistered.
+ *
+ * Parameters:
+ *
+ * - state: the state pointer passed to the startup_cb callback
+ * - num:   the number of options in the opts array
+ * - opts:  an array of null-terminated option names to register
+ *
+ * The list of option names is copied internally, and the opts array is not
+ * required to remain valid after the call.
+ */
+void RegisterOAuthHBAOptions(ValidatorModuleState *state, int num,
+                             const char *opts[]);
+</pre><p>
+    </p><p>
+<span class="original">
+     Each option's value, if set, may be later retrieved using
+     &lt;function&gt;GetOAuthHBAOption()&lt;/function&gt;:
+</span>
+《機械翻訳》各オプションの値は、設定された場合、後で<code class="function">GetOAuthHBAOption()</code>:を使用して取得できます。
+
+</p><pre class="programlisting">
+/*
+ * Retrieve the string value of an HBA option which was registered via
+ * RegisterOAuthHBAOptions(). Usable only during validate_cb or shutdown_cb.
+ *
+ * If the user has set the corresponding option in pg_hba.conf, this function
+ * returns that value as a null-terminated string, which must not be modified
+ * or freed. NULL is returned instead if the user has not set this option, if
+ * the option name was not registered, or if this function is incorrectly called
+ * during the startup_cb.
+ *
+ * Parameters:
+ *
+ * - state:   the state pointer passed to the validate_cb/shutdown_cb callback
+ * - optname: the name of the option to retrieve
+ */
+const char *GetOAuthHBAOption(const ValidatorModuleState *state,
+                              const char *optname);
+</pre><p>
+    </p><p>
+<span class="original">
+     See &lt;xref linkend="oauth-validator-hba-example-usage"/&gt; for sample usage.
+</span>
+《機械翻訳》サンプル利用については<a class="xref" href="oauth-validator-hba.html#OAUTH-VALIDATOR-HBA-EXAMPLE-USAGE" title="50.4.3. 使用例">50.4.3</a>を見てください。
+    </p></div><div class="sect2" id="OAUTH-VALIDATOR-HBA-LIMITATIONS"><div class="titlepage"><div><div><h3 class="title">50.4.2. 制限事項 <a href="#OAUTH-VALIDATOR-HBA-LIMITATIONS" class="id_link">#</a></h3></div></div></div><span class="original">
+   &lt;title&gt;Limitations&lt;/title&gt;
+</span><p>
+    </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>
+<span class="original">
+       Option names are limited to ASCII alphanumeric characters,
+       underscores (&lt;literal&gt;_&lt;/literal&gt;), and hyphens (&lt;literal&gt;-&lt;/literal&gt;).
+</span>
+《機械翻訳》オプション名には、ASCII英数字、アンダースコア<code class="literal">_</code>、およびハイフン(<code class="literal">-</code>)しか使用できません。
+      </p></li><li class="listitem"><p>
+<span class="original">
+       Option values are always freeform strings (in contrast to custom GUCs,
+       which support numerics, booleans, and enums).
+</span>
+《機械翻訳》オプションの値は常に自由形式の文字列です（カスタムの数値、ブール値、列挙型であるサポートのGUCsとは対照的です）。
+      </p></li><li class="listitem"><p>
+       Option names and values cannot be checked by the server during a reload of
+       the configuration. Any unregistered options in <code class="filename">pg_hba.conf</code>
+       will instead result in connection failures. It is the responsibility of
+       each module to document and verify the syntax of option values as needed.
+       <a href="#ftn.id-1.8.17.10.5.2.1.3.1.2" class="footnote"><sup class="footnote" id="id-1.8.17.10.5.2.1.3.1.2">[18]</sup></a>
+      </p></li></ul></div><p>
+   </p></div><div class="sect2" id="OAUTH-VALIDATOR-HBA-EXAMPLE-USAGE"><div class="titlepage"><div><div><h3 class="title">50.4.3. 使用例 <a href="#OAUTH-VALIDATOR-HBA-EXAMPLE-USAGE" class="id_link">#</a></h3></div></div></div><span class="original">
+   &lt;title&gt;Example Usage&lt;/title&gt;
+</span><p>
+<span class="original">
+    For a hypothetical module, the options &lt;literal&gt;foo&lt;/literal&gt; and
+    &lt;literal&gt;bar&lt;/literal&gt; could be registered as follows:
+</span>
+《機械翻訳》仮定のモジュールの場合、オプション<code class="literal">foo</code>および<code class="literal">bar</code>は、次のように登録できます。
+
+</p><pre class="programlisting">
+static void
+validator_startup(ValidatorModuleState *state)
+{
+    static const char *opts[] = {
+        "foo",      /* description of access privileges */
+        "bar",      /* magic URL for additional administrator powers */
+    };
+
+    RegisterOAuthHBAOptions(state, lengthof(opts), opts);
+
+    /* ...other setup... */
+}
+</pre><p>
+   </p><p>
+<span class="original">
+    The following sample entries in &lt;filename&gt;pg_hba.conf&lt;/filename&gt; can then
+    make use of these options:
+</span>
+《機械翻訳》の次のサンプルエントリ<code class="filename">pg_hba.conf</code> makeはこれらのオプションを使用できます。
+
+</p><pre class="programlisting">
+# TYPE   DATABASE   USER   ADDRESS    METHOD
+hostssl  postgres   admin  0.0.0.0/0  oauth issuer=https://admin.example.com \
+                                            scope="pg-admin openid email" \
+                                            map=oauth-email \
+                                            validator.foo="admin access" \
+                                            validator.bar=https://magic.example.com
+
+hostssl  postgres   all    0.0.0.0/0  oauth issuer=https://www.example.com \
+                                            scope="pg-user openid email" \
+                                            map=oauth-email \
+                                            validator.foo="user access"
+</pre><p>
+   </p><p>
+<span class="original">
+    The module can retrieve the option settings from the HBA during validation:
+</span>
+《機械翻訳》モジュールは、バリデーション中にHBAからオプション設定を取得できます。
+
+</p><pre class="programlisting">
+static bool
+validate_token(const ValidatorModuleState *state,
+               const char *token, const char *role,
+               ValidatorModuleResult *res)
+{
+    const char *foo = GetOAuthHBAOption(state, "foo"); /* "admin access" or "user access" */
+    const char *bar = GetOAuthHBAOption(state, "bar"); /* "https://magic.example.com" or NULL */
+
+    if (bar &amp;&amp; !is_valid_url(bar))
+    {
+        res-&gt;error_detail = psprintf("validator.bar (\"%s\") is not a valid URL.", bar);
+        return false;
+    }
+
+    /* proceed to validate token */
+}
+</pre><p>
+   </p><p>
+<span class="original">
+    When multiple validators are in use, their registered option lists remain
+    independent:
+</span>
+《機械翻訳》マルチプルバリデータが使用されている場合、登録されたオプションリストは独立したままになります。
+
+</p><pre class="programlisting">
+<em class="lineannotation"><span class="lineannotation">in postgresql.conf:</span></em>
+oauth_validator_libraries = 'example_org, my_validator'
+
+<em class="lineannotation"><span class="lineannotation">in pg_hba.conf:</span></em>
+# TYPE   DATABASE   USER   ADDRESS    METHOD
+hostssl  postgres   admin  0.0.0.0/0  oauth issuer=https://admin.example.com \
+                                            scope="pg-admin openid email" \
+                                            map=oauth-email \
+                                            validator=my_validator \
+                                            validator.foo="admin access" \
+                                            validator.bar=https://magic.example.com
+
+hostssl  postgres   all    0.0.0.0/0  oauth issuer=https://www.example.org \
+                                            scope="pg-user openid profile" \
+                                            validator=example_org \
+                                            delegate_ident_mapping=1 \
+                                            validator.magic=on \
+                                            validator.more_magic=off
+</pre><p>
+   </p></div><div class="footnotes"><br /><hr style="width:100; text-align:left;margin-left: 0" /><div id="ftn.id-1.8.17.10.5.2.1.3.1.2" class="footnote"><p><a href="#id-1.8.17.10.5.2.1.3.1.2" class="para"><sup class="para">[18] </sup></a>
+<span class="original">
+         If a module finds an invalid option value during &lt;function&gt;validate_cb&lt;/function&gt;,
+         it's recommended to &lt;link linkend="oauth-validator-callback-validate"&gt;signal
+         an internal error&lt;/link&gt; by setting &lt;structfield&gt;result-&gt;error_detail&lt;/structfield&gt;
+         to a description of the problem and returning &lt;literal&gt;false&lt;/literal&gt;.
+</span>
+《機械翻訳》<code class="function">validate_cb</code>の最中にモジュールが無効なオプション値を見つけた場合には、<code class="structfield">result-&gt;error_detail</code>に問題の説明を設定し、<code class="literal">false</code>を返すことによって、<a class="link" href="oauth-validator-callbacks.html#OAUTH-VALIDATOR-CALLBACK-VALIDATE" title="50.3.2. 検証コールバック">内部のエラー</a>を通知することをお勧めします。
+        </p></div></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="oauth-validator-callbacks.html" title="50.3. OAuth検証器コールバック">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="oauth-validators.html" title="第50章 OAuth検証器モジュール">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="reference.html" title="パート VI. リファレンス">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">50.3. OAuth検証器コールバック </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 19rc1文書">ホーム</a></td><td width="40%" align="right" valign="top"> パート VI. リファレンス</td></tr></table></div></body></html>

@@ -1,0 +1,231 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>F.33. pg_stash_advice — store and automatically apply plan advice</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="pgrowlocks.html" title="F.32. pgrowlocks — テーブルの行ロックの情報を示す" /><link rel="next" href="pgstatstatements.html" title="F.34. pg_stat_statements — SQL文のプラン生成時と実行時の統計情報を記録する" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 19rc1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="contrib.html" title="付録F 追加で提供されるモジュールと拡張">付録F 追加で提供されるモジュールと拡張</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 19rc1 : pgstashadvice.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="pgrowlocks.html" title="F.32. pgrowlocks — テーブルの行ロックの情報を示す">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="contrib.html" title="付録F 追加で提供されるモジュールと拡張">上へ</a></td><td width="60%" align="center">F.33. pg_stash_advice — store and automatically apply plan advice</td><td width="20%" align="right"> <a accesskey="n" href="pgstatstatements.html" title="F.34. pg_stat_statements — SQL文のプラン生成時と実行時の統計情報を記録する">次へ</a></td></tr></table><hr /></div><div class="sect1" id="PGSTASHADVICE"><div class="titlepage"><div><div><h2 class="title" style="clear: both">F.33. pg_stash_advice — store and automatically apply plan advice <a href="#PGSTASHADVICE" class="id_link">#</a></h2></div></div></div><a id="id-1.11.7.43.2" class="indexterm"></a><p>
+<span class="original">
+  The &lt;filename&gt;pg_stash_advice&lt;/filename&gt; extension allows you to stash
+  &lt;link linkend="pgplanadvice"&gt;plan advice&lt;/link&gt; strings in dynamic
+  shared memory where they can be automatically applied. An
+  &lt;literal&gt;advice stash&lt;/literal&gt; is a mapping from
+  &lt;link linkend="guc-compute-query-id"&gt;query identifiers&lt;/link&gt; to plan advice
+  strings. Whenever a session is asked to plan a query whose query ID appears
+  in the relevant advice stash, the plan advice string is automatically applied
+  to guide planning. Note that advice stashes are stored in dynamically
+  allocated shared memory. This means that it is important to be mindful
+  of memory consumption when deciding how much plan advice to stash.
+  Optionally, advice stashes and their contents can automatically be persisted
+  to disk and reloaded from disk; see
+  &lt;literal&gt;pg_stash_advice.persist&lt;/literal&gt;, below.
+</span>
+《機械翻訳》<code class="filename">pg_stash_advice</code>extensionを使用すると、<a class="link" href="pgplanadvice.html" title="F.30. 《機械翻訳》pg_plan_advice — プランナが正しいプランを取得するのを助ける">プランアドバイス</a>文字列を動的共有メモリに隠して、自動的に適用できます。
+<code class="literal">advice stash</code>は<a class="link" href="runtime-config-statistics.html#GUC-COMPUTE-QUERY-ID">問い合わせ識別子</a>からプランアドバイス文字列までのマッピングです。
+セッションがプラン問い合わせに要求され、その問い合わせIDが関連するアドバイス隠しに表示されるたびに、プランアドバイス文字列がガイドplanning. ノートに自動的に適用され、アドバイス隠しが動的に割り当てられた共有メモリに格納されます。
+これは、プランアドバイスの量を決定する際に、メモリの消費に注意することが重要であることを意味します。
+オプションで、アドバイス隠しとその内容を自動的にディスクに保持し、ディスクから再ロードすることができます。
+下記の<code class="literal">pg_stash_advice.persist</code>を参照してください。
+ </p><p>
+<span class="original">
+  In order to use this module, you will need to execute
+  &lt;literal&gt;CREATE EXTENSION pg_stash_advice&lt;/literal&gt; in at least
+  one database, so that you have access to the SQL functions to manage
+  advice stashes. You will also need the &lt;literal&gt;pg_stash_advice&lt;/literal&gt;
+  module to be loaded in all sessions where you want this module to
+  automatically apply advice. It will usually be best to do this by adding
+  &lt;literal&gt;pg_stash_advice&lt;/literal&gt; to
+  &lt;xref linkend="guc-shared-preload-libraries"/&gt; and restarting the server.
+</span>
+《機械翻訳》オーダーでこのモジュールを使用するには、実行<code class="literal">CREATE EXTENSION pg_stash_advice</code>少なくとも1つのデータベースで、アクセスからSQLへの機能を使用してアドバイスの隠し場所を管理する必要があります。
+また、このモジュールでアドバイスを自動的に適用するすべてのセッションで<code class="literal">pg_stash_advice</code>モジュールをロードする必要があります。
+通常はベストで、<a class="xref" href="runtime-config-client.html#GUC-SHARED-PRELOAD-LIBRARIES">shared_preload_libraries</a>に<code class="literal">pg_stash_advice</code>を追加し、サーバを再起動します。
+ </p><p>
+<span class="original">
+  Once you have met the above criteria, you can create advice stashes
+  using the &lt;literal&gt;pg_create_advice_stash&lt;/literal&gt; function described
+  below and set the plan advice for a given query ID in a given stash using
+  the &lt;literal&gt;pg_set_stashed_advice&lt;/literal&gt; function. Then, you need
+  only configure &lt;literal&gt;pg_stash_advice.stash_name&lt;/literal&gt; to point
+  to the chosen advice stash name. For some use cases, rather than setting
+  this on a system-wide basis, you may find it helpful to use
+  &lt;literal&gt;ALTER DATABASE ... SET&lt;/literal&gt; or
+  &lt;literal&gt;ALTER ROLE ... SET&lt;/literal&gt; to configure values that will apply
+  only to a database or only to a certain role. Likewise, it may sometimes
+  be better to set the stash name in a particular session using
+  &lt;literal&gt;SET&lt;/literal&gt;.
+</span>
+《機械翻訳》前述の基準を満たした後は、<code class="literal">pg_create_advice_stash</code>後述のアドバイスを使用して関数の隠し場所を作成し、<code class="literal">pg_set_stashed_advice</code>プランを使用して、特定の隠し場所の特定の問い合わせIDに対して関数アドバイスを設定できます。
+その後は、<code class="literal">pg_stash_advice.stash_name</code>選択したアドバイスの隠し場所名前にポイントするように構成するだけで済みます。
+一部のユースケースでは、システム全体にこの値を設定するよりも、データベースまたは特定のロールのみに適用される値を構成するために<code class="literal">ALTER DATABASE ... SET</code>または<code class="literal">ALTER ROLE ... SET</code>を使用することをお薦めします。
+同様に、<code class="literal">SET</code>を使用して特定のセッションに隠し場所名前を設定する方がよい場合もあります。
+ </p><p>
+<span class="original">
+  Because &lt;literal&gt;pg_stash_advice&lt;/literal&gt; works on the basis of query
+  identifiers, you will need to determine the query identifier for each query
+  whose plan you wish to control. You will also need to determine the advice
+  string that you wish to store for each query. One way to do this is to use
+  &lt;literal&gt;EXPLAIN&lt;/literal&gt;: the &lt;literal&gt;VERBOSE&lt;/literal&gt; option will
+  show the query ID, and the &lt;literal&gt;PLAN_ADVICE&lt;/literal&gt; option will
+  show plan advice.  Query identifiers can also be obtained through tools
+  such as &lt;xref linkend="pgstatstatements" /&gt; or
+  &lt;xref linkend="monitoring-pg-stat-activity-view" /&gt;, but these tools
+  will not provide plan advice strings. Note that
+  &lt;xref linkend="guc-compute-query-id" /&gt; must be enabled for query
+  identifiers to be computed; if set to &lt;literal&gt;auto&lt;/literal&gt;, loading
+  &lt;literal&gt;pg_stash_advice&lt;/literal&gt; will enable it automatically.
+</span>
+《機械翻訳》<code class="literal">pg_stash_advice</code>は問い合わせ識別子に基づいて動作するため、問い合わせをコントロールにしたい問い合わせごとに、プラン識別子を決定する必要があります。
+また、各問い合わせに対して保存したいアドバイス文字列を決定する必要もあります。
+これを行う1つの方法は、<code class="literal">EXPLAIN</code>:<code class="literal">VERBOSE</code>オプションは問い合わせIDを表示し、<code class="literal">PLAN_ADVICE</code>オプションはプランアドバイスを表示します。
+問い合わせ識別子は<a class="xref" href="pgstatstatements.html" title="F.34. pg_stat_statements — SQL文のプラン生成時と実行時の統計情報を記録する">pg_stat_statements</a>や<a class="xref" href="monitoring-stats.html#MONITORING-PG-STAT-ACTIVITY-VIEW" title="27.2.3. pg_stat_activity">27.2.3</a>などのツールを使用して取得することもできますが、これらのツールはプランアドバイス文字列を提供しません。
+ノート問い合わせ識別子を計算するには、この<a class="xref" href="runtime-config-statistics.html#GUC-COMPUTE-QUERY-ID">compute_query_id</a>が有効になっている必要があります。
+<code class="literal">auto</code>に設定されている場合、ロード時に<code class="literal">pg_stash_advice</code>は自動的に有効になります。
+ </p><p>
+<span class="original">
+  Generally, the fact that the planner is able to change query plans as
+  the underlying distribution of data changes is a feature, not a bug.
+  Moreover, applying plan advice can have a noticeable performance cost even
+  when it does not result in a change to the query plan. Therefore, it is
+  a good idea to use this feature only when and to the extent needed.
+  Plan advice strings can be trimmed down to mention only those aspects
+  of the plan that need to be controlled, and used only for queries where
+  there is believed to be a significant risk of planner error.
+</span>
+《機械翻訳》一般的に、プランナの基礎となるディストリビューションが変更されたときにデータが問い合わせ計画を変更できるのは、機能であってバグではありません。
+さらに、プランアドバイスを適用すると、問い合わせプランへの変更を伴わない場合でも、顕著なパフォーマンスコストが発生する可能性があります。
+したがって、この機能は、必要なときに必要なエクステントにのみ使用するのが良いアイディアです。
+プランアドバイス文字列はダウンをトリムして、制御が必要なプランの側面のみを言及し、プランナエラーのかなりのリスクがあると考えられる問い合わせにのみ使用できます。
+ </p><p>
+<span class="original">
+  Note that &lt;literal&gt;pg_stash_advice&lt;/literal&gt; currently lacks a sophisticated
+  security model. Only the superuser, or a user to whom the superuser has
+  granted &lt;literal&gt;EXECUTE&lt;/literal&gt; permission on the relevant functions,
+  may create advice stashes or alter their contents, but any user may set
+  &lt;literal&gt;pg_stash_advice.stash_name&lt;/literal&gt; for their session, and this
+  may reveal the contents of any advice stash with that name. Users should
+  assume that information embedded in stashed advice strings may become visible
+  to non-privileged users.
+</span>
+《機械翻訳》ノート<code class="literal">pg_stash_advice</code>現在、高度なセキュリティモデルがありません。
+スーパーユーザまたはユーザが付与したスーパーユーザ<code class="literal">EXECUTE</code>関連する機能に関するパーミッションのみが、アドバイスの隠し場所を作成したり、その内容を変更したりできますが、ユーザは<code class="literal">pg_stash_advice.stash_name</code>そのセッションに対して設定することができ、これにより、その名前とともに隠されているアドバイスの内容が明らかになる可能性があります。
+ユーザは、隠されたアドバイス文字列内の情報埋め込みが、特権のないユーザには可視になる可能性があると想定する必要があります。
+ </p><div class="sect2" id="PGSTASHADVICE-FUNCTIONS"><div class="titlepage"><div><div><h3 class="title">F.33.1. Functions <a href="#PGSTASHADVICE-FUNCTIONS" class="id_link">#</a></h3></div></div></div><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+     <code class="function">pg_create_advice_stash(stash_name text) returns void</code>
+     <a id="id-1.11.7.43.9.2.1.1.2" class="indexterm"></a>
+    </span></dt><dd><p>
+<span class="original">
+      Creates a new, empty advice stash with the given name.
+</span>
+《機械翻訳》指定されたアドバイスで、新しい空の名前の隠し場所を作成します。
+     </p></dd><dt><span class="term">
+     <code class="function">pg_drop_advice_stash(stash_name text) returns void</code>
+     <a id="id-1.11.7.43.9.2.2.1.2" class="indexterm"></a>
+    </span></dt><dd><p>
+<span class="original">
+      Drops the named advice stash and all of its entries.
+</span>
+《機械翻訳》記名的アドバイスのstashとそのすべてのエントリを削除します。
+     </p></dd><dt><span class="term">
+     <code class="function">pg_set_stashed_advice(stash_name text, query_id bigint,
+       advice_string text) returns void</code>
+     <a id="id-1.11.7.43.9.2.3.1.2" class="indexterm"></a>
+    </span></dt><dd><p>
+<span class="original">
+      Stores an advice string in the named advice stash, associated with
+      the given query identifier. If an entry for that query identifier
+      already exists in the stash, it is replaced. If
+      &lt;parameter&gt;advice_string&lt;/parameter&gt; is &lt;literal&gt;NULL&lt;/literal&gt;,
+      any existing entry for that query identifier is removed.
+</span>
+《機械翻訳》指定したアドバイス文字列に関連付けられた記名的アドバイスのスタッシュに問い合わせ識別子を格納します。
+その問い合わせ識別子のエントリがすでにスタッシュに存在する場合は、置き換えられます。
+<em class="parameter"><code>advice_string</code></em>が<code class="literal">NULL</code>の場合は、その問い合わせ識別子の既存のエントリが削除されます。
+     </p></dd><dt><span class="term">
+     <code class="function">pg_get_advice_stashes() returns setof (stash_name text,
+       num_entries bigint)</code>
+     <a id="id-1.11.7.43.9.2.4.1.2" class="indexterm"></a>
+    </span></dt><dd><p>
+<span class="original">
+      Returns one row for each advice stash, showing the stash name and
+      the number of entries it contains.
+</span>
+《機械翻訳》行の各隠し場所に対して1つのアドバイスを返し、隠し場所の名前とその包含のエントリ数を表示します。
+     </p></dd><dt><span class="term">
+     <code class="function">pg_get_advice_stash_contents(stash_name text) returns setof
+       (stash_name text, query_id bigint, advice_string text)</code>
+     <a id="id-1.11.7.43.9.2.5.1.2" class="indexterm"></a>
+    </span></dt><dd><p>
+<span class="original">
+      Returns one row for each entry in the named advice stash. If
+      &lt;parameter&gt;stash_name&lt;/parameter&gt; is &lt;literal&gt;NULL&lt;/literal&gt;, returns
+      entries from all stashes.
+</span>
+《機械翻訳》行アドバイススタッシュ内のエントリごとに1つの記名的を戻します。
+<em class="parameter"><code>stash_name</code></em>が<code class="literal">NULL</code>の場合は、すべてのスタッシュからエントリが戻されます。
+     </p></dd><dt><span class="term">
+     <code class="function">pg_start_stash_advice_worker() returns void</code>
+     <a id="id-1.11.7.43.9.2.6.1.2" class="indexterm"></a>
+    </span></dt><dd><p>
+<span class="original">
+      Starts the background worker, so that advice stash contents can be
+      automatically persisted to disk.  If this module is included in
+      &lt;xref linkend="guc-shared-preload-libraries"/&gt; at startup time with
+      &lt;literal&gt;pg_stash_advice.persist = true&lt;/literal&gt;, the worker will be
+      started automatically. When started manually, the worker will not load
+      anything from disk, but it will still persist data to disk. You can then
+      configure the server to start the worker automatically after the next
+      restart, preserving any stashed advice you add now.
+</span>
+《機械翻訳》バックグラウンドワーカーを起動し、アドバイスのstashコンテンツを自動的にディスクに永続化できるようにします。
+このモジュールが<code class="literal">pg_stash_advice.persist = true</code>でスタートアップ時間に<a class="xref" href="runtime-config-client.html#GUC-SHARED-PRELOAD-LIBRARIES">shared_preload_libraries</a>に含まれている場合、ワーカーは自動的に起動されます。
+手動で起動した場合、ワーカーはディスクから何もロードしませんが、データからディスクまでは存続します。
+次のリスタートの後に、サーバからワーカーに自動的にスタートするように構成できます。
+これにより、今追加したstashアドバイスが保持されます。
+     </p></dd></dl></div></div><div class="sect2" id="PGSTASHADVICE-CONFIG-PARAMS"><div class="titlepage"><div><div><h3 class="title">F.33.2. 設定パラメータ <a href="#PGSTASHADVICE-CONFIG-PARAMS" class="id_link">#</a></h3></div></div></div><span class="original">
+  &lt;title&gt;Configuration Parameters&lt;/title&gt;
+</span><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+     <code class="varname">pg_stash_advice.persist</code> (<code class="type">boolean</code>)
+     <a id="id-1.11.7.43.10.2.1.1.3" class="indexterm"></a>
+    </span></dt><dd><p>
+<span class="original">
+      Controls whether the advice stashes and stash entries should be
+      persisted to disk. This is on by default. If any stashes are persisted,
+      a file named &lt;literal&gt;pg_stash_advice.tsv&lt;/literal&gt; will be created in
+      the data directory. Stashes are loaded and saved using a background
+      worker process.  This parameter can only be set at server start.
+</span>
+《機械翻訳》アドバイスのstashおよびstashエントリをディスクに保持するかどうかを制御します。
+これはデフォルトによるものです。
+stashが保持されている場合は、ファイルに記名的<code class="literal">pg_stash_advice.tsv</code>が作成されます。
+stashはバックグラウンドワーカープロセスを使用してロードおよび保存されます。
+このパラメータはサーバスタートでのみ設定できます。
+データディレクトリ
+     </p></dd><dt><span class="term">
+     <code class="varname">pg_stash_advice.persist_interval</code> (<code class="type">integer</code>)
+     <a id="id-1.11.7.43.10.2.2.1.3" class="indexterm"></a>
+    </span></dt><dd><p>
+<span class="original">
+      Specifies the interval, in seconds, between checks for changes that
+      need to be written to &lt;literal&gt;pg_stash_advice.tsv&lt;/literal&gt;. If set to
+      zero, changes are only written when the server shuts down. The default
+      value is &lt;literal&gt;30&lt;/literal&gt;. This parameter can only be set in the
+      &lt;filename&gt;postgresql.conf&lt;/filename&gt; file or on the server command line.
+</span>
+《機械翻訳》書き込む必要がある変更をチェックする間隔<code class="literal">pg_stash_advice.tsv</code>秒を指定します。
+ゼロに設定すると、サーバがダウンを閉鎖するときにのみ変更が書き込まれます。
+デフォルト値は<code class="literal">30</code>です。
+このパラメータは、<code class="filename">postgresql.conf</code>ファイルまたはサーバコマンドラインでのみ設定できます。
+インターバル
+     </p></dd><dt><span class="term">
+     <code class="varname">pg_stash_advice.stash_name</code> (<code class="type">string</code>)
+     <a id="id-1.11.7.43.10.2.3.1.3" class="indexterm"></a>
+    </span></dt><dd><p>
+<span class="original">
+      Specifies the name of the advice stash to consult during query
+      planning. The default value is the empty string, which disables
+      this module.
+</span>
+《機械翻訳》問い合わせの計画中に参照される名前の隠し場所のアドバイスを指定します。
+デフォルト値は空の文字列で、このモジュールを無効にします。
+     </p></dd></dl></div></div><div class="sect2" id="PGSTASHADVICE-AUTHOR"><div class="titlepage"><div><div><h3 class="title">F.33.3. 作者 <a href="#PGSTASHADVICE-AUTHOR" class="id_link">#</a></h3></div></div></div><span class="original">
+  &lt;title&gt;Author&lt;/title&gt;
+</span><p>
+   Robert Haas <code class="email">&lt;<a class="email" href="mailto:rhaas@postgresql.org">rhaas@postgresql.org</a>&gt;</code>
+  </p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="pgrowlocks.html" title="F.32. pgrowlocks — テーブルの行ロックの情報を示す">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="contrib.html" title="付録F 追加で提供されるモジュールと拡張">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="pgstatstatements.html" title="F.34. pg_stat_statements — SQL文のプラン生成時と実行時の統計情報を記録する">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">F.32. pgrowlocks — テーブルの行ロックの情報を示す </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 19rc1文書">ホーム</a></td><td width="40%" align="right" valign="top"> F.34. pg_stat_statements — SQL文のプラン生成時と実行時の統計情報を記録する</td></tr></table></div></body></html>

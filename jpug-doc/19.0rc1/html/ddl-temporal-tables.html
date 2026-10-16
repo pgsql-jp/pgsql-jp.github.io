@@ -1,0 +1,317 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>5.7. Temporal Tables</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="ddl-system-columns.html" title="5.6. システム列" /><link rel="next" href="ddl-alter.html" title="5.8. テーブルの変更" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="other_version"><a href="https://www.postgresql.jp/document/">バージョンごとのドキュメント一覧</a></div><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 19rc1文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="ddl.html" title="第5章 データ定義">第5章 データ定義</a></td><td width="20%" align="right"><div class="actions"><a class="issue" title="github" href="https://github.com/pgsql-jp/jpug-doc/issues/new?template=bug_report.yml&amp;what-happened=version 19rc1 : ddl-temporal-tables.html">誤訳等の報告
+                    </a></div></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="ddl-system-columns.html" title="5.6. システム列">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="ddl.html" title="第5章 データ定義">上へ</a></td><td width="60%" align="center">5.7. Temporal Tables</td><td width="20%" align="right"> <a accesskey="n" href="ddl-alter.html" title="5.8. テーブルの変更">次へ</a></td></tr></table><hr /></div><div class="sect1" id="DDL-TEMPORAL-TABLES"><div class="titlepage"><div><div><h2 class="title" style="clear: both">5.7. Temporal Tables <a href="#DDL-TEMPORAL-TABLES" class="id_link">#</a></h2></div></div></div><a id="id-1.5.4.9.2" class="indexterm"></a><p>
+<span class="original">
+   &lt;firstterm&gt;Temporal tables&lt;/firstterm&gt; allow users to track different
+   dimensions of history.  &lt;firstterm&gt;Application time&lt;/firstterm&gt; tracks the
+   history of a thing out in the world, and &lt;firstterm&gt;system time&lt;/firstterm&gt;
+   tracks the history of the database itself.  (A database that does both is
+   also called &lt;firstterm&gt;bitemporal&lt;/firstterm&gt;.)  This section describes how
+   to express and manage such histories in temporal tables.
+</span>
+《機械翻訳》<em class="firstterm">一時表</em>を使用すると、ユーザは歴史のさまざまな次元を追跡できます。
+<em class="firstterm">アプリケーション時間</em>は世界の物の歴史を追跡し、<em class="firstterm">システム時間</em>はデータベース自分自身の歴史を追跡します。
+両方を行うデータベースは<em class="firstterm">バイテンポラル</em>とも呼ばれます。
+このセクションでは、このような履歴を一時表で表現および管理する方法について説明します。
+  </p><div class="sect2" id="DDL-APPLICATION-TIME"><div class="titlepage"><div><div><h3 class="title">5.7.1. Application Time <a href="#DDL-APPLICATION-TIME" class="id_link">#</a></h3></div></div></div><a id="id-1.5.4.9.4.2" class="indexterm"></a><p>
+<span class="original">
+    &lt;firstterm&gt;Application time&lt;/firstterm&gt; refers to a history of the entity
+    described by a table.  In a typical non-temporal table, there is a single
+    row for each entity.  In a temporal table, an entity may have multiple
+    rows, as long as those rows describe non-overlapping periods from its
+    history.  Application time requires each row to have a start and end time,
+    expressing when the row is applicable.
+</span>
+《機械翻訳》<em class="firstterm">アプリケーション時間</em>とは、表で記述された歴史のエンティティを指します。
+通常の非時間テーブルでは、行ごとに1つのエンティティが存在します。
+時間テーブルでは、エンティティにマルチプル行が存在する場合があります。
+ただし、それらの行がその歴史からの重複しない期間を記述している必要があります。
+アプリケーション時間では、各行にスタートと終了時間が存在し、行が適用される時期を表す必要があります。
+   </p><p>
+<span class="original">
+    The following SQL creates a temporal table that can store application time:
+</span>
+《機械翻訳》次のSQLは、テーブル時間を格納できる一時的なアプリケーションを作成します。
+</p><pre class="programlisting">
+CREATE TABLE products (
+    product_no integer,
+    price numeric,
+    <span class="emphasis"><strong>valid_at daterange</strong></span>
+);
+</pre><p>
+   </p><p>
+<span class="original">
+    Records in a temporal table can be imagined on a timeline, as in &lt;xref
+    linkend="temporal-entities-figure"/&gt;.  Here we show three records
+    describing two products.  Each record is a tuple with three attributes:
+    the product number, the price, and the application time.  So product 5 was
+    first offered for a price of 5.00 starting January 1, 2020, but then
+    became 8.00 starting January 1, 2022.  Its second record has no specified
+    end time, indicating that it is true indefinitely, or for all future time.
+    The last record shows that product 6 was introduced January 1, 2021 for
+    9.00, then canceled January 1, 2024.
+</span>
+《機械翻訳》一時的なテーブルのレコードは、<a class="xref" href="ddl-temporal-tables.html#TEMPORAL-ENTITIES-FIGURE" title="図5.1 Application Time Example">図 5.1</a>のようにタイムラインで想像することができます。
+ここでは、2つの製品を記述する3つのレコードを示します。
+各レコードは、製品番号、価格およびタプル時間の3つの属性を持つアプリケーションです。
+製品5は、2020年1月1日から価格5.00で最初にオファーされましたが、2022年1月1日から8.00になりました。
+2番目のレコードには終了時間の指定がなく、無期限または将来のすべての時間にわたって真であることを示しています。
+最後のレコードは、製品6が2021年1月1日に9.00に導入され、2024年1月1日に取り消されたことを示しています。
+   </p><div class="figure" id="TEMPORAL-ENTITIES-FIGURE"><p class="title"><strong>図5.1 Application Time Example</strong></p><div class="figure-contents"><div class="mediaobject"><object type="image/svg+xml" data="temporal-entities.svg" width="100%"></object></div></div></div><br class="figure-break" /><p>
+<span class="original">
+    In a table, these records would be:
+</span>
+《機械翻訳》テーブルでは、これらのレコードは次のようになります。
+</p><pre class="programlisting">
+ product_no | price |        valid_at
+------------+-------+-------------------------
+          5 |  5.00 | [2020-01-01,2022-01-01)
+          5 |  8.00 | [2022-01-01,)
+          6 |  9.00 | [2021-01-01,2024-01-01)
+</pre><p>
+   </p><p>
+<span class="original">
+    We show the application time using range-type notation, because it is
+    stored as a single column (either a range or multirange).  Ranges include
+    their start point but exclude their end point.  That way two adjacent
+    ranges cover all points without overlapping.  See &lt;xref
+    linkend="rangetypes"/&gt; for more information about range types.
+</span>
+《機械翻訳》アプリケーション時間は単一のレンジ（タイプまたは複数範囲）として格納されるため、ここではカラム-レンジ表記を使用して表示します。
+includeには始点を含めますが、終点は含めません。
+このようにして、2つの隣接するカバー範囲のすべての点が重ならないようにします。
+レンジタイプの詳細は、<a class="xref" href="rangetypes.html" title="8.17. 範囲型">8.17</a>を参照してください。
+   </p><p>
+<span class="original">
+    In principle, a table with application-time ranges/multiranges is
+    equivalent to a table that stores application-time
+    &lt;quote&gt;instants&lt;/quote&gt;: one for each second, millisecond, nanosecond, or
+    whatever finest granularity is available.  But such a table would contain
+    far too many rows, so ranges/multiranges offer an optimization to
+    represent the same information in a compact form.  In addition, ranges and
+    multiranges offer a more convenient interface for typical temporal
+    operations, where records change infrequently enough that separate
+    &lt;quote&gt;versions&lt;/quote&gt; persist for extended periods of time.
+</span>
+《機械翻訳》原則として、アプリケーション時間の範囲/マルチレンジを含むテーブルは、アプリケーション時間<span class="quote">「<span class="quote">インスタント</span>」</span>を格納するテーブルと同等です。
+ミリ秒時間インスタントは、毎秒、最適化、ナノ秒、または使用可能な最も細かい粒度で1つずつ格納されます。
+しかし、このようなテーブルにはあまりにも多くの行が含まれるため、範囲/マルチレンジは、コンパクトフォームで同じ情報を表すための拡張を提供します。
+さらに、範囲とマルチレンジは、一般的な一時的な操作のためのより便利なインタフェースを提供します。
+この場合、レコードの変更頻度が低いため、個別の<span class="quote">「<span class="quote">バージョン</span>」</span>がロータイム期間に存続します。
+   </p><div class="sect3" id="DDL-APPLICATION-TIME-PRIMARY-KEYS"><div class="titlepage"><div><div><h4 class="title">5.7.1.1. Temporal Primary Keys and Unique Constraints <a href="#DDL-APPLICATION-TIME-PRIMARY-KEYS" class="id_link">#</a></h4></div></div></div><p>
+<span class="original">
+     A table with application time has a different concept of entity
+     uniqueness than a non-temporal table.  Temporal entity uniqueness can be
+     enforced with a temporal primary key.  A regular primary key has at least
+     one column, all columns are &lt;literal&gt;NOT NULL&lt;/literal&gt;, and the combined
+     value of all columns is unique.  A temporal primary key also has at least
+     one such column, but in addition it has a final column that is of a range
+     type or multirange type that shows when the row is applicable.  The
+     regular parts of the key must be unique for any moment in time, but
+     non-unique rows are allowed if their application time does not overlap.
+</span>
+《機械翻訳》アプリケーション時間を含む表には、非一時コンセプトとは異なるエンティティ一意性のテーブルがあります。
+一時エンティティ一意性は、一時主キーを使用して強制できます。
+通常の主キーには少なくとも1つのカラムがあり、すべての列は<code class="literal">NOT NULL</code>で、すべての列の結合値はユニークです。
+一時主キーにも少なくとも1つのそのようなカラムがありますが、さらに、最後のカラムがあります。
+これは、行が適用される時期を示す範囲型またはマルチレンジタイプです。
+キーの通常の部分は、どの時点でもユニークである必要がありますが、アプリケーション時間がオーバーラップしない場合は、ユニーク以外の行を使用できます。
+    </p><p>
+<span class="original">
+     The syntax to create a temporal primary key is as follows:
+</span>
+《機械翻訳》一時的な構文を作成するための主キーは次のとおりです。
+
+</p><pre class="programlisting">
+CREATE TABLE products (
+    product_no integer,
+    price numeric,
+    valid_at daterange,
+    <span class="emphasis"><strong>PRIMARY KEY (product_no, valid_at WITHOUT OVERLAPS)</strong></span>
+);
+</pre><p>
+
+<span class="original">
+     In this example, &lt;literal&gt;product_no&lt;/literal&gt; is the non-temporal part
+     of the key, and &lt;literal&gt;valid_at&lt;/literal&gt; is a range column containing
+     the application time.
+</span>
+《機械翻訳》この例では、<code class="literal">product_no</code>はキーの非一時パートであり、<code class="literal">valid_at</code>はレンジ時間を含むアプリケーションカラムである。
+    </p><p>
+<span class="original">
+     The &lt;literal&gt;WITHOUT OVERLAPS&lt;/literal&gt; column is implicitly &lt;literal&gt;NOT
+     NULL&lt;/literal&gt; (like the other parts of the key).  In addition it may not
+     contain empty values, that is, a range of &lt;literal&gt;'empty'&lt;/literal&gt; or a
+     multirange of &lt;literal&gt;{}&lt;/literal&gt;.  An empty application time would
+     have no meaning.
+</span>
+《機械翻訳》<code class="literal">WITHOUT OVERLAPS</code>カラムは暗黙的に<code class="literal">NOT NULL</code>です（キーの他の部分と同様）。
+また、空の値、つまり<code class="literal">'empty'</code>のレンジまたは<code class="literal">{}</code>のマルチレンジを含めることはできません。
+空のアプリケーション時間は意味がありません。
+    </p><p>
+<span class="original">
+     It is also possible to create a temporal unique constraint that is
+     not a primary key. The syntax is similar:
+</span>
+《機械翻訳》一意性制約ではない一時的な主キーを作成することもできます。
+構文も同様です。
+
+</p><pre class="programlisting">
+CREATE TABLE products (
+    product_no integer,
+    price numeric,
+    valid_at daterange,
+    <span class="emphasis"><strong>UNIQUE (product_no, valid_at WITHOUT OVERLAPS)</strong></span>
+);
+</pre><p>
+
+<span class="original">
+     Temporal unique constraints also forbid empty ranges/multiranges for
+     their application time, but that column is permitted to be null (like the
+     other columns of the unique constraint).
+</span>
+《機械翻訳》時間一意性制約では、アプリケーション時間に空の範囲/複数範囲を使用することも禁止されていますが、カラムはNULLであることが許可されています（一意性制約の他の列と同様）。
+    </p><p>
+<span class="original">
+     Temporal primary keys and unique constraints are backed by GiST indexes
+     (see &lt;xref linkend="gist"/&gt;) rather than B-Tree indexes.  In practice,
+     creating a temporal primary key or constraint requires installing the
+     &lt;xref linkend="btree-gist"/&gt; extension, so that the database has GiST
+     operator classes for the non-temporal parts of the key.
+</span>
+《機械翻訳》一時プライマリ・キーおよび一意制約は、B-Tree索引ではなくGiST索引（<a class="xref" href="gist.html" title="65.2. GiSTインデックス">65.2</a>）によってサポートされます。
+実際には、一時主キーまたは一時制約を作成するには、<a class="xref" href="btree-gist.html" title="F.8. btree_gist — GiST演算子クラスとB-tree動作">btree_gist</a>拡張機能をインストールして、データベースがキーの非一時部分用のGiST演算子クラスを持つようにする必要があります。
+    </p><p>
+<span class="original">
+     Temporal primary keys and unique constraints have the same behavior as
+     exclusion constraints (see &lt;xref linkend="ddl-constraints-exclusion"/&gt;),
+     where each regular key part is compared with equality, and the
+     application time is compared with overlaps, for example &lt;literal&gt;EXCLUDE
+     USING gist (id WITH =, valid_at WITH &amp;amp;&amp;amp;)&lt;/literal&gt;. The only
+     difference is that they also forbid an empty application time.
+</span>
+《機械翻訳》一時プライマリキーと一意性制約は、排他制約と同じ動作をします（<a class="xref" href="ddl-constraints.html#DDL-CONSTRAINTS-EXCLUSION" title="5.5.6. 排他制約">5.5.6</a>を参照）。
+排他制約では、それぞれの正規キーパートが等しいかどうかで比較され、アプリケーション時間は例のオーバーラップと比較されます<code class="literal">EXCLUDE USING gist (id WITH =, valid_at WITH &amp;&amp;)</code>.唯一の差は、空のアプリケーション時間も禁止されていることです。
+    </p></div><div class="sect3" id="DDL-APPLICATION-TIME-FOREIGN-KEYS"><div class="titlepage"><div><div><h4 class="title">5.7.1.2. Temporal Foreign Keys <a href="#DDL-APPLICATION-TIME-FOREIGN-KEYS" class="id_link">#</a></h4></div></div></div><p>
+<span class="original">
+     A temporal foreign key is a reference from one application-time table to
+     another application-time table.  Just as a non-temporal reference
+     requires a referenced key to exist, so a temporal reference requires a
+     referenced key to exist, but during whatever history the reference exists
+     (at least).  So if the &lt;literal&gt;products&lt;/literal&gt; table is referenced by
+     a &lt;literal&gt;variants&lt;/literal&gt; table, and a variant of product 5 has an
+     application-time of &lt;literal&gt;[2020-01-01,2026-01-01)&lt;/literal&gt;, then
+     product 5 must exist throughout that period.
+</span>
+《機械翻訳》一時的な外部キーとは、あるアプリケーション時間のリファレンスから別のアプリケーション時間のテーブルまでのテーブルのことです。
+一時的でないリファレンスが被参照キーの存在を必要とするのと同じように、一時的なリファレンスは被参照キーの存在を必要としますが、歴史の間はリファレンスが（少なくとも）存在します。
+したがって、<code class="literal">products</code>テーブルが<code class="literal">variants</code>テーブルによって被参照であり、製品5のバリアントのアプリケーション時間が<code class="literal">[2020-01-01,2026-01-01)</code>である場合、製品5はそのピリオド全体に存在する必要があります。
+    </p><p>
+<span class="original">
+     We can create the &lt;literal&gt;variants&lt;/literal&gt; table with the following
+     schema (without a foreign key yet):
+</span>
+《機械翻訳》次のテーブル<code class="literal">variants</code>まだスキーマなしを使用して、外部キーを作成できます。
+
+</p><pre class="programlisting">
+CREATE TABLE variants (
+  id         integer,
+  product_no integer,
+  name       text,
+  valid_at   daterange,
+  PRIMARY KEY (id, valid_at WITHOUT OVERLAPS)
+);
+</pre><p>
+
+<span class="original">
+     We have included a temporal primary key as a best practice, but it is not
+     strictly required by foreign keys.
+</span>
+《機械翻訳》ここでは、主キーの慣習として一時的なベストを含めていますが、外部キーでは厳密には必要ありません。
+    </p><p>
+<span class="original">
+     &lt;xref linkend="temporal-references-figure"/&gt; plots product 5 (in green)
+     and two variants referencing it (in yellow) on the same timeline.
+     Variant 8 (Medium) was introduced first, then variant 9 (XXL).  Both
+     satisfy the foreign key constraint, because the referenced product exists
+     throughout their entire history.
+</span>
+《機械翻訳》<a class="xref" href="ddl-temporal-tables.html#TEMPORAL-REFERENCES-FIGURE" title="図5.2 Temporal Foreign Key Example">図 5.2</a>は、同じ参照に対して、製品5（緑色）と2つのバリアント「タイムライン」（黄色）をプロットします。
+バリアント8（中）が最初に導入され、次にバリアント9(XXL)が導入されました。
+外部キー製品は制約全体に存在するため、どちらも被参照歴史を満たしています。
+    </p><div class="figure" id="TEMPORAL-REFERENCES-FIGURE"><p class="title"><strong>図5.2 Temporal Foreign Key Example</strong></p><div class="figure-contents"><div class="mediaobject"><object type="image/svg+xml" data="temporal-references.svg" width="100%"></object></div></div></div><br class="figure-break" /><p>
+<span class="original">
+     In a table, these records would be:
+</span>
+《機械翻訳》テーブルでは、これらのレコードは次のようになります。
+</p><pre class="programlisting">
+ id | product_no |  name  |        valid_at
+----+------------+--------+-------------------------
+  8 |          5 | Medium | [2021-01-01,2023-06-01)
+  9 |          5 | XXL    | [2022-03-01,2024-06-01)
+</pre><p>
+    </p><p>
+<span class="original">
+     Note that a temporal reference need not be fulfilled by a single row in
+     the referenced table.  Product 5 had a price change in the middle of
+     variant 8's history, but the reference is still valid.  The combination
+     of all matching rows is used to test whether the referenced history
+     contains the referencing row.
+</span>
+《機械翻訳》一時ノートは、被参照リファレンス内の単一行によって履行される必要はありません。
+製品5は、バリアント8の歴史の途中で価格変更がありましたが、リファレンスはまだ有効です。
+すべてのマッチング行の組合せを使用して、被参照歴史包含参照行かどうかをテストします。
+テーブル
+    </p><p>
+<span class="original">
+     The syntax to add a temporal foreign key to our table is:
+</span>
+《機械翻訳》私たちの構文に一時的な外部キーを追加するテーブルは次のとおりです。
+
+</p><pre class="programlisting">
+CREATE TABLE variants (
+  id         integer,
+  product_no integer,
+  name       text,
+  valid_at   daterange,
+  PRIMARY KEY (id, valid_at WITHOUT OVERLAPS),
+  <span class="emphasis"><strong>FOREIGN KEY (product_no, PERIOD valid_at) REFERENCES products (product_no, PERIOD valid_at)</strong></span>
+);
+</pre><p>
+
+<span class="original">
+     Note that the keyword &lt;literal&gt;PERIOD&lt;/literal&gt; must be used for the
+     application-time column in both the referencing and referenced table.
+</span>
+《機械翻訳》ノート。
+キーワード<code class="literal">PERIOD</code>は、参照テーブルと被参照地域の両方で、アプリケーション時間のカラムに使用する必要があります。
+    </p><p>
+<span class="original">
+     A temporal primary key or unique constraint matching the referenced columns
+     must exist on the referenced table.
+</span>
+《機械翻訳》仮主キーまたは一意性制約マッチング被参照列は被参照テーブルに存在する必要があります。
+    </p><p>
+<span class="original">
+     &lt;productname&gt;PostgreSQL&lt;/productname&gt; supports temporal foreign keys with
+     action &lt;literal&gt;NO ACTION&lt;/literal&gt;, but not &lt;literal&gt;RESTRICT&lt;/literal&gt;,
+     &lt;literal&gt;CASCADE&lt;/literal&gt;, &lt;literal&gt;SET NULL&lt;/literal&gt;, or &lt;literal&gt;SET
+     DEFAULT&lt;/literal&gt;.
+</span>
+《機械翻訳》<span class="productname">PostgreSQL</span>はアクション<code class="literal">NO ACTION</code>で一時外部キーをサポートしますが、<code class="literal">RESTRICT</code>、<code class="literal">CASCADE</code>、<code class="literal">SET NULL</code>、または<code class="literal">SET DEFAULT</code>はサポートしません。
+    </p></div></div><div class="sect2" id="DDL-SYSTEM-TIME"><div class="titlepage"><div><div><h3 class="title">5.7.2. System Time <a href="#DDL-SYSTEM-TIME" class="id_link">#</a></h3></div></div></div><a id="id-1.5.4.9.5.2" class="indexterm"></a><p>
+<span class="original">
+    &lt;firstterm&gt;System time&lt;/firstterm&gt; refers to the history of the database
+    table, not the entity it describes.  It captures when each row was
+    inserted/updated/deleted.
+</span>
+《機械翻訳》<em class="firstterm">システム時間</em>は、それが記述する歴史ではなく、データベーステーブルのエンティティを参照します。
+各行がいつ挿入/更新/削除されたかを取得します。
+   </p><p>
+<span class="original">
+    &lt;productname&gt;PostgreSQL&lt;/productname&gt; does not currently support system
+    time, but it could be emulated using triggers, and there are external
+    extensions that provide such functionality.
+</span>
+《機械翻訳》<span class="productname">PostgreSQL</span>現在はシステム時間をサポートしていませんが、トリガを使用してエミュレートすることができ、そのような機能を提供する外部拡張機能があります。
+   </p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ddl-system-columns.html" title="5.6. システム列">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="ddl.html" title="第5章 データ定義">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="ddl-alter.html" title="5.8. テーブルの変更">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">5.6. システム列 </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 19rc1文書">ホーム</a></td><td width="40%" align="right" valign="top"> 5.8. テーブルの変更</td></tr></table></div></body></html>
