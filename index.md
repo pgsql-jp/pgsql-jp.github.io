@@ -9,11 +9,11 @@ layout: default
 
 last-updated: 2026-11-16 08:52:19 JST
 
-### PostgreSQL 19（19.0rc2）
+### 最新 PostgreSQL 19（19.0rc）
 
-| HTML （オンライン）        | PDF                            |
-|:---------------------------|:------------------------------:|
-| [html](jpug-doc/19.0rc2/html) | [PDF](jpug-doc/19.0rc2/postgresql-19.0rc2-A4.pdf) |
+| HTML （オンライン）        | PDF                                         |
+|:---------------------------|:-------------------------------------------:|
+| [html](jpug-doc/19.0/html) | [PDF](jpug-doc/19.0/postgresql-19.0-A4.pdf) |
 
 ### 最新 PostgreSQL 18
 
