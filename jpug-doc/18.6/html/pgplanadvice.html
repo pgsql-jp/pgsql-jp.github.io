@@ -1,0 +1,927 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>F.30. 《機械翻訳》pg_plan_advice — プランナが正しいプランを取得するのを助ける</title><link rel="stylesheet" type="text/css" href="stylesheet.css" /><link rev="made" href="pgsql-docs@lists.postgresql.org" /><meta name="generator" content="DocBook XSL Stylesheets Vsnapshot" /><link rel="prev" href="pgoverexplain.html" title="F.29. pg_overexplain — EXPLAINで詳細をダンプする" /><link rel="next" href="pgprewarm.html" title="F.31. pg_prewarm — リレーションデータをバッファキャッシュにプリロードする" /><meta name="viewport" content="width=device-width,initial-scale=1.0" /></head><body id="docContent" class="container-fluid col-10"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="4" align="center"><a accesskey="h" href="index.html">PostgreSQL 19rc2文書</a></th></tr><tr><td width="10%" align="left"></td><td width="10%" align="left"></td><td width="60%" align="center"><a href="contrib.html" title="付録F 追加で提供されるモジュールと拡張">付録F 追加で提供されるモジュールと拡張</a></td><td width="20%" align="right"></td></tr><tr><td width="10%" align="left"><a accesskey="p" href="pgoverexplain.html" title="F.29. pg_overexplain — EXPLAINで詳細をダンプする">前へ</a> </td><td width="10%" align="left"><a accesskey="u" href="contrib.html" title="付録F 追加で提供されるモジュールと拡張">上へ</a></td><td width="60%" align="center">F.30. 《機械翻訳》pg_plan_advice — プランナが正しいプランを取得するのを助ける</td><td width="20%" align="right"> <a accesskey="n" href="pgprewarm.html" title="F.31. pg_prewarm — リレーションデータをバッファキャッシュにプリロードする">次へ</a></td></tr></table><hr /></div><div class="sect1" id="PGPLANADVICE"><div class="titlepage"><div><div><h2 class="title" style="clear: both">F.30. 《機械翻訳》pg_plan_advice — プランナが正しいプランを取得するのを助ける <a href="#PGPLANADVICE" class="id_link">#</a></h2></div></div></div><!--
+ <title>pg_plan_advice &mdash; help the planner get the right plan</title>
+--><a id="id-1.11.7.40.2" class="indexterm"></a><p>
+<!--
+  The <filename>pg_plan_advice</filename> module allows key planner decisions
+  to be described, reproduced, and altered using a special-purpose "plan
+  advice" mini-language. It is intended to allow stabilization of plan choices
+  that the user believes to be good, as well as experimentation with plans that
+  the planner believes to be non-optimal.
+-->
+《機械翻訳》<code class="filename">pg_plan_advice</code>モジュールを使用すると、特別な目的の「キープランナ」ミニ言語を使用して、プランアドバイスの決定を記述、再現、および変更できます。
+これは、ユーザが良いと信じるプランの選択を安定させるとともに、プランナが最適でないと信じる計画を実験することを目的としています。
+ </p><p>
+<!--
+  Note that, since the planner often makes good decisions, overriding its
+  judgment can easily backfire. For example, if the distribution of the
+  underlying data changes, the planner normally has the option to adjust the
+  plan in an attempt to preserve good performance. If the plan advice prevents
+  this, a very poor plan may be chosen. It is important to use plan advice
+  only when the risks of constraining the planner's choices are outweighed by
+  the benefits.
+-->
+《機械翻訳》ノートは、プランナが良い決定を下すことが多いため、その判断を覆すことは容易に裏目に出る可能性がある。
+例では、基礎となるデータのディストリビューションが変化した場合、プランナは通常、良いパフォーマンスを維持するためにプランを調整するオプションを有する。
+プランアドバイスがこれを防止する場合、非常に貧弱なプランが選択される可能性がある。
+プランアドバイスを使用するのは、プランナの選択を制約するリスクが便益よりも上回る場合にのみ行うことが重要である。
+ </p><div class="sect2" id="PGPLANADVICE-GETTING-STARTED"><div class="titlepage"><div><div><h3 class="title">F.30.1. さあ始めましょう <a href="#PGPLANADVICE-GETTING-STARTED" class="id_link">#</a></h3></div></div></div><!--
+  <title>Getting Started</title>
+--><p>
+<!--
+   First, you must arrange to load the <literal>pg_plan_advice</literal>
+   module. You can do this on a system-wide basis by adding
+   <literal>pg_plan_advice</literal> to
+   <xref linkend="guc-shared-preload-libraries"/> and restarting the
+   server, or by adding it to
+   <xref linkend="guc-session-preload-libraries"/> and starting a new session,
+   or by loading it into an individual session using the
+   <link linkend="sql-load"><literal>LOAD</literal></link> command.
+-->
+《機械翻訳》最初に、<code class="literal">pg_plan_advice</code>モジュールをロードに配置する必要があります。
+これをシステム規模で実行するには、<a class="xref" href="runtime-config-client.html#GUC-SHARED-PRELOAD-LIBRARIES">shared_preload_libraries</a>に<code class="literal">pg_plan_advice</code>を追加してサーバを再起動するか、<a class="xref" href="runtime-config-client.html#GUC-SESSION-PRELOAD-LIBRARIES">session_preload_libraries</a>に追加して新しいセッションを開始するか、または<a class="link" href="sql-load.html" title="LOAD"><code class="literal">LOAD</code></a>コマンドを使用して個々のセッションにロードします。
+  </p><p>
+<!--
+   Once the <literal>pg_plan_advice</literal> module is loaded,
+   <link linkend="sql-explain"><literal>EXPLAIN</literal></link> will support
+   a <literal>PLAN_ADVICE</literal> option. You can use this option to see
+   a plan advice string for the chosen plan. For example:
+-->
+《機械翻訳》<code class="literal">pg_plan_advice</code>モジュールが読み込まれると、<a class="link" href="sql-explain.html" title="EXPLAIN"><code class="literal">EXPLAIN</code></a>は<code class="literal">PLAN_ADVICE</code>オプションをサポートします。
+このオプションを使用すると、選択したプランのプランアドバイス文字列を表示できます。
+例の場合:。
+  </p><pre class="programlisting">
+EXPLAIN (COSTS OFF, PLAN_ADVICE)
+        SELECT * FROM join_fact f JOIN join_dim d ON f.dim_id = d.id;
+             QUERY PLAN
+------------------------------------
+ Hash Join
+   Hash Cond: (f.dim_id = d.id)
+   -&gt;  Seq Scan on join_fact f
+   -&gt;  Hash
+         -&gt;  Seq Scan on join_dim d
+ Generated Plan Advice:
+   JOIN_ORDER(f d)
+   HASH_JOIN(d)
+   SEQ_SCAN(f d)
+   NO_GATHER(f d)
+</pre><p>
+<!--
+   In this example, the user has not specified any advice; instead, the
+   planner has been permitted to make whatever decisions it thinks best, and
+   those decisions are memorialized in the form of an advice string.
+   <literal>JOIN_ORDER(f d)</literal> means that <literal>f</literal> should
+   be the driving table, and the first table to which it should be joined is
+   <literal>d</literal>. <literal>HASH_JOIN(d)</literal> means that
+   <literal>d</literal> should appear on the inner side of a hash join.
+   <literal>SEQ_SCAN(f d)</literal> means that both <literal>f</literal>
+   and <literal>d</literal> should be accessed via a sequential scan.
+   <literal>NO_GATHER(f d)</literal> means that neither <literal>f</literal>
+   nor <literal>d</literal> should appear beneath a <literal>Gather</literal>
+   or <literal>Gather Merge</literal> node. For more details on the plan
+   advice mini-language, see the information on
+   <link linkend="pgplanadvice-targets">advice targets</link> and
+   <link linkend="pgplanadvice-tags">advice tags</link>, below.
+-->
+《機械翻訳》この例では、ユーザは特定のアドバイスを指定していません。
+その代わりに、プランナがmakeと考えるいかなる決定もベストに許可されており、それらの決定はアドバイス文字列のフォームで記念されています。
+<code class="literal">JOIN_ORDER(f d)</code>は、<code class="literal">f</code>が駆動テーブルであり、それが結合される最初のテーブルが<code class="literal">d</code>.<code class="literal">HASH_JOIN(d)</code>は<code class="literal">d</code>ハッシュ結合の内側に表示されることを意味します。
+<code class="literal">SEQ_SCAN(f d)</code>は<code class="literal">f</code>と<code class="literal">d</code>の両方にシーケンシャルスキャンを介してアクセスされることを意味します。
+<code class="literal">NO_GATHER(f d)</code>は<code class="literal">f</code>も<code class="literal">d</code>も<code class="literal">Gather</code>または<code class="literal">Gather Merge</code>ノードの下に表示されないことを意味します。
+プランアドバイスミニ言語の詳細については、以下の<a class="link" href="pgplanadvice.html#PGPLANADVICE-TARGETS" title="F.30.3. 《機械翻訳》アドバイスの標的">アドバイスターゲット</a>および<a class="link" href="pgplanadvice.html#PGPLANADVICE-TAGS" title="F.30.4. 《機械翻訳》アドバイスタグ">アドバイスタグ</a>に関する情報を参照してください。
+  </p><p>
+<!--
+   Once you have an advice string for a query, you can use it to control how
+   that query is planned. You can do this by setting
+   <literal>pg_plan_advice.advice</literal> to the advice string you've
+   chosen. This can be an advice string that was generated by the system,
+   or one you've written yourself. One good way of creating your own advice
+   string is to take the string generated by the system and pick out just
+   those elements that you wish to enforce. In the example above,
+   <literal>pg_plan_advice</literal> emits advice for the join order, the
+   join method, the scan method, and the use of parallelism, but you might
+   only want to control the join order:
+-->
+《機械翻訳》問い合わせのアドバイス文字列を取得したら、それを使用して、その問い合わせがどのように計画されているかをコントロールに伝えることができます。
+これを行うには、<code class="literal">pg_plan_advice.advice</code>選択したアドバイス文字列に設定します。
+これは、システムによって生成されたアドバイス文字列、または自分で作成したにすることができます。
+独自のアドバイス文字列を作成する良い方法の1つは、システムによって生成された文字列を取得し、強制したい要素だけを選択することです。
+上記の例では、<code class="literal">pg_plan_advice</code>結合オーダー、結合メソッド、スキャンメソッド、および並列処理の使用のためにアドバイスを発行しますが、コントロール結合オーダーだけを発行することもできます:。
+  </p><pre class="programlisting">
+SET pg_plan_advice.advice = 'JOIN_ORDER(f d)';
+EXPLAIN (COSTS OFF)
+        SELECT * FROM join_fact f JOIN join_dim d ON f.dim_id = d.id;
+             QUERY PLAN
+------------------------------------
+ Hash Join
+   Hash Cond: (f.dim_id = d.id)
+   -&gt;  Seq Scan on join_fact f
+   -&gt;  Hash
+         -&gt;  Seq Scan on join_dim d
+ Supplied Plan Advice:
+   JOIN_ORDER(f d) /* matched */
+</pre><p>
+<!--
+   Since the <literal>PLAN_ADVICE</literal> option to
+   <literal>EXPLAIN</literal> was not specified, no advice string is generated
+   for the plan. However, the supplied plan advice is still shown so that
+   anyone looking at the <literal>EXPLAIN</literal> output knows that the
+   chosen plan was influenced by plan advice. If information about supplied
+   plan advice is not desired, it can be suppressed by configuring
+   <literal>pg_plan_advice.always_explain_supplied_advice = false</literal>.
+   For each piece of supplied advice, the output shows
+   <link linkend="pgplanadvice-feedback">advice feedback</link> indicating
+   whether or not the advice was successfully applied to the query. In this
+   case, the feedback says <literal>/* matched */</literal>, which means that
+   <literal>f</literal> and <literal>d</literal> were found in the query and
+   that the resulting query plan conforms to the specified advice.
+-->
+《機械翻訳》<code class="literal">EXPLAIN</code>に対するオプションが指定されていないため、アドバイスに対してプラン文字列は生成されません。
+ただし、提供されるプランアドバイスは引き続き表示されるため、<code class="literal">EXPLAIN</code>出力を見れば、選択されたプランがプランアドバイスの影響を受けていることがわかります。
+提供されるプランアドバイスに関する情報が必要ない場合は、<code class="literal">pg_plan_advice. always_explain_supplied_advice = false</code>.提供されるアドバイスごとに、アドバイスが問い合わせに正常に適用されたかどうかを示す<a class="link" href="pgplanadvice.html#PGPLANADVICE-FEEDBACK" title="F.30.5. 《機械翻訳》アドバイスフィードバック">アドバイスフィードバック</a>が出力に表示されます。
+このケースでは、フィードバックに<code class="literal">/* matched */</code>と表示されます。
+これは、<code class="literal">f</code>および<code class="literal">d</code>が問い合わせで検出され、検出された問い合わせプランが指定されたアドバイスに準拠していることを意味します。
+<code class="literal">PLAN_ADVICE</code>
+  </p></div><div class="sect2" id="PGPLANADVICE-HOW-IT-WORKS"><div class="titlepage"><div><div><h3 class="title">F.30.2. どうやって動くのか <a href="#PGPLANADVICE-HOW-IT-WORKS" class="id_link">#</a></h3></div></div></div><!--
+  <title>How It Works</title>
+--><p>
+<!--
+   Plan advice is written imperatively; that is, it specifies what should be
+   done. However, at an implementation level,
+   <literal>pg_plan_advice</literal> works by telling the core planner what
+   should not be done. In other words, it operates by constraining the
+   planner's choices, not by replacing it. Therefore, no matter what advice
+   you provide, you will only ever get a plan that the core planner would have
+   considered for the query in question. If you attempt to force what you
+   believe to be the correct plan by supplying an advice string, and the
+   planner still fails to produce the desired plan, this means that either
+   there is a bug in your advice string, or the plan in question was not
+   considered viable by the core planner. This commonly happens for one of two
+   reasons. First, it might be that the planner believes that the plan you're
+   trying to force would be semantically incorrect - that is, it would produce
+   the wrong results - and for that reason it wasn't considered. Second, it
+   might be that the planner rejected the plan you were hoping to generate on
+   some grounds other than cost. For example, given a very simple query such as
+   <literal>SELECT * FROM some_table</literal>, the query planner will
+   decide that the use of an index is worthless here before it performs any
+   costing calculations. You cannot force it to use an index for this query
+   even if you set <literal>enable_seqscan = false</literal>, and you can't
+   force it to use an index using plan advice, either.
+-->
+《機械翻訳》プランアドバイスは命令的に書かれています。
+つまり、何をすべきかを指定しています。
+しかし、実装レベルでは、<code class="literal">pg_plan_advice</code>何をすべきでないかをコアプランナに伝えることによって機能します。
+言い換えれば、プランナの選択を制約することによって機能し、を置き換えることによって機能するのではありません。
+したがって、アドバイスがどのようなを提供しても、コアプランナが問題の問い合わせに対して考慮したプランのみを取得できます。
+アドバイス文字列を提供することによって正しいプランであると信じるものを強制しようとしたが、プランナが依然として目的のプランを生成できない場合、これはアドバイス文字列にバグがあるか、または問題のプランがコアプランナによって実行可能と見なされなかったことを意味します。
+これは一般的に次の2つの理由のいずれかで発生します。
+第1に、強制しようとしているプランが意味的に正しくない（つまり、間違いの結果を生成する）とプランナが信じているため、それが考慮されなかった可能性があります。
+第2に、プランナがコスト以外の何らかの理由で、生成しようとしているプランを拒否した可能性があります。
+例については、次のような非常に問い合わせの高い<code class="literal">SELECT * FROM some_table</code>を前提とした場合、問い合わせーは、の使用がここでは役に立たないと判断し、原価計算計算を実行します。
+<code class="literal">enable_seqscan = false</code>を設定しても、このマップにを使用するように強制することはできません。
+また、を使用するを使用するように強制することもできません。
+問い合わせ前アドバイスインデックスシンプルプランナインデックスプランインデックス
+  </p><p>
+<!--
+   Specifying plan advice should never cause planner failure. However, if you
+   specify plan advice that asks for something impossible, you may get a plan
+   where some plan nodes are flagged as <literal>Disabled: true</literal> in
+   the <literal>EXPLAIN</literal> output. In some cases, such plans will be
+   basically the same plan you would have gotten with no supplied advice at
+   all, but in other cases, they may be much worse. For example:
+-->
+《機械翻訳》プランアドバイスを指定しても、プランナ障害が発生することはありません。
+ただし、不可能なことを要求するプランアドバイスを指定した場合、一部のプランが<code class="literal">EXPLAIN</code>の出力でとしてフラグ付けされている計画ノードを取得する可能性があります。
+場合によっては、このような計画は、提供されるプランがまったくない場合に取得したアドバイスと基本的に同じになりますが、他の場合には、はるかに悪い可能性があります。
+例の場合:。
+<code class="literal">Disabled: true</code>
+  </p><pre class="programlisting">
+SET pg_plan_advice.advice = 'JOIN_ORDER(x f d)';
+EXPLAIN (COSTS OFF)
+        SELECT * FROM join_fact f JOIN join_dim d ON f.dim_id = d.id;
+                     QUERY PLAN
+----------------------------------------------------
+ Nested Loop
+   Disabled: true
+   -&gt;  Seq Scan on join_fact f
+   -&gt;  Index Scan using join_dim_pkey on join_dim d
+         Index Cond: (id = f.dim_id)
+ Supplied Plan Advice:
+   JOIN_ORDER(x f d) /* partially matched */
+</pre><p>
+<!--
+   Because neither <literal>f</literal> nor <literal>d</literal> is the
+   first table in the <literal>JOIN_ORDER()</literal> specification, the
+   planner disables all direct joins between the two of them, thinking that
+   the join to <literal>x</literal> should happen first. Since planning isn't
+   allowed to fail, a disabled plan between the two relations is eventually
+   selected anyway, but here it's a <literal>Nested Loop</literal> rather than
+   the <literal>Hash Join</literal> that was chosen in the above example where
+   no advice was specified. There are several different ways that this kind
+   of thing can happen; when it does, the resulting plan is generally worse
+   than if no advice had been specified at all. Therefore, it is a good idea
+   to validate that the advice you specify applies to the query to which it
+   is applied and that the results are as expected.
+-->
+《機械翻訳》なぜなら、<code class="literal">JOIN_ORDER()</code>指定の最初のテーブルが<code class="literal">f</code>またはどちらでもないため、プランナは<code class="literal">x</code>への結合が先に行われるべきであると考えて、2つのプラン間のすべての直接結合を無効にします。
+計画が失敗することは許されないため、2つのリレーション間の無効な例は最終的には選択されますが、ここではそれは<code class="literal">Hash Join</code>アドバイスが指定されていない上記ので選択されたではなくです。
+この種のことが起こるにはいくつかの異なる方法があります。
+それが起こる場合、結果として生じるプランは、アドバイスが指定されていない場合よりも一般的に悪くなります。
+したがって、指定したアドバイスが適用先の問い合わせに適用され、結果が期待どおりであることを検証するのは良いアイディアです。
+<code class="literal">Nested Loop</code> <code class="literal">d</code>
+  </p></div><div class="sect2" id="PGPLANADVICE-TARGETS"><div class="titlepage"><div><div><h3 class="title">F.30.3. 《機械翻訳》アドバイスの標的 <a href="#PGPLANADVICE-TARGETS" class="id_link">#</a></h3></div></div></div><!--
+  <title>Advice Targets</title>
+--><p>
+<!--
+   An <firstterm>advice target</firstterm> uniquely identifies a particular
+   instance of a particular relation involved in a particular query. In simple
+   cases, such as the examples shown above, the advice target is simply the
+   relation alias. However, a more complex syntax is required when subqueries
+   are used, when tables are partitioned, or when the same relation alias is
+   mentioned more than once in the same subquery (e.g., <literal>(foo JOIN bar
+   ON foo.a = bar.a) x JOIN foo ON x.b = foo.b</literal>). Any combination of
+   these three things can occur simultaneously: a relation could be mentioned
+   more than once, be partitioned, and be used inside of a subquery.
+-->
+《機械翻訳》<em class="firstterm">アドバイスターゲット</em>は、特定の問い合わせに含まれる特定のインスタンスの特定のリレーションを一意に識別します。
+前述の例のようなシンプルの場合、アドバイスターゲットは単にリレーション別名です。
+ただし、副問い合わせが使用される場合、表がパーティション化される場合、または同じリレーション別名が同じサブ問い合わせで2回以上言及される場合<code class="literal">(foo JOIN bar ON foo.a = bar.a) x JOIN foo ON x.b = foo.b</code>たとえば、は、より複雑な構文が必要になります。
+これら3つの組合せは同時に発生する可能性があります。
+リレーションは2回以上言及され、パーティション化され、サブ問い合わせ内で使用される可能性があります。
+  </p><p>
+<!--
+   Because of this, the general syntax for a relation identifier is:
+-->
+《機械翻訳》このため、リレーション識別子の一般的な構文は次のとおりです。
+  </p><pre class="programlisting">
+alias_name#occurrence_number/partition_schema.partition_name@plan_name
+</pre><p>
+<!--
+   All components except for the <literal>alias_name</literal> are optional
+   and are included only when required. When a component is omitted, the
+   preceding punctuation must also be omitted. For the first occurrence of a
+   relation within a given subquery, generated advice will omit the occurrence
+   number, but it is legal to write <literal>#1</literal>, if desired. For
+   children of partitioned tables, the partition schema and partition name are
+   required; otherwise, both are omitted. The plan name is omitted for the
+   top-level plan, and must be included for any subplan.
+-->
+《機械翻訳》<code class="literal">alias_name</code>以外のすべてのコンポーネントはオプショナルであり、必要な場合にのみ含まれます。
+コンポーネントを省略する場合は、直前の句読点も省略する必要があります。
+特定のサブ問い合わせ内でリレーションが初めて出現する場合、生成されたアドバイスでは出現番号が省略されますが、<code class="literal">#1</code>と記述することもできます。
+テーブルパーティションの子の場合、パーティションスキーマとパーティション名前が必要ですが、それ以外の場合は両方とも省略されます。
+プラン名前はトップ-レベルプランでは省略され、すべてのサブプランでは含める必要があります。
+  </p><p>
+<!--
+   It is not always easy to determine the correct advice target by examining
+   the query. For instance, if the planner pulls up a subquery into the parent
+   query level, everything inside of it becomes part of the parent query level,
+   and uses the parent query's subplan name (or no subplan name, if pulled up
+   to the top level). Furthermore, the correct subquery name is sometimes not
+   obvious. For example, when two queries are joined using an operation such as
+   <literal>UNION</literal> or <literal>INTERSECT</literal>, no name for the
+   subqueries is present in the SQL syntax; instead, a system-generated name is
+   assigned to each branch. The easiest way to discover the proper advice
+   targets is to use <literal>EXPLAIN (PLAN_ADVICE)</literal> and examine the
+   generated advice.
+-->
+《機械翻訳》アドバイスを調べて正しい問い合わせターゲットを判断することは、必ずしも容易ではありません。
+インスタンスの場合、プランナがサブ問い合わせを親問い合わせレベルにプルアップすると、その中にあるものはすべて親問い合わせレベルのパートになり、親問い合わせのサブプラン名前を使用します（トップレベルにプルアップされている場合はサブプラン名前は使用されません）。
+さらに、正しいサブ問い合わせ名前が明確でない場合があります。
+例の場合、2つの問い合わせーが<code class="literal">UNION</code>または<code class="literal">INTERSECT</code>のようなオペレーションを使用して結合されている場合、サブ問い合わせー用の名前はSQL構文には存在しません。
+代わりに、で生成された名前が各にアサインされます。
+適切なターゲットを検出する最も簡単な方法は、を使用することです<code class="literal">EXPLAIN (PLAN_ADVICE)</code>そして、生成されたを調べます。
+アドバイスシステムアドバイスブランチ
+  </p></div><div class="sect2" id="PGPLANADVICE-TAGS"><div class="titlepage"><div><div><h3 class="title">F.30.4. 《機械翻訳》アドバイスタグ <a href="#PGPLANADVICE-TAGS" class="id_link">#</a></h3></div></div></div><!--
+  <title>Advice Tags</title>
+--><p>
+<!--
+   An <firstterm>advice tag</firstterm> specifies a particular behavior that
+   should be enforced for some portion of the query, such as a particular
+   join order or join method. All advice tags take
+   <link linkend="pgplanadvice-targets">advice targets</link> as arguments,
+   and many allow lists of advice targets, which in some cases can be nested
+   multiple levels deep. Several different classes of advice tags exist,
+   each controlling a different aspect of query planning.
+-->
+《機械翻訳》<em class="firstterm">アドバイスタグ</em>は、特定の結合問い合わせや結合オーダーなど、メソッドの一部に適用する必要がある特定の動作を指定します。
+すべてのアドバイスタグは、<a class="link" href="pgplanadvice.html#PGPLANADVICE-TARGETS" title="F.30.3. 《機械翻訳》アドバイスの標的">アドバイスターゲット</a>を引数として取り、多くのアドバイスターゲットのリストを許可します。
+このリストは、場合によってはマルチプルレベルの深さまでネストできます。
+アドバイスタグにはいくつかの異なるクラスが存在し、それぞれが問い合わせ計画の異なる側面を制御します。
+  </p><div class="sect3" id="PGPLANADVICE-SCAN-METHOD"><div class="titlepage"><div><div><h4 class="title">F.30.4.1. 《機械翻訳》スキャンメソッドアドバイス <a href="#PGPLANADVICE-SCAN-METHOD" class="id_link">#</a></h4></div></div></div><!--
+  <title>Scan Method Advice</title>
+--><pre class="synopsis">
+SEQ_SCAN(<em class="replaceable"><code>target</code></em> [ ... ])
+TID_SCAN(<em class="replaceable"><code>target</code></em> [ ... ])
+INDEX_SCAN(<em class="replaceable"><code>target</code></em> <em class="replaceable"><code>index_name</code></em> [ ... ])
+INDEX_ONLY_SCAN(<em class="replaceable"><code>target</code></em> <em class="replaceable"><code>index_name</code></em> [ ... ])
+FOREIGN_JOIN((<em class="replaceable"><code>target</code></em> [ ... ]) [ ... ])
+BITMAP_HEAP_SCAN(<em class="replaceable"><code>target</code></em> [ ... ])
+DO_NOT_SCAN(<em class="replaceable"><code>target</code></em> [ ... ])</pre><p>
+<!--
+    <literal>SEQ_SCAN</literal> specifies that each target should be
+    scanned using a <literal>Seq Scan</literal>. <literal>TID_SCAN</literal>
+    specifies that each target should be scanned using a
+    <literal>TID Scan</literal> or <literal>TID Range Scan</literal>.
+    <literal>BITMAP_HEAP_SCAN</literal> specifies that each target
+    should be scanned using a <literal>Bitmap Heap Scan</literal>.
+-->
+《機械翻訳》<code class="literal">SEQ_SCAN</code>各ターゲットが<code class="literal">Seq Scan</code>を使用してスキャンされるように指定します.<code class="literal">TID_SCAN</code>各ターゲットが<code class="literal">TID Scan</code>または<code class="literal">TID Range Scan</code>を使用してスキャンされるように指定します.<code class="literal">BITMAP_HEAP_SCAN</code>各ターゲットが<code class="literal">Bitmap Heap Scan</code>を使用してスキャンされるように指定します。
+   </p><p>
+<!--
+    <literal>INDEX_SCAN</literal> specifies that each target should
+    be scanned using an <literal>Index Scan</literal> on the given index
+    name. <literal>INDEX_ONLY_SCAN</literal> is similar, but specifies the
+    use of an <literal>Index Only Scan</literal>. In either case, the index
+    name can be, but does not have to be, schema-qualified.
+-->
+《機械翻訳》<code class="literal">INDEX_SCAN</code>は、指定したターゲット名前で<code class="literal">Index Scan</code>を使用して各インデックスをスキャンするように指定します。
+<code class="literal">INDEX_ONLY_SCAN</code>は似ていますが、では<code class="literal">Index Only Scan</code>を使用するように指定します。
+どちらのケースでも、インデックス名前はスキーマで認定される可能性がありますが、必ずしもそうである必要はありません。
+   </p><p>
+<!--
+    <literal>FOREIGN_JOIN</literal> specifies that a join between two or
+    more foreign tables should be pushed down to a remote server so
+    that it can be implemented as a single <literal>Foreign Scan</literal>.
+    Specifying <literal>FOREIGN_JOIN</literal> for a single foreign table is
+    neither necessary nor permissible: a <literal>Foreign Scan</literal> will
+    need to be used regardless. If you want to prevent a join from being
+    pushed down, consider using the <literal>JOIN_ORDER</literal> tag for
+    that purpose.
+-->
+《機械翻訳》<code class="literal">FOREIGN_JOIN</code>は、2つ以上の外部テーブル間の結合が、単一の<code class="literal">Foreign Scan</code>として実装できるように、ダウンをあるリモートサーバにプッシュする必要があることを指定します。
+<code class="literal">FOREIGN_JOIN</code>を単一の外部テーブルに対して指定することは必要でも許可されてもいません。
+とにかく<code class="literal">Foreign Scan</code>を使用する必要があります。
+結合がダウンにプッシュされるのを防ぎたい場合は、その目的のために<code class="literal">JOIN_ORDER</code>タグを使用することを検討してください。
+   </p><p>
+<!--
+    <literal>DO_NOT_SCAN</literal> specifies that a particular target
+    should not appear in the final plan at all. In most cases, this is
+    impossible, and will simply cause the scan of the target relation to
+    be marked disabled. However, in certain cases, the planner considers
+    optimizations where a portion of the plan tree is copied and mutated,
+    and then considered as an alternative to the original. In those cases,
+    <literal>DO_NOT_SCAN</literal> can be used to exclude the non-preferred
+    alternative.
+-->
+《機械翻訳》<code class="literal">DO_NOT_SCAN</code>は、特定のターゲットが最終プランにまったく表示されないように指定します。
+ほとんどの場合、これは不可能であり、ターゲットリレーションのスキャンが使用不可とマークされるだけです。
+ただし、場合によっては、プランナが最適化を検討し、計画ツリーの一部がコピーされて変化し、オリジナルの代替とみなされることがあります。
+このような場合は、<code class="literal">DO_NOT_SCAN</code>を使用して、優先されない代替を除外できます。
+   </p><p>
+<!--
+    The planner supports many types of scans other than those listed here;
+    however, in most of those cases, there is no meaningful decision to be
+    made, and hence no need for advice. For example, the output of a
+    set-returning function that appears in the <literal>FROM</literal> clause
+    can only ever be scanned using a <literal>Function Scan</literal>, so
+    there is no opportunity for advice to change anything.
+-->
+《機械翻訳》プランナは、ここに挙げた以外にも多くの種類のスキャンをサポートしています。
+しかし、これらのほとんどの場合、意味のある決定を下すことができないため、アドバイスは必要ありません。
+例では、<code class="literal">FROM</code>関数に現れる集合を返す句の出力は、<code class="literal">Function Scan</code>を使ってしかスキャンできないため、アドバイスが何かを変更することはありません。
+   </p></div><div class="sect3" id="PGPLANADVICE-JOIN-ORDER"><div class="titlepage"><div><div><h4 class="title">F.30.4.2. 《機械翻訳》結合オーダーアドバイス <a href="#PGPLANADVICE-JOIN-ORDER" class="id_link">#</a></h4></div></div></div><!--
+  <title>Join Order Advice</title>
+--><pre class="synopsis">
+JOIN_ORDER(<em class="replaceable"><code>join_order_item</code></em> [ ... ])
+
+<span class="phrase">where <em class="replaceable"><code>join_order_item</code></em> is:</span>
+
+<em class="replaceable"><code>advice_target</code></em> |
+( <em class="replaceable"><code>join_order_item</code></em> [ ... ] ) |
+{ <em class="replaceable"><code>join_order_item</code></em> [ ... ] }</pre><p>
+<!--
+    When <literal>JOIN_ORDER</literal> is used without any sublists, it
+    specifies an outer-deep join with the first advice target as the driving
+    table, joined to each subsequent advice target in turn in the order
+    specified. For instance, <literal>JOIN_ORDER(a b c)</literal> means that
+    <literal>a</literal> should be the driving table, and that it should be
+    joined first to <literal>b</literal> and then to <literal>c</literal>.
+    If there are more relations in the query than <literal>a</literal>,
+    <literal>b</literal>, and <literal>c</literal>, the rest can be joined
+    afterwards in any manner.
+-->
+《機械翻訳》サブリストなしで<code class="literal">JOIN_ORDER</code>が使用された場合、最初のアドバイス結合を駆動ターゲットとし、指定されたテーブル内で後続の各アドバイスターゲットに順に結合される、外側の深いオーダーを指定します。
+インスタンスの場合、<code class="literal">JOIN_ORDER(a b c)</code>は、<code class="literal">a</code>が駆動テーブルであり、最初に<code class="literal">b</code>に、次に<code class="literal">c</code>に結合される必要があることを意味します。
+問い合わせ内に<code class="literal">a</code>、<code class="literal">b</code>および<code class="literal">c</code>より多くのリレーションがある場合、残りは後で任意の方法で結合できます。
+   </p><p>
+<!--
+    If a <literal>JOIN_ORDER</literal> list contains a parenthesized sublist,
+    it specifies a non-outer-deep join. The relations in the sublist must first
+    be joined to each other much as if the sublist were a top-level
+    <literal>JOIN_ORDER</literal> list, and the resulting join product must
+    then appear on the inner side of a join at the appropriate point in the
+    join order. For example, <literal>JOIN_ORDER(a (b c) d)</literal> requires
+    a plan of this form:
+-->
+《機械翻訳》<code class="literal">JOIN_ORDER</code>リスト包含がカッコで囲まれたサブリストの場合は、外側の深い結合以外を指定します。
+サブリスト内のリレーションは、サブリストがトップレベル<code class="literal">JOIN_ORDER</code>リストであるかのように、最初に互いに結合する必要があります。
+次に、結果の結合製品は、結合オーダーの適切なポイントで結合の内側に表示される必要があります。
+例の場合は、<code class="literal">JOIN_ORDER(a (b c) d)</code>このフォームのプランが必要です:。
+   </p><pre class="programlisting">
+Join
+  -&gt;  Join
+        -&gt; Scan on a
+        -&gt; Join
+             -&gt; Scan on b
+             -&gt; Scan on c
+  -&gt;  Scan on d
+</pre><p>
+<!--
+    If a <literal>JOIN_ORDER</literal> list contains a sublist surrounded by
+    curly braces, this also specifies a non-outer-deep join. However, the join
+    order within the sublist is not constrained. For example, specifying
+    <literal>JOIN_ORDER(a {b c} d)</literal> would allow the scans of
+    <literal>b</literal> and <literal>c</literal> to be swapped in the
+    previous example, which is not allowed when parentheses are used.
+-->
+《機械翻訳》中カッコで囲まれた<code class="literal">JOIN_ORDER</code>リスト包含aサブリストの場合も、深い結合の外側以外を指定しています。
+ただし、サブリスト内の結合オーダーには制約はありません。
+例の場合、<code class="literal">JOIN_ORDER(a {b c} d)</code>を指定すると、<code class="literal">b</code>および<code class="literal">c</code>のスキャンを以前の例でスワップできますが、カッコが使用されている場合はスワップできません。
+   </p><p>
+<!--
+    Parenthesized sublists can be arbitrarily nested, but sublists surrounded
+    by curly braces cannot themselves contain sublists.
+-->
+《機械翻訳》括弧で括られたサブリストは任意にネストすることができますが、中括弧で囲まれたサブリスト自体はサブリストを含むことができません。
+   </p><p>
+<!--
+    Multiple instances of <literal>JOIN_ORDER()</literal> can sometimes be
+    needed in order to fully constrain the join order. This occurs when there
+    are multiple join problems that are optimized separately by the planner.
+    This can happen due to the presence of subqueries, or because there is a
+    partitionwise join. In the latter case, each branch of the partitionwise
+    join can have its own join order, independent of every other branch.
+-->
+《機械翻訳》<code class="literal">JOIN_ORDER()</code>のマルチプルインスタンスは、オーダーオーダーを完全に制約するために、結合で必要になる場合があります。
+これは、プランナによって個別に最適化されるマルチプル結合問題がある場合に発生します。
+これは、副問い合わせが存在するため、またはパーティション化された結合があるために発生する可能性があります。
+後者のケースでは、パーティション化された結合の各ブランチは、他のブランチから独立した独自の結合オーダーを持つことができます。
+   </p></div><div class="sect3" id="PGPLANADVICE-JOIN-METHOD"><div class="titlepage"><div><div><h4 class="title">F.30.4.3. 《機械翻訳》結合メソッドアドバイス <a href="#PGPLANADVICE-JOIN-METHOD" class="id_link">#</a></h4></div></div></div><!--
+  <title>Join Method Advice</title>
+--><pre class="synopsis">
+join_method_name(<em class="replaceable"><code>join_method_item</code></em> [ ... ])
+
+<span class="phrase">where <em class="replaceable"><code>join_method_name</code></em> is:</span>
+
+{ MERGE_JOIN_MATERIALIZE | MERGE_JOIN_PLAIN | NESTED_LOOP_MATERIALIZE | NESTED_LOOP_MEMOIZE | NESTED_LOOP_PLAIN | HASH_JOIN }
+
+<span class="phrase">and <em class="replaceable"><code>join_method_item</code></em> is:</span>
+
+{ <em class="replaceable"><code>advice_target</code></em> |
+( <em class="replaceable"><code>advice_target</code></em> [ ... ] ) }</pre><p>
+<!--
+    Join method advice specifies the relation, or set of relations, that should
+    appear on the inner side of a join using the named join method. For
+    example, <literal>HASH_JOIN(a b)</literal> means that each of
+    <literal>a</literal> and <literal>b</literal> should appear on the inner
+    side of a hash join; a conforming plan must contain at least two hash
+    joins, one of which has <literal>a</literal> and nothing else on the
+    inner side, and the other of which has <literal>b</literal> and nothing
+    else on the inner side. On the other hand,
+    <literal>HASH_JOIN((a b))</literal> means that the join product of
+    <literal>a</literal> and <literal>b</literal> should appear together
+    on the inner side of a single hash join.
+-->
+《機械翻訳》結合メソッドアドバイスは、記名的リレーションメソッドを使用する結合の内側に現れる必要のあるリレーションまたは一連の結合を指定します。
+例の場合、<code class="literal">HASH_JOIN(a b)</code>は、それぞれ<code class="literal">a</code>および<code class="literal">b</code>がハッシュ結合の内側に現れる必要があることを意味します。
+準拠するプランには少なくとも2つのハッシュ結合が含まれている必要があり、その結合の1つには<code class="literal">a</code>が含まれ、内側にはそれ以外のものは含まれません。
+また、<code class="literal">HASH_JOIN((a b))</code>は、<code class="literal">a</code>および<code class="literal">b</code>の結合積が1つのハッシュ結合の内側に一緒に含まれる必要があることを意味します。
+<code class="literal">b</code>
+   </p><p>
+<!--
+    Note that join method advice implies a negative join order constraint.
+    Since the named relation or relations must be on the inner side of a join
+    using the specified method, none of them can be the driving table for the
+    entire join problem. Moreover, no relation inside the set should be joined
+    to any relation outside the set until all relations within the set have
+    been joined to each other. For example, if the advice specifies
+    <literal>HASH_JOIN((a b))</literal> and the system begins by joining either
+    of those to some third relation <literal>c</literal>, the resulting
+    plan could never be compliant with the request to put exactly those two
+    relations on the inner side of a hash join. When using both join order
+    advice and join method advice for the same query, it is a good idea to make
+    sure that they do not mandate incompatible join orders.
+-->
+《機械翻訳》結合メソッドアドバイスは、負の結合オーダー制約を意味します。
+記名的リレーションまたはリレーションは、指定されたメソッドを使用する結合の内側にある必要があるため、これらのいずれも結合問題全体の駆動テーブルにすることはできません。
+さらに、セット内のリレーションは、セット内のすべてのリレーションが互いに結合されるまで、セット外のリレーションに結合されるべきではありません。
+例については、アドバイスが指定されている場合<code class="literal">HASH_JOIN((a b))</code>そしてシステムがそれらのいずれかを3番目のリレーションに結合することから始まる場合、結果のプランは、これら2つのリレーションをハッシュ結合の内側に正確に配置するためにリクエストに準拠することはできません。
+同じ結合に対して、オーダーと結合メソッドの両方を使用する場合は、互換性のないオーダーを必須としないことを確認することをアドバイスにお勧めします。
+   </p></div><div class="sect3" id="PGPLANADVICE-PARTITIONWISE"><div class="titlepage"><div><div><h4 class="title">F.30.4.4. 《機械翻訳》パーティションワイズアドバイス <a href="#PGPLANADVICE-PARTITIONWISE" class="id_link">#</a></h4></div></div></div><!--
+  <title>Partitionwise Advice</title>
+--><pre class="synopsis">
+PARTITIONWISE(<em class="replaceable"><code>partitionwise_item</code></em> [ ... ])
+
+<span class="phrase">where <em class="replaceable"><code>partitionwise_item</code></em> is:</span>
+
+{ <em class="replaceable"><code>advice_target</code></em> |
+( <em class="replaceable"><code>advice_target</code></em> [ ... ] ) }</pre><p>
+<!--
+    When applied to a single target, <literal>PARTITIONWISE</literal>
+    specifies that the specified table should not be part of any partitionwise
+    join. When applied to a list of targets, <literal>PARTITIONWISE</literal>
+    specifies that exactly that set of relations should be joined in
+    partitionwise fashion. Note that, regardless of what advice is specified,
+    no partitionwise joins will be possible if
+    <literal>enable_partitionwise_join = off</literal>.
+-->
+《機械翻訳》単一のターゲットに適用される場合、<code class="literal">PARTITIONWISE</code>指定されたテーブルがパーティションワイズパートの結合でないことを指定します。
+ターゲットのリストに適用される場合、<code class="literal">PARTITIONWISE</code>そのリレーションのセットがパーティションワイズ方式で結合されることを指定します。
+ノートは、指定されたアドバイスに関係なく、次の場合にはパーティションワイズ結合は不可能になります。
+<code class="literal">enable_partitionwise_join = off</code>.
+   </p></div><div class="sect3" id="PGPLANADVICE-SEMIJOIN-UNIQUE"><div class="titlepage"><div><div><h4 class="title">F.30.4.5. 《機械翻訳》セミジョイン一意性アドバイス <a href="#PGPLANADVICE-SEMIJOIN-UNIQUE" class="id_link">#</a></h4></div></div></div><!--
+  <title>Semijoin Uniqueness Advice</title>
+--><pre class="synopsis">
+SEMIJOIN_UNIQUE(<em class="replaceable"><code>sj_unique_item</code></em> [ ... ])
+SEMIJOIN_NON_UNIQUE(<em class="replaceable"><code>sj_unique_item</code></em> [ ... ])
+
+<span class="phrase">where <em class="replaceable"><code>sj_unique_item</code></em> is:</span>
+
+{ <em class="replaceable"><code>advice_target</code></em> |
+( <em class="replaceable"><code>advice_target</code></em> [ ... ] ) }</pre><p>
+<!--
+    The planner sometimes has a choice between implementing a semijoin
+    directly and implementing a semijoin by making the nullable side unique
+    and then performing an inner join. <literal>SEMIJOIN_UNIQUE</literal>
+    specifies the latter strategy, while <literal>SEMIJOIN_NON_UNIQUE</literal>
+    specifies the former strategy. In either case, the argument is the single
+    relation or list of relations that appear beneath the nullable side of the
+    join.
+-->
+《機械翻訳》プランナでは、セミジョインを直接実装するか、またはNULL入力可能な側をユニークにして内部結合を実行するセミジョインを実装するかを選択できる場合があります。
+<code class="literal">SEMIJOIN_UNIQUE</code>は後者のストラテジを指定し、<code class="literal">SEMIJOIN_NON_UNIQUE</code>は前者のストラテジを指定します。
+どちらのケースでも、引数は、結合のNULL入力可能な側の下に表示されるリレーションの単一のリレーションまたはリストです。
+   </p></div><div class="sect3" id="PGPLANADVICE-PARALLEL-QUERY"><div class="titlepage"><div><div><h4 class="title">F.30.4.6. 《機械翻訳》パラレル問い合わせアドバイス <a href="#PGPLANADVICE-PARALLEL-QUERY" class="id_link">#</a></h4></div></div></div><!--
+  <title>Parallel Query Advice</title>
+--><pre class="synopsis">
+GATHER(<em class="replaceable"><code>gather_item</code></em> [ ... ])
+GATHER_MERGE(<em class="replaceable"><code>gather_item</code></em> [ ... ])
+NO_GATHER(<em class="replaceable"><code>advice_target</code></em> [ ... ])
+
+<span class="phrase">where <em class="replaceable"><code>gather_item</code></em> is:</span>
+
+{ <em class="replaceable"><code>advice_target</code></em> |
+( <em class="replaceable"><code>advice_target</code></em> [ ... ] ) }</pre><p>
+<!--
+    <literal>GATHER</literal> or <literal>GATHER_MERGE</literal> specifies
+    that <literal>Gather</literal> or <literal>Gather Merge</literal>,
+    respectively, should be placed on top of the single relation specified as
+    a target, or on top of the join between the list of relations specified as
+    a target. This means that <literal>GATHER(a b c)</literal> is a request
+    for three different <literal>Gather</literal> nodes, while
+    <literal>GATHER((a b c))</literal> is a request for a single
+    <literal>Gather</literal> node on top of a 3-way join.
+-->
+《機械翻訳》<code class="literal">GATHER</code>または<code class="literal">GATHER_MERGE</code>は、<code class="literal">Gather</code>または<code class="literal">Gather Merge</code>が、ターゲットとして指定された単一のリレーションのトップ、またはターゲットとして指定されたリレーションのトップの間の結合のリストにそれぞれ配置されることを指定します。
+これは、<code class="literal">GATHER(a b c)</code>が3つの異なる<code class="literal">Gather</code>ノードに対するリクエストであるのに対して、<code class="literal">GATHER((a b c))</code>は、3方向結合のトップ上の単一<code class="literal">Gather</code>ノードに対するリクエストであることを意味します。
+   </p><p>
+<!--
+    <literal>NO_GATHER</literal> specifies that no <literal>Gather</literal> or
+    <literal>Gather Merge</literal> node should appear above any of the
+    targets, but it only constrains planning within a given join problem,
+    and parent tables or outer subquery levels can still use parallel query.
+    For example,
+    <literal>NO_GATHER(inner_example@any_1)</literal> precludes using a
+    <literal>Parallel Seq Scan</literal> to access the
+    <literal>inner_example</literal> table within the <literal>any_1</literal>
+    subquery, but it does not prevent the planner from placing
+    <literal>SubPlan any_1</literal> beneath a <literal>Gather</literal>
+    or <literal>Gather Merge</literal> node. The following plan is
+    compatible with <literal>NO_GATHER(inner_example@any_1)</literal>, but
+    not with <literal>NO_GATHER(outer_example)</literal>:
+-->
+《機械翻訳》<code class="literal">NO_GATHER</code>は、どのターゲットの上にも<code class="literal">Gather</code>または<code class="literal">Gather Merge</code>ノードが表示されないように指定しますが、指定した結合問題の範囲内で計画が制約されるだけであり、親表または外側のサブ問い合わせレベルでもパラレル問い合わせを使用できます。
+例に対して、<code class="literal">NO_GATHER(inner_example@any_1)</code>は<code class="literal">Parallel Seq Scan</code>アクセスへの使用<code class="literal">inner_example</code>テーブルが<code class="literal">any_1</code>サブ問い合わせ内にあることは禁止されていますが、プランナが<code class="literal">Gather</code>または<code class="literal">Gather Merge</code>ノードの下に<code class="literal">SubPlan any_1</code>を配置することは禁止されていません。
+次のプランは<code class="literal">NO_GATHER(inner_example@any_1)</code>と互換性がありますが、<code class="literal">NO_GATHER(outer_example)</code>とは互換性がありません:。
+   </p><pre class="programlisting">
+Finalize Aggregate
+  -&gt;  Gather
+        -&gt;  Partial Aggregate
+              -&gt;  Parallel Seq Scan on outer_example
+                    Filter: (something = (hashed SubPlan any_1).col1)
+                    SubPlan any_1
+                      -&gt;  Seq Scan on inner_example
+                            Filter: (something_else &gt; 100)
+</pre><p>
+<!--
+    Here is the reverse case, that is, a plan compatible with
+    <literal>NO_GATHER(outer_example)</literal> but not with
+    <literal>NO_GATHER(inner_example@any_1)</literal>:
+-->
+《機械翻訳》これは逆ケースです。
+つまり、<code class="literal">NO_GATHER(outer_example)</code>とは互換性がありますが、<code class="literal">NO_GATHER(inner_example@any_1)</code>:とは互換性がありません。
+プラン
+   </p><pre class="programlisting">
+Aggregate
+  -&gt;  Seq Scan on outer_example
+        Filter: (something = (hashed SubPlan any_1).col1)
+        SubPlan any_1
+          -&gt;  Gather
+                -&gt; Parallel Seq Scan on inner_example
+                     Filter: (something_else &gt; 100)
+</pre><p>
+<!--
+    Similarly, when <literal>NO_GATHER</literal> is applied to an individual
+    partition, it precludes a parallel scan of that particular partition, but
+    it is still possible for a <literal>Parallel Append</literal> node to use
+    a non-parallel scan of that partition. To rule out that possibility,
+    use <literal>NO_GATHER</literal> on the parent rather than on the child.
+-->
+《機械翻訳》同様に、<code class="literal">NO_GATHER</code>が個々のパーティションに適用される場合、その特定のパラレルスキャンのパーティションは除外されますが、<code class="literal">Parallel Append</code>ノードがそのパラレルスキャンの非パーティションを使用することは可能です。
+その可能性を排除するには、子ではなく親に<code class="literal">NO_GATHER</code>を使用します。
+   </p></div></div><div class="sect2" id="PGPLANADVICE-FEEDBACK"><div class="titlepage"><div><div><h3 class="title">F.30.5. 《機械翻訳》アドバイスフィードバック <a href="#PGPLANADVICE-FEEDBACK" class="id_link">#</a></h3></div></div></div><!--
+  <title>Advice Feedback</title>
+--><p>
+<!--
+   <literal>EXPLAIN</literal> provides feedback on whether supplied advice was
+   successfully applied to the query in the form of a comment on each piece
+   of supplied advice. For example:
+-->
+《機械翻訳》<code class="literal">EXPLAIN</code>提供されるアドバイスが提供されるアドバイスごとにコメントのフォームの問い合わせに適用されたかどうかについてフィードバックに提供します。
+例の場合:。
+  </p><pre class="programlisting">
+SET pg_plan_advice.advice = 'hash_join(f g) join_order(f g) index_scan(f no_such_index)';
+EXPLAIN (COSTS OFF)
+    SELECT * FROM jo_fact f
+    LEFT JOIN jo_dim1 d1 ON f.dim1_id = d1.id
+    LEFT JOIN jo_dim2 d2 ON f.dim2_id = d2.id
+    WHERE val1 = 1 AND val2 = 1;
+                            QUERY PLAN
+-------------------------------------------------------------------
+ Hash Join
+   Hash Cond: ((d1.id = f.dim1_id) AND (d2.id = f.dim2_id))
+   -&gt;  Nested Loop
+         -&gt;  Seq Scan on jo_dim2 d2
+               Filter: (val2 = 1)
+         -&gt;  Materialize
+               -&gt;  Seq Scan on jo_dim1 d1
+                     Filter: (val1 = 1)
+   -&gt;  Hash
+         -&gt;  Seq Scan on jo_fact f
+ Supplied Plan Advice:
+   INDEX_SCAN(f no_such_index) /* matched, inapplicable, failed */
+   HASH_JOIN(f) /* matched */
+   HASH_JOIN(g) /* not matched */
+   JOIN_ORDER(f g) /* partially matched */
+</pre><p>
+<!--
+   For this query, <literal>f</literal> is a valid advice target, but
+   <literal>g</literal> is not. Therefore, the request to place
+   <literal>f</literal> on the inner side of a hash join is listed as
+   <literal>matched</literal>, but the request to place <literal>g</literal>
+   on the inner side of a hash join is listed as
+   <literal>not matched</literal>. The <literal>JOIN_ORDER</literal> advice
+   tag involves one valid target and one invalid target, and so is listed as
+   <literal>partially matched</literal>. Note that
+   <literal>HASH_JOIN(f g)</literal> is actually a request for two logically
+   separate behaviors, so in the feedback it is decomposed into
+   <literal>HASH_JOIN(f)</literal> and <literal>HASH_JOIN(g)</literal>.
+   By contrast, <literal>JOIN_ORDER(f g)</literal> is a single request and
+   appears as-is.
+-->
+《機械翻訳》この問い合わせの場合、<code class="literal">f</code>は有効なアドバイスターゲットですが、<code class="literal">g</code>は有効ではありません。
+したがって、<code class="literal">f</code>ハッシュ結合の内側の設定するリクエストは<code class="literal">matched</code>と表示されますが、<code class="literal">g</code>ハッシュ結合の内側の設定するリクエストは<code class="literal">not matched</code>と表示されます。
+<code class="literal">JOIN_ORDER</code>アドバイスタグには、1つの有効ターゲットと1つの無効ターゲットが含まれるため、<code class="literal">partially matched</code>.ノートと表示されます。
+<code class="literal">HASH_JOIN(f g)</code>は実際には2つの論理的に異なる動作のリクエストであるため、フィードバックでは<code class="literal">HASH_JOIN(f)</code>と<code class="literal">HASH_JOIN(g)</code>に分解されます。
+これに対し、<code class="literal">JOIN_ORDER(f g)</code>は単一リクエストであり、そのまま表示されます。
+  </p><p>
+<!--
+   Advice feedback can include any of the following:
+-->
+《機械翻訳》アドバイスフィードバックは、次のいずれかをincludeに載せることができます。
+  </p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>
+<!--
+     <literal>matched</literal> means that all of the specified advice targets
+     were observed together during query planning, at a time at which the
+     advice could be enforced.
+-->
+《機械翻訳》<code class="literal">matched</code>は、問い合わせの計画中に、指定されたすべてのアドバイスターゲットが同時に観測されたことを意味します。
+このとき、アドバイスが実施される可能性があります。
+    </p></li><li class="listitem"><p>
+<!--
+     <literal>partially matched</literal> means that some but not all of the
+     specified advice targets were observed during query planning, or all
+     of the advice targets were observed but not together. For example, this
+     may happen if all the targets of <literal>JOIN_ORDER</literal> advice
+     individually match the query, but the proposed join order is not legal.
+-->
+《機械翻訳》<code class="literal">partially matched</code>指定されたアドバイスターゲットのすべてではなく一部が、問い合わせー計画中に観察されたこと、またはすべてのアドバイスターゲットが観察されたが、同時には観察されなかったことを意味します。
+例の場合、<code class="literal">JOIN_ORDER</code>アドバイスのすべてのターゲットが個別に問い合わせのマッチとなるが、提案された結合オーダーが合法でない場合に、これが発生する可能性があります。
+    </p></li><li class="listitem"><p>
+<!--
+     <literal>not matched</literal> means that none of the
+     specified advice targets were observed during query planning. This may
+     happen if the advice simply doesn't match the query, or it may
+     occur if the relevant portion of the query was not planned, perhaps
+     because it was gated by a condition that was simplified to constant false.
+-->
+《機械翻訳》<code class="literal">not matched</code>は、問い合わせの計画中に、指定されたアドバイスターゲットが観測されなかったことを意味します。
+これは、単にアドバイスが問い合わせをマッチしない場合に発生する可能性があります。
+または、問い合わせの関連部分が計画されなかった場合に発生する可能性があります。
+これは、おそらく定数偽に単純化された状態によってゲートされたためです。
+    </p></li><li class="listitem"><p>
+<!--
+     <literal>inapplicable</literal> means that the advice tag could not
+     be applied to the advice targets for some reason. For example, this will
+     happen if the use of a nonexistent index is requested, or if an attempt
+     is made to control semijoin uniqueness for a non-semijoin.
+-->
+《機械翻訳》<code class="literal">inapplicable</code>何らかの理由でアドバイスタグをアドバイスターゲットに適用できなかったことを意味します。
+例の場合、存在しないインデックスを使用することが要求された場合、または、非セミジョインでコントロールセミジョインの一意性を維持しようとした場合に、このような状況が発生します。
+    </p></li><li class="listitem"><p>
+<!--
+     <literal>conflicting</literal> means that two or more pieces of advice
+     request incompatible behaviors. For example, if you advise a sequential
+     scan and an index scan for the same table, both requests will be flagged
+     as conflicting. This also commonly happens if join method advice or
+     semijoin uniqueness advice implies a join order incompatible with the
+     one explicitly specified; see
+     <xref linkend="pgplanadvice-join-method" />.
+-->
+《機械翻訳》<code class="literal">conflicting</code>は、2つ以上のアドバイスリクエストの動作に互換性がないことを意味します。
+例の場合、同じシーケンシャルスキャンに対してテーブルとインデックススキャンをアドバイスすると、両方の要求に競合を示すフラグが設定されます。
+これは一般に、結合メソッドアドバイスまたはセミジョイン一意性アドバイスが、明示的に指定された結合オーダーと互換性がないことを意味する場合にも発生します。
+<a class="xref" href="pgplanadvice.html#PGPLANADVICE-JOIN-METHOD" title="F.30.4.3. 《機械翻訳》結合メソッドアドバイス">F.30.4.3</a>を参照してください。
+    </p></li><li class="listitem"><p>
+<!--
+     <literal>failed</literal> means that the query plan does not comply with
+     the advice. This only occurs for entries that are also shown as
+     <literal>matched</literal>. It frequently occurs for entries that are
+     also marked as <literal>conflicting</literal> or
+     <literal>inapplicable</literal>. However, it can also occur when the
+     advice is valid insofar as <literal>pg_plan_advice</literal> is able
+     to determine, but the planner is not able to construct a legal
+     plan that can comply with the advice. It is important to note that the
+     sanity checks performed by <literal>pg_plan_advice</literal> are fairly
+     superficial and focused mostly on looking for logical inconsistencies in
+     the advice string; only the planner knows what will actually work.
+-->
+《機械翻訳》<code class="literal">failed</code>は、問い合わせプランがアドバイスに準拠していないことを意味します。
+これは、<code class="literal">matched</code>としても示されているエントリでのみ発生します。
+多くの場合、<code class="literal">conflicting</code>または<code class="literal">inapplicable</code>としても示されているエントリで発生します。
+ただし、<code class="literal">pg_plan_advice</code>は判断できますが、アドバイスがプランナに準拠できる合法的なプランをコンストラクトに載せることができないという限りにおいて、アドバイスが有効である場合にも発生する可能性があります。
+ノートにとって重要なのは、<code class="literal">pg_plan_advice</code>によって実行される健全性チェックはかなり表面的であり、主にアドバイス文字列内のロジカルの不整合を探すことに重点が置かれています。
+プランナだけが実際に機能することを知っています。
+    </p></li></ul></div><p>
+<!--
+   All advice should be marked as exactly one of <literal>matched</literal>,
+   <literal>partially matched</literal>, or <literal>not matched</literal>.
+-->
+《機械翻訳》すべてのアドバイスは、<code class="literal">matched</code>、<code class="literal">partially matched</code>、または<code class="literal">not matched</code>のいずれか1つとして正確にマークされる必要があります。
+  </p></div><div class="sect2" id="PGPLANADVICE-CONFIG-PARAMS"><div class="titlepage"><div><div><h3 class="title">F.30.6. 設定パラメータ <a href="#PGPLANADVICE-CONFIG-PARAMS" class="id_link">#</a></h3></div></div></div><!--
+  <title>Configuration Parameters</title>
+--><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+     <code class="varname">pg_plan_advice.advice</code> (<code class="type">string</code>)
+     <a id="id-1.11.7.40.10.2.1.1.3" class="indexterm"></a>
+     <a id="id-1.11.7.40.10.2.1.1.4" class="indexterm"></a>
+    </span></dt><dd><p>
+<!--
+      <varname>pg_plan_advice.advice</varname> is an advice string to be
+      used during query planning.
+-->
+《機械翻訳》<code class="varname">pg_plan_advice.advice</code>は問い合わせ計画作成時に使用されるアドバイスの文字列です。
+     </p></dd><dt><span class="term">
+     <code class="varname">pg_plan_advice.always_explain_supplied_advice</code> (<code class="type">boolean</code>)
+     <a id="id-1.11.7.40.10.2.2.1.3" class="indexterm"></a>
+     <a id="id-1.11.7.40.10.2.2.1.4" class="indexterm"></a>
+    </span></dt><dd><p>
+<!--
+      <varname>pg_plan_advice.always_explain_supplied_advice</varname> causes
+      <literal>EXPLAIN</literal> to always show any supplied advice and the
+      associated
+      <link linkend="pgplanadvice-feedback">advice feedback</link>.
+      The default value is <literal>true</literal>. If set to
+      <literal>false</literal>, this information will be displayed only when
+      <literal>EXPLAIN (PLAN_ADVICE)</literal> is used.
+-->
+《機械翻訳》<code class="varname">pg_plan_advice.always_explain_provided_advice</code>は、<code class="literal">EXPLAIN</code>が常にすべての提供されるアドバイスと関連する<a class="link" href="pgplanadvice.html#PGPLANADVICE-FEEDBACK" title="F.30.5. 《機械翻訳》アドバイスフィードバック">アドバイスフィードバック</a>を表示するようにします。
+デフォルト値は<code class="literal">true</code>です。
+<code class="literal">false</code>に設定されている場合、この情報は<code class="literal">EXPLAIN (PLAN_ADVICE)</code>が使用されている場合にのみ表示されます。
+     </p></dd><dt><span class="term">
+     <code class="varname">pg_plan_advice.always_store_advice_details</code> (<code class="type">boolean</code>)
+     <a id="id-1.11.7.40.10.2.3.1.3" class="indexterm"></a>
+     <a id="id-1.11.7.40.10.2.3.1.4" class="indexterm"></a>
+    </span></dt><dd><p>
+<!--
+      <varname>pg_plan_advice.always_store_advice_details</varname> allows
+      <literal>EXPLAIN</literal> to show details related to plan advice even
+      when prepared queries are used. The default value is
+      <literal>false</literal>. When planning a prepared query, it is not
+      possible to know whether <literal>EXPLAIN</literal> will later be used,
+      so by default, to reduce overhead, <literal>pg_plan_advice</literal>
+      will not generate plan advice or feedback on supplied advice. This means
+      that if <literal>EXPLAIN EXECUTE</literal> is used on the prepared query,
+      it will not be able to show this information. Changing this setting to
+      <literal>true</literal> avoids this problem, but adds additional
+      overhead. It is probably a good idea to enable this option only in
+      sessions where it is needed, rather than on a system-wide basis.
+-->
+《機械翻訳》<code class="varname">pg_plan_advice.always_store_advice_details</code>により、<code class="literal">EXPLAIN</code>プラン問い合わせが使用されている場合でも、プリペアドアドバイスに関連する詳細を表示することができます。
+デフォルト値は<code class="literal">false</code>.プリペアード問い合わせを計画するとき、<code class="literal">EXPLAIN</code>後で使用されるため、デフォルトによってオーバーヘッドを削減するために使用されるかどうかを知ることはできません。
+<code class="literal">pg_plan_advice</code>提供されるアドバイスでプランアドバイスまたはフィードバックは生成されません。
+これは、<code class="literal">EXPLAIN EXECUTE</code>プリペアード問い合わせで使用される場合、この情報を表示できないことを意味します。
+この設定を<code class="literal">true</code>に変更すると、この問題は回避されますが、オーバーヘッドが追加されます。
+このオプションをシステム全体ではなく、必要なセッションでのみ有効にすることは、おそらく良いアイディアです。
+     </p></dd><dt><span class="term">
+     <code class="varname">pg_plan_advice.feedback_warnings</code> (<code class="type">boolean</code>)
+     <a id="id-1.11.7.40.10.2.4.1.3" class="indexterm"></a>
+     <a id="id-1.11.7.40.10.2.4.1.4" class="indexterm"></a>
+    </span></dt><dd><p>
+<!--
+      When set to true, <varname>pg_plan_advice.feedback_warnings</varname>
+      emits a warning whenever supplied plan advice is not successfully
+      enforced. The default value is <literal>false</literal>.
+-->
+《機械翻訳》真が設定された場合、<code class="varname">pg_plan_advice.feedback_warnings</code>は、提供されるプランワーニングが正常に実施されなかった場合に必ずアドバイスを発します。
+デフォルト値は<code class="literal">false</code>.
+     </p></dd><dt><span class="term">
+     <code class="varname">pg_plan_advice.trace_mask</code> (<code class="type">boolean</code>)
+     <a id="id-1.11.7.40.10.2.5.1.3" class="indexterm"></a>
+     <a id="id-1.11.7.40.10.2.5.1.4" class="indexterm"></a>
+    </span></dt><dd><p>
+<!--
+      When <varname>pg_plan_advice.trace_mask</varname> is
+      <literal>true</literal>, <literal>pg_plan_advice</literal> will print
+      messages during query planning each time that
+      <literal>pg_plan_advice</literal> alters the mask of allowable query
+      plan types in response to supplied plan advice. The default value is
+      <literal>false</literal>. The messages printed by this setting are not
+      expected to be useful except for purposes of debugging this module.
+-->
+《機械翻訳》<code class="varname">pg_plan_advice.trace_mask</code>が<code class="literal">true</code>,の場合、<code class="literal">pg_plan_advice</code>が<code class="literal">pg_plan_advice</code>回答で許容される問い合わせプラン型のマスクを提供されるプランアドバイスに変更するたびに、問い合わせ計画作成中にデフォルト値がメッセージを生成します。
+は<code class="literal">false</code>.この設定で出力されるメッセージは、このモジュールをデバッグする目的以外に有用であるとは期待されません。
+プリント
+     </p></dd></dl></div></div><div class="sect2" id="PGPLANADVICE-LIMITATIONS"><div class="titlepage"><div><div><h3 class="title">F.30.7. 制限事項 <a href="#PGPLANADVICE-LIMITATIONS" class="id_link">#</a></h3></div></div></div><!--
+  <title>Limitations</title>
+--><p>
+<!--
+   It is currently not possible to control any aspect of the planner's behavior
+   with respect to aggregation. This includes both whether aggregates are
+   computed by sorting or hashing, and also whether strategies such as
+   <link linkend="guc-enable-eager-aggregate">eager aggregation</link> or
+   <link linkend="guc-enable-partitionwise-aggregate">partitionwise
+   aggregation</link> are used.
+-->
+《機械翻訳》現在、集約に関するコントロールの動作のいかなる側面もプランナ化することはできません。
+これには、集約が並べ替えまたはハッシュによって計算されるかどうか、および<a class="link" href="runtime-config-query.html#GUC-ENABLE-EAGER-AGGREGATE">熱心な集約</a>または<a class="link" href="runtime-config-query.html#GUC-ENABLE-PARTITIONWISE-AGGREGATE">パーティションごとの集約</a>などの戦略が使用されるかどうかの両方が含まれます。
+  </p><p>
+<!--
+   It also is currently not possible to control any aspect of the planner's
+   behavior with respect to set operations such as <literal>UNION</literal>
+   or <literal>INTERSECT</literal>.
+-->
+《機械翻訳》また、現在のところ、<code class="literal">UNION</code>や<code class="literal">INTERSECT</code>などの集合演算に関するコントロールの動作のいかなる側面もプランナすることはできない。
+  </p><p>
+<!--
+   As discussed above under <link linkend="pgplanadvice-how-it-works">How
+   It Works</link>, the use of plan advice can only affect which plan
+   the planner chooses from among those it believes to be viable. It can never
+   force the choice of a plan which the planner refused to consider in the
+   first place.
+-->
+《機械翻訳》<a class="link" href="pgplanadvice.html#PGPLANADVICE-HOW-IT-WORKS" title="F.30.2. どうやって動くのか">仕組み</a>で述べたように、プランアドバイスの利用は、プランナが存続可能と考えるプランの中からどのプランを選択するかに影響を及ぼすだけであり、プランナが検討を拒否した地域の選択を強制することは決してできない。
+  </p><p>
+<!--
+   One consequence of the limitation described in the previous paragraph is
+   that plan advice works only probabilistically when
+   <link linkend="geqo"><acronym>GEQO</acronym></link> is used. Even if plans
+   compatible with the supplied advice exist, there is no guarantee that any
+   of them will be a part of the randomly generated pool of candidates. If
+   not, the planner will generate a plan that does not comply with the
+   supplied advice, with some parts of that plan marked disabled. If you
+   supply advice that only mildly constrains join planning,
+   <acronym>GEQO</acronym> will usually manage to find a plan that conforms
+   with it; but if you wish to constrain it more substantially, you may need
+   to disable <acronym>GEQO</acronym> in order to obtain satisfactory results.
+   Note that scan advice is not affected by this limitation because it does
+   not constrain the join order.
+-->
+《機械翻訳》前のパラグラフで述べた制限の1つの結果は、<a class="link" href="geqo.html" title="第61章 遺伝的問い合わせオプティマイザ"><acronym class="acronym">GEQO</acronym></a>が使われるとき、プランアドバイスは確率的にしか働かないということです。
+提供されるアドバイスと互換性のある計画が存在したとしても、それらのどれかが候補のランダムに生成されたプールのパートになるという保証はありません。
+そうでない場合、プランナは提供されるアドバイスに準拠しないプランを生成し、そのプランの一部は使用不可とマークされます。
+結合計画をわずかしか制約しないアドバイスを提供した場合、<acronym class="acronym">GEQO</acronym>は通常、それに準拠するプランを見つけることができます。
+しかし、それをより実質的に制約したい場合は、満足な結果を得るためにオーダーで<acronym class="acronym">GEQO</acronym>を無効にする必要があるかもしれません。
+ノートスキャンアドバイスは結合オーダーを制約しないので、この制限の影響を受けません。
+  </p><p>
+<!--
+   Plan advice is consulted only when a query is planned. If a prepared
+   statement is re-executed under a different value of
+   <varname>pg_plan_advice.advice</varname>, or with different advice supplied
+   by another module such as <xref linkend="pgstashadvice"/>, it can still
+   make use of a previously cached plan. The same thing can happen when
+   re-executing a statement within a <application>PL/pgSQL</application>
+   block, where plans can also be cached. Sessions that do not wish to reuse
+   previously-cached plans can use
+   <link linkend="sql-discard"><command>DISCARD PLANS</command></link>.
+-->
+《機械翻訳》プランアドバイスは、問い合わせが計画されている場合にのみ参照されます。
+あるプリペアドステートメントが<code class="varname">pg_plan_advice.advice</code>の異なる値で、または<a class="xref" href="pgstashadvice.html" title="F.33. pg_stash_advice — store and automatically apply plan advice">pg_stash_advice</a>などの別のモジュールによって異なるアドバイス提供されるで再実行された場合でも、以前にキャッシュされたプランをmakeに使用できます。
+<span class="application">PL/pgSQL</span>ブロック内でステートメントを再実行する場合も、同じことが発生する可能性があります。
+この場合、プランもキャッシュできます。
+以前にキャッシュされたプランを再利用しないセッションでは、<a class="link" href="sql-discard.html" title="DISCARD"><code class="command">DISCARD PLANS</code></a>を使用できます。
+  </p></div><div class="sect2" id="PGPLANADVICE-AUTHOR"><div class="titlepage"><div><div><h3 class="title">F.30.8. 作者 <a href="#PGPLANADVICE-AUTHOR" class="id_link">#</a></h3></div></div></div><!--
+  <title>Author</title>
+--><p>
+   Robert Haas <code class="email">&lt;<a class="email" href="mailto:rhaas@postgresql.org">rhaas@postgresql.org</a>&gt;</code>
+  </p></div></div><div class="navfooter"><hr /><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="pgoverexplain.html" title="F.29. pg_overexplain — EXPLAINで詳細をダンプする">前へ</a> </td><td width="20%" align="center"><a accesskey="u" href="contrib.html" title="付録F 追加で提供されるモジュールと拡張">上へ</a></td><td width="40%" align="right"> <a accesskey="n" href="pgprewarm.html" title="F.31. pg_prewarm — リレーションデータをバッファキャッシュにプリロードする">次へ</a></td></tr><tr><td width="40%" align="left" valign="top">F.29. pg_overexplain — EXPLAINで詳細をダンプする </td><td width="20%" align="center"><a accesskey="h" href="index.html" title="PostgreSQL 19rc2文書">ホーム</a></td><td width="40%" align="right" valign="top"> F.31. pg_prewarm — リレーションデータをバッファキャッシュにプリロードする</td></tr></table></div></body></html>
