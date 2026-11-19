@@ -158,8 +158,8 @@ WALファイル(16MB)は隣り合うシステム、同じサイトの別シス�
     primary before the restart, but you can also manually copy files to
     &lt;filename&gt;pg_wal&lt;/filename&gt; at any time to have them replayed.
 </span>
-《マッチ度[92.879747]》スタンバイモードでは、サーバは継続的にプライマリサーバから受け取ったWALを適用します。
-スタンバイサーバはWALアーカイブ(<a class="xref" href="runtime-config-wal.html#GUC-RESTORE-COMMAND">restore_command</a>参照)から、または直接TCP接続(ストリーミングレプリケーション)を介してプライマリサーバから、WALを読み取ることができます。
+《未レビュー》スタンバイモードでは、サーバは継続的にプライマリサーバから受け取ったWALを適用します。
+スタンバイサーバはWALアーカイブ(<a class="xref" href="runtime-config-wal.html#GUC-RESTORE-COMMAND">restore_command</a>参照)から、または直接TCP接続（ストリーミング物理レプリケーション）を介してプライマリサーバから、WALを読み取ることができます。
 またスタンバイサーバはスタンバイクラスタの<code class="filename">pg_wal</code>ディレクトリにあるすべてのWALをリストアしようと試みます。
 これはよくサーバの再起動後、スタンバイが再起動前にプライマリから流れ込んだWALを再生する時に発生します。
 しかしまたファイルを再生する任意の時点で、手作業で<code class="filename">pg_wal</code>にコピーすることもできます。
@@ -322,7 +322,7 @@ archive_cleanup_command = 'pg_archivecleanup /path/to/archive "%r"'
      Although you could treat a logical replication subscriber as a warm standby,
      it would require some differences to what is described here.
 </span>
-《機械翻訳》ここでのストリーミングレプリケーションの説明は、物理レプリケーションを想定しています。
+《未レビュー》ここでのストリーミングレプリケーションの説明は、物理レプリケーションを想定しています。
 論理レプリケーションサブスクライバーをウォームスタンバイとして扱うこともできますが、ここで説明するものとはいくつかの違いが必要になります。
     </p></div><p>
 <span class="original">
@@ -508,14 +508,12 @@ primary_conninfo = 'host=192.168.1.50 port=5432 user=foo password=foopass'
      view's &lt;literal&gt;flushed_lsn&lt;/literal&gt; indicates that WAL is being
      received faster than it can be replayed.  Recovery state and replay
      progress can also be monitored via the
+     &lt;link linkend="monitoring-pg-stat-recovery-view"&gt;
+     &lt;structname&gt;pg_stat_recovery&lt;/structname&gt;&lt;/link&gt; view.
 </span>
-《マッチ度[78.426966]》ホットスタンバイ上では、WAL受信プロセスの状態は、<a class="link" href="monitoring-stats.html#MONITORING-PG-STAT-WAL-RECEIVER-VIEW" title="27.2.6. pg_stat_wal_receiver"><code class="structname">pg_stat_wal_receiver</code></a>ビューを通じて入手することができます。
+《未レビュー》ホットスタンバイ上では、WAL受信プロセスの状態は、<a class="link" href="monitoring-stats.html#MONITORING-PG-STAT-WAL-RECEIVER-VIEW" title="27.2.6. pg_stat_wal_receiver"><code class="structname">pg_stat_wal_receiver</code></a>ビューを通じて入手することができます。
 <code class="function">pg_last_wal_replay_lsn</code>とビューの<code class="literal">flushed_lsn</code>との違いが大きい場合、WALのリプレイを上回る速さでWALが受信されていることを示しています。
-《機械翻訳》ホットスタンバイでは、WALレシーバプロセスのステータスは<a class="link" href="monitoring-stats.html#MONITORING-PG-STAT-WAL-RECEIVER-VIEW" title="27.2.6. pg_stat_wal_receiver"><code class="structname">pg_stat_wal_receiver</code></a>ビューから得ることができます。
-<code class="function">pg_last_wal_replay_lsn</code>とビューの<code class="literal">flushed_lsn</code>の間のラージ差は、WALが再生可能な速度よりも速く受信されていることを示します。
-リカバリの状態とリプレイの進行状況は、経由でも監視できます。
-     <a class="link" href="monitoring-stats.html#MONITORING-PG-STAT-RECOVERY-VIEW" title="27.2.7. pg_stat_recovery">
-     <code class="structname">pg_stat_recovery</code></a> view.
+リカバリの状態とリプレイの進行状況は、<a class="link" href="monitoring-stats.html#MONITORING-PG-STAT-RECOVERY-VIEW" title="27.2.7. pg_stat_recovery"><code class="structname">pg_stat_recovery</code></a>ビューを通じても監視することができます。
     </p></div></div><div class="sect2" id="STREAMING-REPLICATION-SLOTS"><div class="titlepage"><div><div><h3 class="title">26.2.6. レプリケーションスロット <a href="#STREAMING-REPLICATION-SLOTS" class="id_link">#</a></h3></div></div></div><span class="original">
    &lt;title&gt;Replication Slots&lt;/title&gt;
 </span><a id="id-1.6.13.22.23.2" class="indexterm"></a><a id="id-1.6.13.22.23.3" class="indexterm"></a><p>
@@ -527,11 +525,7 @@ primary_conninfo = 'host=192.168.1.50 port=5432 user=foo password=foopass'
     linkend="hot-standby-conflict"&gt;recovery conflict&lt;/link&gt; on physical
     replicas even when the standby is disconnected.
 </span>
-《マッチ度[78.609626]》レプリケーションスロットは、以下のことを保証する自動的な方法を提供します。
-全てのスタンバイがWALセグメントを受け取るまでは、プライマリサーバがWALセグメントを削除しないこと、また、スタンバイが接続していない際にも、<a class="link" href="hot-standby.html#HOT-STANDBY-CONFLICT" title="26.4.2. 問い合わせコンフリクトの処理">リカバリの競合</a>が発生する可能性がある行をプライマリが削除しないこと、です。
-《機械翻訳》レプリケーションスロットは、全てのスタンバイ/サブスクライバーが物理的もしくは論理的にWALセグメントを受信するまで、保証がWALセグメントを削除しないプライマリサーバへの自動化された方法を提供します。
-また、プライマリが接続していない場合でも、物理的レプリカ上で<a class="link" href="hot-standby.html#HOT-STANDBY-CONFLICT" title="26.4.2. 問い合わせコンフリクトの処理">スタンバイコンフリクト</a>を引き起こす可能性のある行を削除しません。
-リカバリ
+《未レビュー》レプリケーションスロットは、全てのスタンバイ／サブスクライバーが物理的もしくは論理的にWALセグメントを受信するまで、プライマリサーバがWALセグメントを削除しないこと、また、スタンバイが接続していない際にも、<a class="link" href="hot-standby.html#HOT-STANDBY-CONFLICT" title="26.4.2. 問い合わせコンフリクトの処理">リカバリの競合</a>が発生する可能性がある行をプライマリが削除しないことを保証します。
    </p><p>
 <span class="original">
     In lieu of using replication slots, it is possible to prevent the removal
@@ -552,8 +546,7 @@ primary_conninfo = 'host=192.168.1.50 port=5432 user=foo password=foopass'
     being removed by vacuum, but provides no protection during any time period
     when the physical replication standby is disconnected.
 </span>
-《マッチ度[82.456140]》同様に、<a class="xref" href="runtime-config-replication.html#GUC-HOT-STANDBY-FEEDBACK">hot_standby_feedback</a>は、レプリケーションスロットを使用しない場合、関連する行がバキュームによって削除されることに対して保護しますが、スタンバイが接続されていない間は保護しません。
-《機械翻訳》同様に、物理レプリケーションスロットを使用せずに<a class="xref" href="runtime-config-replication.html#GUC-HOT-STANDBY-FEEDBACK">hot_standby_feedback</a>を単独で使用した場合、該当する行がバキュームによって削除されることに対する保護は提供されますが、物理的ピリオドが切断されている場合は、レプリケーションスタンバイのどの時点でも保護は提供されません。
+《未レビュー》同様に、物理レプリケーションスロットを使用せずに<a class="xref" href="runtime-config-replication.html#GUC-HOT-STANDBY-FEEDBACK">hot_standby_feedback</a>を単独で使用した場合、関連する行がバキュームによって削除されることに対して保護しますが、物理レプリケーションスタンバイが切断されている間は保護されません。
    </p><div class="caution"><h3 class="title">注意</h3><p>
 <span class="original">
      Beware that replication slots can cause the server to retain so
@@ -593,8 +586,7 @@ primary_conninfo = 'host=192.168.1.50 port=5432 user=foo password=foopass'
 <span class="original">
      You can create a physical replication slot on the primary like this:
 </span>
-《マッチ度[57.352941]》以下のような方法でレプリケーションスロットを作成できます。
-《機械翻訳》次のように、プライマリに物理レプリケーションスロットを作成できます。
+《未レビュー》以下のような方法でプライマリに物理レプリケーションスロットを作成できます。
 </p><pre class="programlisting">
 postgres=# SELECT * FROM pg_create_physical_replication_slot('node_a_slot');
   slot_name  | lsn
@@ -846,11 +838,9 @@ primary_slot_name = 'node_a_slot'
     (if set) expires, regardless of whether replication is synchronous or
     asynchronous.
 </span>
-《マッチ度[52.112676]》《タグ不一致》高速シャットダウンが要求された場合、ユーザは待ち状態ではなくなります。
-しかし非同期レプリケーションを使用している時と同じく、送信中のWALレコードが現在接続しているスタンバイサーバに転送されるまで、サーバは完全に停止しません。
-《機械翻訳》高速シャットダウンが要求された場合、ユーザは待つのをやめます。
-しかし、レプリケーションを使用する場合、全ての未処理のWAL記録が現在接続されているサーバに転送されるまで、あるいは、シャットダウンが同期的であるか非同期であるかに関わらず<a class="xref" href="runtime-config-replication.html#GUC-WAL-SENDER-SHUTDOWN-TIMEOUT">wal_sender_shutdown_timeout</a>（設定されていれば）が終了するまで、レプリケーションは完全にはになりません。
-スタンバイサーバ
+《未レビュー》高速シャットダウンが要求された場合、ユーザは待ち状態ではなくなります。
+しかしレプリケーションを使用している場合、全ての未処理のWAL記録が現在接続しているスタンバイサーバに転送されるまで、サーバは完全に停止しません。
+また、<a class="xref" href="runtime-config-replication.html#GUC-WAL-SENDER-SHUTDOWN-TIMEOUT">wal_sender_shutdown_timeout</a>（設定されていれば）が終了するまで、サーバは停止しません。
    </p></div><div class="sect3" id="SYNCHRONOUS-REPLICATION-MULTIPLE-STANDBYS"><div class="titlepage"><div><div><h4 class="title">26.2.8.2. 複数の同期スタンバイ <a href="#SYNCHRONOUS-REPLICATION-MULTIPLE-STANDBYS" class="id_link">#</a></h4></div></div></div><span class="original">
     &lt;title&gt;Multiple Synchronous Standbys&lt;/title&gt;
 </span><p>
@@ -1090,7 +1080,7 @@ PostgreSQLは、WALデータをすべてのスタンバイが安全に受信し�
 </span>
 トランザクションの待機中にスタンバイサーバを再作成する必要がある場合、<code class="function">pg_backup_start()</code>関数および<code class="function">pg_backup_stop()</code>関数を<code class="varname">synchronous_commit</code> = <code class="literal">off</code>であるセッション内で確実に実行してください。
 さもないとこれらの要求はスタンバイに現れるまで永遠に待機します。
-   </p></div></div><div class="sect2" id="READ-YOUR-WRITES-CONSISTENCY"><div class="titlepage"><div><div><h3 class="title">26.2.9. 《機械翻訳》Read-Your-Writes一貫性。 <a href="#READ-YOUR-WRITES-CONSISTENCY" class="id_link">#</a></h3></div></div></div><span class="original">
+   </p></div></div><div class="sect2" id="READ-YOUR-WRITES-CONSISTENCY"><div class="titlepage"><div><div><h3 class="title">26.2.9. 《未レビュー》Read-Your-Writes一貫性 <a href="#READ-YOUR-WRITES-CONSISTENCY" class="id_link">#</a></h3></div></div></div><span class="original">
    &lt;title&gt;Read-Your-Writes Consistency&lt;/title&gt;
 </span><p>
 <span class="original">
@@ -1101,9 +1091,9 @@ PostgreSQLは、WALデータをすべてのスタンバイが安全に受信し�
     However, it is possible to address this without switching to synchronous
     replication.
 </span>
-《機械翻訳》非同期レプリケーションでは、可視ラグのために、プライマリでの乗り換えがスタンバイでのレプリケーションにまだなっていない可能性がある短いウィンドウが常にあります。
+《未レビュー》非同期レプリケーションでは、可視ラグのために、プライマリでの書き込みがスタンバイでのレプリケーションにまだ反映されていない可能性がある短いウィンドウが常にあります。
 これは、アプリケーションがプライマリでデータを書き込み、すぐにスタンバイで読み取り問い合わせを発行する場合に不整合を引き起こす可能性があります。
-ただし、同期レプリケーションに切り替えることなく、これをアドレスすることは可能です。
+しかし、同期レプリケーションに切り替えることなく、これに対処することは可能です。
    </p><p>
 <span class="original">
     To address this, PostgreSQL offers a mechanism for read-your-writes
@@ -1111,15 +1101,15 @@ PostgreSQLは、WALデータをすべてのスタンバイが安全に受信し�
     by synchronizing the WAL replay on the standby with the known point of
     change on the primary.
 </span>
-《機械翻訳》これをアドレスするために、PostgreSQLはread-your-writesメカニズムを一貫性に提供しています。
-キーアイディアは保証に対してであり、クライアントはスタンバイ上のWALリプレイとプライマリ上の既知の変更ポイントを同期させることによって、自身の書き込みを確認します。
+《未レビュー》これに対処するために、PostgreSQLはread-your-writes一貫性のメカニズムを提供しています。
+キーアイディアは、クライアントが自身の書き込みを確認できるように、スタンバイ上のWALリプレイとプライマリ上の既知の変更ポイントを同期させることです。
    </p><p>
 <span class="original">
     This is achieved by the following steps.  Once the write transaction
     has committed, the application retrieves a WAL location from the
     primary using a function call like this.
 </span>
-《機械翻訳》これは以下の手順で実現されます。
+《未レビュー》これは以下の手順で実現されます。
 書き込みトランザクションがコミットすると、アプリケーションは以下のような関数呼び出しを使用して、プライマリからWAL位置を取得します。
 
 </p><pre class="programlisting">
@@ -1138,9 +1128,9 @@ postgres=# SELECT pg_current_wal_insert_lsn();
     the standby's WAL replay process reaches (or exceeds) the specified
     &lt;acronym&gt;LSN&lt;/acronym&gt;.
 </span>
-《機械翻訳》プライマリから取得した<acronym class="acronym">LSN</acronym>は、スタンバイサーバに通知されます。
+《未レビュー》プライマリから取得した<acronym class="acronym">LSN</acronym>は、スタンバイサーバに通知されます。
 これは、アプリケーションレベルで管理することも、コネクションプーラ経由で管理することもできます。
-スタンバイでは、アプリケーションは<a class="xref" href="sql-wait.html" title="WAIT"><span class="refentrytitle">WAIT</span></a>コマンドをブロックに発行し、スタンバイのWALがリプレイプロセスの指定<acronym class="acronym">LSN</acronym>に達するまで処理が続行されます。
+スタンバイでは、アプリケーションは<a class="xref" href="sql-wait.html" title="WAIT"><span class="refentrytitle">WAIT</span></a>コマンドを発行し、スタンバイのWALリプレイプロセスが指定された<acronym class="acronym">LSN</acronym>に達するまで（またはそれを超えるまで）処理をブロックします。
 
 </p><pre class="programlisting">
 postgres=# WAIT FOR LSN '0/306EE20';
@@ -1155,7 +1145,7 @@ postgres=# WAIT FOR LSN '0/306EE20';
     Therefore, if that &lt;acronym&gt;LSN&lt;/acronym&gt; was retrieved from the primary
     after the commit, subsequent read queries will reflect those updates.
 </span>
-《機械翻訳》コマンドが成功のステータスを戻すと、指定された<acronym class="acronym">LSN</acronym>までのすべての変更が適用されていることが保証されます。
+《未レビュー》コマンドが成功のステータスを戻すと、指定された<acronym class="acronym">LSN</acronym>までのすべての変更が適用されていることが保証されます。
 したがって、その<acronym class="acronym">LSN</acronym>がプライマリの後にコミットから取得された場合、後続の読取り問い合わせはそれらの更新を反映します。
    </p></div><div class="sect2" id="CONTINUOUS-ARCHIVING-IN-STANDBY"><div class="titlepage"><div><div><h3 class="title">26.2.10. スタンバイにおける継続的アーカイビング <a href="#CONTINUOUS-ARCHIVING-IN-STANDBY" class="id_link">#</a></h3></div></div></div><span class="original">
    &lt;title&gt;Continuous Archiving in Standby&lt;/title&gt;
